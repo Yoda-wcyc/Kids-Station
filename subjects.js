@@ -1,5 +1,4 @@
-/* subjects.js — 科目切換列（國語／數學／社會／自然／英文）。英文＝原本的 app.js；其他科目由這支畫在 #subject。
-   遊戲庫單檔版（build_single.py）不含這支，只有英文。 */
+/* subjects.js — 科目切換列（國語／數學／社會／自然／英文）。英文＝原本的 app.js；其他科目由這支畫在 #subject。 */
 (function () {
   'use strict';
   const SUBJ = [{ k: 'chinese', n: '國語', i: '📝' }, { k: 'math', n: '數學', i: '🔢' }, { k: 'social', n: '社會', i: '🌏' }, { k: 'science', n: '自然', i: '🔬' }, { k: 'english', n: '英文', i: '🔤' }];

@@ -15,9 +15,7 @@
 ```
 
 **天平解方程式的正本就是 `小朋友學英文\math\balance.html`**（2026-10-05 起；原本在小朋友學AI 系列，從那裡複製過來一次）。要改天平就直接改這支。
-遊戲庫那份 `game\數學-天平解方程式.html` 是從它衍生的：正本＋遊戲庫尾段（角落簽名 yoda-logo、流量 beacon），一樣不載 yoda-game-badge.js、不加投資免責和檢核鈕。改完正本後：
-1. 把 kids-english 複製到 `_deploy\kids-english\` 並 push；
-2. 重做遊戲庫那份（正本＋尾段），寫到 `game\`（LF）和 `_deploy\game\`（CRLF），再 push game repo。
+改完直接把 kids-english 複製到 `_deploy\kids-english\` 並 push。遊戲庫（game repo）已不放單獨的天平或英文頁，只有一張「小朋友學習站」卡片連到本站。
 
 線上版：https://yoda-wcyc.github.io/kids-english/
 
@@ -39,10 +37,6 @@ test/smoke.js     node test/smoke.js（檢查資料格式、每種題型各出 3
 
 「學會了」：單字、字根、文法、句型四個學習頁的每張卡片都有「👍 學會了」按鈕，按下記錄時間（`ke_learned` = `{itemId: {at}}`，ISO 時間，畫面顯示台北時間），可按「取消」移除。學習頁可篩選 全部／已學會／未學會，家長頁有「學會紀錄」表。itemId 例：`word:apple`、`root:un`、`grammar:be`、`pattern:lets`。
 
-## 遊戲庫單檔版
-
-`python build_single.py` 會把 style.css、engine.js、app.js、data/*.js 內嵌成一支 HTML（只有英文：index.html 裡標了 `<!-- subjects -->` 的科目列、數學 iframe 都會拿掉），寫到遊戲庫正本 `G:\Yoda x Claude\game\英文-句型單字文法.html`（標題「英文-句型/單字/文法」，尾端加遊戲庫標配的角落簽名＋流量 beacon），同步到 `_deploy\game\`，並在遊戲庫 `index.html` 的 GAMES 登錄（已登錄就不重複加）。之後到 `_deploy\game\` commit＋push。
-兩個網址（kids-english 與遊戲庫）localStorage 不互通，紀錄各自分開。
 
 ## 新增單字（含課本單字）
 

@@ -148,8 +148,8 @@
     redraw = full; full();
   }
 
-  // ---------- 分享（網址固定用遊戲庫正式網址）----------
-  const SHARE = { title: '英文-句型/單字/文法', text: '單字、字根、文法、句型：聽、選、拼、排句子一起練英文', url: 'https://yoda-wcyc.github.io/game/' + encodeURIComponent('英文-句型單字文法.html') };
+  // ---------- 分享（網址固定用小朋友學習站正式網址）----------
+  const SHARE = { title: '小朋友學習站', text: '單字、字根、文法、句型：聽、選、拼、排句子一起練英文', url: 'https://yoda-wcyc.github.io/kids-english/' };
   const shareRow = () => `<div class="share-row"><button class="btn share" data-share>🔗 分享這個網站</button><span class="share-msg muted" role="status" aria-live="polite"></span></div>`;
   function share(b) {
     const msg = b.parentNode.querySelector('.share-msg'), say = t => { if (msg) msg.textContent = t; };
