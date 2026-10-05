@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>塔防講義 · 第 1 堂</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#2a3550;--ink2:#42597a;--acc:#ff8a3c;--acc2:#ff9f43;--card:#fff;--line:#d6e6f5;--ok:#3ecf8e;--okbg:#e9fbf2;--warm:#fff8ec;--warmline:#ffe0b3}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,'PingFang TC','Noto Sans TC','Segoe UI',sans-serif;background:linear-gradient(160deg,#8ed7ff 0%,#bfeaff 40%,#fff4d6 100%);background-attachment:fixed;min-height:100vh;color:var(--ink);font-size:19px;line-height:1.75}
+#app{max-width:900px;margin:0 auto;padding:1.2rem 16px 3rem}
+.brand{font-size:14px;letter-spacing:3px;color:var(--acc);font-weight:800;text-align:center}
+h1{font-size:30px;line-height:1.35;text-align:center;margin:.3rem 0 .8rem;color:#22314f}
+h2{font-size:24px;margin:1.6rem 0 .7rem;color:#22314f}
+h3{font-size:21px;line-height:1.4;color:#22314f}
+.nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:.3rem 0 1rem}
+.nav a{background:rgba(255,255,255,.75);border:2px solid var(--line);border-radius:30px;padding:.25rem .9rem;font-size:16px;font-weight:700;color:var(--ink2);text-decoration:none}
+.nav a.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.card{background:var(--card);border-radius:18px;padding:1rem 1.2rem;box-shadow:0 6px 20px rgba(60,90,140,.15);margin:0 0 1rem;break-inside:avoid;page-break-inside:avoid}
+.goal{border:3px solid var(--acc2)}
+.goal .see{background:var(--warm);border:2px solid var(--warmline);border-radius:14px;padding:.7rem 1rem;margin-top:.6rem;font-weight:700}
+.sh{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .7rem;margin-bottom:.5rem}
+.no{flex:none;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff9f43,#ff7e5f);color:#fff;font-weight:800;font-size:21px;display:flex;align-items:center;justify-content:center}
+.sp{background:#eaf4ff;border:2px solid #b9d7f5;border-radius:20px;padding:.05rem .7rem;font-size:16px;font-weight:700;color:#2d5c8f}
+.tx p{margin:.3rem 0}.tx ul,.tx ol{margin:.3rem 0 .3rem 1.4rem}
+.bcap{font-size:15px;font-weight:700;color:var(--ink2);margin:.7rem 0 .2rem}
+.bwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#f7fbff;border:2px dashed var(--line);border-radius:12px;padding:.6rem;max-width:100%}
+.bwrap svg{display:block}
+pre.blocks{font-size:15px;white-space:pre;font-family:monospace}
+.check{background:var(--okbg);border:2.5px solid #a8ecc9}
+.ck{font-weight:800;font-size:20px;color:#1d8a5a;margin-bottom:.2rem}
+.chal{background:#f3ecff;border:2.5px solid #cdb8f5}
+.chal .ck{color:#6a3fc0}
+.tip{background:var(--warm);border:2px solid var(--warmline);border-radius:12px;padding:.55rem .9rem;margin:.6rem 0;font-size:17px}
+.must{background:#ffe9e4;border:2.5px solid #ffb4a3;border-radius:14px;padding:.5rem 1rem;font-weight:800;font-size:20px;margin:1.2rem 0 .8rem}
+.opt{background:#eef3f8;border:2.5px solid #c7d4e2;border-radius:14px;padding:.5rem 1rem;font-weight:800;font-size:20px;margin:1.6rem 0 .8rem}
+details.parent{background:rgba(255,255,255,.82);border:2px dashed #a9c4e0;border-radius:16px;padding:.8rem 1.1rem;margin-top:1.6rem;color:var(--ink2);font-size:18px}
+details.parent summary{font-weight:800;font-size:21px;cursor:pointer;color:#22314f}
+details.parent h4{font-size:19px;color:#22314f;margin:1rem 0 .3rem}
+table{border-collapse:collapse;width:100%;font-size:17px;margin:.4rem 0}
+th,td{border:1.5px solid var(--line);padding:.35rem .55rem;text-align:left;vertical-align:top}
+th{background:#eaf4ff}
+.tblw{overflow-x:auto}
+.q{background:#fff;border-left:5px solid var(--acc2);border-radius:8px;padding:.4rem .8rem;margin:.4rem 0}
+.foot{text-align:center;font-size:15px;color:#6b84a6;margin-top:1.4rem}
+a{color:#2d6bb0}
+.dls{display:flex;flex-wrap:wrap;gap:10px;margin-top:.7rem}
+.dl{display:inline-flex;flex-direction:column;align-items:flex-start;min-height:52px;justify-content:center;background:linear-gradient(135deg,#4dabf7,#1c7ed6);color:#fff!important;text-decoration:none;font-weight:800;font-size:18px;border-radius:14px;padding:.45rem 1rem;box-shadow:0 3px 10px rgba(28,126,214,.3)}
+.dl small{font-size:13px;font-weight:600;opacity:.9}
+.dl.done{background:linear-gradient(135deg,#69db7c,#2f9e44)}
+.kbd{display:inline-block;background:#fff;border:2px solid #c7d4e2;border-bottom-width:4px;border-radius:8px;padding:0 .45rem;font-weight:700;font-size:.92em}
+@media (max-width:600px){body{font-size:18px}h1{font-size:25px}h3{font-size:19px}.card{padding:.85rem .9rem}}
+@media print{
+ body{background:#fff;font-size:14pt}
+ .nav,.noprint{display:none}
+ .card,details.parent{box-shadow:none;border:1.5px solid #bbb}
+ .bwrap{overflow:visible;background:#fff}
+ details.parent{break-before:page}
+ a{color:inherit;text-decoration:none}
+}
+</style></head>
+<body><div id="app">
+<div class="brand">小朋友學習站 · SCRATCH 塔防</div>
+<nav class="nav"><a href="index.html" class="">總覽</a><a href="lesson1.html" class="on">第 1 堂</a><a href="lesson2.html" class="">第 2 堂</a><a href="lesson3.html" class="">第 3 堂</a><a href="lesson4.html" class="">第 4 堂</a><a href="lesson5.html" class="">第 5 堂</a><a href="lesson6.html" class="">第 6 堂</a><a href="lesson7.html" class="">第 7 堂</a></nav>
+<h1>第 1 堂：怪物沿 S 形路線走到城堡</h1>
+<section class="card goal"><h3>🎯 今天的目標</h3><div class="tx"><p>讓史萊姆怪物從入口出發，沿著彎彎曲曲的路，一段一段滑到城堡門口。</p></div>
+<div class="see">👀 做完你會看到：按下綠旗，史萊姆從左上角出發，轉 7 個彎，最後停在城堡門口，一邊走還一邊蹦蹦跳。</div>
+<div class="tx" style="font-size:16px;color:#5b6f8f;margin-top:.5rem">今天大約要拼 15 塊積木。</div>
+<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/start.sb3" download="塔防_起始.sb3">⬇️ 下載起始檔<small>塔防_起始.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson1-done.sb3" download="塔防_第1堂完成.sb3">⬇️ 下載完成檔<small>塔防_第1堂完成.sb3</small></a></div>
+<div class="tx" style="font-size:15px;color:#5b6f8f;margin-top:.3rem">iPad 點按鈕 → 「下載」，檔案會在「檔案」App 的「下載項目」，再到 Scratch 用「檔案 → 從你的電腦挑選」打開。完成檔是老師的解答，卡住時再用。</div></section><h2>🧩 開始拼積木</h2><section class="card step"><div class="sh"><span class="no">1</span><h3>打開起始檔、找到怪物</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>載入 <b>塔防_起始.sb3</b>（方法見總覽頁）。在右下角的角色區點一下 <b>怪物</b>（綠色史萊姆）。</p><p>看看舞台：路上有 8 個數字圓點，1–7 是轉角，8 是城堡門口。</p></div></section><section class="card step"><div class="sh"><span class="no">2</span><h3>按綠旗回到起點</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>從「事件」拖出 <b>當綠旗被點擊</b>，從「外觀」拖 <b>顯示</b>，從「動作」拖 <b>定位到 x: y:</b>，把數字改成 -240 和 130。</p></div><div class="bwrap"><pre class="blocks">當綠旗被點擊
+顯示
+定位到 x:(-240) y:(130)</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">按綠旗，史萊姆有沒有跳到左上角的入口？<br>小提醒：負號「-」要記得打，iPad 鍵盤在數字頁可以找到。</div></section><section class="card step"><div class="sh"><span class="no">3</span><h3>前 4 段滑行（入口 → 點 4）</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>把史萊姆拖到圓點 1 上，看角色資訊的 x、y，就是要填的數字。從「動作」拖 <b>滑行 () 秒到 x: y:</b> 接在下面，一段一塊：</p></div><div class="bwrap"><pre class="blocks">滑行 (1) 秒到 x:(-170) y:(130)
+滑行 (3) 秒到 x:(-170) y:(-30)
+滑行 (2) 秒到 x:(-70) y:(-30)
+滑行 (3) 秒到 x:(-70) y:(130)</pre></div></section><section class="card step"><div class="sh"><span class="no">4</span><h3>後 4 段滑行（點 4 → 城堡門口）</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>再接 4 塊滑行，最後一塊停在城堡門口（點 8）。</p></div><div class="bwrap"><pre class="blocks">滑行 (2) 秒到 x:(30) y:(130)
+滑行 (4) 秒到 x:(30) y:(-130)
+滑行 (2) 秒到 x:(150) y:(-130)
+滑行 (3) 秒到 x:(150) y:(60)</pre></div><div class="bcap">拼好的樣子（整段對照）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
+顯示
+定位到 x:(-240) y:(130)
+滑行 (1) 秒到 x:(-170) y:(130)
+滑行 (3) 秒到 x:(-170) y:(-30)
+滑行 (2) 秒到 x:(-70) y:(-30)
+滑行 (3) 秒到 x:(-70) y:(130)
+滑行 (2) 秒到 x:(30) y:(130)
+滑行 (4) 秒到 x:(30) y:(-130)
+滑行 (2) 秒到 x:(150) y:(-130)
+滑行 (3) 秒到 x:(150) y:(60)</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">按綠旗，史萊姆有沒有一路走到城堡門口？大約 20 秒。<br>如果走歪了，看看是哪一段，回去對那一塊的數字。</div></section><section class="card step"><div class="sh"><span class="no">5</span><h3>加分題：蹦蹦跳動畫</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>在同一個怪物角色裡，另外拼一段新的（不要接在上一段下面）。從「控制」拖 <b>重複無限次</b>，把「造型換成下一個」和「等待」放進去。時間不夠可以跳過，第 2 堂會一起改。</p></div><div class="bcap">完整腳本：怪物-走路動畫（新增）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
+重複無限次
+  造型換成下一個
+  等待 (0.3) 秒
+end</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">按綠旗，史萊姆一邊走一邊換造型、看起來在跳嗎？</div></section><section class="card chal"><div class="ck">🏆 挑戰題</div><div class="tx"><p>把某一段滑行的秒數改小（例如 3 改成 1），史萊姆在那段會變怎樣？哪一段最長、最該慢慢走？</p><p>玩完記得<b>把數字改回來</b>再存檔，下一堂才會跟講義一樣喔！</p></div></section><section class="card"><h3>💾 存檔＋預告</h3><div class="tx"><p>點上面選單的 <b>檔案 → 下載到你的電腦</b>，iPad 會問要不要下載，按「下載」，檔案會存進「檔案」App 的「下載項目」。檔名可以改成「我的塔防_第N堂」。</p><p>🔜 下一堂：一隻怪物太孤單了！我們要用「分身」變出一整串怪物，還要有生命和失敗畫面。</p></div></section><details class="parent"><summary>👨‍👩‍👧 家長版（點我展開）</summary>
+<h4>⏱️ 時間分配（40 分鐘）</h4><table><tr><th>時間</th><th>做什麼</th></tr>
+<tr><td>0–5 分</td><td>看目標：一起讀「今天的目標」，可以先打開完成檔玩一下（記得之後回到自己的檔案）</td></tr>
+<tr><td>5–30 分</td><td>拼積木：照步驟卡一張一張做，每到「試試看」就按綠旗</td></tr>
+<tr><td>30–35 分</td><td>試玩抓蟲：玩一輪，不對就回頭對積木（數字、負號、下拉選單）</td></tr>
+<tr><td>35–40 分</td><td>存檔＋預告下一堂</td></tr></table>
+<h4>💡 這堂的觀念（用孩子聽得懂的話）</h4><p><b>座標：</b>舞台像一張方格紙，x 是左右（右邊越大）、y 是上下（上面越大），正中間是 (0, 0)。圓點上的 x、y 就像地址，告訴史萊姆要走去哪裡。</p><p><b>程式是一行一行往下做的：</b>第一塊做完才做第二塊，所以滑行要照路線順序排。</p><p><b>兩段腳本可以同時跑：</b>按綠旗時，「走路線」和「走路動畫」會一起開始，所以可以邊走邊跳。</p>
+<h4>🧯 常見卡關點和解法</h4><div class="tblw"><table><tr><th>卡在哪</th><th>怎麼解</th></tr><tr><td>負號沒打，史萊姆跑到相反的地方</td><td>對照積木，-240、-170、-30、-70、-130 都有負號。iPad 鍵盤切到數字頁可以打「-」。</td></tr><tr><td>按綠旗史萊姆不回起點、從上次停的地方開始滑</td><td>第一塊「定位到 x:-240 y:130」漏掉或接錯位置，要放在「顯示」下面、第一塊滑行上面。</td></tr><tr><td>某一段走成斜線</td><td>那一塊的 x 或 y 抄錯。路線只有水平、垂直，所以相鄰兩塊滑行一定只有 x 或 y 其中一個會變。</td></tr><tr><td>找不到 x、y 在哪</td><td>點舞台下方的角色資訊區（角色名稱旁），拖動角色時 x、y 會跟著變。iPad 直式時資訊區比較擠，可以轉橫式。</td></tr><tr><td>積木拖不上去、黏不起來</td><td>手指按住積木左上角拖，靠近上一塊的下緣時會出現灰色影子再放手。</td></tr><tr><td>走路動畫做不完</td><td>這是加分題，可以跳過，第 2 堂會一起改。</td></tr></table></div>
+<h4>🗨️ 可以問小朋友的問題</h4><div class="q">💬 史萊姆往右走的時候，x 會變大還是變小？往下走呢？</div><div class="q">💬 如果把兩塊滑行對調順序，史萊姆會怎麼走？</div><div class="q">💬 為什麼一按綠旗要先「定位到」入口？不放會怎樣？</div>
+<h4>🆘 落後了怎麼辦</h4><p>上一堂沒做完：開課前先載入 <b>塔防_起始.sb3</b>，從這堂第 1 步開始。</p><p>這堂來不及做完：下課前存好自己做到的部分，下次上課前載入 <b>塔防_第1堂完成.sb3</b> 接著做第 2 堂。</p><p>載入方法見<a href="index.html#load">總覽頁</a>。完成檔和規格逐塊一致，可以拿來對照小朋友的積木哪裡不一樣。</p>
+</details>
+<div class="foot">Scratch 塔防課 · 共 7 堂 · 每堂 40 分鐘</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/scratchblocks@3.7.1/build/scratchblocks.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/scratchblocks@3.7.1/build/translations-all.js"></script>
+<script>
+(function(){
+ function sc(){return window.innerWidth<600?0.8:(window.innerWidth<900?0.95:1.05);}
+ try{scratchblocks.renderMatching('pre.blocks',{style:'scratch3',languages:['zh_tw','en'],scale:sc()});}
+ catch(e){console.error('scratchblocks render failed',e);}
+ function openAll(){document.querySelectorAll('details').forEach(function(d){d.open=true;});}
+ window.addEventListener('beforeprint',openAll);
+ if(window.matchMedia){var mq=window.matchMedia('print');if(mq.addListener)mq.addListener(function(m){if(m.matches)openAll();});}
+})();
+</script>
+</body></html>

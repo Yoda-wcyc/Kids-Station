@@ -1,8 +1,18 @@
-/* subjects.js — 科目切換列（國語／數學／社會／自然／英文）。英文＝原本的 app.js；其他科目由這支畫在 #subject。 */
+/* subjects.js — 科目切換列（國語／數學／社會／自然／英文／AI／遊戲）。英文＝原本的 app.js；其他科目由這支畫在 #subject。 */
 (function () {
   'use strict';
-  const SUBJ = [{ k: 'chinese', n: '國語', i: '📝' }, { k: 'math', n: '數學', i: '🔢' }, { k: 'social', n: '社會', i: '🌏' }, { k: 'science', n: '自然', i: '🔬' }, { k: 'english', n: '英文', i: '🔤' }];
-  const MATH = [{ id: 'balance', title: '天平解方程式', desc: '用天平學加減方程式，可以自己出題，也有括號題', icon: '⚖️', src: 'math/balance.html' }];
+  const SUBJ = [{ k: 'chinese', n: '國語', i: '📝' }, { k: 'math', n: '數學', i: '🔢' }, { k: 'social', n: '社會', i: '🌏' }, { k: 'science', n: '自然', i: '🔬' }, { k: 'english', n: '英文', i: '🔤' }, { k: 'ai', n: 'AI', i: '🤖' }, { k: 'game', n: '遊戲', i: '🎮' }];
+  // 有活動卡片的科目：點卡片 → iframe 開正本頁面
+  const ACTS = {
+    math: [{ id: 'balance', title: '天平解方程式', desc: '用天平學加減方程式，可以自己出題，也有括號題', icon: '⚖️', src: 'math/balance.html' }],
+    ai: [
+      { id: 'hallucinate', title: 'AI 會唬爛', desc: 'AI 有時會很有自信地說錯。學會三招不被騙：自己查、問大人、多找一個地方對答案。', icon: '🤥', src: 'ai/hallucinate.html' },
+      { id: 'ask-well', title: '怎麼問得好', desc: '同一件事，問法不同答案就差很多。練習講清楚、給背景、說形式，讓 AI 真的幫得上忙。', icon: '💬', src: 'ai/ask-well.html' },
+      { id: 'secrets', title: '秘密不能說', desc: '分清楚哪些話可以跟 AI 或網路上的人說，哪些能找到你本人的資料要收好。', icon: '🔒', src: 'ai/secrets.html' }
+    ],
+    game: [{ id: 'scratch-td', title: 'Scratch 塔防（7 堂課）', desc: '用 iPad 上的 Scratch，一堂一堂做出自己的塔防遊戲：分身、變數、廣播、自己做的積木都會用到。每堂都能直接下載起始檔。', icon: '🏰', src: 'game/scratch-td/web/index.html' }]
+  };
+  const COLORS = ['c2', 'c4', 'c1', 'c5', 'c3'];
   const bar = document.getElementById('subjects'), box = document.getElementById('subject'), app = document.getElementById('app');
   if (!bar || !box || !app) return;
   const loadS = () => { try { return JSON.parse(localStorage.getItem('ke_settings')) || {}; } catch (e) { return {}; } };
@@ -15,23 +25,17 @@
   window.addEventListener('resize', setH); setH();
 
   function route() {
-    const { k, sub } = parse();
+    const { k, sub } = parse(), s = SUBJ.find(x => x.k === k);
+    if (!s) { location.replace('#home'); return; }
     bar.querySelectorAll('.stab').forEach(a => { const on = a.dataset.k === k; a.classList.toggle('on', on); a.setAttribute('aria-selected', on ? 'true' : 'false'); });
-    const frame = k === 'math' && MATH.some(a => a.id === sub);
-    document.documentElement.classList.toggle('frame-mode', frame);
+    const acts = ACTS[k], a = acts && acts.find(x => x.id === sub);
+    document.documentElement.classList.toggle('frame-mode', !!a);
     saveSubj(k);
     if (k === 'english') { box.hidden = true; box.innerHTML = ''; app.hidden = false; return; }
     app.hidden = true; box.hidden = false;
-    if (k === 'math') {
-      const a = MATH.find(x => x.id === sub);
-      box.innerHTML = a
-        ? `<div class="frame-top"><a class="btn" href="#s/math">← 回數學</a><b>${a.icon} ${a.title}</b></div><div class="frame-wrap"><iframe src="${a.src}" title="${a.title}" allow="clipboard-write; web-share"></iframe></div>`
-        : `<header class="top"><h1>🔢 數學</h1></header><div class="tiles">${MATH.map(x => `<a class="tile c2" href="#s/math/${x.id}"><span class="ti">${x.icon}</span><b>${x.title}</b><small>${x.desc}</small></a>`).join('')}</div>`;
-    } else {
-      const s = SUBJ.find(x => x.k === k);
-      if (!s) { location.replace('#home'); return; }
-      box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header><div class="card center soon"><div class="soon-i">${s.i}</div><h2>${s.n}準備中，敬請期待！</h2><p class="muted">先去其他科目玩玩看吧 😊</p></div>`;
-    }
+    if (a) box.innerHTML = `<div class="frame-top"><a class="btn" href="#s/${k}">← 回${s.n}</a><b>${a.icon} ${a.title}</b></div><div class="frame-wrap"><iframe src="${a.src}" title="${a.title}" allow="clipboard-write; web-share"></iframe></div>`;
+    else if (acts) box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header><div class="tiles">${acts.map((x, i) => `<a class="tile ${COLORS[i % COLORS.length]}" href="#s/${k}/${x.id}"><span class="ti">${x.icon}</span><b>${x.title}</b><small>${x.desc}</small></a>`).join('')}</div>`;
+    else box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header><div class="card center soon"><div class="soon-i">${s.i}</div><h2>${s.n}準備中，敬請期待！</h2><p class="muted">先去其他科目玩玩看吧 😊</p></div>`;
     window.scrollTo(0, 0); setH();
   }
   // 打開網站時沒有指定頁面 → 回到上次的科目

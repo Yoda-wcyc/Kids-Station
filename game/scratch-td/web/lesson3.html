@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>塔防講義 · 第 3 堂</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#2a3550;--ink2:#42597a;--acc:#ff8a3c;--acc2:#ff9f43;--card:#fff;--line:#d6e6f5;--ok:#3ecf8e;--okbg:#e9fbf2;--warm:#fff8ec;--warmline:#ffe0b3}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,'PingFang TC','Noto Sans TC','Segoe UI',sans-serif;background:linear-gradient(160deg,#8ed7ff 0%,#bfeaff 40%,#fff4d6 100%);background-attachment:fixed;min-height:100vh;color:var(--ink);font-size:19px;line-height:1.75}
+#app{max-width:900px;margin:0 auto;padding:1.2rem 16px 3rem}
+.brand{font-size:14px;letter-spacing:3px;color:var(--acc);font-weight:800;text-align:center}
+h1{font-size:30px;line-height:1.35;text-align:center;margin:.3rem 0 .8rem;color:#22314f}
+h2{font-size:24px;margin:1.6rem 0 .7rem;color:#22314f}
+h3{font-size:21px;line-height:1.4;color:#22314f}
+.nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:.3rem 0 1rem}
+.nav a{background:rgba(255,255,255,.75);border:2px solid var(--line);border-radius:30px;padding:.25rem .9rem;font-size:16px;font-weight:700;color:var(--ink2);text-decoration:none}
+.nav a.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.card{background:var(--card);border-radius:18px;padding:1rem 1.2rem;box-shadow:0 6px 20px rgba(60,90,140,.15);margin:0 0 1rem;break-inside:avoid;page-break-inside:avoid}
+.goal{border:3px solid var(--acc2)}
+.goal .see{background:var(--warm);border:2px solid var(--warmline);border-radius:14px;padding:.7rem 1rem;margin-top:.6rem;font-weight:700}
+.sh{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .7rem;margin-bottom:.5rem}
+.no{flex:none;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff9f43,#ff7e5f);color:#fff;font-weight:800;font-size:21px;display:flex;align-items:center;justify-content:center}
+.sp{background:#eaf4ff;border:2px solid #b9d7f5;border-radius:20px;padding:.05rem .7rem;font-size:16px;font-weight:700;color:#2d5c8f}
+.tx p{margin:.3rem 0}.tx ul,.tx ol{margin:.3rem 0 .3rem 1.4rem}
+.bcap{font-size:15px;font-weight:700;color:var(--ink2);margin:.7rem 0 .2rem}
+.bwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#f7fbff;border:2px dashed var(--line);border-radius:12px;padding:.6rem;max-width:100%}
+.bwrap svg{display:block}
+pre.blocks{font-size:15px;white-space:pre;font-family:monospace}
+.check{background:var(--okbg);border:2.5px solid #a8ecc9}
+.ck{font-weight:800;font-size:20px;color:#1d8a5a;margin-bottom:.2rem}
+.chal{background:#f3ecff;border:2.5px solid #cdb8f5}
+.chal .ck{color:#6a3fc0}
+.tip{background:var(--warm);border:2px solid var(--warmline);border-radius:12px;padding:.55rem .9rem;margin:.6rem 0;font-size:17px}
+.must{background:#ffe9e4;border:2.5px solid #ffb4a3;border-radius:14px;padding:.5rem 1rem;font-weight:800;font-size:20px;margin:1.2rem 0 .8rem}
+.opt{background:#eef3f8;border:2.5px solid #c7d4e2;border-radius:14px;padding:.5rem 1rem;font-weight:800;font-size:20px;margin:1.6rem 0 .8rem}
+details.parent{background:rgba(255,255,255,.82);border:2px dashed #a9c4e0;border-radius:16px;padding:.8rem 1.1rem;margin-top:1.6rem;color:var(--ink2);font-size:18px}
+details.parent summary{font-weight:800;font-size:21px;cursor:pointer;color:#22314f}
+details.parent h4{font-size:19px;color:#22314f;margin:1rem 0 .3rem}
+table{border-collapse:collapse;width:100%;font-size:17px;margin:.4rem 0}
+th,td{border:1.5px solid var(--line);padding:.35rem .55rem;text-align:left;vertical-align:top}
+th{background:#eaf4ff}
+.tblw{overflow-x:auto}
+.q{background:#fff;border-left:5px solid var(--acc2);border-radius:8px;padding:.4rem .8rem;margin:.4rem 0}
+.foot{text-align:center;font-size:15px;color:#6b84a6;margin-top:1.4rem}
+a{color:#2d6bb0}
+.dls{display:flex;flex-wrap:wrap;gap:10px;margin-top:.7rem}
+.dl{display:inline-flex;flex-direction:column;align-items:flex-start;min-height:52px;justify-content:center;background:linear-gradient(135deg,#4dabf7,#1c7ed6);color:#fff!important;text-decoration:none;font-weight:800;font-size:18px;border-radius:14px;padding:.45rem 1rem;box-shadow:0 3px 10px rgba(28,126,214,.3)}
+.dl small{font-size:13px;font-weight:600;opacity:.9}
+.dl.done{background:linear-gradient(135deg,#69db7c,#2f9e44)}
+.kbd{display:inline-block;background:#fff;border:2px solid #c7d4e2;border-bottom-width:4px;border-radius:8px;padding:0 .45rem;font-weight:700;font-size:.92em}
+@media (max-width:600px){body{font-size:18px}h1{font-size:25px}h3{font-size:19px}.card{padding:.85rem .9rem}}
+@media print{
+ body{background:#fff;font-size:14pt}
+ .nav,.noprint{display:none}
+ .card,details.parent{box-shadow:none;border:1.5px solid #bbb}
+ .bwrap{overflow:visible;background:#fff}
+ details.parent{break-before:page}
+ a{color:inherit;text-decoration:none}
+}
+</style></head>
+<body><div id="app">
+<div class="brand">小朋友學習站 · SCRATCH 塔防</div>
+<nav class="nav"><a href="index.html" class="">總覽</a><a href="lesson1.html" class="">第 1 堂</a><a href="lesson2.html" class="">第 2 堂</a><a href="lesson3.html" class="on">第 3 堂</a><a href="lesson4.html" class="">第 4 堂</a><a href="lesson5.html" class="">第 5 堂</a><a href="lesson6.html" class="">第 6 堂</a><a href="lesson7.html" class="">第 7 堂</a></nav>
+<h1>第 3 堂：高台／低地塔位＋點擊蓋塔＋金錢</h1>
+<section class="card goal"><h3>🎯 今天的目標</h3><div class="tx"><p>在地圖上擺出 6 塊空地（3 塊高台、3 塊低地），點一下空地就花 50 元蓋一座塔。</p></div>
+<div class="see">👀 做完你會看到：按綠旗後地圖上冒出 6 塊空地，點兩塊就蓋好兩座塔，金錢從 100 變 0；再點第三塊，塔位會說「錢不夠！」。</div>
+<div class="tx" style="font-size:16px;color:#5b6f8f;margin-top:.5rem">今天大約要拼 28 塊積木。</div>
+<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson2-done.sb3" download="塔防_第2堂完成.sb3">⬇️ 下載起始檔<small>塔防_第2堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson3-done.sb3" download="塔防_第3堂完成.sb3">⬇️ 下載完成檔<small>塔防_第3堂完成.sb3</small></a></div>
+<div class="tx" style="font-size:15px;color:#5b6f8f;margin-top:.3rem">iPad 點按鈕 → 「下載」，檔案會在「檔案」App 的「下載項目」，再到 Scratch 用「檔案 → 從你的電腦挑選」打開。完成檔是老師的解答，卡住時再用。</div></section><h2>🧩 開始拼積木</h2><section class="card step"><div class="sh"><span class="no">1</span><h3>建立變數「金錢」，開場給 100 元</h3><span class="sp">🖼️ 角色：舞台</span></div><div class="tx"><p>建立變數 <b>金錢</b>（適用於所有角色）。點舞台，在「開場與失敗」裡、「背景換成 草地」下面插入 <b>變數 金錢 設為 100</b>。</p></div><div class="bcap">完整腳本：舞台-開場與失敗（修改）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
+背景換成 [草地 v]
+變數 [金錢 v] 設為 (100)
+變數 [生命 v] 設為 (10)
+等待直到 &lt;(生命) &lt; (1)&gt;
+背景換成 [失敗 v]
+停止 [全部 v]</pre></div></section><section class="card step"><div class="sh"><span class="no">2</span><h3>擺 3 塊高台空地</h3><span class="sp">🏰 角色：塔位</span></div><div class="tx"><p>點 <b>塔位</b> 角色。先換成高台空地造型，移到一個位置就建立一個分身（分身會留在那裡）：</p></div><div class="bwrap"><pre class="blocks">當綠旗被點擊
+造型換成 [高台空地 v]
+定位到 x:(-20) y:(40)
+建立 [自己 v] 的分身
+定位到 x:(90) y:(-30)
+建立 [自己 v] 的分身
+定位到 x:(-120) y:(-110)</pre></div></section><section class="card step"><div class="sh"><span class="no">3</span><h3>擺低地空地，本尊站最後一格</h3><span class="sp">🏰 角色：塔位</span></div><div class="tx"><p>接著換成低地空地，再複製 2 塊；最後一塊「定位到 -215, 60」不建立分身，本尊自己站在那裡。</p></div><div class="bwrap"><pre class="blocks">建立 [自己 v] 的分身
+造型換成 [低地空地 v]
+定位到 x:(-120) y:(70)
+建立 [自己 v] 的分身
+定位到 x:(205) y:(-40)</pre></div><div class="bcap">拼好的樣子（整段對照）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
+造型換成 [高台空地 v]
+定位到 x:(-20) y:(40)
+建立 [自己 v] 的分身
+定位到 x:(90) y:(-30)
+建立 [自己 v] 的分身
+定位到 x:(-120) y:(-110)
+建立 [自己 v] 的分身
+造型換成 [低地空地 v]
+定位到 x:(-120) y:(70)
+建立 [自己 v] 的分身
+定位到 x:(205) y:(-40)
+建立 [自己 v] 的分身
+定位到 x:(-215) y:(60)</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">按綠旗，數數看地圖上是不是有 <b>6 塊</b>空地？3 塊高台（有台階的平台上）、3 塊低地（凹下去的泥地）。</div></section><section class="card step"><div class="sh"><span class="no">4</span><h3>點一下蓋塔</h3><span class="sp">🏰 角色：塔位</span></div><div class="tx"><p>在塔位角色拼新的一段。重點：</p><ul><li>造型編號小於 3 ＝ 還是空地，才能蓋。</li><li>「錢不夠！」的驚嘆號是<b>全形</b>的。</li><li>「造型換成」的格子裡放一個「+」運算：造型編號 + 2。</li></ul></div><div class="bcap">完整腳本：塔位-點一下蓋塔（新增）</div><div class="bwrap"><pre class="blocks">當角色被點擊
+如果 &lt;(造型 [編號 v]) &lt; (3)&gt; 那麼
+  如果 &lt;(金錢) &lt; (50)&gt; 那麼
+    說出 [錢不夠！] 持續 (1) 秒
+  否則
+    造型換成 ((造型 [編號 v]) + (2))
+    變數 [金錢 v] 改變 (-50)
+    圖層移到 [最下 v] 層
+  end
+end</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">按綠旗，點兩塊空地：變成塔、金錢 100 → 50 → 0 嗎？再點第三塊，有沒有說「錢不夠！」？已經蓋好的塔再點，應該什麼都不會發生。</div></section><div class="tip">🙋 怪物走過塔旁邊，塔還不會打牠——這是對的！打怪是第 4 堂的事。</div><section class="card chal"><div class="ck">🏆 挑戰題</div><div class="tx"><p>高台塔的大圓圈（攻擊圈）比低地塔大。試著每種各蓋一座，比比看哪一種圈住的路比較長？如果只能蓋 2 座，你會選哪兩塊？</p></div></section><section class="card"><h3>💾 存檔＋預告</h3><div class="tx"><p>點上面選單的 <b>檔案 → 下載到你的電腦</b>，iPad 會問要不要下載，按「下載」，檔案會存進「檔案」App 的「下載項目」。檔名可以改成「我的塔防_第N堂」。</p><p>🔜 下一堂：塔要開始打怪了！我們會自己做一塊「走路積木」，還要讓每隻怪物有自己的血量。</p></div></section><details class="parent"><summary>👨‍👩‍👧 家長版（點我展開）</summary>
+<h4>⏱️ 時間分配（40 分鐘）</h4><table><tr><th>時間</th><th>做什麼</th></tr>
+<tr><td>0–5 分</td><td>看目標：一起讀「今天的目標」，可以先打開完成檔玩一下（記得之後回到自己的檔案）</td></tr>
+<tr><td>5–30 分</td><td>拼積木：照步驟卡一張一張做，每到「試試看」就按綠旗</td></tr>
+<tr><td>30–35 分</td><td>試玩抓蟲：玩一輪，不對就回頭對積木（數字、負號、下拉選單）</td></tr>
+<tr><td>35–40 分</td><td>存檔＋預告下一堂</td></tr></table>
+<h4>💡 這堂的觀念（用孩子聽得懂的話）</h4><p><b>造型編號：</b>塔位有 4 個造型，照順序是 1 高台空地、2 低地空地、3 高台塔、4 低地塔。所以「編號 + 2」剛好把空地變成同一種地形的塔，一塊積木就搞定兩種地形。</p><p><b>如果…否則：</b>錢不夠就說話，不然（否則）就蓋塔。Scratch 只有「小於」，所以寫成「金錢 &lt; 50 就說錢不夠，否則蓋塔」。</p><p><b>分身會留在原地：</b>本尊走到一個位置複製一次，影印本就留在那裡；本尊再走去下一個位置。</p>
+<h4>🧯 常見卡關點和解法</h4><div class="tblw"><table><tr><th>卡在哪</th><th>怎麼解</th></tr><tr><td>塔蓋出來是錯的地形（高台蓋成低地塔）</td><td>到「造型」分頁確認順序是 1 高台空地、2 低地空地、3 高台塔、4 低地塔，不要拖動造型順序。</td></tr><tr><td>只有 5 塊空地</td><td>最後一塊是本尊自己站：最後一塊「定位到 x:-215 y:60」不要再接「建立分身」，但也不能漏掉。</td></tr><tr><td>點了一直說錢不夠，或錢變負的</td><td>外層「如果 造型編號 &lt; 3」和內層「如果 金錢 &lt; 50」要分清楚；「說出」放在「那麼」，換造型和扣錢放在「否則」。</td></tr><tr><td>「造型 編號」積木找不到</td><td>在「外觀」最下面；放進格子後，下拉選單要選「編號」不是「名稱」。</td></tr><tr><td>蓋好塔後，旁邊的空地點不到</td><td>漏了「圖層移到最下層」：塔的大圓圈蓋在旁邊空地上，會搶走手指的點擊。</td></tr><tr><td>驚嘆號打成半形</td><td>講義寫全形「！」。半形也能跑，但為了跟完成檔一樣，請用全形（中文輸入法下打）。</td></tr></table></div>
+<h4>🗨️ 可以問小朋友的問題</h4><div class="q">💬 高台的塔打得比較遠，但是比較少，錢要花在哪？</div><div class="q">💬 蓋在轉彎處為什麼比較好？（提示：看圈圈裡有幾段路）</div><div class="q">💬 為什麼「造型編號 + 2」就能把空地變成塔？如果造型順序被打亂會怎樣？</div><div class="q">💬 起始只有 100 元，一座 50 元，可以蓋幾座？</div>
+<h4>🆘 落後了怎麼辦</h4><p>上一堂沒做完：開課前先載入 <b>塔防_第2堂完成.sb3</b>，從這堂第 1 步開始。</p><p>這堂來不及做完：下課前存好自己做到的部分，下次上課前載入 <b>塔防_第3堂完成.sb3</b> 接著做第 4 堂。</p><p>載入方法見<a href="index.html#load">總覽頁</a>。完成檔和規格逐塊一致，可以拿來對照小朋友的積木哪裡不一樣。</p>
+</details>
+<div class="foot">Scratch 塔防課 · 共 7 堂 · 每堂 40 分鐘</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/scratchblocks@3.7.1/build/scratchblocks.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/scratchblocks@3.7.1/build/translations-all.js"></script>
+<script>
+(function(){
+ function sc(){return window.innerWidth<600?0.8:(window.innerWidth<900?0.95:1.05);}
+ try{scratchblocks.renderMatching('pre.blocks',{style:'scratch3',languages:['zh_tw','en'],scale:sc()});}
+ catch(e){console.error('scratchblocks render failed',e);}
+ function openAll(){document.querySelectorAll('details').forEach(function(d){d.open=true;});}
+ window.addEventListener('beforeprint',openAll);
+ if(window.matchMedia){var mq=window.matchMedia('print');if(mq.addListener)mq.addListener(function(m){if(m.matches)openAll();});}
+})();
+</script>
+</body></html>

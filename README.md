@@ -11,11 +11,28 @@
 │    └─ 天平解方程式  #s/math/balance → iframe 開 math/balance.html
 ├─ 社會   #s/social    準備中
 ├─ 自然   #s/science   準備中
-└─ 英文   #home 等原本路由（app.js，預設科目）
+├─ 英文   #home 等原本路由（app.js，預設科目）
+├─ AI     #s/ai        活動卡片
+│    ├─ AI 會唬爛     #s/ai/hallucinate → ai/hallucinate.html
+│    ├─ 怎麼問得好    #s/ai/ask-well    → ai/ask-well.html
+│    └─ 秘密不能說    #s/ai/secrets     → ai/secrets.html
+└─ 遊戲   #s/game      活動卡片
+     └─ Scratch 塔防（7 堂課） #s/game/scratch-td → game/scratch-td/web/index.html
 ```
 
-**天平解方程式的正本就是 `小朋友學英文\math\balance.html`**（2026-10-05 起；原本在小朋友學AI 系列，從那裡複製過來一次）。要改天平就直接改這支。
-改完直接把 kids-english 複製到 `_deploy\kids-english\` 並 push。遊戲庫（game repo）已不放單獨的天平或英文頁，只有一張「小朋友學習站」卡片連到本站。
+活動卡片定義在 `subjects.js` 的 `ACTS`（新增活動＝加一筆 `{id,title,desc,icon,src}`）。點卡片後頁面用 iframe 開在科目列下方，上面有「← 回某科」。
+
+### 正本位置（2026-10-05 起，小朋友學AI 系列已退場，以下就是正本，直接改）
+
+| 內容 | 正本 | 網站上的檔案 |
+|---|---|---|
+| 天平解方程式 | `math\balance.html` | 同一支 |
+| AI 三頁 | `ai\hallucinate.html`、`ai\ask-well.html`、`ai\secrets.html` | 同一支 |
+| Scratch 塔防 | `game\scratch-td\`：`_build\`（產生器與驗證）、`積木腳本規格.md`、中文檔名講義與 .sb3 | `game\scratch-td\web\`（ASCII 檔名，由 `_build\gen_handout.py` 產生，不要手改） |
+
+Scratch 塔防重做：在 `game\scratch-td\_build\` 依序跑 `python build_sb3.py`（.sb3＋規格）、`python check_consistency.py`、`node validate.js <裝有 scratch-parser、jszip 的資料夾>`、`python gen_handout.py`（講義＋web\）。細節見 `_build\驗證報告.md`。
+
+遊戲庫（game repo）已不放單獨的天平或英文頁，只有一張「小朋友學習站」卡片連到本站。
 
 線上版：https://yoda-wcyc.github.io/kids-english/
 
@@ -30,7 +47,10 @@ data/words.js     單字 window.DATA_WORDS
 data/roots.js     字首字尾字根 window.DATA_ROOTS
 data/grammar.js   文法 12 主題 window.DATA_GRAMMAR
 data/patterns.js  句型 12 個 window.DATA_PATTERNS
-test/smoke.js     node test/smoke.js（檢查資料格式、每種題型各出 30 題）
+test/smoke.js     node test/smoke.js（檢查資料格式、每種題型各出 30 題、各科活動檔案都在）
+subjects.js/.css  科目列與活動卡片、iframe
+math/ ai/ game/   其他科目的活動頁（見上方「正本位置」）
+deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 ```
 
 紀錄存在瀏覽器 localStorage：`ke_progress`、`ke_mistakes`、`ke_settings`、`ke_log`、`ke_learned`。家長頁可以匯出／匯入 JSON 備份（含學會紀錄）。
@@ -58,6 +78,6 @@ test/smoke.js     node test/smoke.js（檢查資料格式、每種題型各出 3
 正本在 `G:\Yoda x Claude\小朋友學英文\`（Google Drive 鏡像夾，不在這裡跑 git）。
 部署副本在 `G:\Yoda x Claude\_deploy\kids-english\`：
 
-1. 把正本檔案複製到部署副本（覆蓋）。
-2. 在部署副本 `git add -A`、`git commit`、`git push`。
+1. 在正本跑 `python deploy_copy.py`：複製到部署副本（覆蓋），`game\scratch-td\` 只帶 `web\`（不帶 `_build\`、.md、中文檔名正本）。部署夾多出來的舊檔它只會列出來，要刪就在部署夾 `git rm`。
+2. 在部署副本跑 `node test/smoke.js`，再 `git add -A`、`git commit`、`git push`。
 3. GitHub Pages（main 分支根目錄）約 1 分鐘後更新。

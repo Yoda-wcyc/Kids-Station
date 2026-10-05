@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>塔防講義 · 總覽</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#2a3550;--ink2:#42597a;--acc:#ff8a3c;--acc2:#ff9f43;--card:#fff;--line:#d6e6f5;--ok:#3ecf8e;--okbg:#e9fbf2;--warm:#fff8ec;--warmline:#ffe0b3}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,'PingFang TC','Noto Sans TC','Segoe UI',sans-serif;background:linear-gradient(160deg,#8ed7ff 0%,#bfeaff 40%,#fff4d6 100%);background-attachment:fixed;min-height:100vh;color:var(--ink);font-size:19px;line-height:1.75}
+#app{max-width:900px;margin:0 auto;padding:1.2rem 16px 3rem}
+.brand{font-size:14px;letter-spacing:3px;color:var(--acc);font-weight:800;text-align:center}
+h1{font-size:30px;line-height:1.35;text-align:center;margin:.3rem 0 .8rem;color:#22314f}
+h2{font-size:24px;margin:1.6rem 0 .7rem;color:#22314f}
+h3{font-size:21px;line-height:1.4;color:#22314f}
+.nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:.3rem 0 1rem}
+.nav a{background:rgba(255,255,255,.75);border:2px solid var(--line);border-radius:30px;padding:.25rem .9rem;font-size:16px;font-weight:700;color:var(--ink2);text-decoration:none}
+.nav a.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.card{background:var(--card);border-radius:18px;padding:1rem 1.2rem;box-shadow:0 6px 20px rgba(60,90,140,.15);margin:0 0 1rem;break-inside:avoid;page-break-inside:avoid}
+.goal{border:3px solid var(--acc2)}
+.goal .see{background:var(--warm);border:2px solid var(--warmline);border-radius:14px;padding:.7rem 1rem;margin-top:.6rem;font-weight:700}
+.sh{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .7rem;margin-bottom:.5rem}
+.no{flex:none;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff9f43,#ff7e5f);color:#fff;font-weight:800;font-size:21px;display:flex;align-items:center;justify-content:center}
+.sp{background:#eaf4ff;border:2px solid #b9d7f5;border-radius:20px;padding:.05rem .7rem;font-size:16px;font-weight:700;color:#2d5c8f}
+.tx p{margin:.3rem 0}.tx ul,.tx ol{margin:.3rem 0 .3rem 1.4rem}
+.bcap{font-size:15px;font-weight:700;color:var(--ink2);margin:.7rem 0 .2rem}
+.bwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#f7fbff;border:2px dashed var(--line);border-radius:12px;padding:.6rem;max-width:100%}
+.bwrap svg{display:block}
+pre.blocks{font-size:15px;white-space:pre;font-family:monospace}
+.check{background:var(--okbg);border:2.5px solid #a8ecc9}
+.ck{font-weight:800;font-size:20px;color:#1d8a5a;margin-bottom:.2rem}
+.chal{background:#f3ecff;border:2.5px solid #cdb8f5}
+.chal .ck{color:#6a3fc0}
+.tip{background:var(--warm);border:2px solid var(--warmline);border-radius:12px;padding:.55rem .9rem;margin:.6rem 0;font-size:17px}
+.must{background:#ffe9e4;border:2.5px solid #ffb4a3;border-radius:14px;padding:.5rem 1rem;font-weight:800;font-size:20px;margin:1.2rem 0 .8rem}
+.opt{background:#eef3f8;border:2.5px solid #c7d4e2;border-radius:14px;padding:.5rem 1rem;font-weight:800;font-size:20px;margin:1.6rem 0 .8rem}
+details.parent{background:rgba(255,255,255,.82);border:2px dashed #a9c4e0;border-radius:16px;padding:.8rem 1.1rem;margin-top:1.6rem;color:var(--ink2);font-size:18px}
+details.parent summary{font-weight:800;font-size:21px;cursor:pointer;color:#22314f}
+details.parent h4{font-size:19px;color:#22314f;margin:1rem 0 .3rem}
+table{border-collapse:collapse;width:100%;font-size:17px;margin:.4rem 0}
+th,td{border:1.5px solid var(--line);padding:.35rem .55rem;text-align:left;vertical-align:top}
+th{background:#eaf4ff}
+.tblw{overflow-x:auto}
+.q{background:#fff;border-left:5px solid var(--acc2);border-radius:8px;padding:.4rem .8rem;margin:.4rem 0}
+.foot{text-align:center;font-size:15px;color:#6b84a6;margin-top:1.4rem}
+a{color:#2d6bb0}
+.dls{display:flex;flex-wrap:wrap;gap:10px;margin-top:.7rem}
+.dl{display:inline-flex;flex-direction:column;align-items:flex-start;min-height:52px;justify-content:center;background:linear-gradient(135deg,#4dabf7,#1c7ed6);color:#fff!important;text-decoration:none;font-weight:800;font-size:18px;border-radius:14px;padding:.45rem 1rem;box-shadow:0 3px 10px rgba(28,126,214,.3)}
+.dl small{font-size:13px;font-weight:600;opacity:.9}
+.dl.done{background:linear-gradient(135deg,#69db7c,#2f9e44)}
+.kbd{display:inline-block;background:#fff;border:2px solid #c7d4e2;border-bottom-width:4px;border-radius:8px;padding:0 .45rem;font-weight:700;font-size:.92em}
+@media (max-width:600px){body{font-size:18px}h1{font-size:25px}h3{font-size:19px}.card{padding:.85rem .9rem}}
+@media print{
+ body{background:#fff;font-size:14pt}
+ .nav,.noprint{display:none}
+ .card,details.parent{box-shadow:none;border:1.5px solid #bbb}
+ .bwrap{overflow:visible;background:#fff}
+ details.parent{break-before:page}
+ a{color:inherit;text-decoration:none}
+}
+</style></head>
+<body><div id="app">
+<div class="brand">小朋友學習站 · SCRATCH 塔防</div>
+<nav class="nav"><a href="index.html" class="on">總覽</a><a href="lesson1.html" class="">第 1 堂</a><a href="lesson2.html" class="">第 2 堂</a><a href="lesson3.html" class="">第 3 堂</a><a href="lesson4.html" class="">第 4 堂</a><a href="lesson5.html" class="">第 5 堂</a><a href="lesson6.html" class="">第 6 堂</a><a href="lesson7.html" class="">第 7 堂</a></nav>
+<h1>Scratch 塔防課 · 總覽</h1>
+<section class="card goal"><h3>🗺️ 我們要做什麼？</h3><div class="tx"><p>7 堂課，一步一步做出一個「塔防遊戲」：史萊姆沿著 S 形的路走向城堡，你要在路旁蓋塔把牠們打倒，守住城堡！</p></div>
+<div class="see">👀 全部做完你會有：開始按鈕、3 波越來越強的怪物、高台／低地兩種塔、會派小兵的兵營、勝利和失敗畫面。</div></section>
+<h2>📚 課程地圖</h2>
+<section class="card"><div class="tblw"><table><tr><th>堂次</th><th>做什麼</th><th>學到的觀念</th><th>積木量</th><th>做完會看到</th></tr><tr><td><a href="lesson1.html"><b>第 1 堂</b></a></td><td>怪物沿 S 形路線走到城堡</td><td>座標、滑行</td><td>15</td><td>按綠旗，史萊姆轉 7 個彎走到城堡</td></tr><tr><td><a href="lesson2.html"><b>第 2 堂</b></a></td><td>分身產生一串怪物＋生命＋失敗畫面</td><td>分身、所有角色的變數、等待直到</td><td>17</td><td>8 隻排隊走、生命往下掉</td></tr><tr><td><a href="lesson3.html"><b>第 3 堂</b></a></td><td>高台／低地塔位＋點擊蓋塔＋金錢</td><td>如果…否則、造型編號</td><td>28</td><td>點空地蓋塔、錢不夠會說話</td></tr><tr><td><a href="lesson4.html"><b>第 4 堂</b></a></td><td>自製走路積木＋怪物血量＋打倒得錢</td><td>函式積木、只限這個角色的變數</td><td>28</td><td>塔會打怪、打倒得錢</td></tr><tr><td><a href="lesson5.html"><b>第 5 堂</b></a></td><td>開始按鈕＋波次＋勝利畫面＋清場</td><td>廣播、重複中的重複、公式</td><td>41</td><td>完整遊戲：3 波＋乾淨的勝利／失敗畫面</td></tr><tr><td><a href="lesson6.html"><b>第 6 堂</b></a></td><td>加料①：蓋兵營＋派小兵站崗</td><td>沿用點擊腳本、分身</td><td>23</td><td>點兵營花 70，藍色小兵站到路上</td></tr><tr><td><a href="lesson7.html"><b>第 7 堂</b></a></td><td>加料②：小兵擋怪互打＋補兵</td><td>同名的角色變數、等待直到不成立、停止其它程式</td><td>24</td><td>史萊姆被小兵擋住互打，兵營自動補兵</td></tr></table></div>
+<p class="tip">每堂 40 分鐘：5 分鐘看目標 → 25 分鐘拼積木 → 5 分鐘試玩抓蟲 → 5 分鐘存檔＋預告。第 5 堂積木比較多（約 41 塊），講義把「清場」放在最後，時間不夠可以下次補。</p></section>
+<h2>📱 iPad 操作須知</h2>
+<section class="card"><div class="tx"><ul>
+<li>用 iPad 的 <b>Safari</b> 打開 <b>scratch.mit.edu</b>，按上面的「創造」進編輯器。<b>橫式</b>比較好拼積木；看講義可以直式。</li>
+<li><b>長按＝右鍵</b>：在積木上長按，會出現「複製」「刪除」「新增註解」；在變數上長按可以改名或刪除；在定義帽子上長按可以「編輯」自己做的積木。</li>
+<li><b>拖積木</b>：手指按住積木的左邊拖。靠近另一塊時會出現灰色影子，這時放手就會黏上。</li>
+<li><b>刪積木</b>：拖回左邊的積木區放手就刪掉了。拖一塊會連它下面的整串一起拖走。</li>
+<li><b>打數字和負號</b>：點白色格子會跳出鍵盤，切到數字頁就有「-」。</li>
+<li><b>切換角色／舞台</b>：右下角是角色區，最右邊那塊是「舞台」。拼之前先看清楚現在選的是誰。</li>
+<li>綠旗開始、紅色八角形停止。舞台上方的按鈕可以放大舞台試玩。</li>
+</ul></div></section>
+<h2 id="load">📂 怎麼載入起始檔／完成檔</h2>
+<section class="card"><div class="tx"><ol>
+<li>在下面的表格（或每堂講義最上面）點藍色／綠色的下載按鈕，iPad 問要不要下載時按「下載」，檔案會存進「檔案」App 的「下載項目」。</li>
+<li>在 Scratch 編輯器點上方選單 <b>檔案 → 從你的電腦挑選</b>。</li>
+<li>iPad 會打開「檔案」，選要用的 .sb3，等它載入完成。</li>
+<li>⚠️ 載入會<b>蓋掉</b>目前畫面上的專案，載入前先把自己的作品存檔。</li>
+</ol></div>
+<div class="tblw"><table><tr><th>這堂</th><th>從哪個檔開始</th><th>落後時用的完成檔</th></tr><tr><td>第 1 堂</td><td><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/start.sb3" download="塔防_起始.sb3">⬇️ 起始檔<small>塔防_起始.sb3</small></a></td><td><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson1-done.sb3" download="塔防_第1堂完成.sb3">⬇️ 完成檔<small>塔防_第1堂完成.sb3</small></a></td></tr><tr><td>第 2 堂</td><td><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson1-done.sb3" download="塔防_第1堂完成.sb3">⬇️ 起始檔<small>塔防_第1堂完成.sb3</small></a></td><td><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson2-done.sb3" download="塔防_第2堂完成.sb3">⬇️ 完成檔<small>塔防_第2堂完成.sb3</small></a></td></tr><tr><td>第 3 堂</td><td><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson2-done.sb3" download="塔防_第2堂完成.sb3">⬇️ 起始檔<small>塔防_第2堂完成.sb3</small></a></td><td><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson3-done.sb3" download="塔防_第3堂完成.sb3">⬇️ 完成檔<small>塔防_第3堂完成.sb3</small></a></td></tr><tr><td>第 4 堂</td><td><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson3-done.sb3" download="塔防_第3堂完成.sb3">⬇️ 起始檔<small>塔防_第3堂完成.sb3</small></a></td><td><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson4-done.sb3" download="塔防_第4堂完成.sb3">⬇️ 完成檔<small>塔防_第4堂完成.sb3</small></a></td></tr><tr><td>第 5 堂</td><td><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson4-done.sb3" download="塔防_第4堂完成.sb3">⬇️ 起始檔<small>塔防_第4堂完成.sb3</small></a></td><td><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson5-done.sb3" download="塔防_第5堂完成.sb3">⬇️ 完成檔<small>塔防_第5堂完成.sb3</small></a></td></tr><tr><td>第 6 堂</td><td><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson5-done.sb3" download="塔防_第5堂完成.sb3">⬇️ 起始檔<small>塔防_第5堂完成.sb3</small></a></td><td><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson6-done.sb3" download="塔防_第6堂完成.sb3">⬇️ 完成檔<small>塔防_第6堂完成.sb3</small></a></td></tr><tr><td>第 7 堂</td><td><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson6-done.sb3" download="塔防_第6堂完成.sb3">⬇️ 起始檔<small>塔防_第6堂完成.sb3</small></a></td><td><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson7-done.sb3" download="塔防_第7堂完成.sb3">⬇️ 完成檔<small>塔防_第7堂完成.sb3</small></a></td></tr></table></div>
+<p class="tip">完成檔和講義的積木一模一樣。小朋友卡住時，可以另開一個分頁載入完成檔對照，不要直接覆蓋孩子自己的作品。</p></section>
+<h2>💾 怎麼存檔</h2>
+<section class="card"><div class="tx"><ul>
+<li><b>沒登入：</b>點 <b>檔案 → 下載到你的電腦</b>，iPad 按「下載」，檔案會在「檔案」App 的「下載項目」裡。下一堂再用「從你的電腦挑選」打開。</li>
+<li><b>有登入 Scratch 帳號：</b>可以按 <b>檔案 → 立即存檔</b>，存在線上；建議還是每堂下載一份備份。</li>
+<li>檔名建議：「我的塔防_第1堂」，下一堂打開這個檔繼續做。</li>
+</ul></div></section>
+<h2>👨‍👩‍👧 給家長</h2>
+<section class="card"><div class="tx"><ul>
+<li>每堂講義最下面有可展開的「家長版」：時間分配、觀念解釋、常見卡關點、引導問題、落後時要載入哪個檔。</li>
+<li>講義裡的積木圖是照課程規格畫的。iPad 上真正的積木顏色和字一樣，但外觀可能有一點點不同（積木圖是用 scratchblocks 畫的）。</li>
+<li>第 5–7 堂有音效（蓋塔、打倒、進城、勝利、失敗、派兵），上課前把音量調小。</li>
+<li>列印：直接用瀏覽器列印，家長版會自動展開、從新的一頁開始。</li>
+</ul></div></section>
+<div class="foot">Scratch 塔防課 · 共 7 堂 · 每堂 40 分鐘</div>
+</div>
+
+</body></html>

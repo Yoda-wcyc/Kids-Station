@@ -112,7 +112,28 @@ const idx = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 ok(/<title>小朋友學習站<\/title>/.test(idx), 'site title');
 ok(idx.indexOf('subjects.js') < idx.indexOf('app.js'), 'subjects.js loads before app.js');
 const sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
-['國語', '數學', '社會', '自然', '英文', '#s/', 'math/balance.html', '準備中，敬請期待'].forEach(t => ok(sj.includes(t), 'subjects.js has ' + t));
+['國語', '數學', '社會', '自然', '英文', "n: 'AI'", '遊戲', '#s/', 'math/balance.html', '準備中，敬請期待', '← 回'].forEach(t => ok(sj.includes(t), 'subjects.js has ' + t));
+ok((sj.match(/\{ k: '[a-z]+', n: /g) || []).length === 7, '7 subject tabs');
+
+// ---- AI 與 遊戲（Scratch 塔防）：檔案存在、非空；活動卡片的 src 都找得到 ----
+const nonEmpty = rel => { const p = path.join(root, rel); return fs.existsSync(p) && fs.statSync(p).size > 0; };
+['ai/hallucinate.html', 'ai/ask-well.html', 'ai/secrets.html', 'game/scratch-td/web/index.html', 'game/scratch-td/web/start.sb3']
+  .concat([1, 2, 3, 4, 5, 6, 7].flatMap(i => [`game/scratch-td/web/lesson${i}.html`, `game/scratch-td/web/lesson${i}-done.sb3`]))
+  .forEach(rel => ok(nonEmpty(rel), rel + ' exists and is non-empty'));
+const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
+ok(srcs.length === 5, 'activity cards: ' + srcs.length);
+srcs.forEach(s => ok(nonEmpty(s), 'activity src exists: ' + s));
+// 講義互連與下載鈕：連到的檔案都在 web/，不再指向退場的 kids-ai
+const WEB = 'https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/';
+fs.readdirSync(path.join(root, 'game/scratch-td/web')).filter(f => f.endsWith('.html')).forEach(f => {
+  const h = fs.readFileSync(path.join(root, 'game/scratch-td/web', f), 'utf8');
+  ok(!h.includes('kids-ai') && !h.includes('小朋友學 AI'), f + ' has no kids-ai link/brand');
+  [...h.matchAll(/href="([^"#]+)(#[^"]*)?"/g)].map(m => m[1]).filter(u => !/^https:\/\/cdn\./.test(u)).forEach(u => {
+    const local = u.startsWith(WEB) ? u.slice(WEB.length) : u;
+    ok(!/^https?:/.test(local) && nonEmpty('game/scratch-td/web/' + local), `${f} link ok: ${u}`);
+  });
+});
+['ai/hallucinate.html', 'ai/ask-well.html', 'ai/secrets.html'].forEach(f => ok(!fs.readFileSync(path.join(root, f), 'utf8').includes('kids-ai'), f + ' has no kids-ai link'));
 
 // ---- 已取消的功能不可殘留（手寫、上傳）----
 ['engine.js', 'app.js', 'README.md'].forEach(f => {

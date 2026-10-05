@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>塔防講義 · 第 5 堂</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#2a3550;--ink2:#42597a;--acc:#ff8a3c;--acc2:#ff9f43;--card:#fff;--line:#d6e6f5;--ok:#3ecf8e;--okbg:#e9fbf2;--warm:#fff8ec;--warmline:#ffe0b3}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,'PingFang TC','Noto Sans TC','Segoe UI',sans-serif;background:linear-gradient(160deg,#8ed7ff 0%,#bfeaff 40%,#fff4d6 100%);background-attachment:fixed;min-height:100vh;color:var(--ink);font-size:19px;line-height:1.75}
+#app{max-width:900px;margin:0 auto;padding:1.2rem 16px 3rem}
+.brand{font-size:14px;letter-spacing:3px;color:var(--acc);font-weight:800;text-align:center}
+h1{font-size:30px;line-height:1.35;text-align:center;margin:.3rem 0 .8rem;color:#22314f}
+h2{font-size:24px;margin:1.6rem 0 .7rem;color:#22314f}
+h3{font-size:21px;line-height:1.4;color:#22314f}
+.nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:.3rem 0 1rem}
+.nav a{background:rgba(255,255,255,.75);border:2px solid var(--line);border-radius:30px;padding:.25rem .9rem;font-size:16px;font-weight:700;color:var(--ink2);text-decoration:none}
+.nav a.on{background:var(--acc2);border-color:var(--acc2);color:#fff}
+.card{background:var(--card);border-radius:18px;padding:1rem 1.2rem;box-shadow:0 6px 20px rgba(60,90,140,.15);margin:0 0 1rem;break-inside:avoid;page-break-inside:avoid}
+.goal{border:3px solid var(--acc2)}
+.goal .see{background:var(--warm);border:2px solid var(--warmline);border-radius:14px;padding:.7rem 1rem;margin-top:.6rem;font-weight:700}
+.sh{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .7rem;margin-bottom:.5rem}
+.no{flex:none;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff9f43,#ff7e5f);color:#fff;font-weight:800;font-size:21px;display:flex;align-items:center;justify-content:center}
+.sp{background:#eaf4ff;border:2px solid #b9d7f5;border-radius:20px;padding:.05rem .7rem;font-size:16px;font-weight:700;color:#2d5c8f}
+.tx p{margin:.3rem 0}.tx ul,.tx ol{margin:.3rem 0 .3rem 1.4rem}
+.bcap{font-size:15px;font-weight:700;color:var(--ink2);margin:.7rem 0 .2rem}
+.bwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#f7fbff;border:2px dashed var(--line);border-radius:12px;padding:.6rem;max-width:100%}
+.bwrap svg{display:block}
+pre.blocks{font-size:15px;white-space:pre;font-family:monospace}
+.check{background:var(--okbg);border:2.5px solid #a8ecc9}
+.ck{font-weight:800;font-size:20px;color:#1d8a5a;margin-bottom:.2rem}
+.chal{background:#f3ecff;border:2.5px solid #cdb8f5}
+.chal .ck{color:#6a3fc0}
+.tip{background:var(--warm);border:2px solid var(--warmline);border-radius:12px;padding:.55rem .9rem;margin:.6rem 0;font-size:17px}
+.must{background:#ffe9e4;border:2.5px solid #ffb4a3;border-radius:14px;padding:.5rem 1rem;font-weight:800;font-size:20px;margin:1.2rem 0 .8rem}
+.opt{background:#eef3f8;border:2.5px solid #c7d4e2;border-radius:14px;padding:.5rem 1rem;font-weight:800;font-size:20px;margin:1.6rem 0 .8rem}
+details.parent{background:rgba(255,255,255,.82);border:2px dashed #a9c4e0;border-radius:16px;padding:.8rem 1.1rem;margin-top:1.6rem;color:var(--ink2);font-size:18px}
+details.parent summary{font-weight:800;font-size:21px;cursor:pointer;color:#22314f}
+details.parent h4{font-size:19px;color:#22314f;margin:1rem 0 .3rem}
+table{border-collapse:collapse;width:100%;font-size:17px;margin:.4rem 0}
+th,td{border:1.5px solid var(--line);padding:.35rem .55rem;text-align:left;vertical-align:top}
+th{background:#eaf4ff}
+.tblw{overflow-x:auto}
+.q{background:#fff;border-left:5px solid var(--acc2);border-radius:8px;padding:.4rem .8rem;margin:.4rem 0}
+.foot{text-align:center;font-size:15px;color:#6b84a6;margin-top:1.4rem}
+a{color:#2d6bb0}
+.dls{display:flex;flex-wrap:wrap;gap:10px;margin-top:.7rem}
+.dl{display:inline-flex;flex-direction:column;align-items:flex-start;min-height:52px;justify-content:center;background:linear-gradient(135deg,#4dabf7,#1c7ed6);color:#fff!important;text-decoration:none;font-weight:800;font-size:18px;border-radius:14px;padding:.45rem 1rem;box-shadow:0 3px 10px rgba(28,126,214,.3)}
+.dl small{font-size:13px;font-weight:600;opacity:.9}
+.dl.done{background:linear-gradient(135deg,#69db7c,#2f9e44)}
+.kbd{display:inline-block;background:#fff;border:2px solid #c7d4e2;border-bottom-width:4px;border-radius:8px;padding:0 .45rem;font-weight:700;font-size:.92em}
+@media (max-width:600px){body{font-size:18px}h1{font-size:25px}h3{font-size:19px}.card{padding:.85rem .9rem}}
+@media print{
+ body{background:#fff;font-size:14pt}
+ .nav,.noprint{display:none}
+ .card,details.parent{box-shadow:none;border:1.5px solid #bbb}
+ .bwrap{overflow:visible;background:#fff}
+ details.parent{break-before:page}
+ a{color:inherit;text-decoration:none}
+}
+</style></head>
+<body><div id="app">
+<div class="brand">小朋友學習站 · SCRATCH 塔防</div>
+<nav class="nav"><a href="index.html" class="">總覽</a><a href="lesson1.html" class="">第 1 堂</a><a href="lesson2.html" class="">第 2 堂</a><a href="lesson3.html" class="">第 3 堂</a><a href="lesson4.html" class="">第 4 堂</a><a href="lesson5.html" class="on">第 5 堂</a><a href="lesson6.html" class="">第 6 堂</a><a href="lesson7.html" class="">第 7 堂</a></nav>
+<h1>第 5 堂：開始按鈕＋波次＋勝利畫面＋清場</h1>
+<section class="card goal"><h3>🎯 今天的目標</h3><div class="tx"><p>做出完整的遊戲：按「開始」才出怪；一共 3 波，一波比一波多、一波比一波硬；打完 3 波就勝利！加上蓋塔、打倒、進城、勝利、失敗的音效，最後讓結束畫面乾乾淨淨。</p></div>
+<div class="see">👀 做完你會看到：畫面中間有「開始」按鈕，點下去第 1 波 5 隻、第 2 波 8 隻、第 3 波 11 隻；守住就換成勝利畫面，塔和史萊姆都會消失，只留下大大的「勝利！」。</div>
+<div class="tx" style="font-size:16px;color:#5b6f8f;margin-top:.5rem">今天大約要拼 41 塊積木。</div>
+<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson4-done.sb3" download="塔防_第4堂完成.sb3">⬇️ 下載起始檔<small>塔防_第4堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson5-done.sb3" download="塔防_第5堂完成.sb3">⬇️ 下載完成檔<small>塔防_第5堂完成.sb3</small></a></div>
+<div class="tx" style="font-size:15px;color:#5b6f8f;margin-top:.3rem">iPad 點按鈕 → 「下載」，檔案會在「檔案」App 的「下載項目」，再到 Scratch 用「檔案 → 從你的電腦挑選」打開。完成檔是老師的解答，卡住時再用。</div></section><div class="tip">📢 這堂大約 41 塊，比平常多一點。步驟 1–6 先做（遊戲就能玩了），步驟 7–8 的「清場」放最後，時間不夠下次補。</div><h2>🧩 開始拼積木</h2><section class="card step"><div class="sh"><span class="no">1</span><h3>建立變數和廣播</h3></div><div class="tx"><p>建立兩個變數（都選 <b>適用於所有角色</b>）：<b>波次</b>、<b>場上怪物</b>。再到「事件」→ 廣播訊息的下拉選「新的訊息」，建立兩個訊息：<b>開始</b>、<b>遊戲結束</b>。</p></div></section><section class="card step"><div class="sh"><span class="no">2</span><h3>開始按鈕</h3><span class="sp">▶️ 角色：開始按鈕</span></div><div class="tx"><p>點 <b>開始按鈕</b> 角色，拼兩段：</p></div><div class="bcap">完整腳本：按鈕-出現（新增）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
+顯示</pre></div><div class="bcap">完整腳本：按鈕-按下開始（新增）</div><div class="bwrap"><pre class="blocks">當角色被點擊
+隱藏
+廣播訊息 [開始 v]</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">按綠旗，畫面中間有「開始」按鈕嗎？點它，按鈕會消失。（怪物還不會出來，下一步就來改。）</div></section><section class="card step"><div class="sh"><span class="no">3</span><h3>舞台出怪：改成 3 波</h3><span class="sp">🖼️ 角色：舞台</span></div><div class="tx"><p>這段改最多，慢慢來：</p><ol><li>帽子換成 <b>當收到訊息 開始</b>。</li><li>拿一塊新的 <b>重複 3 次</b>，把原本的「重複 8 次」整個放進去。</li><li>上面加 <b>波次 改變 1</b>；次數格放「(波次 × 3) + 2」（先拖「+」，再把「×」放在左邊格子）。</li><li>裡面補 <b>場上怪物 改變 1</b>，後面加「等待直到 場上怪物 = 0」和「等待 2 秒」。</li><li>最外面接：勝利背景 → <b>廣播訊息 遊戲結束</b> → 勝利音效直到結束 → 停止全部（順序不能換）。</li></ol></div><div class="bcap">完整腳本：舞台-出怪（修改）</div><div class="bwrap"><pre class="blocks">當收到訊息 [開始 v]
+重複 (3) 次
+  變數 [波次 v] 改變 (1)
+  重複 (((波次) * (3)) + (2)) 次
+    建立 [怪物 v] 的分身
+    變數 [場上怪物 v] 改變 (1)
+    等待 (1.5) 秒
+  end
+  等待直到 &lt;(場上怪物) = (0)&gt;
+  等待 (2) 秒
+end
+背景換成 [勝利 v]
+廣播訊息 [遊戲結束 v]
+播放音效 [勝利 v] 直到結束
+停止 [全部 v]</pre></div></section><section class="card step"><div class="sh"><span class="no">4</span><h3>舞台開場：多設兩個 0、失敗也要清場</h3><span class="sp">🖼️ 角色：舞台</span></div><div class="tx"><p>在「生命 設為 10」下面補兩塊「設為 0」。失敗背景下面依序加：<b>停止 這個物件的其它程式</b>（把還在出怪的迴圈停掉）→ <b>廣播訊息 遊戲結束</b> → <b>播放音效 失敗 直到結束</b>。</p></div><div class="bcap">完整腳本：舞台-開場與失敗（修改）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
+背景換成 [草地 v]
+變數 [金錢 v] 設為 (100)
+變數 [生命 v] 設為 (10)
+變數 [波次 v] 設為 (0)
+變數 [場上怪物 v] 設為 (0)
+等待直到 &lt;(生命) &lt; (1)&gt;
+背景換成 [失敗 v]
+停止 [這個物件的其它程式 v]
+廣播訊息 [遊戲結束 v]
+播放音效 [失敗 v] 直到結束
+停止 [全部 v]</pre></div></section><section class="card step"><div class="sh"><span class="no">5</span><h3>怪物：走到城堡和被打倒都要記帳</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>兩個「分身刪除」上面，各補一塊 <b>場上怪物 改變 -1</b>，並加上音效。血量改成「波次 × 10」。</p></div><div class="bcap">完整腳本：怪物-走路線（修改）</div><div class="bwrap"><pre class="blocks">當分身產生
+顯示
+定位到 x:(-240) y:(130)
+往 (90) 走 (35) 步 :: custom
+往 (180) 走 (80) 步 :: custom
+往 (90) 走 (50) 步 :: custom
+往 (0) 走 (80) 步 :: custom
+往 (90) 走 (50) 步 :: custom
+往 (180) 走 (130) 步 :: custom
+往 (90) 走 (60) 步 :: custom
+往 (0) 走 (95) 步 :: custom
+變數 [生命 v] 改變 (-1)
+變數 [場上怪物 v] 改變 (-1)
+播放音效 [進城 v]
+分身刪除</pre></div><div class="bcap">完整腳本：怪物-被打（修改）</div><div class="bwrap"><pre class="blocks">當分身產生
+變數 [血量 v] 設為 ((波次) * (10))
+重複無限次
+  如果 &lt;碰到 [塔位 v]？&gt; 那麼
+    變數 [血量 v] 改變 (-1)
+    圖像效果 [亮度 v] 設為 (60)
+    等待 (0.2) 秒
+    圖像效果清除
+  end
+  如果 &lt;(血量) &lt; (1)&gt; 那麼
+    變數 [金錢 v] 改變 (10)
+    變數 [場上怪物 v] 改變 (-1)
+    播放音效 [打倒 v]
+    分身刪除
+  end
+end</pre></div></section><section class="card step"><div class="sh"><span class="no">6</span><h3>塔位：蓋塔的音效</h3><span class="sp">🏰 角色：塔位</span></div><div class="tx"><p>在「圖層移到最下層」下面加 <b>播放音效 蓋塔</b>。音效起始檔已經放好了，不用自己錄。</p></div><div class="bcap">完整腳本：塔位-點一下蓋塔（修改）</div><div class="bwrap"><pre class="blocks">當角色被點擊
+如果 &lt;(造型 [編號 v]) &lt; (3)&gt; 那麼
+  如果 &lt;(金錢) &lt; (50)&gt; 那麼
+    說出 [錢不夠！] 持續 (1) 秒
+  否則
+    造型換成 ((造型 [編號 v]) + (2))
+    變數 [金錢 v] 改變 (-50)
+    圖層移到 [最下 v] 層
+    播放音效 [蓋塔 v]
+  end
+end</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">按綠旗 → 點開始，玩一整場：<ul><li>第 1 波 5 隻、第 2 波 8 隻、第 3 波 11 隻？（5 = 1×3+2、8 = 2×3+2、11 = 3×3+2）</li><li>打完最後一隻，會換成勝利畫面嗎？</li><li>賺到錢要記得<b>繼續蓋塔</b>喔！</li></ul></div></section><div class="opt">🧹 最後做：結束畫面清場</div><section class="card step"><div class="sh"><span class="no">7</span><h3>怪物、塔位、城堡聽到「遊戲結束」就消失</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>怪物角色：收到「遊戲結束」就<b>分身刪除</b>（用刪除，不然藏起來的史萊姆還會偷偷走進城堡扣生命）。</p></div><div class="bcap">完整腳本：怪物-遊戲結束（新增）</div><div class="bwrap"><pre class="blocks">當收到訊息 [遊戲結束 v]
+分身刪除</pre></div><div class="bcap">🏰 換到塔位角色：收到「遊戲結束」就隱藏</div><div class="bcap">完整腳本：塔位-遊戲結束（新增）</div><div class="bwrap"><pre class="blocks">當收到訊息 [遊戲結束 v]
+隱藏</pre></div><div class="bcap">🏯 換到城堡角色：綠旗顯示、收到「遊戲結束」隱藏</div><div class="bcap">完整腳本：城堡-出現（新增）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
+顯示</pre></div><div class="bcap">完整腳本：城堡-遊戲結束（新增）</div><div class="bwrap"><pre class="blocks">當收到訊息 [遊戲結束 v]
+隱藏</pre></div></section><section class="card step"><div class="sh"><span class="no">8</span><h3>塔位重玩時要回來</h3><span class="sp">🏰 角色：塔位</span></div><div class="tx"><p>塔位本尊上一局被藏起來了，在「擺放空地」最下面補一塊 <b>顯示</b>，按綠旗重玩時它才會回來。</p></div><div class="bcap">完整腳本：塔位-擺放空地（修改）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
+造型換成 [高台空地 v]
+定位到 x:(-20) y:(40)
+建立 [自己 v] 的分身
+定位到 x:(90) y:(-30)
+建立 [自己 v] 的分身
+定位到 x:(-120) y:(-110)
+建立 [自己 v] 的分身
+造型換成 [低地空地 v]
+定位到 x:(-120) y:(70)
+建立 [自己 v] 的分身
+定位到 x:(205) y:(-40)
+建立 [自己 v] 的分身
+定位到 x:(-215) y:(60)
+顯示</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">故意只蓋 1 座塔讓自己輸：換成失敗畫面時，塔、史萊姆、城堡都消失了嗎？再按綠旗，6 塊空地都回來了嗎？</div></section><section class="card chal"><div class="ck">🏆 挑戰題</div><div class="tx"><p>只蓋 2 座塔、之後都不加蓋，你能贏嗎？再玩一次，有錢就馬上蓋，結果有什麼不一樣？你的「最少用幾座塔贏」紀錄是多少？</p></div></section><section class="card"><h3>💾 存檔＋預告</h3><div class="tx"><p>點上面選單的 <b>檔案 → 下載到你的電腦</b>，iPad 會問要不要下載，按「下載」，檔案會存進「檔案」App 的「下載項目」。檔名可以改成「我的塔防_第N堂」。</p><p>🔜 下一堂：加料！蓋一座兵營，派出藍色的小兵站到路上。</p></div></section><details class="parent"><summary>👨‍👩‍👧 家長版（點我展開）</summary>
+<h4>⏱️ 時間分配（40 分鐘）</h4><table><tr><th>時間</th><th>做什麼</th></tr>
+<tr><td>0–5 分</td><td>看目標：一起讀「今天的目標」，可以先打開完成檔玩一下（記得之後回到自己的檔案）</td></tr>
+<tr><td>5–30 分</td><td>拼積木：照步驟卡一張一張做，每到「試試看」就按綠旗</td></tr>
+<tr><td>30–35 分</td><td>試玩抓蟲：玩一輪，不對就回頭對積木（數字、負號、下拉選單）</td></tr>
+<tr><td>35–40 分</td><td>存檔＋預告下一堂</td></tr></table>
+<h4>💡 這堂的觀念（用孩子聽得懂的話）</h4><p><b>廣播：</b>像學校的廣播器。按鈕喊一聲「開始！」，有在聽「當收到訊息 開始」的舞台就開始出怪；舞台喊「遊戲結束！」，塔和史萊姆聽到就自己收拾乾淨。</p><p><b>重複裡面再重複：</b>外圈跑 3 次＝3 波；每一波裡面，內圈決定這波出幾隻。</p><p><b>用公式代替很多個如果：</b>波次 × 3 + 2，第 1 波 5 隻、第 2 波 8 隻、第 3 波 11 隻；血量 = 波次 × 10，就是 10、20、30。順便練乘法！</p><p><b>場上怪物＝點名簿：</b>出一隻 +1，走進城堡或被打倒 −1；等點名簿變 0，才進下一波。</p><p><b>順序很重要：</b>先換背景 → 喊「遊戲結束」清場 → 播音效播完 → 才停止全部。</p>
+<h4>🧯 常見卡關點和解法</h4><div class="tblw"><table><tr><th>卡在哪</th><th>怎麼解</th></tr><tr><td>打完了卻一直不進下一波、也不勝利</td><td>某個「分身刪除」上面漏了「場上怪物 改變 -1」，點名簿永遠不會回到 0。兩個地方都要有（走到城堡、被打倒）。</td></tr><tr><td>點開始沒反應</td><td>舞台帽子要是「當收到訊息 開始」，按鈕裡廣播的也要是「開始」（下拉選單要一樣）。</td></tr><tr><td>一開始就出 0 隻或怪物 0 血馬上死</td><td>舞台開場要把「波次 設為 0」，出怪時先「波次 改變 1」再出怪；順序放錯，波次會是 0。</td></tr><tr><td>只蓋 2 座就一直輸</td><td>這是設計好的難度！只蓋 2 座不加蓋，會在第 3 波輸；要記得用打倒怪物賺的錢陸續加蓋，才能零失血贏。</td></tr><tr><td>勝利／失敗的聲音一下就斷掉</td><td>要用「播放音效 () 直到結束」，不然下一塊「停止全部」會把聲音切掉。</td></tr><tr><td>結果畫面上還看得到塔或史萊姆</td><td>「廣播訊息 遊戲結束」要放在「停止全部」<b>前面</b>；塔位、怪物、城堡都要有「當收到訊息 遊戲結束」，下拉要選「遊戲結束」不是「開始」。</td></tr><tr><td>輸了以後生命變成負數、還冒出新怪物</td><td>失敗那段漏了「停止 這個物件的其它程式」，或怪物的「遊戲結束」用了隱藏而不是分身刪除。</td></tr><tr><td>重玩時少一塊空地</td><td>塔位「擺放空地」最後漏了「顯示」，上一局藏起來的本尊不會自己回來。</td></tr><tr><td>覺得塔打中沒有聲音</td><td>是故意的：塔每 0.2 秒打一次，每次都響會很吵，所以只放蓋塔、打倒、進城、勝利、失敗。</td></tr><tr><td>時間不夠</td><td>步驟 7、8（清場）下次再補，遊戲照樣能玩，只是結果畫面會留著塔、史萊姆和城堡。</td></tr></table></div>
+<h4>🗨️ 可以問小朋友的問題</h4><div class="q">💬 第 4 波（如果有的話）會有幾隻怪？血量多少？</div><div class="q">💬 為什麼要等「場上怪物 = 0」才進下一波？不等會怎樣？</div><div class="q">💬 為什麼「廣播 遊戲結束」要放在「停止全部」前面？反過來會怎樣？</div><div class="q">💬 高台的塔打得比較遠，但是比較少，錢要花在哪？</div>
+<h4>🆘 落後了怎麼辦</h4><p>上一堂沒做完：開課前先載入 <b>塔防_第4堂完成.sb3</b>，從這堂第 1 步開始。</p><p>這堂來不及做完：下課前存好自己做到的部分，下次上課前載入 <b>塔防_第5堂完成.sb3</b> 接著做第 6 堂。</p><p>載入方法見<a href="index.html#load">總覽頁</a>。完成檔和規格逐塊一致，可以拿來對照小朋友的積木哪裡不一樣。</p><p class="tip">🔊 這堂開始有音效。上課前先把 iPad 音量調小，避免嚇到人。</p><h4>📦 分量提醒（照規格）</h4><p>本堂新增約 41 塊，比 32 塊的目標多 9 塊（清場佔 12 塊）。講義把清場放在步驟 7–8，時間不夠可以下次補。</p>
+</details>
+<div class="foot">Scratch 塔防課 · 共 7 堂 · 每堂 40 分鐘</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/scratchblocks@3.7.1/build/scratchblocks.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/scratchblocks@3.7.1/build/translations-all.js"></script>
+<script>
+(function(){
+ function sc(){return window.innerWidth<600?0.8:(window.innerWidth<900?0.95:1.05);}
+ try{scratchblocks.renderMatching('pre.blocks',{style:'scratch3',languages:['zh_tw','en'],scale:sc()});}
+ catch(e){console.error('scratchblocks render failed',e);}
+ function openAll(){document.querySelectorAll('details').forEach(function(d){d.open=true;});}
+ window.addEventListener('beforeprint',openAll);
+ if(window.matchMedia){var mq=window.matchMedia('print');if(mq.addListener)mq.addListener(function(m){if(m.matches)openAll();});}
+})();
+</script>
+</body></html>
