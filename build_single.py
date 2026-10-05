@@ -43,6 +43,9 @@ def write(p, s, crlf):
 
 def build():
     html = read(os.path.join(HERE, "index.html"))
+    # 遊戲庫版只有英文：拿掉科目列、數學 iframe（index.html 裡標了 <!-- subjects --> 的行）
+    html = "\n".join(l for l in html.split("\n") if "<!-- subjects -->" not in l)
+    assert "subjects" not in html, "subject bar leaked into single build"
     css = read(os.path.join(HERE, "style.css"))
     html = html.replace('<link rel="stylesheet" href="style.css">', "<style>\n" + css + "</style>")
 
@@ -77,6 +80,8 @@ def register(index_path, crlf):
 
 if __name__ == "__main__":
     html = build()
+    old = os.path.join(GAME_SRC, OUT_NAME)
+    print("unchanged" if os.path.exists(old) and read(old) == html else "changed")
     write(os.path.join(GAME_SRC, OUT_NAME), html, False)
     write(os.path.join(GAME_DEPLOY, OUT_NAME), html, True)
     print("built", OUT_NAME, len(html.encode("utf-8")), "bytes")

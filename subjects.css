@@ -1,0 +1,23 @@
+/* 科目切換列與數學 iframe（遊戲庫單檔版不含這支） */
+:root{--subj-h:72px}
+.subjects{position:sticky;top:0;z-index:80;background:#fff;border-bottom:3px solid var(--line);box-shadow:0 2px 10px rgba(38,52,69,.06)}
+.subj-in{max-width:980px;margin:0 auto;padding:6px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px}
+.brand{font-size:1.1rem;white-space:nowrap}
+.stabs{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;min-width:280px}
+.stab{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:56px;border-radius:16px;text-decoration:none;color:var(--ink);background:#fff8ec;border:2px solid var(--line);touch-action:manipulation;line-height:1.15}
+.stab span{font-size:1.35rem}.stab b{font-size:1rem}
+.stab:active{transform:translateY(2px)}
+.stab.on{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 3px 0 #d96a22}
+body.has-subjects .top{top:var(--subj-h)}
+#subject{max-width:980px;margin:0 auto;padding:12px 16px 40px}
+#subject[hidden],#app[hidden]{display:none}
+a.tile{text-decoration:none}
+a.btn{text-decoration:none}
+.soon{padding:40px 18px}
+.soon-i{font-size:4.5rem;line-height:1.2}
+/* 數學活動：iframe 固定在切換列下方、自己捲動，外層不捲（避免兩條捲軸） */
+html.frame-mode,html.frame-mode body{overflow:hidden;height:100%}
+.frame-top{position:fixed;top:var(--subj-h);left:0;right:0;height:64px;display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--bg);z-index:40;border-bottom:2px solid var(--line)}
+.frame-wrap{position:fixed;top:calc(var(--subj-h) + 64px);left:0;right:0;bottom:0;-webkit-overflow-scrolling:touch}
+.frame-wrap iframe{display:block;width:100%;height:100%;border:0;background:#fff}
+@media (max-width:560px){.brand{width:100%;text-align:center;font-size:1rem}.stab{min-height:52px}}

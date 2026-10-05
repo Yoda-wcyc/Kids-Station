@@ -98,6 +98,21 @@ ok(KE.clampRate(0.7) === 0.7 && KE.clampRate('1') === 1 && KE.clampRate(0.84) ==
 ok(KE.clampRate(0.1) === 0.5 && KE.clampRate(2) === 1.3 && KE.clampRate(undefined) === 1 && KE.clampRate('x') === 1, 'rate clamp/default');
 ok(!/name="rate"|'0\.7', '🐢 慢慢唸'/.test(fs.readFileSync(path.join(root, 'app.js'), 'utf8')), 'old 0.7/1.0 radios removed');
 
+// ---- 多科目：數學天平副本要和正本一致；科目列只在網站版 ----
+const crypto = require('crypto'), lfmd5 = p => crypto.createHash('md5').update(fs.readFileSync(p).toString('binary').replace(/\r\n/g, '\n'), 'binary').digest('hex');
+const balanceSrc = path.join(root, '..', '小朋友學AI', '數學-天平解方程式.html'), balanceCopy = path.join(root, 'math', 'balance.html');
+ok(fs.existsSync(balanceCopy), 'math/balance.html exists');
+if (fs.existsSync(balanceSrc)) ok(lfmd5(balanceSrc) === lfmd5(balanceCopy), 'math/balance.html equals 正本 (run sync_math.py)');
+else console.log('skip: 天平正本不在這台電腦（只檢查副本存在）');
+const bal = fs.readFileSync(balanceCopy, 'utf8');
+ok(!/['"]ke_/.test(bal), 'balance.html does not use ke_* storage keys');
+const idx = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+ok(/<title>小朋友學習站<\/title>/.test(idx), 'site title');
+ok(idx.split('\n').filter(l => /subjects/.test(l)).every(l => l.includes('<!-- subjects -->')), 'every subject line is marked for build_single');
+ok(idx.indexOf('subjects.js') < idx.indexOf('app.js'), 'subjects.js loads before app.js');
+const sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
+['國語', '數學', '社會', '自然', '英文', '#s/', 'math/balance.html', '準備中，敬請期待'].forEach(t => ok(sj.includes(t), 'subjects.js has ' + t));
+
 // ---- 已取消的功能不可殘留（手寫、上傳）----
 ['engine.js', 'app.js', 'README.md'].forEach(f => {
   const s = fs.readFileSync(path.join(root, f), 'utf8');
