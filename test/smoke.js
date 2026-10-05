@@ -93,6 +93,11 @@ ok(!L4['root:un'] && L3['root:un'] && Object.keys(L4).length === 2, 'unsetLearne
 ok(KE.unsetLearned(L4, 'nope') !== L4 && Object.keys(KE.unsetLearned(L4, 'nope')).length === 2, 'unset missing id is harmless');
 ok(E.learnedRows({ 'word:apple': {} }).length === 0, 'rows skip records without time');
 
+// ---- 語速 ----
+ok(KE.clampRate(0.7) === 0.7 && KE.clampRate('1') === 1 && KE.clampRate(0.84) === 0.8, 'rate keep/round');
+ok(KE.clampRate(0.1) === 0.5 && KE.clampRate(2) === 1.3 && KE.clampRate(undefined) === 1 && KE.clampRate('x') === 1, 'rate clamp/default');
+ok(!/name="rate"|'0\.7', '🐢 慢慢唸'/.test(fs.readFileSync(path.join(root, 'app.js'), 'utf8')), 'old 0.7/1.0 radios removed');
+
 // ---- 已取消的功能不可殘留（手寫、上傳）----
 ['engine.js', 'app.js', 'README.md'].forEach(f => {
   const s = fs.readFileSync(path.join(root, f), 'utf8');

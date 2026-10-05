@@ -16,7 +16,22 @@ h1{font-size:1.5rem;margin:0}
 h2{font-size:1.15rem;margin:0 0 10px}
 .muted{color:var(--muted);font-size:.9rem}
 .center{text-align:center}
-.top{display:flex;align-items:center;gap:12px;margin:4px 0 16px;min-height:52px}
+.top{display:flex;align-items:center;gap:12px;margin:0 -16px 16px;padding:6px 16px;min-height:60px;position:sticky;top:0;z-index:50;background:var(--bg)}
+.top h1{flex:1;min-width:0}
+.speed{position:relative;margin-left:auto}
+.speed-pill{border-radius:999px;white-space:nowrap}
+.speed-pop{position:absolute;right:0;top:calc(100% + 8px);width:min(360px,calc(100vw - 32px));background:#fff;border:2px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;z-index:60}
+.speed-pop[hidden]{display:none}
+.speed-ctl{margin:4px 0 10px}
+.speed-row{display:flex;align-items:center;gap:10px;font-size:1.4rem}
+.speed-val{font-size:1.1rem;min-width:3.2em;text-align:right}
+.speed-quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.speed-quick .btn{flex:1;min-height:48px}
+.speed-range{flex:1;min-width:0;height:44px;-webkit-appearance:none;appearance:none;background:transparent;touch-action:pan-y}
+.speed-range::-webkit-slider-runnable-track{height:10px;border-radius:99px;background:#f3e6cf}
+.speed-range::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;margin-top:-13px;border-radius:50%;background:var(--pri);border:4px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.speed-range::-moz-range-track{height:10px;border-radius:99px;background:#f3e6cf}
+.speed-range::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:var(--pri);border:4px solid #fff}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:8px 18px;border:2px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);font:inherit;font-size:1rem;font-weight:600;cursor:pointer;box-shadow:0 3px 0 var(--line);touch-action:manipulation}
 .btn:active{transform:translateY(2px);box-shadow:none}
 .btn:disabled{opacity:.45}

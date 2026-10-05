@@ -39,6 +39,8 @@
     const p = {}; f.formatToParts(d).forEach(x => { p[x.type] = x.value; });
     return full ? `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}` : `${p.month}/${p.day} ${p.hour}:${p.minute}`;
   }
+  // 語速：0.5～1.3、一位小數；舊設定（0.7／1）或壞值都轉成合法值
+  function clampRate(r) { const n = parseFloat(r); if (!isFinite(n)) return 1; return Math.round(Math.min(1.3, Math.max(0.5, n)) * 10) / 10; }
   // 學會紀錄 {itemId:{at}}：回傳新物件，不改原本的
   function setLearned(L, itemId, iso) { const o = Object.assign({}, L); o[itemId] = { at: iso }; return o; }
   function unsetLearned(L, itemId) { const o = Object.assign({}, L); delete o[itemId]; return o; }
@@ -162,7 +164,7 @@
     }
   };
 
-  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

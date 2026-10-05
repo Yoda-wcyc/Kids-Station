@@ -21,6 +21,8 @@
     if (!S.learned || typeof S.learned !== 'object' || Array.isArray(S.learned)) S.learned = {};
     S.progress = Object.assign({ stars: 0, quizzes: 0 }, S.progress);
     S.settings = Object.assign({ rate: 1, accent: 'en-US', last: null }, S.settings);
+    const r0 = S.settings.rate; S.settings.rate = KE.clampRate(r0);
+    if (r0 !== S.settings.rate) save('ke_settings', S.settings);
     if (!Array.isArray(S.log)) S.log = [];
     if (!S.mistakes || typeof S.mistakes !== 'object') S.mistakes = {};
   }
@@ -48,7 +50,7 @@
       const u = new SpeechSynthesisUtterance(text), v = pickVoice();
       if (v) u.voice = v;
       u.lang = v ? v.lang : S.settings.accent;
-      u.rate = +S.settings.rate || 1;
+      u.rate = KE.clampRate(S.settings.rate);
       if (busy) setTimeout(() => synth.speak(u), 80); else synth.speak(u);
     } catch (e) { /* 不支援就安靜 */ }
   }
@@ -103,14 +105,32 @@
   });
 
   // ---------- 共用 UI ----------
-  const top = (title, back) => `<header class="top">${back === false ? '' : `<button class="btn icon" data-go="${back || '#home'}" aria-label="回上一頁">${back && back !== '#home' ? '⬅️' : '🏠'}</button>`}<h1>${title}</h1></header>`;
+  // 語速控制：學習頁、作答、結果、錯題庫的標題列都有一顆膠囊，點開調整
+  const fmtRate = r => KE.clampRate(r).toFixed(1) + '×';
+  const speedCtl = () => `<div class="speed-ctl"><label class="speed-row">🐢<input type="range" class="speed-range" min="0.5" max="1.3" step="0.1" value="${KE.clampRate(S.settings.rate)}" aria-label="語音速度">🐇<b class="speed-val">${fmtRate(S.settings.rate)}</b></label><div class="speed-quick">${[['慢', 0.6], ['中', 0.8], ['正常', 1]].map(([t, v]) => `<button type="button" class="btn sm" data-rate="${v}">${t} ${v.toFixed(1)}</button>`).join('')}</div></div>`;
+  const speedPill = () => /^#(learn|quiz|result|mistakes)/.test(rendered) ? `<div class="speed"><button type="button" class="btn sm speed-pill" data-speed-toggle aria-label="調整語音速度">🐢 <b class="speed-val">${fmtRate(S.settings.rate)}</b></button><div class="speed-pop" hidden>${speedCtl()}</div></div>` : '';
+  function setRate(r, preview) {
+    S.settings.rate = KE.clampRate(r); save('ke_settings', S.settings);
+    $$('.speed-val').forEach(x => { x.textContent = fmtRate(S.settings.rate); });
+    $$('.speed-range').forEach(x => { x.value = S.settings.rate; });
+    if (preview) speak('Hello');
+  }
+  document.addEventListener('input', e => { if (e.target.classList.contains('speed-range')) $$('.speed-val').forEach(x => { x.textContent = fmtRate(e.target.value); }); });
+  document.addEventListener('change', e => { if (e.target.classList.contains('speed-range')) setRate(e.target.value, true); });
+  document.addEventListener('click', e => {
+    const q = e.target.closest('[data-rate]'), t = e.target.closest('[data-speed-toggle]');
+    if (q) setRate(q.dataset.rate, true);
+    if (t) { const p = t.parentNode.querySelector('.speed-pop'); p.hidden = !p.hidden; }
+    if (!e.target.closest('.speed')) $$('.speed-pop').forEach(p => { p.hidden = true; });
+  });
+  const top = (title, back) => `<header class="top">${back === false ? '' : `<button class="btn icon" data-go="${back || '#home'}" aria-label="回上一頁">${back && back !== '#home' ? '⬅️' : '🏠'}</button>`}<h1>${title}</h1>${speedPill()}</header>`;
   const tile = (go, icon, name, desc, cls) => `<button class="tile ${cls}" data-go="${go}"><span class="ti">${icon}</span><b>${name}</b><small>${desc}</small></button>`;
   const radios = (name, opts, cur) => `<div class="seg">${opts.map(([v, t]) => `<label class="pill"><input type="radio" name="${name}" value="${esc(v)}" ${String(v) === String(cur) ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}</div>`;
   const val = name => { const el = $(`input[name="${name}"]:checked`); return el ? el.value : ''; };
   const vals = name => $$(`input[name="${name}"]`).filter(x => x.checked).map(x => x.value);
-  const voiceCard = () => `<section class="card"><h2>🔊 語音設定</h2>${radios('rate', [['0.7', '🐢 慢慢唸'], ['1', '🐇 正常速度']], S.settings.rate)}${radios('accent', [['en-US', '🇺🇸 美式'], ['en-GB', '🇬🇧 英式']], S.settings.accent)}<button class="btn" id="tryv">試聽：<span class="en">Hello! How are you?</span></button>${synth ? '' : '<p class="muted">這個瀏覽器不支援唸英文。</p>'}</section>`;
+  const voiceCard = () => `<section class="card"><h2>🔊 語音設定</h2>${speedCtl()}${radios('accent', [['en-US', '🇺🇸 美式'], ['en-GB', '🇬🇧 英式']], S.settings.accent)}<button class="btn" id="tryv">試聽：<span class="en">Hello! How are you?</span></button>${synth ? '' : '<p class="muted">這個瀏覽器不支援唸英文。</p>'}</section>`;
   function bindVoice() {
-    $$('input[name="rate"],input[name="accent"]').forEach(el => el.onchange = () => { S.settings.rate = +val('rate') || 1; S.settings.accent = val('accent') || 'en-US'; save('ke_settings', S.settings); });
+    $$('input[name="accent"]').forEach(el => el.onchange = () => { S.settings.accent = val('accent') || 'en-US'; save('ke_settings', S.settings); });
     const t = $('#tryv'); if (t) t.onclick = () => speak('Hello! How are you?');
   }
   // ---------- 學會了 ----------
