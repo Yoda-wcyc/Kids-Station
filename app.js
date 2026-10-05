@@ -14,10 +14,11 @@
   // ---------- 儲存 ----------
   function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 空間不足或私密模式 */ } }
-  const KEYS = ['ke_progress', 'ke_mistakes', 'ke_settings', 'ke_log'];
+  const KEYS = ['ke_progress', 'ke_mistakes', 'ke_settings', 'ke_log', 'ke_learned'];
   let S;
   function loadAll() {
-    S = { progress: load('ke_progress', {}), mistakes: load('ke_mistakes', {}), settings: load('ke_settings', {}), log: load('ke_log', []) };
+    S = { progress: load('ke_progress', {}), mistakes: load('ke_mistakes', {}), settings: load('ke_settings', {}), log: load('ke_log', []), learned: load('ke_learned', {}) };
+    if (!S.learned || typeof S.learned !== 'object' || Array.isArray(S.learned)) S.learned = {};
     S.progress = Object.assign({ stars: 0, quizzes: 0 }, S.progress);
     S.settings = Object.assign({ rate: 1, accent: 'en-US', last: null }, S.settings);
     if (!Array.isArray(S.log)) S.log = [];
@@ -74,11 +75,11 @@
   const mistakeIds = () => Object.keys(S.mistakes).filter(id => E.byId[id] && (canSpeak || E.byId[id].type !== 'speak'));
 
   // ---------- 路由 ----------
-  let rendered = '', Q = null;
+  let rendered = '', Q = null, redraw = null;
   function go(h) { if (location.hash !== h) location.hash = h; render(); }
   window.addEventListener('hashchange', () => { if (location.hash !== rendered) render(); });
   function render() {
-    const h = location.hash || '#home'; rendered = h;
+    const h = location.hash || '#home'; rendered = h; redraw = null;
     const [p, sub] = h.slice(1).split('/');
     const pages = { home: pHome, learn: pLearn, practice: pPractice, quiz: pQuiz, result: pResult, mistakes: pMistakes, bank: pBank, parent: pParent };
     (pages[p] || pHome)(sub);
@@ -87,6 +88,16 @@
   document.addEventListener('click', e => {
     const g = e.target.closest('[data-go]');
     if (g) { e.preventDefault(); go(g.dataset.go); return; }
+    const lb = e.target.closest('[data-learn],[data-unlearn]');
+    if (lb) {
+      e.preventDefault();
+      if (lb.dataset.learn) S.learned = KE.setLearned(S.learned, lb.dataset.learn, new Date().toISOString());
+      else { if (!confirm('確定要取消「已學會」嗎？')) return; S.learned = KE.unsetLearned(S.learned, lb.dataset.unlearn); }
+      save('ke_learned', S.learned);
+      if (redraw) redraw();
+      return;
+    }
+    if (e.target.closest('[data-share]')) { share(e.target.closest('[data-share]')); return; }
     const s = e.target.closest('.say');
     if (s) speak(s.dataset.say || s.textContent);
   });
@@ -102,6 +113,41 @@
     $$('input[name="rate"],input[name="accent"]').forEach(el => el.onchange = () => { S.settings.rate = +val('rate') || 1; S.settings.accent = val('accent') || 'en-US'; save('ke_settings', S.settings); });
     const t = $('#tryv'); if (t) t.onclick = () => speak('Hello! How are you?');
   }
+  // ---------- 學會了 ----------
+  const LS = { words: '', roots: '', grammar: '', patterns: '' };
+  const isL = id => !!(S.learned[id] && S.learned[id].at);
+  const lfPass = (page, id) => !LS[page] || (LS[page] === 'yes') === isL(id);
+  const learnUI = id => isL(id) ? `<div class="learned"><span class="done">✅ 已學會 ${esc(KE.fmtTaipei(S.learned[id].at))}</span><button class="btn sm" data-unlearn="${esc(id)}">取消</button></div>` : `<button class="btn learn" data-learn="${esc(id)}">👍 學會了</button>`;
+  const lfBar = page => `<div class="lfbar">${radios('lf-' + page, [['', '全部'], ['yes', '已學會'], ['no', '未學會']], LS[page])}<p class="prog" id="prog"></p></div>`;
+  function bindLf(page, label, ids, draw) {
+    const full = () => { $('#prog').textContent = `${label} ${ids.filter(isL).length}/${ids.length} 已學會`; draw(); };
+    $$(`input[name="lf-${page}"]`).forEach(el => el.onchange = () => { LS[page] = el.value; full(); });
+    redraw = full; full();
+  }
+
+  // ---------- 分享（網址固定用遊戲庫正式網址）----------
+  const SHARE = { title: '英文-句型/單字/文法', text: '單字、字根、文法、句型：聽、選、拼、排句子一起練英文', url: 'https://yoda-wcyc.github.io/game/' + encodeURIComponent('英文-句型單字文法.html') };
+  const shareRow = () => `<div class="share-row"><button class="btn share" data-share>🔗 分享這個網站</button><span class="share-msg muted" role="status" aria-live="polite"></span></div>`;
+  function share(b) {
+    const msg = b.parentNode.querySelector('.share-msg'), say = t => { if (msg) msg.textContent = t; };
+    const copy = () => {
+      const done = () => say('已複製連結 ✓ 可以貼給朋友了');
+      const legacy = () => {
+        const ta = document.createElement('textarea'); let ok = false;
+        ta.value = SHARE.url; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+        document.body.appendChild(ta); ta.select();
+        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+        ta.remove();
+        if (ok) done(); else say('沒辦法自動複製，請長按複製這個網址：' + SHARE.url);
+      };
+      try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(SHARE.url).then(done, legacy); return; } } catch (e) { }
+      legacy();
+    };
+    say('');
+    if (!navigator.share) return copy();
+    try { Promise.resolve(navigator.share({ title: SHARE.title, text: SHARE.text, url: SHARE.url })).catch(err => { if (!err || err.name !== 'AbortError') copy(); }); } catch (e) { copy(); }
+  }
+
   function startQuiz(cfg) {
     const list = cfg.ids ? KE.shuffle(cfg.ids).slice(0, cfg.count || 30).map(id => E.get(id)).filter(Boolean) : E.buildQuiz(cfg);
     if (!list.length) { alert('沒有符合條件的題目，換個選擇試試看！'); return; }
@@ -115,7 +161,7 @@
     app.innerHTML = top('小朋友學英文 🎈', false) + `
       <div class="stats"><div class="stat"><span>🔥</span><b>${st.streak}</b><small>連續天數</small></div><div class="stat"><span>✏️</span><b>${st.today}</b><small>今天做的題目</small></div><div class="stat"><span>⭐</span><b>${S.progress.stars}</b><small>星星</small></div></div>
       <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}</div>
-      <p class="muted center">小提示：看到英文，點一下就會唸給你聽 👂</p>`;
+      <p class="muted center">小提示：看到英文，點一下就會唸給你聽 👂</p>${shareRow()}`;
   }
 
   // ---------- 學習 ----------
@@ -133,28 +179,41 @@
       <select id="flv" aria-label="等級"><option value="">全部等級</option><option value="1">等級 1</option><option value="2">等級 2</option></select>
       <select id="ftag" aria-label="主題"><option value="">全部主題</option>${tags.map(t => `<option value="${esc(t)}">${esc(KE.TAGS[t] || t)}</option>`).join('')}</select>
       ${srcs.length > 1 ? `<select id="fsrc" aria-label="來源"><option value="">全部來源</option>${srcs.map(s => `<option value="${esc(s)}">${esc(srcLabel(s))}</option>`).join('')}</select>` : ''}
-      <button class="btn primary" id="pw">🎯 練這些字</button></div><p class="muted" id="wn"></p><div class="cards" id="wl"></div>`;
-    const pick = () => D.words.filter(w => (!LF.lv || String(w.lv) === LF.lv) && (!LF.tag || (w.tags || []).includes(LF.tag)) && (!LF.src || (w.src || 'moe') === LF.src));
+      <button class="btn primary" id="pw">🎯 練這些字</button></div>${lfBar('words')}<p class="muted" id="wn"></p><div class="cards" id="wl"></div>`;
+    const pick = () => D.words.filter(w => (!LF.lv || String(w.lv) === LF.lv) && (!LF.tag || (w.tags || []).includes(LF.tag)) && (!LF.src || (w.src || 'moe') === LF.src) && lfPass('words', KE.wordItemId(w)));
     const draw = () => {
       const L = pick();
-      $('#wn').textContent = `共 ${L.length} 個字，點英文就會唸`;
-      $('#wl').innerHTML = L.map(w => `<div class="card word"><div class="w en say">${esc(w.w)}</div><div class="ipa">${esc(w.ipa)} <span class="pos">${esc(w.pos)}</span></div><div class="zh">${esc(w.zh)}</div>${w.ex ? `<div class="ex en say">${esc(w.ex)}</div><div class="exzh">${esc(w.exZh || '')}</div>` : ''}</div>`).join('');
+      $('#wn').textContent = `這裡有 ${L.length} 個字，點英文就會唸`;
+      $('#wl').innerHTML = L.map(w => `<div class="card word ${isL(KE.wordItemId(w)) ? 'is-learned' : ''}"><div class="w en say">${esc(w.w)}</div><div class="ipa">${esc(w.ipa)} <span class="pos">${esc(w.pos)}</span></div><div class="zh">${esc(w.zh)}</div>${w.ex ? `<div class="ex en say">${esc(w.ex)}</div><div class="exzh">${esc(w.exZh || '')}</div>` : ''}${learnUI(KE.wordItemId(w))}</div>`).join('');
     };
     ['lv', 'tag', 'src'].forEach(k => { const el = $('#f' + k); if (el) { el.value = LF[k]; el.onchange = () => { LF[k] = el.value; draw(); }; } });
-    $('#pw').onclick = () => { const ids = pick().flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell'].map(t => `w:${w.w.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}:${t}`)); startQuiz({ ids, count: 10 }); };
-    draw();
+    $('#pw').onclick = () => { const ids = pick().flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell'].map(t => `w:${KE.slug(w.w)}:${t}`)); startQuiz({ ids, count: 10 }); };
+    bindLf('words', '單字', D.words.map(KE.wordItemId), draw);
   }
   function pRoots() {
-    app.innerHTML = top('字根字首', '#learn') + `<p class="muted">把長長的單字拆開，就像拼樂高一樣！</p><button class="btn primary" data-act="pr">🎯 練字根字首</button><div class="cards">${D.roots.map(r => `<div class="card root"><div class="rh"><b class="en">${esc(r.p)}</b><span class="tag">${KE.ROOT_T[r.t]}</span></div><div class="rm">＝ ${esc(r.m)}</div><ul>${r.words.map(w => `<li><span class="en say" data-say="${esc(w.w)}">${w.parts.map(esc).join(' <i>+</i> ')} ＝ <b>${esc(w.w)}</b></span> <span class="zh">${esc(w.zh)}</span></li>`).join('')}</ul></div>`).join('')}</div>`;
+    app.innerHTML = top('字根字首', '#learn') + `<p class="muted">把長長的單字拆開，就像拼樂高一樣！</p><button class="btn primary" data-act="pr">🎯 練字根字首</button>${lfBar('roots')}<div class="cards" id="rl"></div>`;
+    const draw = () => {
+      $('#rl').innerHTML = D.roots.filter(r => lfPass('roots', KE.rootItemId(r))).map(r => `<div class="card root ${isL(KE.rootItemId(r)) ? 'is-learned' : ''}"><div class="rh"><b class="en">${esc(r.p)}</b><span class="tag">${KE.ROOT_T[r.t]}</span></div><div class="rm">＝ ${esc(r.m)}</div><ul>${r.words.map(w => `<li><span class="en say" data-say="${esc(w.w)}">${w.parts.map(esc).join(' <i>+</i> ')} ＝ <b>${esc(w.w)}</b></span> <span class="zh">${esc(w.zh)}</span></li>`).join('')}</ul>${learnUI(KE.rootItemId(r))}</div>`).join('');
+    };
     $('[data-act="pr"]').onclick = () => startQuiz({ modules: ['roots'], count: 10 });
+    bindLf('roots', '字根', D.roots.map(KE.rootItemId), draw);
   }
   function pGrammar() {
-    app.innerHTML = top('文法', '#learn') + D.grammar.map(g => `<details class="card gram"><summary><b>${esc(g.title)}</b></summary><ul class="rules">${g.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ul><div class="exs">${g.ex.map(e => `<div><span class="en say">${esc(e.en)}</span><small>${esc(e.zh)}</small></div>`).join('')}</div><button class="btn primary" data-g="${esc(g.id)}">🎯 練這個文法</button></details>`).join('');
-    $$('[data-g]').forEach(b => b.onclick = () => startQuiz({ modules: ['grammar'], topics: ['grammar:' + b.dataset.g], count: 10, allowSpeak: canSpeak }));
+    app.innerHTML = top('文法', '#learn') + `${lfBar('grammar')}<div id="gl"></div>`;
+    const draw = () => {
+      const open = new Set($$('#gl details[open]').map(d => d.dataset.id));
+      $('#gl').innerHTML = D.grammar.filter(g => lfPass('grammar', KE.grammarItemId(g))).map(g => `<details class="card gram ${isL(KE.grammarItemId(g)) ? 'is-learned' : ''}" data-id="${esc(g.id)}" ${open.has(g.id) ? 'open' : ''}><summary><b>${isL(KE.grammarItemId(g)) ? '✅ ' : ''}${esc(g.title)}</b></summary><ul class="rules">${g.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ul><div class="exs">${g.ex.map(e => `<div><span class="en say">${esc(e.en)}</span><small>${esc(e.zh)}</small></div>`).join('')}</div><div class="row wrap"><button class="btn primary" data-g="${esc(g.id)}">🎯 練這個文法</button>${learnUI(KE.grammarItemId(g))}</div></details>`).join('');
+      $$('[data-g]').forEach(b => b.onclick = () => startQuiz({ modules: ['grammar'], topics: ['grammar:' + b.dataset.g], count: 10, allowSpeak: canSpeak }));
+    };
+    bindLf('grammar', '文法', D.grammar.map(KE.grammarItemId), draw);
   }
   function pPatterns() {
-    app.innerHTML = top('句型', '#learn') + `<div class="cards">${D.patterns.map(p => `<div class="card pat"><div class="ph en say">${esc(p.pattern)}</div><div class="zh">${esc(p.zh)}</div><div class="exs">${p.ex.map(e => `<div><span class="en say">${esc(e.en)}</span><small>${esc(e.zh)}</small></div>`).join('')}</div><button class="btn primary" data-p="${esc(p.id)}">🎯 練這個句型</button></div>`).join('')}</div>`;
-    $$('[data-p]').forEach(b => b.onclick = () => startQuiz({ modules: ['patterns'], topics: ['patterns:' + b.dataset.p], count: 10, allowSpeak: canSpeak }));
+    app.innerHTML = top('句型', '#learn') + `${lfBar('patterns')}<div class="cards" id="pl"></div>`;
+    const draw = () => {
+      $('#pl').innerHTML = D.patterns.filter(p => lfPass('patterns', KE.patternItemId(p))).map(p => `<div class="card pat ${isL(KE.patternItemId(p)) ? 'is-learned' : ''}"><div class="ph en say">${esc(p.pattern)}</div><div class="zh">${esc(p.zh)}</div><div class="exs">${p.ex.map(e => `<div><span class="en say">${esc(e.en)}</span><small>${esc(e.zh)}</small></div>`).join('')}</div><div class="row wrap"><button class="btn primary" data-p="${esc(p.id)}">🎯 練這個句型</button>${learnUI(KE.patternItemId(p))}</div></div>`).join('');
+      $$('[data-p]').forEach(b => b.onclick = () => startQuiz({ modules: ['patterns'], topics: ['patterns:' + b.dataset.p], count: 10, allowSpeak: canSpeak }));
+    };
+    bindLf('patterns', '句型', D.patterns.map(KE.patternItemId), draw);
   }
 
   // ---------- 練習設定 ----------
@@ -301,7 +360,16 @@
   }
 
   // ---------- 家長 ----------
-  const PS = { k: 'acc', d: 1 };
+  const PS = { k: 'acc', d: 1 }, PL = { k: 'at', d: -1 };
+  // 可排序表格：cols=[{k,t,f}]，st={k,d} 記住目前排序
+  function sortTable(el, cols, rows, st) {
+    const draw = () => {
+      const s = rows.slice().sort((a, b) => { const x = a[st.k], y = b[st.k]; return (typeof x === 'string' ? x.localeCompare(y, 'zh-Hant') : x - y) * st.d; });
+      el.innerHTML = `<thead><tr>${cols.map(c => `<th data-k="${c.k}">${c.t}${c.k === st.k ? (st.d > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr></thead><tbody>${s.length ? s.map(r => `<tr>${cols.map(c => `<td>${esc(c.f ? c.f(r[c.k]) : r[c.k])}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length}" class="muted">還沒有紀錄</td></tr>`}</tbody>`;
+      $$('th', el).forEach(th => th.onclick = () => { st.d = st.k === th.dataset.k ? -st.d : 1; st.k = th.dataset.k; draw(); });
+    };
+    draw();
+  }
   function pParent() {
     const days = [];
     for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(ymd(d)); }
@@ -318,17 +386,13 @@
       <section class="card"><h2>最近 7 天做題數</h2><div class="week">${days.map(d => `<div class="day"><div class="col"><i style="height:${(cnt[d] || 0) / mx * 100}%"></i></div><b>${cnt[d] || 0}</b><small>${d.slice(5)}</small></div>`).join('')}</div>
         <p class="muted">累計 ${S.log.length} 題・完成 ${S.progress.quizzes} 回練習・⭐ ${S.progress.stars}・錯題庫 ${mistakeIds().length} 題</p></section>
       <section class="card"><h2>最需要加強的 5 個主題</h2>${weak.length ? `<ol>${weak.map(r => `<li>${esc(r.label)}（${esc(r.mod)}）— 正確率 ${pct(r.acc)}，做了 ${r.n} 題</li>`).join('')}</ol>` : '<p class="muted">每個主題做滿 3 題後就會出現。</p>'}</section>
-      <section class="card"><h2>各主題正確率（點標題排序）</h2><div class="tblwrap"><table class="tbl"><thead><tr><th data-k="label">主題</th><th data-k="mod">單元</th><th data-k="n">題數</th><th data-k="ok">答對</th><th data-k="acc">正確率</th></tr></thead><tbody id="tb"></tbody></table></div></section>
+      <section class="card"><h2>各主題正確率（點標題排序）</h2><div class="tblwrap"><table class="tbl" id="tt"></table></div></section>
+      <section class="card"><h2>學會紀錄（${Object.keys(S.learned).length} 項，點標題排序）</h2><div class="tblwrap"><table class="tbl" id="lt"></table></div></section>
       ${voiceCard()}
       <section class="card"><h2>備份與重設</h2><div class="row wrap"><button class="btn" id="exp">📤 匯出備份</button><label class="btn">📥 匯入備份<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn danger" id="rst">🗑️ 清除全部紀錄</button></div><p class="muted">紀錄只存在這台裝置的瀏覽器裡；換裝置前先匯出備份。</p></section>`;
     bindVoice();
-    const drawT = () => {
-      const s = rows.slice().sort((a, b) => { const x = a[PS.k], y = b[PS.k]; return (typeof x === 'string' ? x.localeCompare(y, 'zh-Hant') : x - y) * PS.d; });
-      $('#tb').innerHTML = s.length ? s.map(r => `<tr><td>${esc(r.label)}</td><td>${esc(r.mod)}</td><td>${r.n}</td><td>${r.ok}</td><td>${pct(r.acc)}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">還沒有紀錄</td></tr>';
-      $$('.tbl th').forEach(th => th.textContent = th.textContent.replace(/ [▲▼]$/, '') + (th.dataset.k === PS.k ? (PS.d > 0 ? ' ▲' : ' ▼') : ''));
-    };
-    $$('.tbl th').forEach(th => th.onclick = () => { PS.d = PS.k === th.dataset.k ? -PS.d : 1; PS.k = th.dataset.k; drawT(); });
-    drawT();
+    sortTable($('#tt'), [{ k: 'label', t: '主題' }, { k: 'mod', t: '單元' }, { k: 'n', t: '題數' }, { k: 'ok', t: '答對' }, { k: 'acc', t: '正確率', f: pct }], rows, PS);
+    sortTable($('#lt'), [{ k: 'item', t: '項目' }, { k: 'type', t: '類型' }, { k: 'at', t: '學會時間（台北）', f: x => KE.fmtTaipei(x, true) }], E.learnedRows(S.learned), PL);
     $('#exp').onclick = () => {
       const data = { app: 'kids-english', at: new Date().toISOString() };
       KEYS.forEach(k => { data[k] = load(k, null); });
@@ -354,7 +418,7 @@
       rd.readAsText(f);
     };
     $('#rst').onclick = () => {
-      if (!confirm('確定要清除全部紀錄（星星、錯題、做題紀錄、設定）嗎？這個動作不能復原。')) return;
+      if (!confirm('確定要清除全部紀錄（星星、錯題、做題紀錄、學會紀錄、設定）嗎？這個動作不能復原。')) return;
       KEYS.forEach(k => { try { localStorage.removeItem(k); } catch (e) { } });
       loadAll(); render();
     };

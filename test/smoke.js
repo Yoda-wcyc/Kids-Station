@@ -73,5 +73,32 @@ const mixed = E.buildQuiz({ modules: ['words'], count: 10, mistakeRatio: 0.3, mi
 ok(mixed.length === 10 && mixed.filter(q => mids.includes(q.id)).length === 3, 'mix 30%');
 ok(E.buildQuiz({ modules: ['words'], src: 'textbook-x', count: 10 }).length === 0, 'src filter');
 
+// ---- 學會紀錄 ----
+ok(KE.fmtTaipei('2026-10-05T12:31:09Z') === '10/05 20:31' && KE.fmtTaipei('2026-10-05T16:05:00Z', true) === '2026-10-06 00:05:00', 'taipei time');
+ok(KE.fmtTaipei('') === '' && KE.fmtTaipei('bad') === '', 'taipei time empty/bad');
+const allItems = W.map(KE.wordItemId).concat(R.map(KE.rootItemId), G.map(KE.grammarItemId), P.map(KE.patternItemId));
+ok(new Set(allItems).size === allItems.length, 'unique learned item ids');
+ok(allItems.every(id => E.itemInfo(id).type), 'itemInfo for every item');
+ok(E.itemInfo('word:apple').item === 'apple' && E.itemInfo('word:apple').type === '單字', 'itemInfo word');
+ok(E.itemInfo('root:un').type === '字根' && E.itemInfo('grammar:be').type === '文法' && E.itemInfo('pattern:lets').type === '句型', 'itemInfo types');
+const L0 = {};
+const L1 = KE.setLearned(L0, 'word:apple', '2026-10-05T01:00:00Z');
+const L2 = KE.setLearned(L1, 'grammar:be', '2026-10-05T03:00:00Z');
+const L3 = KE.setLearned(L2, 'root:un', '2026-10-05T02:00:00Z');
+ok(Object.keys(L0).length === 0 && Object.keys(L1).length === 1, 'setLearned does not mutate');
+ok(L3['word:apple'].at === '2026-10-05T01:00:00Z', 'setLearned stores at');
+ok(E.learnedRows(L3).map(r => r.itemId).join() === 'grammar:be,root:un,word:apple', 'learnedRows newest first');
+const L4 = KE.unsetLearned(L3, 'root:un');
+ok(!L4['root:un'] && L3['root:un'] && Object.keys(L4).length === 2, 'unsetLearned removes without mutating');
+ok(KE.unsetLearned(L4, 'nope') !== L4 && Object.keys(KE.unsetLearned(L4, 'nope')).length === 2, 'unset missing id is harmless');
+ok(E.learnedRows({ 'word:apple': {} }).length === 0, 'rows skip records without time');
+
+// ---- 已取消的功能不可殘留（手寫、上傳）----
+['engine.js', 'app.js', 'README.md'].forEach(f => {
+  const s = fs.readFileSync(path.join(root, f), 'utf8');
+  ['inputtools', 'handwrit', '上傳網址', 'Code.gs', 'ke_upload'].forEach(bad => ok(!s.includes(bad), `${f} still contains ${bad}`));
+});
+ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
+
 console.log(`OK  ${checks} checks | words ${W.length} (lv1 ${W.filter(w => w.lv === 1).length}, lv2 ${W.filter(w => w.lv === 2).length}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
 console.log('pool per type:', JSON.stringify(counts));

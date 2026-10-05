@@ -18,7 +18,14 @@ data/patterns.js  句型 12 個 window.DATA_PATTERNS
 test/smoke.js     node test/smoke.js（檢查資料格式、每種題型各出 30 題）
 ```
 
-紀錄存在瀏覽器 localStorage：`ke_progress`、`ke_mistakes`、`ke_settings`、`ke_log`。家長頁可以匯出／匯入 JSON 備份。
+紀錄存在瀏覽器 localStorage：`ke_progress`、`ke_mistakes`、`ke_settings`、`ke_log`、`ke_learned`。家長頁可以匯出／匯入 JSON 備份（含學會紀錄）。
+
+「學會了」：單字、字根、文法、句型四個學習頁的每張卡片都有「👍 學會了」按鈕，按下記錄時間（`ke_learned` = `{itemId: {at}}`，ISO 時間，畫面顯示台北時間），可按「取消」移除。學習頁可篩選 全部／已學會／未學會，家長頁有「學會紀錄」表。itemId 例：`word:apple`、`root:un`、`grammar:be`、`pattern:lets`。
+
+## 遊戲庫單檔版
+
+`python build_single.py` 會把 style.css、engine.js、app.js、data/*.js 內嵌成一支 HTML，寫到遊戲庫正本 `G:\Yoda x Claude\game\英文-句型單字文法.html`（標題「英文-句型/單字/文法」，尾端加遊戲庫標配的角落簽名＋流量 beacon），同步到 `_deploy\game\`，並在遊戲庫 `index.html` 的 GAMES 登錄（已登錄就不重複加）。之後到 `_deploy\game\` commit＋push。
+兩個網址（kids-english 與遊戲庫）localStorage 不互通，紀錄各自分開。
 
 ## 新增單字（含課本單字）
 

@@ -30,6 +30,20 @@
     return s;
   }
 
+  // ---- 學會紀錄（純函式）----
+  const TPE = {};
+  function fmtTaipei(iso, full) {
+    if (!iso) return '';
+    const d = new Date(iso); if (isNaN(d)) return '';
+    const f = TPE.f || (TPE.f = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }));
+    const p = {}; f.formatToParts(d).forEach(x => { p[x.type] = x.value; });
+    return full ? `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}` : `${p.month}/${p.day} ${p.hour}:${p.minute}`;
+  }
+  // 學會紀錄 {itemId:{at}}：回傳新物件，不改原本的
+  function setLearned(L, itemId, iso) { const o = Object.assign({}, L); o[itemId] = { at: iso }; return o; }
+  function unsetLearned(L, itemId) { const o = Object.assign({}, L); delete o[itemId]; return o; }
+  const wordItemId = w => 'word:' + slug(w.w), patternItemId = p => 'pattern:' + p.id, grammarItemId = g => 'grammar:' + g.id, rootItemId = r => 'root:' + slug(r.p);
+
   function Engine(data) {
     const D = this.D = { words: data.words || [], roots: data.roots || [], grammar: data.grammar || [], patterns: data.patterns || [] };
     this.meta = []; this.byId = {};
@@ -97,6 +111,16 @@
       if (module === 'patterns') return this.D.patterns.map(p => ({ key: 'patterns:' + p.id, label: p.pattern }));
       return [];
     },
+    // 學會紀錄的項目資訊：word:apple → {item:'apple', type:'單字'}
+    itemInfo(itemId) {
+      const w = this.D.words.find(x => wordItemId(x) === itemId); if (w) return { item: w.w, zh: w.zh, type: '單字' };
+      const p = this.D.patterns.find(x => patternItemId(x) === itemId); if (p) return { item: p.pattern, zh: p.zh, type: '句型' };
+      const g = this.D.grammar.find(x => grammarItemId(x) === itemId); if (g) return { item: g.title, zh: '', type: '文法' };
+      const r = this.D.roots.find(x => rootItemId(x) === itemId); if (r) return { item: r.p, zh: r.m, type: '字根' };
+      return { item: itemId, zh: '', type: '' };
+    },
+    // 家長頁用：學會紀錄表，預設新到舊
+    learnedRows(L) { return Object.keys(L || {}).filter(id => L[id] && L[id].at).map(id => Object.assign({ itemId: id, at: L[id].at }, this.itemInfo(id))).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)); },
     topicLabel(tkey) { const m = tkey.split(':')[0]; const t = this.topics(m).find(x => x.key === tkey); return t ? t.label : tkey; },
     // f: {modules, topics(tkey 陣列), types, src, lv, allowSpeak, ids}
     list(f) {
@@ -138,7 +162,7 @@
     }
   };
 
-  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank };
+  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

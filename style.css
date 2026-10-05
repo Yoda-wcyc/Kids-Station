@@ -111,6 +111,16 @@ select{min-height:48px;font:inherit;font-size:1rem;padding:6px 12px;border:2px s
 .tbl{width:100%;border-collapse:collapse;font-size:.95rem}
 .tbl th,.tbl td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}
 .tbl th{cursor:pointer;user-select:none;-webkit-user-select:none;background:#fff8ec;white-space:nowrap}
+.btn.learn{margin-top:12px;background:var(--ok-bg);border-color:#9fe0bd;color:#16784a;box-shadow:0 3px 0 #9fe0bd}
+.btn.sm{min-height:44px;padding:4px 14px;font-size:.9rem;font-weight:500}
+.learned{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px}
+.learned .done{color:#16784a;font-weight:700;font-size:1rem}
+.row .learned,.row .btn.learn{margin-top:0}
+.card.is-learned{border-color:#9fe0bd;background:#fbfffc}
+.lfbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin:6px 0}
+.lfbar .seg{margin:0}
+.prog{margin:0;font-weight:700;color:#16784a}
+.share-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;margin:18px 0 8px}
 @media (max-width:560px){
   body{font-size:18px}
   .tiles{grid-template-columns:1fr 1fr}
