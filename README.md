@@ -14,8 +14,10 @@
 └─ 英文   #home 等原本路由（app.js，預設科目）
 ```
 
-`math/balance.html` 是天平正本 `G:\Yoda x Claude\小朋友學AI\數學-天平解方程式.html` 的副本，**不要手改**。
-天平正本只要有改：照 kids-ai 的規則同步 `_deploy\kids-ai\`、`_deploy\game\` 之外，還要在這裡跑 `python sync_math.py`，再把 kids-english 複製到部署夾並 push。smoke 測試會檢查副本與正本一致。
+**天平解方程式的正本就是 `小朋友學英文\math\balance.html`**（2026-10-05 起；原本在小朋友學AI 系列，從那裡複製過來一次）。要改天平就直接改這支。
+遊戲庫那份 `game\數學-天平解方程式.html` 是從它衍生的：正本＋遊戲庫尾段（角落簽名 yoda-logo、流量 beacon），一樣不載 yoda-game-badge.js、不加投資免責和檢核鈕。改完正本後：
+1. 把 kids-english 複製到 `_deploy\kids-english\` 並 push；
+2. 重做遊戲庫那份（正本＋尾段），寫到 `game\`（LF）和 `_deploy\game\`（CRLF），再 push game repo。
 
 線上版：https://yoda-wcyc.github.io/kids-english/
 
