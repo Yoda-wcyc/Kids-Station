@@ -28,6 +28,16 @@ for dp, dn, fn in os.walk(HERE):
         d = os.path.join(DST, rel)
         os.makedirs(os.path.dirname(d), exist_ok=True)
         shutil.copy2(os.path.join(HERE, rel), d)
+# 部署版 index.html 的本地 .js/.css 加 ?v=時間戳，避免 iPad 拿到快取的舊檔（新資料配舊引擎會壞）
+import re, time
+idx = os.path.join(DST, "index.html")
+ver = time.strftime("%Y%m%d%H%M%S")
+with open(idx, encoding="utf-8") as f:
+    html = f.read()
+html, n = re.subn(r'((?:src|href)="(?!https?:|data:)[^"?]+\.(?:js|css))"', lambda m: f'{m.group(1)}?v={ver}"', html)
+with open(idx, "w", encoding="utf-8", newline="\n") as f:
+    f.write(html)
+print("cache-busted", n, "assets in index.html, v =", ver)
 stale = []
 for dp, dn, fn in os.walk(DST):
     dn[:] = [x for x in dn if x != ".git"]
