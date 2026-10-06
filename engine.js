@@ -4,9 +4,14 @@
   const TAGS = { animal: '動物', food: '食物', color: '顏色', number: '數字', family: '家人', school: '學校', body: '身體', weather: '天氣', place: '地方', time: '時間', verb: '動作', adj: '形容詞' };
   const ROOT_T = { prefix: '字首', suffix: '字尾', root: '字根' };
   const MODULES = { words: '單字', roots: '字根字首', grammar: '文法', patterns: '句型' };
-  const TYPES = { 'listen-choose': '聽音選字', zh2en: '看中文選英文', en2zh: '看英文選中文', spell: '聽寫拼字', 'root-meaning': '字首字尾的意思', 'root-word': '用字根組單字', 'grammar-fill': '文法填空', 'grammar-fix': '挑出正確的句子', reorder: '句子重組', speak: '開口說說看' };
-  const MOD_TYPES = { words: ['listen-choose', 'zh2en', 'en2zh', 'spell'], roots: ['root-meaning', 'root-word'], grammar: ['grammar-fill', 'grammar-fix', 'reorder', 'speak'], patterns: ['reorder', 'speak'] };
+  const TYPES = { 'listen-choose': '聽音選字', zh2en: '看中文選英文', en2zh: '看英文選中文', spell: '聽寫拼字', 'root-meaning': '字首字尾的意思', 'root-word': '用字根組單字', 'grammar-fill': '文法填空', 'grammar-fix': '挑出正確的句子', reorder: '句子重組', 'pattern-choose': '看中文選句子', 'zh2en-type': '中翻英打字', 'root-type': '字根拼字（打字）', speak: '開口說說看' };
+  const MOD_TYPES = { words: ['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type'], roots: ['root-meaning', 'root-word', 'root-type'], grammar: ['grammar-fill', 'grammar-fix', 'reorder', 'zh2en-type', 'speak'], patterns: ['reorder', 'pattern-choose', 'zh2en-type', 'speak'] };
+  const TYPED = 'zh2en-type';
+  // 鍵盤打字題（練習一組時排最後；共用同一個打字介面與判分）
+  const TYPED_TYPES = ['spell', 'zh2en-type', 'root-type'];
+  const isTyped = q => TYPED_TYPES.includes(q && q.type);
   const SRC_LABEL = { moe: '教育部基本字彙' };
+  const POS = { n: '名詞', v: '動詞', adj: '形容詞', adv: '副詞', num: '數字' };
 
   function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   function norm(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' '); }
@@ -43,8 +48,26 @@
   function clampRate(r) { const n = parseFloat(r); if (!isFinite(n)) return 1; return Math.round(Math.min(1.3, Math.max(0.5, n)) * 10) / 10; }
   // 學會紀錄 {itemId:{at}}：回傳新物件，不改原本的
   function setLearned(L, itemId, iso, score) { const o = Object.assign({}, L); o[itemId] = score ? { at: iso, score } : { at: iso }; return o; }
-  // 「學會了」小測驗是否通過：答對數 ≥ 門檻
-  const gatePassed = (gate, correct) => !!gate && correct >= gate.need;
+  // 中翻英打字的判分：不分大小寫、去頭尾空白、空白合併、句尾 .!? 不計、彎引號統一；可接受 alts
+  function typeNorm(s) { return String(s == null ? '' : s).replace(/[’‘`´]/g, "'").replace(/[“”]/g, '"').toLowerCase().replace(/\s+/g, ' ').trim().replace(/\s*[.!?]+$/, '').trim(); }
+  function typeGrade(answer, alts, input) {
+    const t = typeNorm(input), ok = !!t && [answer].concat(alts || []).some(a => typeNorm(a) === t);
+    let diffAt = -1;
+    if (!ok) { const a = typeNorm(answer).split(' '), b = t ? t.split(' ') : []; diffAt = a.findIndex((w, i) => w !== b[i]); if (diffAt < 0) diffAt = a.length - 1; }
+    return { ok, diffAt };
+  }
+  // 練習一組時的排序：打字題一律排最後；其餘洗牌
+  function drillOrder(qs) { return shuffle(qs.filter(q => !isTyped(q))).concat(qs.filter(isTyped)); }
+  // 答錯重排：非打字題插到「後面第一個打字題」之前（打字題永遠排最後）；打字題放最後
+  function requeue(list, i, q) {
+    const out = list.slice();
+    let at = out.length;
+    if (!isTyped(q)) { const k = out.findIndex((x, j) => j > i && isTyped(x)); if (k >= 0) at = k; }
+    out.splice(at, 0, q);
+    return out;
+  }
+  // 答對過的題目（從作答紀錄算）
+  function correctIds(log) { const s = new Set(); (log || []).forEach(l => { if (l && l.ok && l.id) s.add(l.id); }); return s; }
   function unsetLearned(L, itemId) { const o = Object.assign({}, L); delete o[itemId]; return o; }
   const wordItemId = w => 'word:' + slug(w.w), patternItemId = p => 'pattern:' + p.id, grammarItemId = g => 'grammar:' + g.id, rootItemId = r => 'root:' + slug(r.p);
 
@@ -65,7 +88,8 @@
       add(Object.assign({ id: `w:${key}:listen`, type: 'listen-choose' }, base), () => ({ prompt: '聽聽看，是哪一個字？', options: choice(w.w, tiers(x => x.w)), answer: w.w, speakText: w.w, auto: true, play: true, why }));
       add(Object.assign({ id: `w:${key}:zh2en`, type: 'zh2en' }, base), () => ({ prompt: w.zh, options: choice(w.w, tiers(x => x.w)), answer: w.w, speakText: w.w, why }));
       add(Object.assign({ id: `w:${key}:en2zh`, type: 'en2zh' }, base), () => ({ prompt: w.w, en: true, play: true, options: choice(w.zh, tiers(x => x.zh)), answer: w.zh, speakText: w.w, why }));
-      add(Object.assign({ id: `w:${key}:spell`, type: 'spell' }, base), () => ({ prompt: '聽寫：把聽到的字拼出來', sub: `提示：${w.zh}（${w.w.length} 個字母）`, input: 'text', options: null, answer: w.w, speakText: w.w, auto: true, play: true, why }));
+      add(Object.assign({ id: `w:${key}:spell`, type: 'spell' }, base), () => ({ prompt: '聽寫：把聽到的字拼出來', sub: `提示：${w.zh}（${w.w.length} 個字母）`, input: 'type', options: null, answer: w.w, alts: [], speakText: w.w, auto: true, play: true, why }));
+      add(Object.assign({ id: `w:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: w.zh, sub: `（${POS[w.pos] || w.pos}）打出這個英文字`, input: 'type', options: null, answer: w.w, alts: [], speakText: w.w, why }));
     });
 
     // ---- 字根字首 ----
@@ -81,6 +105,14 @@
           prompt: `「${w.zh}」英文怎麼說？`, sub: `提示：${r.p}（${r.m}）`,
           options: choice(w.w, [r.words.filter(x => x !== w).map(x => x.w), D.roots.filter(x => x !== r && x.t === r.t).flatMap(x => x.words.map(y => y.w)), D.roots.flatMap(x => x.words.map(y => y.w))]),
           answer: w.w, speakText: w.w, why: `${w.parts.join(' + ')} ＝ ${w.w}（${r.p} ＝ ${r.m}）`
+        }));
+      });
+      // 字根拼字（打字）：輪流藏起一個部分當提示，要打出整個字
+      r.words.forEach((w, i) => {
+        const hide = w.parts.length - 1 - (i % w.parts.length), hint = w.parts.map((x, k) => (k === hide ? '___' : x)).join(' + ');
+        add({ id: `r:${slug(w.w)}:type`, module: 'roots', topic: r.t, type: 'root-type', title: `${w.w}　${w.zh}` }, () => ({
+          prompt: `${w.zh} ＝ ${hint}`, sub: '打出整個英文字', input: 'type', options: null, answer: w.w, alts: [], speakText: w.w,
+          why: `${w.parts.join(' + ')} ＝ ${w.w}（${r.p} ＝ ${r.m}）`
         }));
       });
     });
@@ -99,10 +131,31 @@
         else add({ id, module: 'grammar', topic: g.id, type: 'grammar-fix', title: q.right }, () => ({ prompt: '哪一句是對的？', options: shuffle([q.wrong, q.right]), answer: q.right, speakText: q.right, why: q.why }));
       });
       g.ex.forEach((e, j) => sentenceQs('grammar', g.id, `g:${g.id}:ex${j}`, e, `文法：${g.title}`));
+      (g.typed || []).forEach((t, k) => typedQ('grammar', g.id, `g:${g.id}:t${k}`, t, `文法：${g.title}`));
     });
 
-    // ---- 句型 ----
-    D.patterns.forEach(p => p.ex.forEach((e, j) => sentenceQs('patterns', p.id, `p:${p.id}:${j}`, e, `句型：${p.pattern}（${p.zh}）`)));
+    // ---- 句型：例句（重組＋開口說＋看中文選句子）、加練重組、中翻英打字 ----
+    D.patterns.forEach(p => {
+      const why = `句型：${p.pattern}（${p.zh}）`;
+      p.ex.forEach((e, j) => {
+        sentenceQs('patterns', p.id, `p:${p.id}:${j}`, e, why);
+        add({ id: `p:${p.id}:${j}:choose`, module: 'patterns', topic: p.id, type: 'pattern-choose', title: e.en }, () => ({ prompt: e.zh, sub: '選出意思對的英文句子', options: choice(e.en, [p.ex.filter(x => x !== e).map(x => x.en), (p.extra || []).map(x => x.en)]), answer: e.en, speakText: e.en, why }));
+      });
+      (p.extra || []).forEach((e, k) => add({ id: `p:${p.id}:x${k}:reorder`, module: 'patterns', topic: p.id, type: 'reorder', title: e.en }, () => ({ prompt: e.zh, sub: '把字卡排成正確的英文句子', input: 'chips', options: chips(e.en), answer: e.en, speakText: e.en, why })));
+      (p.typed || []).forEach((t, k) => typedQ('patterns', p.id, `p:${p.id}:t${k}`, t, why));
+    });
+
+    // ---- 每個學習項目的固定題組（全部答對過才能按「學會了」）----
+    this.sets = {};
+    const keep = ids => ids.filter(id => this.byId[id]);
+    D.words.forEach(w => { const k = slug(w.w); this.sets[wordItemId(w)] = keep([`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:en2zh`, `w:${k}:spell`, `w:${k}:type`]); });
+    D.roots.forEach(r => { this.sets[rootItemId(r)] = keep([`r:${slug(r.p)}:meaning`].concat(r.words.map(x => `r:${slug(x.w)}:word`), r.words.map(x => `r:${slug(x.w)}:type`))); });
+    D.grammar.forEach(g => { this.sets[grammarItemId(g)] = keep(g.q.map((q, i) => `g:${g.id}:${i}`).concat((g.typed || []).map((t, k) => `g:${g.id}:t${k}`))); });
+    D.patterns.forEach(p => { this.sets[patternItemId(p)] = keep(p.ex.map((e, j) => `p:${p.id}:${j}:reorder`).concat(p.ex.map((e, j) => `p:${p.id}:${j}:choose`), (p.extra || []).map((e, k) => `p:${p.id}:x${k}:reorder`), (p.typed || []).map((t, k) => `p:${p.id}:t${k}`))); });
+
+    function typedQ(module, topic, id, t, why) {
+      add({ id, module, topic, type: TYPED, title: t.en }, () => ({ prompt: t.zh, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: t.en, alts: t.alts || [], speakText: t.en, why }));
+    }
   }
 
   Engine.prototype = {
@@ -125,22 +178,15 @@
     },
     // 家長頁用：學會紀錄表，預設新到舊；舊紀錄沒有分數顯示「—」
     learnedRows(L) { return Object.keys(L || {}).filter(id => L[id] && L[id].at).map(id => Object.assign({ itemId: id, at: L[id].at, score: L[id].score || '—' }, this.itemInfo(id))).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)); },
-    // 「學會了」的小測驗（不含開口說）：回傳 {itemId, ids, qs, need, total}；找不到項目回傳 null
-    gate(itemId) {
-      const D = this.D, pick = (a, n) => shuffle(a).slice(0, n);
-      let ids = null, need;
-      const w = D.words.find(x => wordItemId(x) === itemId);
-      const r = !w && D.roots.find(x => rootItemId(x) === itemId);
-      const g = !w && !r && D.grammar.find(x => grammarItemId(x) === itemId);
-      const p = !w && !r && !g && D.patterns.find(x => patternItemId(x) === itemId);
-      if (w) { const k = slug(w.w); ids = [`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:spell`]; need = 3; }
-      else if (r) { ids = [`r:${slug(r.p)}:meaning`].concat(pick(r.words, 2).map(x => `r:${slug(x.w)}:word`)); need = 3; }
-      else if (g) { ids = pick(g.q.map((q, i) => `g:${g.id}:${i}`), 5); need = 4; }
-      else if (p) { ids = pick(p.ex.map((e, j) => `p:${p.id}:${j}:reorder`), 3); need = 3; }
-      if (!ids) return null;
-      const qs = ids.map(id => this.get(id)).filter(Boolean);
-      return { itemId, ids, qs, need, total: qs.length };
+    // 項目的固定題組（qid 陣列）；找不到項目回傳 []
+    itemSet(itemId) { return (this.sets[itemId] || []).slice(); },
+    // 進度：correct＝答對過的 qid Set；全部答對過 complete＝true 才能按「學會了」
+    progress(itemId, correct) {
+      const ids = this.sets[itemId] || [], missing = ids.filter(id => !correct.has(id));
+      return { total: ids.length, done: ids.length - missing.length, missing, complete: ids.length > 0 && !missing.length };
     },
+    // 練習這組：只出還沒答對過的題，打字題排最後
+    drill(itemId, correct) { return drillOrder(this.progress(itemId, correct).missing.map(id => this.get(id)).filter(Boolean)); },
     topicLabel(tkey) { const m = tkey.split(':')[0]; const t = this.topics(m).find(x => x.key === tkey); return t ? t.label : tkey; },
     // f: {modules, topics(tkey 陣列), types, src, lv, allowSpeak, ids}
     list(f) {
@@ -177,12 +223,13 @@
         const score = a.length ? hit / a.length : 0;
         return { ok: score >= 0.7, score };
       }
-      if (q.type === 'spell' || q.type === 'reorder') return { ok: norm(input) === norm(q.answer) };
+      if (isTyped(q)) return typeGrade(q.answer, q.alts, input);
+      if (q.type === 'reorder') return { ok: norm(input) === norm(q.answer) };
       return { ok: input === q.answer };
     }
   };
 
-  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, typeNorm, typeGrade, isTyped, TYPED_TYPES, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);
