@@ -13,10 +13,15 @@
 
   // ---------- 儲存 ----------
   function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
-  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 空間不足或私密模式 */ } }
+  const SM = window.KESyncMerge;
+  const SYNCED = ['ke_log', 'ke_learned', 'ke_mistakes'];
+  function save(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 空間不足或私密模式 */ }
+    if (SYNCED.includes(k) && window.KESync) KESync.touch(); // 有變動 → 3 秒後同步
+  }
   // 科目列（subjects.js）也會寫 ke_settings.subject：存檔時以磁碟上最新的 subject 為準，不要蓋掉
   function saveSettings() { const cur = load('ke_settings', {}) || {}; S.settings.subject = cur.subject; if (S.settings.subject === undefined) delete S.settings.subject; save('ke_settings', S.settings); }
-  const KEYS = ['ke_progress', 'ke_mistakes', 'ke_settings', 'ke_log', 'ke_learned', 'ke_correct'];
+  const KEYS = ['ke_progress', 'ke_mistakes', 'ke_settings', 'ke_log', 'ke_learned', 'ke_correct', 'ke_agg'];
   let S;
   function loadAll() {
     S = { progress: load('ke_progress', {}), mistakes: load('ke_mistakes', {}), settings: load('ke_settings', {}), log: load('ke_log', []), learned: load('ke_learned', {}) };
@@ -27,9 +32,14 @@
     if (r0 !== S.settings.rate) saveSettings();
     if (!Array.isArray(S.log)) S.log = [];
     if (!S.mistakes || typeof S.mistakes !== 'object') S.mistakes = {};
-    // 答對過的題目：作答紀錄（追溯以前的練習）∪ 另存的清單（ke_log 只留最近 5000 筆，舊的答對紀錄靠它保住）
+    // 舊紀錄補上固定 id（雜湊：時間|題號|答案，每台算出來一樣，同步時才不會重複）
+    let fixed = 0; S.log.forEach(e => { if (e && !e.r) { e.r = SM.rid(e); fixed++; } });
+    if (fixed) try { localStorage.setItem('ke_log', JSON.stringify(S.log)); } catch (e) { }
+    S.agg = load('ke_agg', {}) || {};
+    // 答對過的題目：作答紀錄（追溯以前的練習）∪ 壓縮過的舊紀錄（agg）∪ 另存的清單
     const kept = load('ke_correct', []);
     S.correct = KE.correctIds(S.log);
+    Object.keys(S.agg.agg || {}).forEach(id => { if (S.agg.agg[id].fc != null) S.correct.add(id); });
     (Array.isArray(kept) ? kept : []).forEach(id => S.correct.add(id));
     if (S.correct.size !== (Array.isArray(kept) ? kept.length : -1)) save('ke_correct', [...S.correct]);
   }
@@ -65,14 +75,23 @@
   document.addEventListener('click', () => { if (unlocked || !synth) return; unlocked = true; try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; synth.speak(u); } catch (e) { } });
 
   // ---------- 紀錄與錯題 ----------
-  function record(q, ok) {
-    S.log.push({ t: Date.now(), id: q.id, m: q.module, k: q.tkey, y: q.type, ok: ok ? 1 : 0 });
-    if (S.log.length > 5000) S.log = S.log.slice(-5000);
+  function record(q, ok, input) {
+    const e = { t: Date.now(), id: q.id, m: q.module, k: q.tkey, y: q.type, ok: ok ? 1 : 0, a: String(input == null ? '' : input).slice(0, 120) };
+    e.r = SM.rid(e);
+    S.log.push(e);
+    // 紀錄太大（> 500 KB）就把最舊的壓成每題一筆（保留第一次答對的時間），不直接丟掉
+    if (S.log.length % 200 === 0 && SM.bytes(S.log) > SM.MAX_BYTES) {
+      const d = SM.compact({ log: S.log, cut: S.agg.cut || 0, agg: S.agg.agg || {} });
+      S.log = d.log; S.agg = { cut: d.cut, agg: d.agg }; save('ke_agg', S.agg);
+    }
     save('ke_log', S.log);
     if (ok && !S.correct.has(q.id)) { S.correct.add(q.id); save('ke_correct', [...S.correct]); }
-    const m = S.mistakes;
-    if (!ok) m[q.id] = { c: 0, w: ((m[q.id] || {}).w || 0) + 1, t: Date.now() };
-    else if (m[q.id]) { m[q.id].c++; if (m[q.id].c >= 3) { delete m[q.id]; Q.graduated++; } }
+    const m = S.mistakes, now = Date.now(), prev = m[q.id] && !m[q.id].d ? m[q.id] : null;
+    if (!ok) m[q.id] = { c: 0, w: ((m[q.id] || {}).w || 0) + 1, t: now, u: now };
+    else if (prev) {
+      prev.c++; prev.u = now;
+      if (prev.c >= 3) { m[q.id] = { d: 1, w: prev.w, t: prev.t, u: now }; Q.graduated++; } // 畢業＝墓碑，同步到別台才不會復活
+    }
     save('ke_mistakes', m);
   }
   function stats() {
@@ -82,7 +101,7 @@
     while (days.has(ymd(d))) { streak++; d.setDate(d.getDate() - 1); }
     return { streak, today: S.log.filter(l => ymd(new Date(l.t)) === t).length };
   }
-  const mistakeIds = () => Object.keys(S.mistakes).filter(id => E.byId[id] && (canSpeak || E.byId[id].type !== 'speak'));
+  const mistakeIds = () => Object.keys(S.mistakes).filter(id => !S.mistakes[id].d && E.byId[id] && (canSpeak || E.byId[id].type !== 'speak'));
 
   // ---------- 路由 ----------
   let rendered = '', Q = null, redraw = null;
@@ -107,8 +126,9 @@
       // 題組全部答對過才解鎖；按下去還要通過小測驗才標記
       if (lb.dataset.learn) { startGate(lb.dataset.learn, rendered); return; }
       if (!confirm('確定要取消「已學會」嗎？')) return;
-      S.learned = KE.unsetLearned(S.learned, lb.dataset.unlearn);
+      S.learned = KE.unsetLearned(S.learned, lb.dataset.unlearn, new Date().toISOString());
       save('ke_learned', S.learned);
+      if (window.KESync) KESync.now();
       if (redraw) redraw();
       return;
     }
@@ -136,7 +156,7 @@
     if (t) { const p = t.parentNode.querySelector('.speed-pop'); p.hidden = !p.hidden; }
     if (!e.target.closest('.speed')) $$('.speed-pop').forEach(p => { p.hidden = true; });
   });
-  const top = (title, back) => `<header class="top">${back === false ? '' : `<button class="btn icon" data-go="${back || '#home'}" aria-label="回上一頁">${back && back !== '#home' ? '⬅️' : '🏠'}</button>`}<h1>${title}</h1>${speedPill()}</header>`;
+  const top = (title, back) => `<header class="top">${back === false ? '' : `<button class="btn icon" data-go="${back || '#home'}" aria-label="回上一頁">${back && back !== '#home' ? '⬅️' : '🏠'}</button>`}<h1>${title}</h1>${window.KESync && KESync.code() ? '<span class="cloud" title="裝置同步已開啟" aria-label="裝置同步已開啟">☁️</span>' : ''}${speedPill()}</header>`;
   const tile = (go, icon, name, desc, cls) => `<button class="tile ${cls}" data-go="${go}"><span class="ti">${icon}</span><b>${name}</b><small>${desc}</small></button>`;
   const radios = (name, opts, cur) => `<div class="seg">${opts.map(([v, t]) => `<label class="pill"><input type="radio" name="${name}" value="${esc(v)}" ${String(v) === String(cur) ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}</div>`;
   const val = name => { const el = $(`input[name="${name}"]:checked`); return el ? el.value : ''; };
@@ -351,7 +371,7 @@
     if (Q.answered) return;
     Q.answered = true;
     const res = skipped ? { ok: false } : E.check(q, input);
-    if (!skipped) record(q, res.ok);
+    if (!skipped) record(q, res.ok, input);
     Q.answers.push({ q, ok: res.ok, skip: !!skipped, input });
     $$('.opt').forEach(b => { b.disabled = true; if (b.dataset.v === q.answer) b.classList.add('right'); else if (b.dataset.v === input) b.classList.add('wrong'); });
     $$('#ok,#clr,#mic,#skip,.pool .chip,#ans').forEach(x => { x.disabled = true; });
@@ -379,6 +399,7 @@
     const stars = tot ? (pct >= 0.9 ? 3 : pct >= 0.6 ? 2 : 1) : 0;
     S.progress.stars += stars; S.progress.quizzes++; save('ke_progress', S.progress);
     Q.result = { ok, tot, stars, wrong: Q.answers.filter(a => !a.ok && !a.skip).map(a => a.q) };
+    if (window.KESync) KESync.now(); // 一回合結束 → 馬上同步
     if (Q.gate) {
       Q.result.pass = KE.gatePassed(Q.gate, ok);
       if (Q.result.pass) { S.learned = KE.setLearned(S.learned, Q.gate.itemId, new Date().toISOString(), `${ok}/${tot}`); save('ke_learned', S.learned); }
@@ -454,6 +475,45 @@
     };
     draw();
   }
+  // ---------- 裝置同步（家長頁）----------
+  function syncCard() {
+    const P = window.KESync; if (!P) return '';
+    const code = P.code();
+    return `<section class="card sync-card"><h2>☁️ 裝置同步（iPad ↔ 電腦）</h2>${code
+      ? `<p>這台已開啟同步，同步碼：<b class="sync-code">${esc(code)}</b></p><div class="row wrap"><button class="btn" id="scopy">📋 複製同步碼</button><button class="btn" id="sshare">🔗 傳送同步連結</button><button class="btn primary" id="snow">🔄 立即同步</button><button class="btn danger" id="soff">取消同步</button></div>`
+      : `<p>在第一台按「產生同步碼」，再到另一台輸入同一組同步碼（或打開同步連結），兩台的紀錄就會自動合在一起。</p><div class="row wrap"><button class="btn primary" id="sgen">產生同步碼</button></div>
+        <div class="row wrap"><input id="scode" class="code-in" placeholder="輸入同步碼 ABCD-EFGH" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="輸入同步碼"><button class="btn" id="spair">連線</button></div>`}
+      <p class="sync-status">${esc(P.statusText())}</p>
+      <p class="muted">會同步：作答紀錄、學會紀錄、錯題庫；語音速度等設定每台各自保存。⚠️ 拿到同步碼的人都看得到練習紀錄（只有練習資料，沒有姓名等個人資料），請不要公開分享。</p></section>`;
+  }
+  function bindSync() {
+    const P = window.KESync; if (!P) return;
+    const b = id => $('#' + id), fail = e => alert((e && e.message && !/^HTTP|fetch/i.test(e.message) ? e.message : '連不上同步伺服器，請確認網路後再試一次'));
+    if (b('sgen')) b('sgen').onclick = () => { b('sgen').disabled = true; P.generate().then(() => render(), e => { b('sgen').disabled = false; fail(e); }); };
+    if (b('spair')) b('spair').onclick = async () => {
+      const v = b('scode').value;
+      try {
+        const c = await P.check(v);
+        if (!confirm(`要把這台裝置跟同步碼 ${c} 連在一起嗎？\n兩台的作答紀錄、學會紀錄和錯題會合併在一起（不會刪掉這台的紀錄）。`)) return;
+        await P.pair(c); render();
+      } catch (e) { fail(e); }
+    };
+    if (b('scode')) b('scode').onkeydown = e => { if (e.key === 'Enter') b('spair').click(); };
+    const copy = text => { try { navigator.clipboard.writeText(text).then(() => alert('已複製：' + text), () => prompt('請長按複製：', text)); } catch (e) { prompt('請長按複製：', text); } };
+    if (b('scopy')) b('scopy').onclick = () => copy(P.code());
+    if (b('sshare')) b('sshare').onclick = () => {
+      const url = P.link(P.code());
+      if (navigator.share) navigator.share({ title: '小朋友學習站 · 同步連結', text: `在另一台裝置打開這個連結，就會跟這台同步（同步碼 ${P.code()}）`, url }).catch(err => { if (!err || err.name !== 'AbortError') copy(url); });
+      else copy(url);
+    };
+    if (b('snow')) b('snow').onclick = () => P.syncNow();
+    if (b('soff')) b('soff').onclick = () => { if (confirm('要取消這台的同步嗎？這台的紀錄會留著，只是不再跟別台同步。')) { P.unpair(); render(); } };
+  }
+  // 同步把別台的紀錄合進來後：重新讀取，畫面停在原位（作答中不重畫）
+  window.KEApp = {
+    reload() { loadAll(); if (/^#quiz/.test(location.hash)) return; const y = window.scrollY; render(); window.scrollTo(0, y); },
+    render() { const y = window.scrollY; render(); window.scrollTo(0, y); }
+  };
   function pParent() {
     const days = [];
     for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(ymd(d)); }
@@ -462,6 +522,9 @@
       const k = ymd(new Date(l.t)); cnt[k] = (cnt[k] || 0) + 1;
       const p = per[l.k] || (per[l.k] = { k: l.k, n: 0, ok: 0 }); p.n++; p.ok += l.ok;
     });
+    // 壓縮過的舊紀錄（每題一筆）也算進各主題
+    const agg = S.agg.agg || {};
+    Object.keys(agg).forEach(id => { const m = E.byId[id]; if (!m) return; const p = per[m.tkey] || (per[m.tkey] = { k: m.tkey, n: 0, ok: 0 }); p.n += agg[id].n || 0; p.ok += agg[id].k || 0; });
     const mx = Math.max(1, ...days.map(d => cnt[d] || 0));
     const rows = Object.values(per).map(p => ({ label: E.topicLabel(p.k), mod: KE.MODULES[p.k.split(':')[0]] || '', n: p.n, ok: p.ok, acc: p.ok / p.n }));
     const weak = rows.filter(r => r.n >= 3).sort((a, b) => a.acc - b.acc).slice(0, 5);
@@ -471,10 +534,11 @@
         <p class="muted">累計 ${S.log.length} 題・完成 ${S.progress.quizzes} 回練習・⭐ ${S.progress.stars}・錯題庫 ${mistakeIds().length} 題</p></section>
       <section class="card"><h2>最需要加強的 5 個主題</h2>${weak.length ? `<ol>${weak.map(r => `<li>${esc(r.label)}（${esc(r.mod)}）— 正確率 ${pct(r.acc)}，做了 ${r.n} 題</li>`).join('')}</ol>` : '<p class="muted">每個主題做滿 3 題後就會出現。</p>'}</section>
       <section class="card"><h2>各主題正確率（點標題排序）</h2><div class="tblwrap"><table class="tbl" id="tt"></table></div></section>
-      <section class="card"><h2>學會紀錄（${Object.keys(S.learned).length} 項，點標題排序）</h2><div class="tblwrap"><table class="tbl" id="lt"></table></div></section>
+      <section class="card"><h2>學會紀錄（${E.learnedRows(S.learned).length} 項，點標題排序）</h2><div class="tblwrap"><table class="tbl" id="lt"></table></div></section>
+      ${syncCard()}
       ${voiceCard()}
       <section class="card"><h2>備份與重設</h2><div class="row wrap"><button class="btn" id="exp">📤 匯出備份</button><label class="btn">📥 匯入備份<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn danger" id="rst">🗑️ 清除全部紀錄</button></div><p class="muted">紀錄只存在這台裝置的瀏覽器裡；換裝置前先匯出備份。</p></section>`;
-    bindVoice();
+    bindVoice(); bindSync();
     sortTable($('#tt'), [{ k: 'label', t: '主題' }, { k: 'mod', t: '單元' }, { k: 'n', t: '題數' }, { k: 'ok', t: '答對' }, { k: 'acc', t: '正確率', f: pct }], rows, PS);
     sortTable($('#lt'), [{ k: 'item', t: '項目' }, { k: 'type', t: '類型' }, { k: 'at', t: '學會時間（台北）', f: x => KE.fmtTaipei(x, true) }, { k: 'score', t: '分數' }], E.learnedRows(S.learned), PL);
     $('#exp').onclick = () => {
@@ -502,7 +566,7 @@
       rd.readAsText(f);
     };
     $('#rst').onclick = () => {
-      if (!confirm('確定要清除全部紀錄（星星、錯題、做題紀錄、學會紀錄、設定）嗎？這個動作不能復原。')) return;
+      if (!confirm('確定要清除全部紀錄（星星、錯題、做題紀錄、學會紀錄、設定）嗎？這個動作不能復原。' + (window.KESync && KESync.code() ? '\n\n⚠️ 這台還開著裝置同步，別台的紀錄會再同步回來；要全部清掉，請先按「取消同步」。' : ''))) return;
       KEYS.forEach(k => { try { localStorage.removeItem(k); } catch (e) { } });
       loadAll(); render();
     };

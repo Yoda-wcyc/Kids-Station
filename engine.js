@@ -70,7 +70,8 @@
   function correctIds(log) { const s = new Set(); (log || []).forEach(l => { if (l && l.ok && l.id) s.add(l.id); }); return s; }
   // 「學會了」小測驗是否通過：答對數 ≥ 門檻（從 981d094 移植）
   const gatePassed = (gate, correct) => !!gate && correct >= gate.need;
-  function unsetLearned(L, itemId) { const o = Object.assign({}, L); delete o[itemId]; return o; }
+  // 取消學會：留墓碑 {removedAt}（裝置同步時「最新的事件」勝，取消才會傳到別台、不會被救回）；沒給時間就直接刪
+  function unsetLearned(L, itemId, iso) { const o = Object.assign({}, L); if (iso) o[itemId] = { removedAt: iso }; else delete o[itemId]; return o; }
   const wordItemId = w => 'word:' + slug(w.w), patternItemId = p => 'pattern:' + p.id, grammarItemId = g => 'grammar:' + g.id, rootItemId = r => 'root:' + slug(r.p);
 
   function Engine(data) {

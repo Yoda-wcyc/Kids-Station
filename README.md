@@ -53,7 +53,7 @@ math/ ai/ game/   其他科目的活動頁（見上方「正本位置」）
 deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 ```
 
-紀錄存在瀏覽器 localStorage：`ke_progress`、`ke_mistakes`、`ke_settings`、`ke_log`、`ke_learned`。家長頁可以匯出／匯入 JSON 備份（含學會紀錄）。
+紀錄存在瀏覽器 localStorage：`ke_progress`、`ke_mistakes`、`ke_settings`、`ke_log`、`ke_learned`、`ke_correct`、`ke_agg`（壓縮過的舊紀錄）；配對資訊 `ke_sync`（只在這台）。家長頁可以匯出／匯入 JSON 備份（含學會紀錄）。
 
 「學會了」：每個學習項目有一組固定題目，**每一題都答對過一次**才能按「👍 學會了」（沒完成前是灰色 🔒「還差 N 題」）。
 
@@ -70,6 +70,18 @@ deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 - 通過才記錄時間與小測驗分數（`ke_learned` = `{itemId: {at, score:"4/5"}}`，畫面顯示台北時間），可按「取消」移除。學習頁可篩選 全部／已學會／未學會／可以按學會了；家長頁「學會紀錄」表有分數欄（舊紀錄顯示「—」）。itemId 例：`word:apple`、`root:un`、`grammar:be`、`pattern:lets`。
 - 打字題判分：不分大小寫、空白合併、句尾 .!? 不計、彎引號視同直引號；`typed` 可加 `alts`（例如 `["I'm a student."]`）接受其他正確寫法。答錯會標出第一個不一樣的字。
 
+
+## 裝置同步（iPad ↔ 電腦）
+
+家長頁「☁️ 裝置同步」：第一台按「產生同步碼」（像 `ABCD-EFGH`），另一台輸入同一組碼或打開同步連結（`https://yoda-wcyc.github.io/kids-english/#sync=ABCD-EFGH`），兩台的紀錄就自動合在一起。不用帳號。
+
+- **會同步**：作答紀錄（`ke_log`）、學會紀錄（`ke_learned`）、錯題庫（`ke_mistakes`）。題組進度、能不能按「學會了」都從合併後的作答紀錄算，所以也會一起同步。語音速度等設定**不**同步。
+- **什麼時候**：打開網站、切回這個分頁、做完一回合、按學會了／取消、任何變動後約 3 秒。沒網路就記下來，下次再同步。只有內容真的不一樣才上傳。
+- **合併規則**（`syncmerge.js`，純函式）：每筆作答有固定 id（舊紀錄用「時間｜題號｜答案」的雜湊補，兩台算出來一樣），依 id 聯集；學會紀錄每個項目「最新的事件」勝，取消會留墓碑 `{removedAt}`，所以取消會傳到別台、不會被救回；錯題每題「更新時間 u」最新的勝，畢業也留墓碑。合併可以重複做、順序不影響結果。
+- **大小上限**：一份同步資料最多 1 MB；作答紀錄超過約 500 KB 時，最舊的會壓成每題一筆（保留「第一次答對的時間」），解鎖狀態不變，只是很舊的逐題紀錄不再保留。
+- **隱私**：拿到同步碼的人都看得到練習紀錄（只有練習資料，沒有姓名等個人資料），不要公開分享。「取消同步」只是讓這台不再同步，這台的紀錄會留著。
+- **後端**：獨立的 Vercel 專案 `kids-sync`（https://kids-sync.vercel.app/api/sync，原始碼在 `G:\Yoda x Claude\_deploy\kids-sync\`），只用自己的 Blob store `kids-sync-store`。要換後端只改 `sync.js` 裡的 `backend`（create/get/put）。
+- **測試**：`node test/smoke.js`（含合併規則）；`node test/live-sync.js`（要網路：兩台假裝置對線上 API 同步、確認收斂）。
 
 ## 新增單字（含課本單字）
 
