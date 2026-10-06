@@ -136,6 +136,7 @@ select{min-height:48px;font:inherit;font-size:1rem;padding:6px 12px;border:2px s
 .lfbar .seg{margin:0}
 .prog{margin:0;font-weight:700;color:#16784a}
 .share-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;margin:18px 0 8px}
+.gate-note{text-align:center;font-weight:700;color:#7a3fd1;margin:0 0 8px}
 .drill-note{text-align:center;font-weight:700;color:#7a3fd1;margin:0 0 8px}
 .iprog{margin-top:12px}
 .iprog-t{font-size:.95rem;font-weight:700;color:#16784a}

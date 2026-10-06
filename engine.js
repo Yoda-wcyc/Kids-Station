@@ -68,6 +68,8 @@
   }
   // 答對過的題目（從作答紀錄算）
   function correctIds(log) { const s = new Set(); (log || []).forEach(l => { if (l && l.ok && l.id) s.add(l.id); }); return s; }
+  // 「學會了」小測驗是否通過：答對數 ≥ 門檻（從 981d094 移植）
+  const gatePassed = (gate, correct) => !!gate && correct >= gate.need;
   function unsetLearned(L, itemId) { const o = Object.assign({}, L); delete o[itemId]; return o; }
   const wordItemId = w => 'word:' + slug(w.w), patternItemId = p => 'pattern:' + p.id, grammarItemId = g => 'grammar:' + g.id, rootItemId = r => 'root:' + slug(r.p);
 
@@ -185,6 +187,24 @@
       const ids = this.sets[itemId] || [], missing = ids.filter(id => !correct.has(id));
       return { total: ids.length, done: ids.length - missing.length, missing, complete: ids.length > 0 && !missing.length };
     },
+    // 「學會了」的小測驗（不含開口說；從 981d094 移植）：回傳 {itemId, ids, qs, need, total}；找不到項目回傳 null
+    // 題組還沒全部答對過（鎖住）時傳 correct 會回傳 null，不能開小測驗
+    gate(itemId, correct) {
+      if (correct && !this.progress(itemId, correct).complete) return null;
+      const D = this.D, pick = (a, n) => shuffle(a).slice(0, n);
+      let ids = null, need;
+      const w = D.words.find(x => wordItemId(x) === itemId);
+      const r = !w && D.roots.find(x => rootItemId(x) === itemId);
+      const g = !w && !r && D.grammar.find(x => grammarItemId(x) === itemId);
+      const p = !w && !r && !g && D.patterns.find(x => patternItemId(x) === itemId);
+      if (w) { const k = slug(w.w); ids = [`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:spell`]; need = 3; }
+      else if (r) { ids = [`r:${slug(r.p)}:meaning`].concat(pick(r.words, 2).map(x => `r:${slug(x.w)}:word`)); need = 3; }
+      else if (g) { ids = pick(g.q.map((q, i) => `g:${g.id}:${i}`), 5); need = 4; }
+      else if (p) { const js = pick(p.ex.map((e, j) => j), 3); ids = [`p:${p.id}:${js[0]}:reorder`, `p:${p.id}:${js[1]}:reorder`, `p:${p.id}:${js[2]}:choose`]; need = 3; }
+      if (!ids) return null;
+      const qs = ids.map(id => this.get(id)).filter(Boolean);
+      return { itemId, ids, qs, need, total: qs.length };
+    },
     // 練習這組：只出還沒答對過的題，打字題排最後
     drill(itemId, correct) { return drillOrder(this.progress(itemId, correct).missing.map(id => this.get(id)).filter(Boolean)); },
     topicLabel(tkey) { const m = tkey.split(':')[0]; const t = this.topics(m).find(x => x.key === tkey); return t ? t.label : tkey; },
@@ -229,7 +249,7 @@
     }
   };
 
-  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, typeNorm, typeGrade, isTyped, TYPED_TYPES, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, isTyped, TYPED_TYPES, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);
