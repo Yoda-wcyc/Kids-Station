@@ -11,6 +11,7 @@
   const TYPED_TYPES = ['spell', 'zh2en-type', 'root-type'];
   const isTyped = q => TYPED_TYPES.includes(q && q.type);
   const SRC_LABEL = { moe: '教育部基本字彙' };
+  const PATTERN_LV = { 1: '簡單', 2: '基本', 3: '進階' };
   const POS = { n: '名詞', v: '動詞', adj: '形容詞', adv: '副詞', num: '數字' };
 
   function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -168,7 +169,7 @@
       if (module === 'words') { const s = []; this.D.words.forEach(w => { const t = (w.tags && w.tags[0]) || 'other'; if (!s.includes(t)) s.push(t); }); return s.map(t => ({ key: 'words:' + t, label: TAGS[t] || t })); }
       if (module === 'roots') return Object.keys(ROOT_T).map(t => ({ key: 'roots:' + t, label: ROOT_T[t] }));
       if (module === 'grammar') return this.D.grammar.map(g => ({ key: 'grammar:' + g.id, label: g.title }));
-      if (module === 'patterns') return this.D.patterns.map(p => ({ key: 'patterns:' + p.id, label: p.pattern }));
+      if (module === 'patterns') return this.D.patterns.slice().sort((a, b) => (a.lv || 2) - (b.lv || 2)).map(p => ({ key: 'patterns:' + p.id, label: p.pattern, group: PATTERN_LV[p.lv || 2] }));
       return [];
     },
     // 學會紀錄的項目資訊：word:apple → {item:'apple', type:'單字'}
@@ -250,7 +251,7 @@
     }
   };
 
-  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, isTyped, TYPED_TYPES, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, PATTERN_LV, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, isTyped, TYPED_TYPES, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

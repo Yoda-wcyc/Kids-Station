@@ -281,13 +281,23 @@
     };
     bindLf('grammar', '文法', D.grammar.map(KE.grammarItemId), draw);
   }
+  // 練習設定的主題勾選：有分組（句型的簡單／基本／進階）就分組顯示
+  function topicChecks(m, L) {
+    const ck = t => `<label class="ck sm"><input type="checkbox" name="top" value="${esc(t.key)}" ${L.offT.includes(t.key) ? '' : 'checked'}> ${esc(t.label)}</label>`;
+    const ts = E.topics(m), groups = [...new Set(ts.map(t => t.group).filter(Boolean))];
+    if (!groups.length) return `<div class="wrap">${ts.map(ck).join('')}</div>`;
+    return groups.map(g => `<div class="tgroup"><b>${esc(g)}</b><div class="wrap">${ts.filter(t => t.group === g).map(ck).join('')}</div></div>`).join('');
+  }
+  const PLV = { lv: '' };
   function pPatterns() {
-    app.innerHTML = top('句型', '#learn') + `${lfBar('patterns')}<div class="cards" id="pl"></div>`;
+    app.innerHTML = top('句型', '#learn') + `${radios('plv', [['', '全部等級'], ['1', '簡單'], ['2', '基本'], ['3', '進階']], PLV.lv)}${lfBar('patterns')}<div class="cards" id="pl"></div>`;
+    const lvOf = p => p.lv || 2;
     const draw = () => {
-      $('#pl').innerHTML = D.patterns.filter(p => lfPass('patterns', KE.patternItemId(p))).map(p => `<div class="card pat ${isL(KE.patternItemId(p)) ? 'is-learned' : ''}"><div class="ph en say">${esc(p.pattern)}</div><div class="zh">${esc(p.zh)}</div><div class="exs">${p.ex.map(e => `<div><span class="en say">${esc(e.en)}</span><small>${esc(e.zh)}</small></div>`).join('')}</div><div class="row wrap"><button class="btn primary" data-p="${esc(p.id)}">🎯 練這個句型</button>${learnUI(KE.patternItemId(p))}</div></div>`).join('');
+      $('#pl').innerHTML = D.patterns.slice().sort((a, b) => lvOf(a) - lvOf(b)).filter(p => (!PLV.lv || String(lvOf(p)) === PLV.lv) && lfPass('patterns', KE.patternItemId(p))).map(p => `<div class="card pat ${isL(KE.patternItemId(p)) ? 'is-learned' : ''}"><span class="lvb lv${lvOf(p)}">${KE.PATTERN_LV[lvOf(p)]}</span><div class="ph en say">${esc(p.pattern)}</div><div class="zh">${esc(p.zh)}</div><div class="exs">${p.ex.map(e => `<div><span class="en say">${esc(e.en)}</span><small>${esc(e.zh)}</small></div>`).join('')}</div><div class="row wrap"><button class="btn primary" data-p="${esc(p.id)}">🎯 練這個句型</button>${learnUI(KE.patternItemId(p))}</div></div>`).join('');
       $$('[data-p]').forEach(b => b.onclick = () => startQuiz({ modules: ['patterns'], topics: ['patterns:' + b.dataset.p], count: 10, allowSpeak: canSpeak }));
     };
-    bindLf('patterns', '句型', D.patterns.map(KE.patternItemId), draw);
+    $$('input[name="plv"]').forEach(el => el.onchange = () => { PLV.lv = el.value; draw(); });
+    bindLf('patterns', '句型', D.patterns.map(KE.patternItemId), draw); // 進度一律算全部句型
   }
 
   // ---------- 練習設定 ----------
@@ -296,7 +306,7 @@
     const types = Object.keys(KE.TYPES).filter(y => canSpeak || y !== 'speak');
     const L = Object.assign({ mods: mods.slice(), offT: [], offY: [], count: 10, ratio: 0, lv: '', src: '' }, S.settings.last || {});
     app.innerHTML = top('練習設定') + `
-      <section class="card"><h2>1. 選單元</h2>${mods.map(m => `<div class="mod"><label class="ck"><input type="checkbox" name="mod" value="${m}" ${L.mods.includes(m) ? 'checked' : ''}> ${KE.MODULES[m]}</label><details><summary>選主題</summary><div class="wrap">${E.topics(m).map(t => `<label class="ck sm"><input type="checkbox" name="top" value="${esc(t.key)}" ${L.offT.includes(t.key) ? '' : 'checked'}> ${esc(t.label)}</label>`).join('')}</div></details></div>`).join('')}</section>
+      <section class="card"><h2>1. 選單元</h2>${mods.map(m => `<div class="mod"><label class="ck"><input type="checkbox" name="mod" value="${m}" ${L.mods.includes(m) ? 'checked' : ''}> ${KE.MODULES[m]}</label><details><summary>選主題</summary>${topicChecks(m, L)}</details></div>`).join('')}</section>
       <section class="card"><h2>2. 選題型</h2><div class="wrap">${types.map(y => `<label class="ck"><input type="checkbox" name="typ" value="${y}" ${L.offY.includes(y) ? '' : 'checked'}> ${KE.TYPES[y]}</label>`).join('')}</div>${canSpeak ? '' : '<p class="muted">這台裝置不支援語音辨識，所以沒有「開口說說看」題。</p>'}</section>
       <section class="card"><h2>3. 單字範圍</h2>${radios('lv', [['', '全部等級'], ['1', '等級 1'], ['2', '等級 2']], L.lv)}${srcs.length > 1 ? radios('src', [['', '全部來源']].concat(srcs.map(s => [s, srcLabel(s)])), L.src) : ''}</section>
       <section class="card"><h2>4. 題數和錯題</h2>${radios('count', [['10', '10 題'], ['20', '20 題'], ['30', '30 題']], L.count)}${radios('ratio', [['0', '不加錯題'], ['0.3', '加 30% 錯題'], ['1', '只練錯題']], L.ratio)}<p class="muted">錯題庫目前有 ${mistakeIds().length} 題</p></section>
