@@ -57,6 +57,7 @@ select{min-height:48px;font:inherit;font-size:1rem;padding:6px 12px;border:2px s
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:10px}
 .cards .card{margin:0}
 .word .w{font-size:1.8rem;font-weight:700;color:#d2601a}
+.phrase .w{font-size:1.55rem;margin-top:4px}
 .word .ipa{color:var(--muted);font-size:1rem}
 .pos{background:#fff2dd;border-radius:8px;padding:0 8px;font-size:.8rem}
 .word .zh{font-size:1.2rem;font-weight:600;margin:4px 0}

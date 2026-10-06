@@ -3,9 +3,10 @@
   'use strict';
   const TAGS = { animal: '動物', food: '食物', color: '顏色', number: '數字', family: '家人', school: '學校', body: '身體', weather: '天氣', place: '地方', time: '時間', verb: '動作', adj: '形容詞' };
   const ROOT_T = { prefix: '字首', suffix: '字尾', root: '字根' };
-  const MODULES = { words: '單字', roots: '字根字首', grammar: '文法', patterns: '句型' };
-  const TYPES = { 'listen-choose': '聽音選字', zh2en: '看中文選英文', en2zh: '看英文選中文', spell: '聽寫拼字', 'root-meaning': '字首字尾的意思', 'root-word': '用字根組單字', 'grammar-fill': '文法填空', 'grammar-fix': '挑出正確的句子', reorder: '句子重組', 'pattern-choose': '看中文選句子', 'zh2en-type': '中翻英打字', 'root-type': '字根拼字（打字）', speak: '開口說說看' };
-  const MOD_TYPES = { words: ['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type'], roots: ['root-meaning', 'root-word', 'root-type'], grammar: ['grammar-fill', 'grammar-fix', 'reorder', 'zh2en-type', 'speak'], patterns: ['reorder', 'pattern-choose', 'zh2en-type', 'speak'] };
+  const MODULES = { words: '單字', phrases: '片語', roots: '字根字首', grammar: '文法', patterns: '句型' };
+  const PHRASE_LV = { 1: '必會', 2: '基本', 3: '進階' };
+  const TYPES = { 'listen-choose': '聽音選字', zh2en: '看中文選英文', en2zh: '看英文選中文', spell: '聽寫拼字', 'root-meaning': '字首字尾的意思', 'root-word': '用字根組單字', 'grammar-fill': '文法填空', 'grammar-fix': '挑出正確的句子', reorder: '句子重組', 'pattern-choose': '看中文選句子', 'phrase-fill': '片語填空', 'zh2en-type': '中翻英打字', 'root-type': '字根拼字（打字）', speak: '開口說說看' };
+  const MOD_TYPES = { words: ['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type'], phrases: ['listen-choose', 'zh2en', 'en2zh', 'phrase-fill', 'zh2en-type'], roots: ['root-meaning', 'root-word', 'root-type'], grammar: ['grammar-fill', 'grammar-fix', 'reorder', 'zh2en-type', 'speak'], patterns: ['reorder', 'pattern-choose', 'zh2en-type', 'speak'] };
   const TYPED = 'zh2en-type';
   // 鍵盤打字題（練習一組時排最後；共用同一個打字介面與判分）
   const TYPED_TYPES = ['spell', 'zh2en-type', 'root-type'];
@@ -73,10 +74,11 @@
   const gatePassed = (gate, correct) => !!gate && correct >= gate.need;
   // 取消學會：留墓碑 {removedAt}（裝置同步時「最新的事件」勝，取消才會傳到別台、不會被救回）；沒給時間就直接刪
   function unsetLearned(L, itemId, iso) { const o = Object.assign({}, L); if (iso) o[itemId] = { removedAt: iso }; else delete o[itemId]; return o; }
-  const wordItemId = w => 'word:' + slug(w.w), patternItemId = p => 'pattern:' + p.id, grammarItemId = g => 'grammar:' + g.id, rootItemId = r => 'root:' + slug(r.p);
+  const wordItemId = w => 'word:' + slug(w.w), patternItemId = p => 'pattern:' + p.id, grammarItemId = g => 'grammar:' + g.id, rootItemId = r => 'root:' + slug(r.p), phraseItemId = p => 'phrase:' + p.id;
+  const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   function Engine(data) {
-    const D = this.D = { words: data.words || [], roots: data.roots || [], grammar: data.grammar || [], patterns: data.patterns || [] };
+    const D = this.D = { words: data.words || [], phrases: data.phrases || [], roots: data.roots || [], grammar: data.grammar || [], patterns: data.patterns || [] };
     this.meta = []; this.byId = {};
     const add = (m, make) => { m.tkey = m.module + ':' + m.topic; m.make = () => Object.assign({ id: m.id, module: m.module, topic: m.topic, tkey: m.tkey, type: m.type, title: m.title, why: '' }, make()); this.meta.push(m); this.byId[m.id] = m; };
 
@@ -94,6 +96,25 @@
       add(Object.assign({ id: `w:${key}:en2zh`, type: 'en2zh' }, base), () => ({ prompt: w.w, en: true, play: true, options: choice(w.zh, tiers(x => x.zh)), answer: w.zh, speakText: w.w, why }));
       add(Object.assign({ id: `w:${key}:spell`, type: 'spell' }, base), () => ({ prompt: '聽寫：把聽到的字拼出來', sub: `提示：${w.zh}（${w.w.length} 個字母）`, input: 'type', options: null, answer: w.w, alts: [], speakText: w.w, auto: true, play: true, why }));
       add(Object.assign({ id: `w:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: w.zh, sub: `（${POS[w.pos] || w.pos}）打出這個英文字`, input: 'type', options: null, answer: w.w, alts: [], speakText: w.w, why }));
+    });
+
+    // ---- 片語：聽音選、看中文選、看英文選、例句填空、中翻英打字 ----
+    D.phrases.forEach(ph => {
+      const topic = ph.lv + '|' + ph.tag, ans = ph.form || ph.p, key = ph.id, why = `${ph.p} ＝ ${ph.zh}`;
+      // 選擇題：同等級同類別優先（比較難）；填空題：用「不同類別」的片語當干擾，避免干擾選項也剛好通順
+      const tiers = (f, sameTag) => {
+        const others = D.phrases.filter(x => x !== ph), lv = others.filter(x => x.lv === ph.lv);
+        return sameTag ? [lv.filter(x => x.tag === ph.tag).map(f), lv.map(f), others.map(f)] : [lv.filter(x => x.tag !== ph.tag).map(f), others.filter(x => x.tag !== ph.tag).map(f)];
+      };
+      const base = { module: 'phrases', topic, lv: ph.lv, title: `${ph.p}　${ph.zh}` };
+      add(Object.assign({ id: `ph:${key}:listen`, type: 'listen-choose' }, base), () => ({ prompt: '聽聽看，是哪一個片語？', options: choice(ph.p, tiers(x => x.p, true)), answer: ph.p, speakText: ph.p, auto: true, play: true, why }));
+      add(Object.assign({ id: `ph:${key}:zh2en`, type: 'zh2en' }, base), () => ({ prompt: ph.zh, options: choice(ph.p, tiers(x => x.p, true)), answer: ph.p, speakText: ph.p, why }));
+      add(Object.assign({ id: `ph:${key}:en2zh`, type: 'en2zh' }, base), () => ({ prompt: ph.p, en: true, play: true, options: choice(ph.zh, tiers(x => x.zh, true)), answer: ph.zh, speakText: ph.p, why }));
+      add(Object.assign({ id: `ph:${key}:fill`, type: 'phrase-fill' }, base), () => ({
+        prompt: ph.ex.replace(new RegExp(escRe(ans), 'i'), '___'), sub: '選出放進空格的片語', options: choice(ans, tiers(x => x.form || x.p, false)),
+        answer: ans, speakText: ph.ex, why: `${ph.p}（${ph.zh}）：${ph.exZh}`
+      }));
+      add(Object.assign({ id: `ph:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: ph.zh, sub: '打出這個英文片語', input: 'type', options: null, answer: ph.p, alts: ph.form ? [ph.form] : [], speakText: ph.p, why }));
     });
 
     // ---- 字根字首 ----
@@ -153,6 +174,7 @@
     this.sets = {};
     const keep = ids => ids.filter(id => this.byId[id]);
     D.words.forEach(w => { const k = slug(w.w); this.sets[wordItemId(w)] = keep([`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:en2zh`, `w:${k}:spell`, `w:${k}:type`]); });
+    D.phrases.forEach(ph => { this.sets[phraseItemId(ph)] = keep(['listen', 'zh2en', 'en2zh', 'fill', 'type'].map(t => `ph:${ph.id}:${t}`)); });
     D.roots.forEach(r => { this.sets[rootItemId(r)] = keep([`r:${slug(r.p)}:meaning`].concat(r.words.map(x => `r:${slug(x.w)}:word`), r.words.map(x => `r:${slug(x.w)}:type`))); });
     D.grammar.forEach(g => { this.sets[grammarItemId(g)] = keep(g.q.map((q, i) => `g:${g.id}:${i}`).concat((g.typed || []).map((t, k) => `g:${g.id}:t${k}`))); });
     D.patterns.forEach(p => { this.sets[patternItemId(p)] = keep(p.ex.map((e, j) => `p:${p.id}:${j}:reorder`).concat(p.ex.map((e, j) => `p:${p.id}:${j}:choose`), (p.extra || []).map((e, k) => `p:${p.id}:x${k}:reorder`), (p.typed || []).map((t, k) => `p:${p.id}:t${k}`))); });
@@ -167,6 +189,7 @@
     sources() { return [...new Set(this.D.words.map(w => w.src || 'moe'))]; },
     topics(module) {
       if (module === 'words') { const s = []; this.D.words.forEach(w => { const t = (w.tags && w.tags[0]) || 'other'; if (!s.includes(t)) s.push(t); }); return s.map(t => ({ key: 'words:' + t, label: TAGS[t] || t })); }
+      if (module === 'phrases') { const seen = []; this.D.phrases.slice().sort((a, b) => a.lv - b.lv).forEach(p => { const t = p.lv + '|' + p.tag; if (!seen.includes(t)) seen.push(t); }); return seen.map(t => { const [lv, tag] = t.split('|'); return { key: 'phrases:' + t, label: tag, group: PHRASE_LV[lv] }; }); }
       if (module === 'roots') return Object.keys(ROOT_T).map(t => ({ key: 'roots:' + t, label: ROOT_T[t] }));
       if (module === 'grammar') return this.D.grammar.map(g => ({ key: 'grammar:' + g.id, label: g.title }));
       if (module === 'patterns') return this.D.patterns.slice().sort((a, b) => (a.lv || 2) - (b.lv || 2)).map(p => ({ key: 'patterns:' + p.id, label: p.pattern, group: PATTERN_LV[p.lv || 2] }));
@@ -178,6 +201,7 @@
       const p = this.D.patterns.find(x => patternItemId(x) === itemId); if (p) return { item: p.pattern, zh: p.zh, type: '句型' };
       const g = this.D.grammar.find(x => grammarItemId(x) === itemId); if (g) return { item: g.title, zh: '', type: '文法' };
       const r = this.D.roots.find(x => rootItemId(x) === itemId); if (r) return { item: r.p, zh: r.m, type: '字根' };
+      const ph = this.D.phrases.find(x => phraseItemId(x) === itemId); if (ph) return { item: ph.p, zh: ph.zh, type: '片語' };
       return { item: itemId, zh: '', type: '' };
     },
     // 家長頁用：學會紀錄表，預設新到舊；舊紀錄沒有分數顯示「—」
@@ -199,6 +223,8 @@
       const r = !w && D.roots.find(x => rootItemId(x) === itemId);
       const g = !w && !r && D.grammar.find(x => grammarItemId(x) === itemId);
       const p = !w && !r && !g && D.patterns.find(x => patternItemId(x) === itemId);
+      const ph = !w && !r && !g && !p && D.phrases.find(x => phraseItemId(x) === itemId);
+      if (ph) ids = [`ph:${ph.id}:zh2en`, `ph:${ph.id}:fill`, `ph:${ph.id}:type`], need = 3;
       if (w) { const k = slug(w.w); ids = [`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:spell`]; need = 3; }
       else if (r) { ids = [`r:${slug(r.p)}:meaning`].concat(pick(r.words, 2).map(x => `r:${slug(x.w)}:word`)); need = 3; }
       else if (g) { ids = pick(g.q.map((q, i) => `g:${g.id}:${i}`), 5); need = 4; }
@@ -209,7 +235,7 @@
     },
     // 練習這組：只出還沒答對過的題，打字題排最後
     drill(itemId, correct) { return drillOrder(this.progress(itemId, correct).missing.map(id => this.get(id)).filter(Boolean)); },
-    topicLabel(tkey) { const m = tkey.split(':')[0]; const t = this.topics(m).find(x => x.key === tkey); return t ? t.label : tkey; },
+    topicLabel(tkey) { const m = tkey.split(':')[0]; const t = this.topics(m).find(x => x.key === tkey); return t ? (t.group && m === 'phrases' ? `${t.group}・${t.label}` : t.label) : tkey; },
     // f: {modules, topics(tkey 陣列), types, src, lv, allowSpeak, ids}
     list(f) {
       f = f || {};
@@ -251,7 +277,7 @@
     }
   };
 
-  const KE = { Engine, PATTERN_LV, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, isTyped, TYPED_TYPES, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, isTyped, TYPED_TYPES, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

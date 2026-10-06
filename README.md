@@ -44,6 +44,7 @@ style.css         樣式（淺色、大按鈕）
 engine.js         題目引擎：不碰 DOM，瀏覽器與 Node 共用（window.KE / module.exports）
 app.js            畫面、路由、localStorage、語音（speechSynthesis / SpeechRecognition）
 data/words.js     單字 window.DATA_WORDS
+data/phrases.js   片語 window.DATA_PHRASES（{id,p,zh,lv,tag,ex,exZh,form?}；lv 1 必會／2 基本／3 進階）
 data/roots.js     字首字尾字根 window.DATA_ROOTS
 data/grammar.js   文法 12 主題 window.DATA_GRAMMAR
 data/patterns.js  句型 12 個 window.DATA_PATTERNS
@@ -60,6 +61,7 @@ deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 | 項目 | 題組（打字題一律排最後） |
 |---|---|
 | 單字 | 5 題：聽音選字、看中文選英文、看英文選中文，＋打字：聽寫拼字、中翻英打字 |
+| 片語 | 5 題：聽音選、看中文選、看英文選、例句填空（干擾選項用不同類別的片語），＋打字：中翻英打字（原形或 `form` 都算對）。小測驗＝看中文選＋填空＋打字，3/3 |
 | 字根 | 1＋2n 題：字首字尾的意思、每個衍生字的「用字根組單字」，＋打字：每個衍生字的「字根拼字」（藏一部分當提示） |
 | 文法 | 15 題：13 題填空／挑正確句，＋2 題中翻英打字（`grammar.js` 的 `typed`） |
 | 句型 | 15 題：5 題重組＋5 題看中文選句子（同一組例句）＋3 題加練重組（`extra`），＋2 題中翻英打字（`typed`）。共 48 個：`lv` 1 簡單 24 個、2 基本 12 個、3 進階 12 個 |

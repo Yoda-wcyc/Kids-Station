@@ -3,8 +3,8 @@
 const vm = require('vm'), fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
 const ctx = { window: {} }; vm.createContext(ctx);
-['words', 'roots', 'grammar', 'patterns'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
-const W = ctx.window.DATA_WORDS, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS;
+['words', 'phrases', 'roots', 'grammar', 'patterns'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
+const W = ctx.window.DATA_WORDS, PH = ctx.window.DATA_PHRASES, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS;
 const KE = require(path.join(root, 'engine.js'));
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 
@@ -46,7 +46,18 @@ P.forEach(p => p.typed.forEach(t => (t.alts || []).forEach(a => ok(a !== t.en &&
 P.forEach(p => ok(p.extra.length === 3 && p.extra.every(e => e.en && e.zh) && p.typed.length === 2 && p.typed.every(t => t.zh && t.en), 'pattern extra/typed ' + p.id));
 
 // ---- 引擎 ----
-const E = new KE.Engine({ words: W, roots: R, grammar: G, patterns: P });
+// ---- 片語資料 ----
+const PH_TAGS = ['動詞片語', '介系詞片語', '時間', '地點', '日常用語', '形容詞片語'];
+ok(PH.length >= 190 && PH.length <= 210, 'phrases ~200: ' + PH.length);
+ok(new Set(PH.map(p => p.id)).size === PH.length, 'phrase ids unique');
+ok(new Set(PH.map(p => p.p.toLowerCase())).size === PH.length, 'phrases unique');
+ok(new Set(PH.map(p => p.zh)).size === PH.length, 'phrase zh unique (en2zh options never ambiguous)');
+PH.forEach(p => {
+  ok(p.p && p.zh && p.ex && p.exZh && [1, 2, 3].includes(p.lv) && PH_TAGS.includes(p.tag), 'phrase fields ' + p.id);
+  ok(p.ex.toLowerCase().includes((p.form || p.p).toLowerCase()), `example contains phrase/form: ${p.id} → ${p.ex}`);
+  if (p.form) ok(p.form !== p.p, 'form differs from base ' + p.id);
+});
+const E = new KE.Engine({ words: W, phrases: PH, roots: R, grammar: G, patterns: P });
 ok(new Set(E.meta.map(m => m.id)).size === E.meta.length, 'unique ids');
 const counts = {};
 Object.keys(KE.TYPES).forEach(type => {
@@ -83,7 +94,29 @@ ok(E.buildQuiz({ modules: ['words'], src: 'textbook-x', count: 10 }).length === 
 // ---- 學會紀錄 ----
 ok(KE.fmtTaipei('2026-10-05T12:31:09Z') === '10/05 20:31' && KE.fmtTaipei('2026-10-05T16:05:00Z', true) === '2026-10-06 00:05:00', 'taipei time');
 ok(KE.fmtTaipei('') === '' && KE.fmtTaipei('bad') === '', 'taipei time empty/bad');
-const allItems = W.map(KE.wordItemId).concat(R.map(KE.rootItemId), G.map(KE.grammarItemId), P.map(KE.patternItemId));
+const allItems = W.map(KE.wordItemId).concat(PH.map(KE.phraseItemId), R.map(KE.rootItemId), G.map(KE.grammarItemId), P.map(KE.patternItemId));
+// 片語：題組 5 題、打字最後；填空題干擾選項不等於答案、空格只有一個；小測驗＝看中文選＋填空＋打字，3/3
+PH.forEach(p => {
+  const id = KE.phraseItemId(p), ids = E.itemSet(id), t = ids.map(q => E.byId[q].type);
+  ok(ids.length === 5 && t.join() === 'listen-choose,zh2en,en2zh,phrase-fill,zh2en-type', 'phrase set ' + p.id);
+  for (let k = 0; k < 3; k++) {
+    const f = E.get(`ph:${p.id}:fill`);
+    ok((f.prompt.match(/___/g) || []).length === 1 && f.options.length === 4 && f.options.includes(f.answer) && new Set(f.options).size === 4 && f.options.filter(o => o === f.answer).length === 1, 'phrase fill options ' + p.id + ' ' + f.options);
+  }
+  const ty = E.get(`ph:${p.id}:type`);
+  ok(E.check(ty, p.p).ok && (!p.form || E.check(ty, p.form).ok) && E.check(ty, p.p.toUpperCase() + '.').ok, 'phrase typed accepts base/form ' + p.id);
+  const g = E.gate(id, new Set(ids));
+  ok(g && g.need === 3 && g.qs.map(q => q.type).join() === 'zh2en,phrase-fill,zh2en-type', 'phrase mini quiz ' + p.id);
+  ok(E.gate(id, new Set()) === null, 'locked phrase cannot open mini quiz ' + p.id);
+});
+{ // 片語也走同一套同步：作答與學會紀錄合併後，題組解鎖狀態一致
+  const SMp = require(path.join(root, 'syncmerge.js')), ids = E.itemSet('phrase:get-up');
+  const a = { log: ids.slice(0, 3).map((id, i) => ({ t: 1e12 + i, id, ok: 1, a: 'x' })) }, b = { log: ids.slice(3).map((id, i) => ({ t: 1e12 + 9 + i, id, ok: 1, a: 'y' })), learned: { 'phrase:get-up': { at: '2026-10-06T00:00:00Z', score: '3/3' } } };
+  const m = SMp.merge(a, b);
+  ok(E.progress('phrase:get-up', SMp.correctIds(m)).complete && m.learned['phrase:get-up'].score === '3/3' && SMp.canon(m) === SMp.canon(SMp.merge(b, a)), 'phrases sync like every other module');
+}
+ok(E.itemInfo('phrase:get-up').type === '片語' && E.topicLabel('phrases:1|動詞片語') === '必會・動詞片語', 'phrase itemInfo/topicLabel');
+ok(E.topics('phrases').every(t => t.group) && E.topics('phrases')[0].group === '必會', 'phrase topics grouped by level');
 ok(new Set(allItems).size === allItems.length, 'unique learned item ids');
 ok(allItems.every(id => E.itemInfo(id).type), 'itemInfo for every item');
 ok(E.itemInfo('word:apple').item === 'apple' && E.itemInfo('word:apple').type === '單字', 'itemInfo word');
@@ -265,5 +298,5 @@ fs.readdirSync(path.join(root, 'game/scratch-td/web')).filter(f => f.endsWith('.
 });
 ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
 
-console.log(`OK  ${checks} checks | words ${W.length} (lv1 ${W.filter(w => w.lv === 1).length}, lv2 ${W.filter(w => w.lv === 2).length}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
+console.log(`OK  ${checks} checks | words ${W.length} (lv1 ${W.filter(w => w.lv === 1).length}, lv2 ${W.filter(w => w.lv === 2).length}) | phrases ${PH.length} (${[1, 2, 3].map(l => PH.filter(p => p.lv === l).length).join('/')}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
 console.log('pool per type:', JSON.stringify(counts));

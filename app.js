@@ -1,7 +1,7 @@
 /* app.js — 畫面、路由、儲存、語音 */
 (function () {
   'use strict';
-  const D = { words: window.DATA_WORDS || [], roots: window.DATA_ROOTS || [], grammar: window.DATA_GRAMMAR || [], patterns: window.DATA_PATTERNS || [] };
+  const D = { words: window.DATA_WORDS || [], phrases: window.DATA_PHRASES || [], roots: window.DATA_ROOTS || [], grammar: window.DATA_GRAMMAR || [], patterns: window.DATA_PATTERNS || [] };
   const E = new KE.Engine(D);
   const app = document.getElementById('app');
   const $ = (s, r) => (r || document).querySelector(s);
@@ -167,7 +167,7 @@
     const t = $('#tryv'); if (t) t.onclick = () => speak('Hello! How are you?');
   }
   // ---------- 學會了 ----------
-  const LS = { words: '', roots: '', grammar: '', patterns: '' };
+  const LS = { words: '', phrases: '', roots: '', grammar: '', patterns: '' };
   const isL = id => !!(S.learned[id] && S.learned[id].at);
   const isReady = id => !isL(id) && E.progress(id, S.correct).complete;
   const lfPass = (page, id) => !LS[page] || (LS[page] === 'ready' ? isReady(id) : (LS[page] === 'yes') === isL(id));
@@ -245,7 +245,8 @@
     if (sub === 'roots') return pRoots();
     if (sub === 'grammar') return pGrammar();
     if (sub === 'patterns') return pPatterns();
-    app.innerHTML = top('學習') + `<div class="tiles">${tile('#learn/words', '🔤', '單字卡', `${D.words.length} 個常用字`, 'c1')}${tile('#learn/roots', '🧩', '字根字首', `${D.roots.length} 組拆字密碼`, 'c2')}${tile('#learn/grammar', '📐', '文法', `${D.grammar.length} 個主題`, 'c3')}${tile('#learn/patterns', '💬', '句型', `${D.patterns.length} 個好用句型`, 'c4')}</div>`;
+    if (sub === 'phrases') return pPhrases();
+    app.innerHTML = top('學習') + `<div class="tiles">${tile('#learn/words', '🔤', '單字卡', `${D.words.length} 個常用字`, 'c1')}${tile('#learn/phrases', '🔗', '片語', `${D.phrases.length} 個常用片語`, 'c5')}${tile('#learn/roots', '🧩', '字根字首', `${D.roots.length} 組拆字密碼`, 'c2')}${tile('#learn/grammar', '📐', '文法', `${D.grammar.length} 個主題`, 'c3')}${tile('#learn/patterns', '💬', '句型', `${D.patterns.length} 個好用句型`, 'c4')}</div>`;
   }
   function pWords() {
     const srcs = E.sources(), tags = [...new Set(D.words.flatMap(w => w.tags || []))];
@@ -280,6 +281,22 @@
       $$('[data-g]').forEach(b => b.onclick = () => startQuiz({ modules: ['grammar'], topics: ['grammar:' + b.dataset.g], count: 10, allowSpeak: canSpeak }));
     };
     bindLf('grammar', '文法', D.grammar.map(KE.grammarItemId), draw);
+  }
+  // ---------- 片語 ----------
+  const PHF = { lv: '', tag: '' };
+  function pPhrases() {
+    const tags = [...new Set(D.phrases.map(p => p.tag))];
+    app.innerHTML = top('片語', '#learn') + `${radios('phlv', [['', '全部等級'], ['1', '必會'], ['2', '基本'], ['3', '進階']], PHF.lv)}
+      <div class="filters"><select id="phtag" aria-label="類別"><option value="">全部類別</option>${tags.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}</select></div>
+      ${lfBar('phrases')}<p class="muted" id="phn"></p><div class="cards" id="phl"></div>`;
+    const draw = () => {
+      const L = D.phrases.filter(p => (!PHF.lv || String(p.lv) === PHF.lv) && (!PHF.tag || p.tag === PHF.tag) && lfPass('phrases', KE.phraseItemId(p)));
+      $('#phn').textContent = `這裡有 ${L.length} 個片語，點英文就會唸`;
+      $('#phl').innerHTML = L.map(p => `<div class="card word phrase ${isL(KE.phraseItemId(p)) ? 'is-learned' : ''}"><span class="lvb lv${p.lv}">${KE.PHRASE_LV[p.lv]}</span> <span class="tag">${esc(p.tag)}</span><div class="w en say">${esc(p.p)}</div><div class="zh">${esc(p.zh)}</div><div class="ex en say">${esc(p.ex)}</div><div class="exzh">${esc(p.exZh)}</div>${learnUI(KE.phraseItemId(p))}</div>`).join('');
+    };
+    $$('input[name="phlv"]').forEach(el => el.onchange = () => { PHF.lv = el.value; draw(); });
+    const t = $('#phtag'); t.value = PHF.tag; t.onchange = () => { PHF.tag = t.value; draw(); };
+    bindLf('phrases', '片語', D.phrases.map(KE.phraseItemId), draw);
   }
   // 練習設定的主題勾選：有分組（句型的簡單／基本／進階）就分組顯示
   function topicChecks(m, L) {
