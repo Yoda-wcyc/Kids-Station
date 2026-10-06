@@ -3,22 +3,28 @@
 const vm = require('vm'), fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
 const ctx = { window: {} }; vm.createContext(ctx);
-['words', 'phrases', 'roots', 'grammar', 'patterns'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
+['words', 'words-2', 'words-3', 'words-4', 'phrases', 'roots', 'grammar', 'patterns'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
 const W = ctx.window.DATA_WORDS, PH = ctx.window.DATA_PHRASES, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS;
 const KE = require(path.join(root, 'engine.js'));
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 
 // ---- 資料格式 ----
-ok(W.length >= 200, 'words count ' + W.length);
-const seenW = new Set(), seenZh = new Set();
+ok(W.length >= 1200 && W.length <= 1230, 'words ≈ 1200: ' + W.length);
+const seenW = new Set();
 W.forEach(w => {
   ['w', 'ipa', 'pos', 'zh', 'ex', 'exZh', 'src'].forEach(k => ok(typeof w[k] === 'string' && w[k].length, `${w.w}.${k}`));
   ok(/^\/.+\/$/.test(w.ipa), 'ipa ' + w.w);
-  ok([1, 2].includes(w.lv), 'lv ' + w.w);
+  ok([1, 2, 3].includes(w.lv), 'lv ' + w.w);
+  ok(KE.POS[w.pos], 'pos ' + w.w + ' ' + w.pos);
+  ok(['moe1200', 'extra'].includes(w.src), 'src ' + w.w + ' ' + w.src);
   ok(Array.isArray(w.tags) && w.tags.length && w.tags.every(t => KE.TAGS[t]), 'tags ' + w.w);
-  ok(!seenW.has(w.w.toLowerCase()), 'duplicate word ' + w.w); seenW.add(w.w.toLowerCase());
-  ok(!seenZh.has(w.zh), 'duplicate zh ' + w.zh); seenZh.add(w.zh);
+  ok(w.ex.toLowerCase().includes((w.form || w.w).toLowerCase()), `example contains word/form: ${w.w} → ${w.ex}`);
+  const key = KE.wordKey(w); ok(!seenW.has(key), 'duplicate word key ' + key); seenW.add(key);
 });
+ok(W.filter(w => w.src === 'extra').map(w => w.w).sort().join() === 'dumpling,giraffe,kangaroo,panda', 'only 4 words outside the official 1200 list (marked extra)');
+const lvCount = [1, 2, 3].map(l => W.filter(w => w.lv === l).length);
+ok(lvCount.every(n => n >= 350 && n <= 450), 'levels ≈ 400 each: ' + lvCount);
+['cat', 'apple', 'happy', 'Monday', 'noodles'].forEach(w => ok(W.find(x => x.w === w && x.src === 'moe1200'), 'original word kept: ' + w));
 const seenM = new Set();
 R.forEach(r => {
   ok(r.p && r.m && ['prefix', 'suffix', 'root'].includes(r.t), 'root ' + r.p);
@@ -57,7 +63,18 @@ PH.forEach(p => {
   ok(p.ex.toLowerCase().includes((p.form || p.p).toLowerCase()), `example contains phrase/form: ${p.id} → ${p.ex}`);
   if (p.form) ok(p.form !== p.p, 'form differs from base ' + p.id);
 });
+const tBuild0 = process.hrtime.bigint();
 const E = new KE.Engine({ words: W, phrases: PH, roots: R, grammar: G, patterns: P });
+const tBuild1 = process.hrtime.bigint();
+const allQs = E.meta.map(m => m.make()); // 整個例題庫每一題都產生一次（含干擾選項）
+const tBuild2 = process.hrtime.bigint();
+const msEngine = Number(tBuild1 - tBuild0) / 1e6, msBank = Number(tBuild2 - tBuild1) / 1e6;
+ok(msEngine < 1000 && msBank < 15000, `bank build time engine ${msEngine.toFixed(0)} ms, all questions ${msBank.toFixed(0)} ms`);
+// 單字選擇題：選項不重複、看中文選英文的干擾字中文意思不能一樣
+allQs.filter(q => q.module === 'words' && q.options).forEach(q => {
+  ok(new Set(q.options).size === q.options.length && q.options.includes(q.answer), 'word options ' + q.id);
+  if (q.type === 'zh2en') { const zhOf = new Map(W.map(w => [w.w, w.zh])); ok(q.options.filter(o => o !== q.answer).every(o => zhOf.get(o) !== q.prompt), 'zh2en distractor has same zh: ' + q.id); }
+});
 ok(new Set(E.meta.map(m => m.id)).size === E.meta.length, 'unique ids');
 const counts = {};
 Object.keys(KE.TYPES).forEach(type => {
@@ -298,5 +315,7 @@ fs.readdirSync(path.join(root, 'game/scratch-td/web')).filter(f => f.endsWith('.
 });
 ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
 
-console.log(`OK  ${checks} checks | words ${W.length} (lv1 ${W.filter(w => w.lv === 1).length}, lv2 ${W.filter(w => w.lv === 2).length}) | phrases ${PH.length} (${[1, 2, 3].map(l => PH.filter(p => p.lv === l).length).join('/')}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
+ok(E.itemSet('word:may-month').length === 5 && E.itemSet('word:may').length === 5 && E.get('w:may-month:zh2en').answer === 'May' && E.get('w:may:zh2en').answer === 'may', 'May / may keep separate ids');
+console.log(`bank build: engine ${msEngine.toFixed(0)} ms, all ${allQs.length} questions ${msBank.toFixed(0)} ms`);
+console.log(`OK  ${checks} checks | words ${W.length} (lv ${lvCount.join('/')}) | phrases ${PH.length} (${[1, 2, 3].map(l => PH.filter(p => p.lv === l).length).join('/')}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
 console.log('pool per type:', JSON.stringify(counts));

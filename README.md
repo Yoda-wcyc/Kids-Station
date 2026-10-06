@@ -44,6 +44,7 @@ style.css         樣式（淺色、大按鈕）
 engine.js         題目引擎：不碰 DOM，瀏覽器與 Node 共用（window.KE / module.exports）
 app.js            畫面、路由、localStorage、語音（speechSynthesis / SpeechRecognition）
 data/words.js     單字 window.DATA_WORDS
+data/words-2..4.js 單字（續）：教育部國中小基本 1200 字，每支用 window.DATA_WORDS = (window.DATA_WORDS||[]).concat([...]) 接在 words.js 後面
 data/phrases.js   片語 window.DATA_PHRASES（{id,p,zh,lv,tag,ex,exZh,form?}；lv 1 必會／2 基本／3 進階）
 data/roots.js     字首字尾字根 window.DATA_ROOTS
 data/grammar.js   文法 12 主題 window.DATA_GRAMMAR
@@ -84,6 +85,13 @@ deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 - **隱私**：拿到同步碼的人都看得到練習紀錄（只有練習資料，沒有姓名等個人資料），不要公開分享。「取消同步」只是讓這台不再同步，這台的紀錄會留著。
 - **後端**：獨立的 Vercel 專案 `kids-sync`（https://kids-sync.vercel.app/api/sync，原始碼在 `G:\Yoda x Claude\_deploy\kids-sync\`），只用自己的 Blob store `kids-sync-store`。要換後端只改 `sync.js` 裡的 `backend`（create/get/put）。
 - **測試**：`node test/smoke.js`（含合併規則）；`node test/live-sync.js`（要網路：兩台假裝置對線上 API 同步、確認收斂）。
+
+## 單字庫（1215 字）
+
+- 來源：**十二年國教課綱 英語文（國家教育研究院）附錄五 參考字彙表 表一「基本 1,200 字」**（官方 PDF 逐字解析，共 1,211 個詞條）。全部標 `src:"moe1200"`；原本 240 字裡不在表內的 4 個（giraffe、panda、kangaroo、dumpling）標 `src:"extra"`（補充字）。官方的 noodle 用原有的 noodles。
+- 等級：lv1 387／lv2 423／lv3 405。主題 tag 見 `engine.js` 的 `TAGS`（新增 clothing、transport、sport、job、house、feeling、nature、function、people、thing、holiday）。
+- 撞名的字（May／may、Miss／miss）在資料裡寫 `id`（`may-month`、`miss-title`），題號才不會重複。例句裡用的是變化形時寫 `form`。
+- 單字卡頁一頁 40 張、可搜尋英文或中文；進度與篩選都以全部 1215 字計算。
 
 ## 新增單字（含課本單字）
 

@@ -1,7 +1,8 @@
 /* engine.js — 題目引擎（不碰 DOM；瀏覽器與 Node 都能用） */
 (function (root) {
   'use strict';
-  const TAGS = { animal: '動物', food: '食物', color: '顏色', number: '數字', family: '家人', school: '學校', body: '身體', weather: '天氣', place: '地方', time: '時間', verb: '動作', adj: '形容詞' };
+  const TAGS = { animal: '動物', food: '食物', color: '顏色', number: '數字', family: '家人', school: '學校', body: '身體', weather: '天氣', place: '地方', time: '時間', verb: '動作', adj: '形容詞',
+    clothing: '衣物', transport: '交通', sport: '運動', job: '職業', house: '家裡', feeling: '心情', nature: '自然', function: '功能字', people: '人', thing: '東西', holiday: '節日' };
   const ROOT_T = { prefix: '字首', suffix: '字尾', root: '字根' };
   const MODULES = { words: '單字', phrases: '片語', roots: '字根字首', grammar: '文法', patterns: '句型' };
   const PHRASE_LV = { 1: '必會', 2: '基本', 3: '進階' };
@@ -11,9 +12,11 @@
   // 鍵盤打字題（練習一組時排最後；共用同一個打字介面與判分）
   const TYPED_TYPES = ['spell', 'zh2en-type', 'root-type'];
   const isTyped = q => TYPED_TYPES.includes(q && q.type);
-  const SRC_LABEL = { moe: '教育部基本字彙' };
+  const SRC_LABEL = { moe: '教育部基本字彙', moe1200: '教育部 1200 字', extra: '補充字' };
   const PATTERN_LV = { 1: '簡單', 2: '基本', 3: '進階' };
-  const POS = { n: '名詞', v: '動詞', adj: '形容詞', adv: '副詞', num: '數字' };
+  const POS = { n: '名詞', v: '動詞', adj: '形容詞', adv: '副詞', num: '數字', pron: '代名詞', prep: '介系詞', conj: '連接詞', art: '冠詞', int: '感嘆詞', aux: '助動詞' };
+  // 單字的題號：通常是 slug(w)；跟別的字撞名（May／may、Miss／miss）時用資料裡的 id
+  const wordKey = w => w.id || slug(w.w);
 
   function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   function norm(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' '); }
@@ -74,7 +77,7 @@
   const gatePassed = (gate, correct) => !!gate && correct >= gate.need;
   // 取消學會：留墓碑 {removedAt}（裝置同步時「最新的事件」勝，取消才會傳到別台、不會被救回）；沒給時間就直接刪
   function unsetLearned(L, itemId, iso) { const o = Object.assign({}, L); if (iso) o[itemId] = { removedAt: iso }; else delete o[itemId]; return o; }
-  const wordItemId = w => 'word:' + slug(w.w), patternItemId = p => 'pattern:' + p.id, grammarItemId = g => 'grammar:' + g.id, rootItemId = r => 'root:' + slug(r.p), phraseItemId = p => 'phrase:' + p.id;
+  const wordItemId = w => 'word:' + wordKey(w), patternItemId = p => 'pattern:' + p.id, grammarItemId = g => 'grammar:' + g.id, rootItemId = r => 'root:' + slug(r.p), phraseItemId = p => 'phrase:' + p.id;
   const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   function Engine(data) {
@@ -84,10 +87,11 @@
 
     // ---- 單字 ----
     D.words.forEach(w => {
-      const topic = (w.tags && w.tags[0]) || 'other', key = slug(w.w);
+      const topic = (w.tags && w.tags[0]) || 'other', key = wordKey(w);
+      // 干擾選項：同等級同主題 → 同詞性 → 同等級 → 全部；中文意思一樣的字不當干擾（看中文選英文才不會兩個都對）
       const tiers = f => {
-        const lv = D.words.filter(x => x !== w && x.lv === w.lv);
-        return [lv.filter(x => (x.tags || []).some(t => (w.tags || []).includes(t))).map(f), lv.filter(x => x.pos === w.pos).map(f), lv.map(f), D.words.filter(x => x !== w).map(f)];
+        const others = D.words.filter(x => x !== w && x.zh !== w.zh), lv = others.filter(x => x.lv === w.lv);
+        return [lv.filter(x => (x.tags || []).some(t => (w.tags || []).includes(t))).map(f), lv.filter(x => x.pos === w.pos).map(f), lv.map(f), others.map(f)];
       };
       const why = `${w.w} ${w.ipa || ''} ＝ ${w.zh}`;
       const base = { module: 'words', topic, lv: w.lv, src: w.src || 'moe', title: `${w.w}　${w.zh}` };
@@ -173,7 +177,7 @@
     // ---- 每個學習項目的固定題組（全部答對過才能按「學會了」）----
     this.sets = {};
     const keep = ids => ids.filter(id => this.byId[id]);
-    D.words.forEach(w => { const k = slug(w.w); this.sets[wordItemId(w)] = keep([`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:en2zh`, `w:${k}:spell`, `w:${k}:type`]); });
+    D.words.forEach(w => { const k = wordKey(w); this.sets[wordItemId(w)] = keep([`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:en2zh`, `w:${k}:spell`, `w:${k}:type`]); });
     D.phrases.forEach(ph => { this.sets[phraseItemId(ph)] = keep(['listen', 'zh2en', 'en2zh', 'fill', 'type'].map(t => `ph:${ph.id}:${t}`)); });
     D.roots.forEach(r => { this.sets[rootItemId(r)] = keep([`r:${slug(r.p)}:meaning`].concat(r.words.map(x => `r:${slug(x.w)}:word`), r.words.map(x => `r:${slug(x.w)}:type`))); });
     D.grammar.forEach(g => { this.sets[grammarItemId(g)] = keep(g.q.map((q, i) => `g:${g.id}:${i}`).concat((g.typed || []).map((t, k) => `g:${g.id}:t${k}`))); });
@@ -225,7 +229,7 @@
       const p = !w && !r && !g && D.patterns.find(x => patternItemId(x) === itemId);
       const ph = !w && !r && !g && !p && D.phrases.find(x => phraseItemId(x) === itemId);
       if (ph) ids = [`ph:${ph.id}:zh2en`, `ph:${ph.id}:fill`, `ph:${ph.id}:type`], need = 3;
-      if (w) { const k = slug(w.w); ids = [`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:spell`]; need = 3; }
+      if (w) { const k = wordKey(w); ids =[`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:spell`]; need = 3; }
       else if (r) { ids = [`r:${slug(r.p)}:meaning`].concat(pick(r.words, 2).map(x => `r:${slug(x.w)}:word`)); need = 3; }
       else if (g) { ids = pick(g.q.map((q, i) => `g:${g.id}:${i}`), 5); need = 4; }
       else if (p) { const js = pick(p.ex.map((e, j) => j), 3); ids = [`p:${p.id}:${js[0]}:reorder`, `p:${p.id}:${js[1]}:reorder`, `p:${p.id}:${js[2]}:choose`]; need = 3; }
@@ -277,7 +281,7 @@
     }
   };
 
-  const KE = { Engine, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, isTyped, TYPED_TYPES, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, isTyped, TYPED_TYPES, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

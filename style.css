@@ -58,6 +58,8 @@ select{min-height:48px;font:inherit;font-size:1rem;padding:6px 12px;border:2px s
 .cards .card{margin:0}
 .word .w{font-size:1.8rem;font-weight:700;color:#d2601a}
 .phrase .w{font-size:1.55rem;margin-top:4px}
+.search{flex:1 1 220px;min-width:0;min-height:48px;font:inherit;font-size:1rem;padding:6px 14px;border:2px solid var(--line);border-radius:14px;background:#fff}
+.pager{display:flex;justify-content:center;align-items:center;gap:16px;margin:18px 0;font-weight:700}
 .word .ipa{color:var(--muted);font-size:1rem}
 .pos{background:#fff2dd;border-radius:8px;padding:0 8px;font-size:.8rem}
 .word .zh{font-size:1.2rem;font-weight:600;margin:4px 0}
