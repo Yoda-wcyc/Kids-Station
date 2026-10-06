@@ -96,8 +96,9 @@
     const lb = e.target.closest('[data-learn],[data-unlearn]');
     if (lb) {
       e.preventDefault();
-      if (lb.dataset.learn) S.learned = KE.setLearned(S.learned, lb.dataset.learn, new Date().toISOString());
-      else { if (!confirm('確定要取消「已學會」嗎？')) return; S.learned = KE.unsetLearned(S.learned, lb.dataset.unlearn); }
+      if (lb.dataset.learn) { startGate(lb.dataset.learn, rendered); return; }
+      if (!confirm('確定要取消「已學會」嗎？')) return;
+      S.learned = KE.unsetLearned(S.learned, lb.dataset.unlearn);
       save('ke_learned', S.learned);
       if (redraw) redraw();
       return;
@@ -140,7 +141,7 @@
   const LS = { words: '', roots: '', grammar: '', patterns: '' };
   const isL = id => !!(S.learned[id] && S.learned[id].at);
   const lfPass = (page, id) => !LS[page] || (LS[page] === 'yes') === isL(id);
-  const learnUI = id => isL(id) ? `<div class="learned"><span class="done">✅ 已學會 ${esc(KE.fmtTaipei(S.learned[id].at))}</span><button class="btn sm" data-unlearn="${esc(id)}">取消</button></div>` : `<button class="btn learn" data-learn="${esc(id)}">👍 學會了</button>`;
+  const learnUI = id => isL(id) ? `<div class="learned"><span class="done">✅ 已學會 ${esc(KE.fmtTaipei(S.learned[id].at))}${S.learned[id].score ? `（${esc(S.learned[id].score)}）` : ''}</span><button class="btn sm" data-unlearn="${esc(id)}">取消</button></div>` : `<button class="btn learn" data-learn="${esc(id)}">👍 學會了</button>`;
   const lfBar = page => `<div class="lfbar">${radios('lf-' + page, [['', '全部'], ['yes', '已學會'], ['no', '未學會']], LS[page])}<p class="prog" id="prog"></p></div>`;
   function bindLf(page, label, ids, draw) {
     const full = () => { $('#prog').textContent = `${label} ${ids.filter(isL).length}/${ids.length} 已學會`; draw(); };
@@ -171,6 +172,13 @@
     try { Promise.resolve(navigator.share({ title: SHARE.title, text: SHARE.text, url: SHARE.url })).catch(err => { if (!err || err.name !== 'AbortError') copy(); }); } catch (e) { copy(); }
   }
 
+  // 「學會了」要先通過小測驗：back＝測完要回去的學習頁
+  function startGate(itemId, back) {
+    const g = E.gate(itemId);
+    if (!g || !g.qs.length) return;
+    Q = { list: g.qs, i: 0, answers: [], answered: false, cfg: null, graduated: 0, result: null, gate: { itemId, need: g.need, total: g.total, back: back || '#learn' } };
+    go('#quiz');
+  }
   function startQuiz(cfg) {
     const list = cfg.ids ? KE.shuffle(cfg.ids).slice(0, cfg.count || 30).map(id => E.get(id)).filter(Boolean) : E.buildQuiz(cfg);
     if (!list.length) { alert('沒有符合條件的題目，換個選擇試試看！'); return; }
@@ -269,7 +277,7 @@
     else if (q.input === 'chips') body = `<div class="placed" id="placed"></div><div class="pool">${q.options.map((c, i) => `<button class="chip" data-i="${i}">${esc(c)}</button>`).join('')}</div><div class="row"><button class="btn" id="clr">清除</button><button class="btn primary" id="ok">確定</button></div>`;
     else if (q.input === 'mic') body = `<div class="row"><button class="btn primary big" id="mic">🎤 按我開始說</button><button class="btn" id="skip">跳過</button></div><p class="muted center" id="heard"></p>`;
     else body = `<div class="opts ${q.options.some(o => o.length > 14) ? 'one' : ''}">${q.options.map(o => `<button class="opt" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
-    app.innerHTML = top('練習中', '#practice') + `<div class="bar"><i style="width:${Q.i / n * 100}%"></i></div><p class="count">第 ${Q.i + 1} / ${n} 題</p>
+    app.innerHTML = (Q.gate ? top('通過小測驗才能標記學會 ✨', Q.gate.back) + `<p class="gate-note">「${esc(E.itemInfo(Q.gate.itemId).item)}」小測驗：${Q.gate.total} 題要答對 ${Q.gate.need} 題</p>` : top('練習中', '#practice')) + `<div class="bar"><i style="width:${Q.i / n * 100}%"></i></div><p class="count">第 ${Q.i + 1} / ${n} 題</p>
       <div class="card qcard"><div class="qtype">${KE.TYPES[q.type]}</div><div class="prompt ${q.en ? 'en say' : ''}">${esc(q.prompt)}</div>${q.sub ? `<div class="sub ${q.subEn ? 'en' : ''}">${esc(q.sub)}</div>` : ''}${q.play ? `<button class="btn sound" id="play">🔊 ${q.type === 'speak' ? '聽示範' : '再聽一次'}</button>` : ''}</div>
       ${body}<div id="fb"></div>`;
     const p = $('#play'); if (p) p.onclick = () => speak(q.speakText);
@@ -339,13 +347,26 @@
     const stars = tot ? (pct >= 0.9 ? 3 : pct >= 0.6 ? 2 : 1) : 0;
     S.progress.stars += stars; S.progress.quizzes++; save('ke_progress', S.progress);
     Q.result = { ok, tot, stars, wrong: Q.answers.filter(a => !a.ok && !a.skip).map(a => a.q) };
+    if (Q.gate) {
+      Q.result.pass = KE.gatePassed(Q.gate, ok);
+      if (Q.result.pass) { S.learned = KE.setLearned(S.learned, Q.gate.itemId, new Date().toISOString(), `${ok}/${tot}`); save('ke_learned', S.learned); }
+    }
     go('#result');
+  }
+  const wrongList = r => r.wrong.length ? `<section class="card"><h2>答錯的題目（點一下聽聽看）</h2><ul class="list">${r.wrong.map(q => `<li><span class="badge">${KE.TYPES[q.type]}</span> <span class="say" data-say="${esc(q.speakText || q.answer)}">${esc(q.title)} 🔊</span></li>`).join('')}</ul></section>` : '';
+  function pGateResult() {
+    const r = Q.result, gt = Q.gate, info = E.itemInfo(gt.itemId), L = S.learned[gt.itemId];
+    app.innerHTML = top(r.pass ? '學會了！🎉' : '小測驗結果', gt.back) + (r.pass
+      ? `<div class="card center result gate-pass"><div class="party">🎉🏅🎉</div><div class="score">${r.ok} / ${r.tot}</div><p>太棒了！「<b>${esc(info.item)}</b>」標記為已學會</p><p class="muted">✅ ${esc(KE.fmtTaipei(L && L.at))}</p></div><div class="row wrap"><button class="btn primary big" data-go="${esc(gt.back)}">回去繼續學</button></div>`
+      : `<div class="card center result"><div class="party">💪</div><div class="score">${r.ok} / ${r.tot}</div><p>差一點！再練練看（要答對 ${gt.need} 題）</p></div>${wrongList(r)}<div class="row wrap"><button class="btn primary big" id="gagain">再試一次</button><button class="btn big" data-go="${esc(gt.back)}">回去複習</button></div>`);
+    const a = $('#gagain'); if (a) a.onclick = () => startGate(gt.itemId, gt.back);
   }
   function pResult() {
     if (!Q || !Q.result) return go('#home');
+    if (Q.gate) return pGateResult();
     const r = Q.result, msg = r.stars === 3 ? '超級厲害！🏆' : r.stars === 2 ? '做得很好！👍' : '多練幾次會更棒！💪';
     app.innerHTML = top('練習結果') + `<div class="card center result"><div class="stars">${'⭐'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</div><div class="score">${r.ok} / ${r.tot}</div><p>${msg}</p>${Q.graduated ? `<p>🎓 有 ${Q.graduated} 題錯題畢業了！</p>` : ''}</div>
-      ${r.wrong.length ? `<section class="card"><h2>答錯的題目（點一下聽聽看）</h2><ul class="list">${r.wrong.map(q => `<li><span class="badge">${KE.TYPES[q.type]}</span> <span class="say" data-say="${esc(q.speakText || q.answer)}">${esc(q.title)} 🔊</span></li>`).join('')}</ul></section>` : ''}
+      ${wrongList(r)}
       <div class="row wrap"><button class="btn primary big" id="again">再練一次</button>${r.wrong.length ? '<button class="btn big" id="redo">練答錯的題目</button>' : ''}<button class="btn big" data-go="#home">回首頁</button></div>`;
     $('#again').onclick = () => startQuiz(Q.cfg);
     const rd = $('#redo'); if (rd) rd.onclick = () => startQuiz({ ids: r.wrong.map(q => q.id) });
@@ -415,7 +436,7 @@
       <section class="card"><h2>備份與重設</h2><div class="row wrap"><button class="btn" id="exp">📤 匯出備份</button><label class="btn">📥 匯入備份<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn danger" id="rst">🗑️ 清除全部紀錄</button></div><p class="muted">紀錄只存在這台裝置的瀏覽器裡；換裝置前先匯出備份。</p></section>`;
     bindVoice();
     sortTable($('#tt'), [{ k: 'label', t: '主題' }, { k: 'mod', t: '單元' }, { k: 'n', t: '題數' }, { k: 'ok', t: '答對' }, { k: 'acc', t: '正確率', f: pct }], rows, PS);
-    sortTable($('#lt'), [{ k: 'item', t: '項目' }, { k: 'type', t: '類型' }, { k: 'at', t: '學會時間（台北）', f: x => KE.fmtTaipei(x, true) }], E.learnedRows(S.learned), PL);
+    sortTable($('#lt'), [{ k: 'item', t: '項目' }, { k: 'type', t: '類型' }, { k: 'at', t: '學會時間（台北）', f: x => KE.fmtTaipei(x, true) }, { k: 'score', t: '分數' }], E.learnedRows(S.learned), PL);
     $('#exp').onclick = () => {
       const data = { app: 'kids-english', at: new Date().toISOString() };
       KEYS.forEach(k => { data[k] = load(k, null); });

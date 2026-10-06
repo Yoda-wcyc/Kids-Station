@@ -93,6 +93,27 @@ ok(!L4['root:un'] && L3['root:un'] && Object.keys(L4).length === 2, 'unsetLearne
 ok(KE.unsetLearned(L4, 'nope') !== L4 && Object.keys(KE.unsetLearned(L4, 'nope')).length === 2, 'unset missing id is harmless');
 ok(E.learnedRows({ 'word:apple': {} }).length === 0, 'rows skip records without time');
 
+// ---- 「學會了」小測驗 ----
+const typesOf = g => g.qs.map(q => q.type).sort().join(',');
+W.forEach(w => { const g = E.gate(KE.wordItemId(w)); ok(g && g.total === 3 && g.need === 3 && typesOf(g) === 'listen-choose,spell,zh2en', 'gate word ' + w.w); });
+R.forEach(r => {
+  const g = E.gate(KE.rootItemId(r));
+  ok(g && g.total === 3 && g.need === 3 && typesOf(g) === 'root-meaning,root-word,root-word', 'gate root ' + r.p);
+  const wids = g.qs.filter(q => q.type === 'root-word').map(q => q.id);
+  ok(new Set(wids).size === 2 && wids.every(id => r.words.some(x => id === `r:${KE.slug(x.w)}:word`)), 'gate root words belong to ' + r.p);
+});
+G.forEach(gr => { const g = E.gate(KE.grammarItemId(gr)); ok(g && g.total === 5 && g.need === 4 && new Set(g.ids).size === 5 && g.qs.every(q => ['grammar-fill', 'grammar-fix'].includes(q.type) && q.topic === gr.id), 'gate grammar ' + gr.id); });
+P.forEach(p => { const g = E.gate(KE.patternItemId(p)); ok(g && g.total === 3 && g.need === 3 && new Set(g.ids).size === 3 && g.qs.every(q => q.type === 'reorder' && q.topic === p.id), 'gate pattern ' + p.id); });
+ok(allItems.every(id => E.gate(id).qs.every(q => q.type !== 'speak')), 'gate never uses speak');
+ok(E.gate('word:nope') === null, 'gate unknown item');
+const gw = E.gate('word:apple'), gg = E.gate('grammar:be');
+ok(!KE.gatePassed(gw, 2) && KE.gatePassed(gw, 3), 'gate 2/3 fail, 3/3 pass');
+ok(KE.gatePassed(gg, 4) && KE.gatePassed(gg, 5) && !KE.gatePassed(gg, 3), 'gate 4/5 pass, 5/5 pass, 3/5 fail');
+ok(!KE.gatePassed(null, 3), 'gatePassed null');
+const LS1 = KE.setLearned({}, 'word:apple', '2026-10-05T01:00:00Z', '3/3');
+ok(LS1['word:apple'].score === '3/3' && E.learnedRows(LS1)[0].score === '3/3', 'learned score stored');
+ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '—', 'old entry score shows —');
+
 // ---- 語速 ----
 ok(KE.clampRate(0.7) === 0.7 && KE.clampRate('1') === 1 && KE.clampRate(0.84) === 0.8, 'rate keep/round');
 ok(KE.clampRate(0.1) === 0.5 && KE.clampRate(2) === 1.3 && KE.clampRate(undefined) === 1 && KE.clampRate('x') === 1, 'rate clamp/default');

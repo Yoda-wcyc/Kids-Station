@@ -42,7 +42,9 @@
   // 語速：0.5～1.3、一位小數；舊設定（0.7／1）或壞值都轉成合法值
   function clampRate(r) { const n = parseFloat(r); if (!isFinite(n)) return 1; return Math.round(Math.min(1.3, Math.max(0.5, n)) * 10) / 10; }
   // 學會紀錄 {itemId:{at}}：回傳新物件，不改原本的
-  function setLearned(L, itemId, iso) { const o = Object.assign({}, L); o[itemId] = { at: iso }; return o; }
+  function setLearned(L, itemId, iso, score) { const o = Object.assign({}, L); o[itemId] = score ? { at: iso, score } : { at: iso }; return o; }
+  // 「學會了」小測驗是否通過：答對數 ≥ 門檻
+  const gatePassed = (gate, correct) => !!gate && correct >= gate.need;
   function unsetLearned(L, itemId) { const o = Object.assign({}, L); delete o[itemId]; return o; }
   const wordItemId = w => 'word:' + slug(w.w), patternItemId = p => 'pattern:' + p.id, grammarItemId = g => 'grammar:' + g.id, rootItemId = r => 'root:' + slug(r.p);
 
@@ -121,8 +123,24 @@
       const r = this.D.roots.find(x => rootItemId(x) === itemId); if (r) return { item: r.p, zh: r.m, type: '字根' };
       return { item: itemId, zh: '', type: '' };
     },
-    // 家長頁用：學會紀錄表，預設新到舊
-    learnedRows(L) { return Object.keys(L || {}).filter(id => L[id] && L[id].at).map(id => Object.assign({ itemId: id, at: L[id].at }, this.itemInfo(id))).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)); },
+    // 家長頁用：學會紀錄表，預設新到舊；舊紀錄沒有分數顯示「—」
+    learnedRows(L) { return Object.keys(L || {}).filter(id => L[id] && L[id].at).map(id => Object.assign({ itemId: id, at: L[id].at, score: L[id].score || '—' }, this.itemInfo(id))).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)); },
+    // 「學會了」的小測驗（不含開口說）：回傳 {itemId, ids, qs, need, total}；找不到項目回傳 null
+    gate(itemId) {
+      const D = this.D, pick = (a, n) => shuffle(a).slice(0, n);
+      let ids = null, need;
+      const w = D.words.find(x => wordItemId(x) === itemId);
+      const r = !w && D.roots.find(x => rootItemId(x) === itemId);
+      const g = !w && !r && D.grammar.find(x => grammarItemId(x) === itemId);
+      const p = !w && !r && !g && D.patterns.find(x => patternItemId(x) === itemId);
+      if (w) { const k = slug(w.w); ids = [`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:spell`]; need = 3; }
+      else if (r) { ids = [`r:${slug(r.p)}:meaning`].concat(pick(r.words, 2).map(x => `r:${slug(x.w)}:word`)); need = 3; }
+      else if (g) { ids = pick(g.q.map((q, i) => `g:${g.id}:${i}`), 5); need = 4; }
+      else if (p) { ids = pick(p.ex.map((e, j) => `p:${p.id}:${j}:reorder`), 3); need = 3; }
+      if (!ids) return null;
+      const qs = ids.map(id => this.get(id)).filter(Boolean);
+      return { itemId, ids, qs, need, total: qs.length };
+    },
     topicLabel(tkey) { const m = tkey.split(':')[0]; const t = this.topics(m).find(x => x.key === tkey); return t ? t.label : tkey; },
     // f: {modules, topics(tkey 陣列), types, src, lv, allowSpeak, ids}
     list(f) {
@@ -164,7 +182,7 @@
     }
   };
 
-  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);
