@@ -72,7 +72,7 @@ const mids = E.list({ modules: ['words'] }).slice(0, 5).map(m => m.id);
 const only = E.buildQuiz({ count: 10, mistakeRatio: 1, mistakes: mids });
 ok(only.length === 5 && only.every(q => mids.includes(q.id)), 'only mistakes');
 const mixed = E.buildQuiz({ modules: ['words'], count: 10, mistakeRatio: 0.3, mistakes: mids });
-ok(mixed.length === 10 && mixed.filter(q => mids.includes(q.id)).length === 3, 'mix 30%');
+ok(mixed.length === 10 && mixed.filter(q => mids.includes(q.id)).length >= 3, 'mix 30% (at least 3 mistakes; random fill may add more)');
 ok(E.buildQuiz({ modules: ['words'], src: 'textbook-x', count: 10 }).length === 0, 'src filter');
 
 // ---- 學會紀錄 ----
