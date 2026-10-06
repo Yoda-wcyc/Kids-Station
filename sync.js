@@ -12,13 +12,14 @@
     async get(code) {
       const r = await fetch(API + '?code=' + encodeURIComponent(code), { cache: 'no-store' });
       if (r.status === 404) return null; if (!r.ok) throw httpErr(r);
-      return { doc: await r.json(), etag: r.headers.get('ETag') };
+      // 瀏覽器拿到的 ETag 會被邊緣壓縮改成弱 ETag（W/…），優先用原樣的 X-Sync-Etag
+      return { doc: await r.json(), etag: r.headers.get('X-Sync-Etag') || r.headers.get('ETag') };
     },
     async put(code, doc, etag) {
       const h = { 'Content-Type': 'application/json' }; if (etag) h['If-Match'] = etag;
       const r = await fetch(API + '?code=' + encodeURIComponent(code), { method: 'PUT', headers: h, body: JSON.stringify(doc) });
       if (r.status === 412) return { conflict: true }; if (!r.ok) throw httpErr(r);
-      return { etag: r.headers.get('ETag') };
+      return { etag: r.headers.get('X-Sync-Etag') || r.headers.get('ETag') };
     }
   };
 
