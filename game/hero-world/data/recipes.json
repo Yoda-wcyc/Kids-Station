@@ -1,8 +1,304 @@
 {
-  "_doc": "合成表（M1：不分形狀，材料夠就能做）。in＝材料 {id: 數量}；out＝{id, count}；needs＝要站在哪個方塊旁邊（null＝背包裡就能做）",
+  "_doc": "合成表（不分形狀，材料夠就能做）。in＝材料 {id: 數量}；out＝{id, count}；needs＝要在哪個方塊旁邊（null＝背包裡就能做）；blueprint＝要先在商店買過那張藍圖。smelt＝熔爐：in 燒成 out，time 秒，每 1 個煤炭可以燒 fuelPerCoal 個",
+  "fuelPerCoal": 4,
   "recipes": [
-    { "id": "planks", "name_zh": "木板", "in": { "log": 1 }, "out": { "id": "planks", "count": 4 }, "needs": null },
-    { "id": "stick", "name_zh": "木棍", "in": { "planks": 2 }, "out": { "id": "stick", "count": 4 }, "needs": null },
-    { "id": "crafting_table", "name_zh": "工作台", "in": { "planks": 4 }, "out": { "id": "crafting_table", "count": 1 }, "needs": null }
+    {
+      "id": "planks",
+      "name_zh": "木板",
+      "in": {
+        "log": 1
+      },
+      "out": {
+        "id": "planks",
+        "count": 4
+      },
+      "needs": null
+    },
+    {
+      "id": "stick",
+      "name_zh": "木棍",
+      "in": {
+        "planks": 2
+      },
+      "out": {
+        "id": "stick",
+        "count": 4
+      },
+      "needs": null
+    },
+    {
+      "id": "crafting_table",
+      "name_zh": "工作台",
+      "in": {
+        "planks": 4
+      },
+      "out": {
+        "id": "crafting_table",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "furnace",
+      "name_zh": "熔爐",
+      "in": {
+        "cobblestone": 8
+      },
+      "out": {
+        "id": "furnace",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "gold_block",
+      "name_zh": "金塊",
+      "in": {
+        "gold_ingot": 9
+      },
+      "out": {
+        "id": "gold_block",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "wood_pickaxe",
+      "name_zh": "木鎬",
+      "in": {
+        "planks": 3,
+        "stick": 2
+      },
+      "out": {
+        "id": "wood_pickaxe",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "wood_axe",
+      "name_zh": "木斧",
+      "in": {
+        "planks": 3,
+        "stick": 2
+      },
+      "out": {
+        "id": "wood_axe",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "wood_shovel",
+      "name_zh": "木鏟",
+      "in": {
+        "planks": 1,
+        "stick": 2
+      },
+      "out": {
+        "id": "wood_shovel",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "wood_sword",
+      "name_zh": "木劍",
+      "in": {
+        "planks": 2,
+        "stick": 1
+      },
+      "out": {
+        "id": "wood_sword",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "stone_pickaxe",
+      "name_zh": "石鎬",
+      "in": {
+        "cobblestone": 3,
+        "stick": 2
+      },
+      "out": {
+        "id": "stone_pickaxe",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "stone_axe",
+      "name_zh": "石斧",
+      "in": {
+        "cobblestone": 3,
+        "stick": 2
+      },
+      "out": {
+        "id": "stone_axe",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "stone_shovel",
+      "name_zh": "石鏟",
+      "in": {
+        "cobblestone": 1,
+        "stick": 2
+      },
+      "out": {
+        "id": "stone_shovel",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "stone_sword",
+      "name_zh": "石劍",
+      "in": {
+        "cobblestone": 2,
+        "stick": 1
+      },
+      "out": {
+        "id": "stone_sword",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "iron_pickaxe",
+      "name_zh": "鐵鎬",
+      "in": {
+        "iron_ingot": 3,
+        "stick": 2
+      },
+      "out": {
+        "id": "iron_pickaxe",
+        "count": 1
+      },
+      "needs": "crafting_table",
+      "blueprint": "bp_iron"
+    },
+    {
+      "id": "iron_axe",
+      "name_zh": "鐵斧",
+      "in": {
+        "iron_ingot": 3,
+        "stick": 2
+      },
+      "out": {
+        "id": "iron_axe",
+        "count": 1
+      },
+      "needs": "crafting_table",
+      "blueprint": "bp_iron"
+    },
+    {
+      "id": "iron_shovel",
+      "name_zh": "鐵鏟",
+      "in": {
+        "iron_ingot": 1,
+        "stick": 2
+      },
+      "out": {
+        "id": "iron_shovel",
+        "count": 1
+      },
+      "needs": "crafting_table",
+      "blueprint": "bp_iron"
+    },
+    {
+      "id": "iron_sword",
+      "name_zh": "鐵劍",
+      "in": {
+        "iron_ingot": 2,
+        "stick": 1
+      },
+      "out": {
+        "id": "iron_sword",
+        "count": 1
+      },
+      "needs": "crafting_table",
+      "blueprint": "bp_iron"
+    },
+    {
+      "id": "diamond_pickaxe",
+      "name_zh": "鑽石鎬",
+      "in": {
+        "diamond": 3,
+        "stick": 2
+      },
+      "out": {
+        "id": "diamond_pickaxe",
+        "count": 1
+      },
+      "needs": "crafting_table",
+      "blueprint": "bp_diamond"
+    },
+    {
+      "id": "diamond_axe",
+      "name_zh": "鑽石斧",
+      "in": {
+        "diamond": 3,
+        "stick": 2
+      },
+      "out": {
+        "id": "diamond_axe",
+        "count": 1
+      },
+      "needs": "crafting_table",
+      "blueprint": "bp_diamond"
+    },
+    {
+      "id": "diamond_shovel",
+      "name_zh": "鑽石鏟",
+      "in": {
+        "diamond": 1,
+        "stick": 2
+      },
+      "out": {
+        "id": "diamond_shovel",
+        "count": 1
+      },
+      "needs": "crafting_table",
+      "blueprint": "bp_diamond"
+    },
+    {
+      "id": "diamond_sword",
+      "name_zh": "鑽石劍",
+      "in": {
+        "diamond": 2,
+        "stick": 1
+      },
+      "out": {
+        "id": "diamond_sword",
+        "count": 1
+      },
+      "needs": "crafting_table",
+      "blueprint": "bp_diamond"
+    }
+  ],
+  "smelt": [
+    {
+      "in": "iron_ore",
+      "out": "iron_ingot",
+      "time": 5
+    },
+    {
+      "in": "gold_ore",
+      "out": "gold_ingot",
+      "time": 5
+    },
+    {
+      "in": "sand",
+      "out": "glass",
+      "time": 4
+    },
+    {
+      "in": "cobblestone",
+      "out": "stone",
+      "time": 4
+    }
   ]
 }

@@ -99,3 +99,8 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 .fb.bad b { color: var(--red); }
 .why { font-size: 15px; opacity: .8; color: var(--ink); font-weight: 400; }
 #err { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 20; background: var(--red); color: #fff; padding: 12px; border-radius: 10px; }
+.slot .dur { position: absolute; left: 7px; right: 7px; bottom: 4px; height: 4px; background: rgba(21,23,20,.2); border-radius: 2px; overflow: hidden; }
+.slot .dur i { display: block; height: 100%; background: var(--leaf); }
+.slot .dur.low i { background: var(--red); }
+.owned { font-weight: 700; color: var(--leaf); padding: 0 8px; }
+.furnace-st { background: var(--paper2); border-radius: 12px; padding: 10px 14px; margin: 8px 0; font-size: 17px; }
