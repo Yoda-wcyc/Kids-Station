@@ -33,6 +33,8 @@
     { "id": "iron_ingot", "name_zh": "鐵錠", "icon": "ingot", "color": "#D8D4CA", "maxStack": 64, "buy": null },
     { "id": "gold_ingot", "name_zh": "金錠", "icon": "ingot", "color": "#D9A63A", "maxStack": 64, "buy": null },
     { "id": "diamond", "name_zh": "鑽石", "icon": "gem", "color": "#6FC7C0", "maxStack": 64, "buy": null },
+    { "id": "leather", "name_zh": "皮", "icon": "hide", "color": "#8C6640", "maxStack": 64, "buy": null },
+    { "id": "feather", "name_zh": "羽毛", "icon": "feather", "color": "#F4EFE2", "maxStack": 64, "buy": null },
     { "id": "wood_pickaxe", "name_zh": "木鎬", "icon": "pickaxe", "color": "#A97E4E", "maxStack": 1, "tool": { "type": "pickaxe", "tier": 1, "durability": 60 } },
     { "id": "stone_pickaxe", "name_zh": "石鎬", "icon": "pickaxe", "color": "#8C8A84", "maxStack": 1, "tool": { "type": "pickaxe", "tier": 2, "durability": 132 } },
     { "id": "iron_pickaxe", "name_zh": "鐵鎬", "icon": "pickaxe", "color": "#D8D4CA", "maxStack": 1, "tool": { "type": "pickaxe", "tier": 3, "durability": 250 } },

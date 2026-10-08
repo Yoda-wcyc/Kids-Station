@@ -1,0 +1,9 @@
+{
+  "_doc": "生物登錄表。kind: animal（白天晃來晃去，打兩下會掉東西）｜quiz（晚上暗處出現的錯題怪，打它＝答一題）。size: [寬, 高]；speed: 每秒幾格；drops: {id, min, max}；colors: 剪紙色塊",
+  "mobs": [
+    { "id": "sheep", "name_zh": "羊", "kind": "animal", "size": [0.9, 1.25], "speed": 1.0, "hp": 2, "drops": { "id": "wool", "min": 1, "max": 2 }, "colors": { "body": "#EDE6D0", "head": "#3B3D3A", "leg": "#3B3D3A" } },
+    { "id": "cow", "name_zh": "牛", "kind": "animal", "size": [0.95, 1.35], "speed": 0.9, "hp": 2, "drops": { "id": "leather", "min": 1, "max": 2 }, "colors": { "body": "#6B4A33", "head": "#6B4A33", "leg": "#3B3D3A", "patch": "#EDE6D0" } },
+    { "id": "chicken", "name_zh": "雞", "kind": "animal", "size": [0.45, 0.75], "speed": 1.1, "hp": 1, "drops": { "id": "feather", "min": 1, "max": 2 }, "colors": { "body": "#F4EFE2", "head": "#F4EFE2", "leg": "#D9A63A", "comb": "#E0352B" } },
+    { "id": "quizling", "name_zh": "錯題怪", "kind": "quiz", "size": [0.8, 1.5], "speed": 1.1, "hp": 1, "drops": null, "colors": { "body": "#2F5A34", "head": "#26302A", "eye": "#EFEBDD" } }
+  ]
+}
