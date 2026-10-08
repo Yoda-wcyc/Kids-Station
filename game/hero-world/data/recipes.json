@@ -1045,6 +1045,150 @@
         "count": 1
       },
       "needs": null
+    },
+    {
+      "id": "slab_planks",
+      "name_zh": "木板半磚",
+      "in": {
+        "planks": 3
+      },
+      "out": {
+        "id": "slab_planks",
+        "count": 6
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "stairs_planks",
+      "name_zh": "木板樓梯",
+      "in": {
+        "planks": 6
+      },
+      "out": {
+        "id": "stairs_planks",
+        "count": 4
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "slab_spruce_planks",
+      "name_zh": "雲杉木板半磚",
+      "in": {
+        "spruce_planks": 3
+      },
+      "out": {
+        "id": "slab_spruce_planks",
+        "count": 6
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "stairs_spruce_planks",
+      "name_zh": "雲杉木板樓梯",
+      "in": {
+        "spruce_planks": 6
+      },
+      "out": {
+        "id": "stairs_spruce_planks",
+        "count": 4
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "slab_cobblestone",
+      "name_zh": "碎石半磚",
+      "in": {
+        "cobblestone": 3
+      },
+      "out": {
+        "id": "slab_cobblestone",
+        "count": 6
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "stairs_cobblestone",
+      "name_zh": "碎石樓梯",
+      "in": {
+        "cobblestone": 6
+      },
+      "out": {
+        "id": "stairs_cobblestone",
+        "count": 4
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "slab_stone_bricks",
+      "name_zh": "石磚半磚",
+      "in": {
+        "stone_bricks": 3
+      },
+      "out": {
+        "id": "slab_stone_bricks",
+        "count": 6
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "stairs_stone_bricks",
+      "name_zh": "石磚樓梯",
+      "in": {
+        "stone_bricks": 6
+      },
+      "out": {
+        "id": "stairs_stone_bricks",
+        "count": 4
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "slab_bricks",
+      "name_zh": "紅磚半磚",
+      "in": {
+        "bricks": 3
+      },
+      "out": {
+        "id": "slab_bricks",
+        "count": 6
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "stairs_bricks",
+      "name_zh": "紅磚樓梯",
+      "in": {
+        "bricks": 6
+      },
+      "out": {
+        "id": "stairs_bricks",
+        "count": 4
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "slab_sandstone",
+      "name_zh": "砂岩半磚",
+      "in": {
+        "sandstone": 3
+      },
+      "out": {
+        "id": "slab_sandstone",
+        "count": 6
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "stairs_sandstone",
+      "name_zh": "砂岩樓梯",
+      "in": {
+        "sandstone": 6
+      },
+      "out": {
+        "id": "stairs_sandstone",
+        "count": 4
+      },
+      "needs": "crafting_table"
     }
   ],
   "smelt": [
