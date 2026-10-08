@@ -264,6 +264,22 @@ h1{font-family:var(--font-hand);font-size:clamp(2.2rem,1.6rem + 2.4vw,3.2rem);li
 .stamp{display:inline-block;margin-left:.5em;font-family:var(--font-hand);font-weight:700;font-size:1.25em;color:var(--red);border:4px double var(--red);border-radius:10px;padding:0 .5em;transform:rotate(-8deg)}
 .stamp.wait{opacity:0}
 .stamp.go{animation:stamp .55s cubic-bezier(.2,1.5,.4,1) both}
+/* 換你算算看：驗算前自己算出 x */
+.tryme{margin-top:10px;padding:12px 14px;border:3px solid var(--ink);border-radius:14px;background:var(--card)}
+.try-h{margin:0 0 4px;font-size:clamp(1.3rem,1.1rem + .8vw,1.7rem);font-weight:700}
+.try-sub{margin:0 0 10px;color:var(--ink-soft);font-size:1rem}
+.try-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.try-x{font-size:2rem;font-weight:700}
+.try-in{width:6.5em;font:inherit;font-size:2rem;font-weight:700;min-height:64px;padding:4px 12px;border:3px solid var(--ink-soft);border-radius:12px;background:var(--paper);color:var(--ink);text-align:center;font-variant-numeric:tabular-nums}
+.try-in:focus{outline:3px solid var(--hl-solid);border-color:var(--ink)}
+.try-pad{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:12px 0 4px;max-width:30rem}
+.try-pad .key{min-height:58px}
+.try-msg{margin:8px 0 0;min-height:1.6em;font-size:1.1rem;font-weight:700;color:var(--ink)}
+.try-msg.bad{color:var(--red)}
+.try-ok{margin:0;font-size:1.25rem;font-weight:700}
+.dot.locked{opacity:.45}
+.dot.ok{border-color:var(--ink)}
+@media (max-width:520px){.try-pad{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @keyframes stamp{from{transform:rotate(-8deg) scale(2.6);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:1}}
 
 /* ---------- 出題與管理 ---------- */
@@ -408,6 +424,7 @@ footer .share-row{margin:14px 0 0}
       <h2>作業簿 <span class="h2-sub" id="board-title"></span></h2>
       <ol class="dots" id="dots" aria-label="跳到第幾步"></ol>
       <div class="lines" id="lines"></div>
+      <div class="tryme" id="tryme" hidden></div>
       <div id="result"></div>
     </div>
   </section>
@@ -920,7 +937,7 @@ function verifyStages(L, s){
 /* ================= 狀態 ================= */
 var BUILTIN = ['x+5=12', 'x−3=9', '12+x=20', 'x+8−2=15', '(x+3)−2=10', '(x−5)+4=12', 'x−(6−2)=7', 'x+(10−4)=15'];
 function builtinList(){ return BUILTIN.map(function(q){ return { q:q, own:false }; }); }
-var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, storeOK:true, store:null };
+var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, storeOK:true, store:null, solved:{}, coinSent:{} };
 var timers = [], anims = [];
 function later(fn, ms){ var id = setTimeout(fn, ms); timers.push(id); return id; }
 function clearAll(){
@@ -1073,10 +1090,21 @@ function balAnim(st, cur){
   later(function(){ build(cur); }, 2050);
   return 2000;
 }
+/* 「換你算」卡出現時（還沒算對），天平和字幕都會洩漏答案（例「右邊剩 7 個」、右盤正好 x 個砝碼）→ 先蓋起來，答對再打開 */
+var TRY_COVER = '天平先蓋起來囉！自己算出 x，算對了再打開看。';
+function answerCovered(){ var g = tryGate(); return !!S.P && g >= 0 && S.i === g - 1; }
 function showBalance(st, animFrom){
   var b = st.bal, opTxt = st.type === 'move' ? (st.inv + ' ' + st.op.n) : '';
   $('op-L').textContent = opTxt; $('op-R').textContent = opTxt;
   $('op-L').classList.toggle('show', !!opTxt); $('op-R').classList.toggle('show', !!opTxt);
+  if (answerCovered()){
+    $('bal-cap').textContent = '先自己算算看：x 是多少？算對了天平會告訴你。';
+    itemsEl.innerHTML = ''; items = [];
+    stage.classList.add('is-faded');
+    $('bal-fade-msg').textContent = TRY_COVER;
+    stage.setAttribute('aria-label', '天平：' + TRY_COVER);
+    return 0;
+  }
   $('bal-cap').textContent = b.fade ? '天平這一步先休息，請看作業簿。' : st.cap;
   if (b.fade){
     itemsEl.innerHTML = ''; items = [];
@@ -1246,8 +1274,11 @@ function renderControls(){
   $('btn-play').setAttribute('aria-pressed', S.playing ? 'true' : 'false');
   $('stepinfo').textContent = '第 ' + (S.i + 1) + ' 步／共 ' + N + ' 步：' + LABEL[st.type];
   var dots = $('dots').querySelectorAll('.dot');
+  var g = tryGate(), r = revealAt(S.P);
   for (var k = 0; k < dots.length; k++){
     dots[k].classList.toggle('done', k < S.i);
+    dots[k].classList.toggle('locked', g >= 0 && k >= g);
+    dots[k].classList.toggle('ok', g < 0 && k === r - 1);
     if (k === S.i) dots[k].setAttribute('aria-current', 'step'); else dots[k].removeAttribute('aria-current');
   }
 }
@@ -1261,11 +1292,14 @@ function renderDots(){
 function goTo(i, animate){
   var P = S.P, N = P.steps.length;
   i = Math.max(0, Math.min(N - 1, i));
+  /* 換你算算看：還沒算對 x 之前，下一步／圓點／自動播放都停在算出 x 的前一步 */
+  var gate = tryGate(), blocked = gate >= 0 && i >= gate;
+  if (blocked){ i = gate - 1; S.playing = false; }
   clearAll();
   var prevI = S.i; S.i = i;
   var anim = !!animate && !reduced() && i === prevI + 1;
   var st = P.steps[i];
-  renderBoard(); renderText(anim); renderControls();
+  renderBoard(); renderText(anim); renderControls(); renderTry(blocked && i === prevI);
   var D = showBalance(st, anim && i > 0 ? P.steps[i-1].bal : null);
   lightRule(st.type === 'move' && !anim ? st.op.sym : null);
   var total = 0;
@@ -1276,8 +1310,80 @@ function goTo(i, animate){
   }
 }
 function stopPlay(){ S.playing = false; renderControls(); }
-function next(){ stopPlay(); goTo(S.i + 1, true); }
-function prev(){ stopPlay(); goTo(S.i - 1, false); }
+function coinAct(){ if (window.KidsCoins) KidsCoins.activity('math'); }
+function next(){ coinAct(); stopPlay(); goTo(S.i + 1, true); }
+function prev(){ coinAct(); stopPlay(); goTo(S.i - 1, false); }
+
+/* ================= 換你算算看（學習幣：算對才算過關） ================= */
+/* 算出 x 的那一步（作業簿第一次出現「x = 數字」）；在它之前插一張「換你算」卡，答對了才看得到答案和驗算 */
+function revealAt(P){
+  for (var j = 1; j < P.steps.length; j++){ var st = P.steps[j]; if (st.left.t === 'x' && !st.right.chunk) return j; }
+  return P.steps.length - 1;
+}
+function isSolved(){ return !!(S.P && S.solved[S.P.q]); }
+function tryGate(){ return S.P && !isSolved() ? revealAt(S.P) : -1; }
+function levelItem(){
+  var it = S.list[S.idx]; if (!it || !S.P) return '';
+  if (!it.own){ var k = BUILTIN.indexOf(it.q); if (k >= 0) return 'balance:b' + (k + 1); }
+  return 'balance:own:' + S.P.q;   /* 自己出的題：後端只給重玩獎勵 */
+}
+function coinLevel(){
+  var item = levelItem();
+  if (!item || S.coinSent[item]) return;   /* 同一次載入、同一題只送一次 */
+  S.coinSent[item] = true;
+  if (window.KidsCoins) KidsCoins.report({ type:'math_level', item:item, correct:1, total:1 });
+}
+function tryMsg(text, bad){ var m = $('try-msg'); if (!m) return; m.textContent = text; m.classList.toggle('bad', !!bad); }
+function renderTry(nudge){
+  var el = $('tryme'), r = revealAt(S.P), solved = isSolved();
+  if (S.i !== r - 1){ el.hidden = true; el.innerHTML = ''; el.removeAttribute('data-k'); return; }
+  var key = S.P.q + '|' + (solved ? 'ok' : 'ask');
+  el.hidden = false;
+  if (el.getAttribute('data-k') !== key){
+    el.setAttribute('data-k', key);
+    if (solved) el.innerHTML = '<p class="try-h">✏️ 換你算算看：<var>x</var> = ?</p><p class="try-ok" id="try-ok">✓ 你算對了！<var>x</var> = ' + S.P.sol + '　按「下一步」看驗算。</p>';
+    else {
+      var pad = '';
+      for (var d = 1; d <= 9; d++) pad += '<button type="button" class="key" data-d="' + d + '">' + d + '</button>';
+      pad += '<button type="button" class="key" data-d="0">0</button><button type="button" class="key wide" data-d="back" aria-label="刪掉一個字">⌫ 退一格</button>';
+      el.innerHTML = '<p class="try-h" id="try-h">✏️ 換你算算看：<var>x</var> = ?</p>' +
+        '<p class="try-sub">看上面作業簿最後一行，自己算出 x 是多少。算對了才能看答案和驗算喔！</p>' +
+        '<div class="try-row"><span class="try-x"><var>x</var> =</span><input class="try-in" id="try-in" type="text" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="6" aria-label="x 等於多少"><button type="button" class="btn primary" id="try-go">確定</button></div>' +
+        '<div class="try-pad" id="try-pad" aria-label="數字按鍵">' + pad + '</div>' +
+        '<p class="try-msg" id="try-msg" role="status" aria-live="polite"></p>';
+    }
+  }
+  if (nudge && !solved) tryMsg('先算出 x，答對了才能往下走喔！', false);
+}
+function trySubmit(){
+  if (window.KidsAuth && !KidsAuth.requireLogin('math')) return;
+  var inp = $('try-in'); if (!inp || isSolved()) return;
+  var raw = normalize(inp.value);
+  if (!/^[0-9]+$/.test(raw)){ tryMsg('先在格子裡寫一個數字喔！', false); return; }
+  var ok = Number(raw) === S.P.sol;
+  if (window.KidsCoins) KidsCoins.answer(ok, 'math');   /* 作答一題：計入有效學習分鐘 */
+  if (!ok){
+    var st = S.P.steps[revealAt(S.P) - 1], c = st.right.chunk;
+    tryMsg('差一點！再算一次看看。' + (c ? '提示：' + st.right.base + ' ' + c.sym + ' ' + c.n + ' 等於多少？' : '提示：看作業簿最後一行。'), true);
+    try { inp.select(); } catch (e){}
+    return;
+  }
+  S.solved[S.P.q] = true;
+  coinLevel();
+  renderControls(); renderTry(false);
+  showBalance(S.P.steps[S.i], null);   /* 答對了：把蓋起來的天平和字幕打開 */
+  var g = revealAt(S.P);
+  later(function(){ goTo(g, true); }, reduced() ? 600 : 1000);
+}
+$('tryme').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'try-go'){ trySubmit(); return; }
+  var d = b.getAttribute('data-d'), inp = $('try-in'); if (!d || !inp) return;
+  if (d === 'back') inp.value = inp.value.slice(0, -1);
+  else if (inp.value.length < 6) inp.value += d;
+  tryMsg('', false);
+});
+$('tryme').addEventListener('keydown', function(e){ if (e.key === 'Enter' && e.target.id === 'try-in'){ e.preventDefault(); trySubmit(); } });
 
 /* ================= 題目清單 ================= */
 function reparse(){ S.parsed = S.list.map(function(it){ return analyze(it.q); }); }
@@ -1333,6 +1439,7 @@ $('btn-next').addEventListener('click', next);
 $('btn-prev').addEventListener('click', prev);
 $('btn-reset').addEventListener('click', function(){ stopPlay(); goTo(0, false); });
 $('btn-play').addEventListener('click', function(){
+  coinAct();
   if (S.playing){ stopPlay(); goTo(S.i, false); return; }
   S.playing = true;
   if (S.i >= S.P.steps.length - 1){ goTo(0, false); }
@@ -1340,7 +1447,7 @@ $('btn-play').addEventListener('click', function(){
 });
 $('dots').addEventListener('click', function(e){
   var b = e.target.closest('.dot'); if (!b) return;
-  var k = +b.dataset.k; stopPlay(); goTo(k, k === S.i + 1);
+  var k = +b.dataset.k; coinAct(); stopPlay(); goTo(k, k === S.i + 1);
 });
 $('tabs').addEventListener('click', function(e){
   var b = e.target.closest('.tab'); if (!b) return;
@@ -1638,10 +1745,11 @@ try {
 }
 })();
 </script>
-<script src="../kids-auth.js"></script>
+<script src="../kids-auth.js?v=eea8abdbb0"></script>
+<script src="../kids-coins.js?v=747b1f93cc"></script>
 <script>
-/* 會員閘門：看說明、翻「常見錯誤」卡片免登入；按步驟／自動播放／選題／自己出題／管理題目要登入 */
-if (window.KidsAuth) KidsAuth.guard('#controls button, #dots .dot, #tabs .tab[data-k], #editor-sec .keypad .key, #editor-sec .row button, #manage-sec button', 'math', { keys: ['ArrowLeft', 'ArrowRight'] });
+/* 會員閘門：看說明、翻「常見錯誤」卡片免登入；按步驟／自動播放／選題／換你算算看／自己出題／管理題目要登入 */
+if (window.KidsAuth) KidsAuth.guard('#controls button, #dots .dot, #tryme button, #tabs .tab[data-k], #editor-sec .keypad .key, #editor-sec .row button, #manage-sec button', 'math', { keys: ['ArrowLeft', 'ArrowRight'] });
 </script>
 
 </body>

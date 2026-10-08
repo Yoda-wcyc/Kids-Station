@@ -9,7 +9,7 @@
 <meta name="robots" content="noindex">
 <title>我的帳號 · 小朋友學習站</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23ffd166'/%3E%3Ctext x='90' y='120' font-size='86' text-anchor='middle' font-family='Arial,sans-serif' font-weight='bold' fill='%23263445'%3EAB%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=e3ebece108">
 <style>
 .mbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:3px solid var(--line);box-shadow:0 2px 10px rgba(38,52,69,.06)}
 .mbar-in{max-width:620px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:12px}
@@ -27,6 +27,21 @@
 .msg.good{background:var(--ok-bg);color:#1d7a48;border:2px solid #b5e8cb}
 .msg.info{background:#fff8ec;border:2px solid var(--line)}
 .msg[hidden],[hidden]{display:none!important}
+.pw{display:flex;gap:8px}.pw .inp{flex:1;min-width:0}.btn.eye{min-width:104px;min-height:56px;padding:0 12px;font-size:1rem;white-space:nowrap}
+/* 🪙 學習幣卡 */
+.coin-top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;margin:0 0 14px}
+.coin-big{display:flex;align-items:baseline;gap:6px}.coin-big span{font-size:2.2rem}.coin-big b{font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}.coin-big small{color:var(--muted)}
+.goalbox{background:#fff8ec;border:2px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 14px}
+.goal-t{font-weight:800;margin:0 0 8px}
+.goal-bar{height:16px;border-radius:999px;background:#fff;border:2px solid var(--line);overflow:hidden}
+.goal-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd166,#ff8a3d);transition:width .4s}
+.goalbox.met .goal-bar i{background:linear-gradient(90deg,#69db7c,#2f9e44)}
+.goal-s{margin:6px 0 0;font-size:.92rem;color:var(--muted)}
+.ctab{width:100%;border-collapse:collapse;font-size:.95rem}
+.ctab th,.ctab td{border-bottom:1.5px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+.ctab th{color:var(--muted);font-weight:700}
+.ctab td.d{text-align:right;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}.ctab td.d.up{color:#1d7a48}.ctab td.d.down{color:#a3262a}
+.ctab td.t{white-space:nowrap;color:var(--muted)}.ctab small{display:block;color:var(--muted);word-break:break-all}
 </style>
 </head>
 <body data-kids-widget="off">
@@ -56,11 +71,27 @@
       <p class="muted" style="margin:12px 0 0">每個月有來練習，登入就會自動延長，不用常常重新登入。</p>
     </section>
 
+    <section class="card" id="coins">
+      <h2>🪙 學習幣</h2>
+      <div class="coin-top">
+        <div class="coin-big" aria-label="學習幣餘額"><span>🪙</span><b id="c-bal">…</b><small>枚</small></div>
+        <dl class="info"><dt>連續達標</dt><dd id="c-streak">—</dd><dt>本週請假卡</dt><dd id="c-leave">—</dd></dl>
+      </div>
+      <div class="goalbox" id="c-goal">
+        <p class="goal-t" id="c-goal-t">今天有效學習 0 / 15 分</p>
+        <div class="goal-bar" role="progressbar" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0" id="c-goal-bar"><i></i></div>
+        <p class="goal-s">一分鐘裡有作答就算 1 分鐘；滿 15 分鐘就達標，會拿到每日達標學習幣。</p>
+      </div>
+      <h3 style="margin:0 0 6px">最近明細</h3>
+      <table class="ctab"><thead><tr><th>時間</th><th>項目</th><th style="text-align:right">學習幣</th></tr></thead><tbody id="c-recent"><tr><td colspan="3" class="muted">讀取中…</td></tr></tbody></table>
+      <p class="muted" id="c-msg" style="margin:8px 0 0" hidden></p>
+    </section>
+
     <form class="card" id="f-pw" novalidate>
       <h2>🔒 改密碼</h2>
-      <label class="fld"><span>現在的密碼</span><input class="inp" type="password" name="old" autocomplete="current-password" required></label>
-      <label class="fld"><span>新密碼</span><input class="inp" type="password" name="new1" autocomplete="new-password" minlength="6" required><small>要 6 個字以上，而且要有英文字母和數字喔！</small></label>
-      <label class="fld"><span>再輸入一次新密碼</span><input class="inp" type="password" name="new2" autocomplete="new-password" required></label>
+      <label class="fld"><span>現在的密碼</span><span class="pw"><input class="inp" type="password" name="old" autocomplete="current-password" required><button type="button" class="btn eye" data-eye aria-label="顯示密碼" aria-pressed="false">👀 顯示</button></span></label>
+      <label class="fld"><span>新密碼</span><span class="pw"><input class="inp" type="text" name="new1" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" minlength="6" required><button type="button" class="btn eye" data-eye aria-label="隱藏密碼" aria-pressed="true">🙈 隱藏</button></span><small>要 6 個字以上，而且要有英文字母和數字喔！</small></label>
+      <label class="fld"><span>再輸入一次新密碼</span><span class="pw"><input class="inp" type="text" name="new2" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required><button type="button" class="btn eye" data-eye aria-label="隱藏密碼" aria-pressed="true">🙈 隱藏</button></span></label>
       <button class="btn primary big wide" type="submit">改密碼</button>
     </form>
 
@@ -72,7 +103,8 @@
   </div>
   <p class="center muted" style="margin:18px 0 0"><a href="terms.html">📄 使用條款與隱私權說明</a></p>
 </main>
-<script src="kids-auth.js"></script>
+<script src="kids-auth.js?v=eea8abdbb0"></script>
+<script src="kids-coins.js?v=747b1f93cc"></script>
 <script>
 (function () {
   'use strict';
@@ -85,6 +117,13 @@
     if (!sec) return '—';
     try { return new Date(sec * 1000).toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: 'long', day: 'numeric' }); } catch (e) { return new Date(sec * 1000).toISOString().slice(0, 10); }
   }
+  // 顯示／隱藏密碼（設定新密碼的欄位預設明碼，避免小朋友打錯還不知道；登入與舊密碼預設遮住）
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-eye]'); if (!b) return;
+    var inp = b.parentNode.querySelector('input'), show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    b.textContent = show ? '🙈 隱藏' : '👀 顯示'; b.setAttribute('aria-label', show ? '隱藏密碼' : '顯示密碼'); b.setAttribute('aria-pressed', show ? 'true' : 'false');
+  });
   function showOut(text) { $('#in').hidden = true; $('#out').hidden = false; $('#out-t').textContent = text; $('#out-go').href = A.loginUrl(A.base + 'account.html'); }
   function draw(m) {
     $('#out').hidden = true; $('#in').hidden = false;
@@ -100,6 +139,46 @@
   if (!A.configured()) { showOut('會員系統還在準備中，現在不用登入也可以練習和玩遊戲喔！'); $('#out-go').hidden = true; return; }
   if (!A.isLoggedIn()) { showOut('還沒有登入喔！'); return; }
   draw(A.member() || {});
+
+  // ---------- 🪙 學習幣卡：餘額、連續天數、請假卡、今日有效分鐘、最近 20 筆 ----------
+  var C = window.KidsCoins;
+  function fmtTs(ts) {
+    var n = Number(ts), d = isFinite(n) && String(ts).trim() !== '' ? new Date(n < 1e12 ? n * 1000 : n) : new Date(ts);
+    if (isNaN(d.getTime())) return '—';
+    try { return d.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }); } catch (e) { return d.toISOString().slice(5, 16).replace('T', ' '); }
+  }
+  function cell(tr, cls, text, sub) { var td = document.createElement('td'); if (cls) td.className = cls; td.textContent = text; if (sub) { var s = document.createElement('small'); s.textContent = sub; td.appendChild(s); } tr.appendChild(td); }
+  function setBal(v) { if (typeof v === 'number') $('#c-bal').textContent = v; }
+  function drawCoins(r) {
+    setBal(r.balance);
+    $('#c-streak').textContent = (+r.streak_days || 0) + ' 天';
+    $('#c-leave').textContent = +r.leave_cards > 0 ? '有 🎫' : '已用';
+    var t = r.today || {}, mins = Math.max(0, +t.minutes || 0), met = !!t.goal_met, shown = Math.min(15, mins);
+    $('#c-goal').classList.toggle('met', met);
+    $('#c-goal-t').textContent = met ? '✅ 今天達標了！有效學習 ' + mins + ' 分鐘' : '今天有效學習 ' + shown + ' / 15 分';
+    var bar = $('#c-goal-bar'); bar.setAttribute('aria-valuenow', String(shown)); bar.firstChild.style.width = (shown / 15 * 100) + '%';
+    var tb = $('#c-recent'); tb.innerHTML = '';
+    var rows = (r.recent || []).slice(0, 20);
+    if (!rows.length) { var tr0 = document.createElement('tr'); cell(tr0, 'muted', '還沒有學習幣紀錄，去練習就會有喔！'); tr0.firstChild.colSpan = 3; tb.appendChild(tr0); }
+    rows.forEach(function (x) {
+      var tr = document.createElement('tr'), d = +x.delta || 0;
+      cell(tr, 't', fmtTs(x.ts));
+      cell(tr, '', x.label || x.rule_id || '—', x.note || x.item || '');
+      cell(tr, 'd ' + (d >= 0 ? 'up' : 'down'), (d >= 0 ? '+' : '−') + Math.abs(d) + ' 🪙');
+      tb.appendChild(tr);
+    });
+  }
+  function loadCoins() {
+    return A.api('getCoins', { token: A.token(), limit: 20 }).then(function (r) { $('#c-msg').hidden = true; drawCoins(r); }, function (x) {
+      if (x.code === 'expired' || x.code === 'revoked') { A.logout(); showOut(A.errorText(x.code)); return; }
+      var cm = $('#c-msg'); cm.hidden = false; cm.textContent = '學習幣明細暫時讀不到：' + A.errorText(x.code);
+      $('#c-recent').innerHTML = '';
+      if (C && typeof C.balance() === 'number') setBal(C.balance());
+    });
+  }
+  if (C) { if (typeof C.balance() === 'number') setBal(C.balance()); C.onChange(function (v) { setBal(v); }); }
+  // 先把這台裝置還沒送出的學習幣事件送掉，再拿明細（明細才會是最新的）
+  (C ? C.flush() : Promise.resolve()).then(loadCoins, loadCoins);
   // 向後端拿最新資料（也順便確認票還有效）
   A.api('memberProfile', { token: A.token() }).then(function (r) {
     var cur = A.member() || {};

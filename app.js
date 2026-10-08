@@ -276,7 +276,7 @@
     };
     ['lv', 'tag', 'src'].forEach(k => { const el = $('#f' + k); if (el) { el.value = LF[k]; el.onchange = () => { LF[k] = el.value; LF.page = 0; draw(); }; } });
     const fq = $('#fq'); let qt = null; fq.value = LF.q; fq.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { if (!fq.isConnected) return; /* 0.2 秒內已切頁：舊搜尋框不在畫面上，略過 */ LF.q = fq.value; LF.page = 0; draw(); }, 200); };
-    $('#pw').onclick = () => { const ids = pick().flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)); startQuiz({ ids, count: 10 }); };
+    $('#pw').onclick = () => { const ids = pick().flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)); startQuiz({ ids, count: 10, mode: 'words' }); };
     bindLf('words', '單字', D.words.map(KE.wordItemId), draw);
   }
   function pRoots() {
@@ -284,7 +284,7 @@
     const draw = () => {
       $('#rl').innerHTML = D.roots.filter(r => lfPass('roots', KE.rootItemId(r))).map(r => `<div class="card root ${isL(KE.rootItemId(r)) ? 'is-learned' : ''}"><div class="rh"><b class="en">${esc(r.p)}</b><span class="tag">${KE.ROOT_T[r.t]}</span></div><div class="rm">＝ ${esc(r.m)}</div><ul>${r.words.map(w => `<li><span class="en say" data-say="${esc(w.w)}">${w.parts.map(esc).join(' <i>+</i> ')} ＝ <b>${esc(w.w)}</b></span> <span class="zh">${esc(w.zh)}</span></li>`).join('')}</ul>${learnUI(KE.rootItemId(r))}</div>`).join('');
     };
-    $('[data-act="pr"]').onclick = () => startQuiz({ modules: ['roots'], count: 10 });
+    $('[data-act="pr"]').onclick = () => startQuiz({ modules: ['roots'], count: 10, mode: 'roots' });
     bindLf('roots', '字根', D.roots.map(KE.rootItemId), draw);
   }
   function pGrammar() {
@@ -292,7 +292,7 @@
     const draw = () => {
       const open = new Set($$('#gl details[open]').map(d => d.dataset.id));
       $('#gl').innerHTML = D.grammar.filter(g => lfPass('grammar', KE.grammarItemId(g))).map(g => `<details class="card gram ${isL(KE.grammarItemId(g)) ? 'is-learned' : ''}" data-id="${esc(g.id)}" ${open.has(g.id) ? 'open' : ''}><summary><b>${isL(KE.grammarItemId(g)) ? '✅ ' : ''}${esc(g.title)}</b></summary><ul class="rules">${g.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ul><div class="exs">${g.ex.map(e => `<div><span class="en say">${esc(e.en)}</span><small>${esc(e.zh)}</small></div>`).join('')}</div><div class="row wrap"><button class="btn primary" data-g="${esc(g.id)}">🎯 練這個文法</button>${learnUI(KE.grammarItemId(g))}</div></details>`).join('');
-      $$('[data-g]').forEach(b => b.onclick = () => startQuiz({ modules: ['grammar'], topics: ['grammar:' + b.dataset.g], count: 10, allowSpeak: canSpeak }));
+      $$('[data-g]').forEach(b => b.onclick = () => startQuiz({ modules: ['grammar'], topics: ['grammar:' + b.dataset.g], count: 10, allowSpeak: canSpeak, mode: 'grammar' }));
     };
     bindLf('grammar', '文法', D.grammar.map(KE.grammarItemId), draw);
   }
@@ -325,7 +325,7 @@
     const lvOf = p => p.lv || 2;
     const draw = () => {
       $('#pl').innerHTML = D.patterns.slice().sort((a, b) => lvOf(a) - lvOf(b)).filter(p => (!PLV.lv || String(lvOf(p)) === PLV.lv) && lfPass('patterns', KE.patternItemId(p))).map(p => `<div class="card pat ${isL(KE.patternItemId(p)) ? 'is-learned' : ''}"><span class="lvb lv${lvOf(p)}">${KE.PATTERN_LV[lvOf(p)]}</span><div class="ph en say">${esc(p.pattern)}</div><div class="zh">${esc(p.zh)}</div><div class="exs">${p.ex.map(e => `<div><span class="en say">${esc(e.en)}</span><small>${esc(e.zh)}</small></div>`).join('')}</div><div class="row wrap"><button class="btn primary" data-p="${esc(p.id)}">🎯 練這個句型</button>${learnUI(KE.patternItemId(p))}</div></div>`).join('');
-      $$('[data-p]').forEach(b => b.onclick = () => startQuiz({ modules: ['patterns'], topics: ['patterns:' + b.dataset.p], count: 10, allowSpeak: canSpeak }));
+      $$('[data-p]').forEach(b => b.onclick = () => startQuiz({ modules: ['patterns'], topics: ['patterns:' + b.dataset.p], count: 10, allowSpeak: canSpeak, mode: 'patterns' }));
     };
     $$('input[name="plv"]').forEach(el => el.onchange = () => { PLV.lv = el.value; draw(); });
     bindLf('patterns', '句型', D.patterns.map(KE.patternItemId), draw); // 進度一律算全部句型
@@ -348,7 +348,7 @@
       const last = { mods: vals('mod'), offT: allT.filter(t => !onT.includes(t)), offY: types.filter(y => !onY.includes(y)), count: +val('count') || 10, ratio: +val('ratio') || 0, lv: val('lv'), src: val('src') };
       S.settings.last = last; saveSettings();
       if (!last.mods.length || !onY.length) { alert('請至少選一個單元和一個題型喔！'); return; }
-      startQuiz({ modules: last.mods, topics: onT, types: onY, count: last.count, mistakeRatio: last.ratio, mistakes: mistakeIds(), lv: last.lv, src: last.src, allowSpeak: canSpeak });
+      startQuiz({ modules: last.mods, topics: onT, types: onY, count: last.count, mistakeRatio: last.ratio, mistakes: mistakeIds(), lv: last.lv, src: last.src, allowSpeak: canSpeak, mode: 'practice' });
     };
   }
 
@@ -413,6 +413,8 @@
     Q.answered = true;
     const res = skipped ? { ok: false } : E.check(q, input);
     if (!skipped) record(q, res.ok, input);
+    // 學習幣（kids-coins.js）：每答一題記進「這一分鐘」；跳過不算作答
+    if (window.KidsCoins) skipped ? KidsCoins.activity('english') : KidsCoins.answer(res.ok, 'english');
     Q.answers.push({ q, ok: res.ok, skip: !!skipped, input });
     $$('.opt').forEach(b => { b.disabled = true; if (b.dataset.v === q.answer) b.classList.add('right'); else if (b.dataset.v === input) b.classList.add('wrong'); });
     $$('#ok,#clr,#mic,#skip,.pool .chip,#ans').forEach(x => { x.disabled = true; });
@@ -441,9 +443,14 @@
     S.progress.stars += stars; S.progress.quizzes++; save('ke_progress', S.progress);
     Q.result = { ok, tot, stars, wrong: Q.answers.filter(a => !a.ok && !a.skip).map(a => a.q) };
     if (window.KESync) KESync.now(); // 一回合結束 → 馬上同步
+    // 學習幣：一回練習結束就回報（給幾枚、門檻、少於 5 題不給，都由後端決定）
+    if (window.KidsCoins && !Q.gate) KidsCoins.report({ type: 'practice_round', item: 'english:' + (Q.drill ? 'drill' : (Q.cfg && Q.cfg.mode) || 'practice'), correct: ok, total: tot });
     if (Q.gate) {
       Q.result.pass = KE.gatePassed(Q.gate, ok);
-      if (Q.result.pass) { S.learned = KE.setLearned(S.learned, Q.gate.itemId, new Date().toISOString(), `${ok}/${tot}`); save('ke_learned', S.learned); }
+      if (Q.result.pass) {
+        S.learned = KE.setLearned(S.learned, Q.gate.itemId, new Date().toISOString(), `${ok}/${tot}`); save('ke_learned', S.learned);
+        if (window.KidsCoins) KidsCoins.report({ type: 'test_' + Q.gate.itemId.split(':')[0], item: Q.gate.itemId, correct: ok, total: tot });
+      }
     }
     go('#result');
   }
@@ -471,7 +478,7 @@
       ${wrongList(r)}
       <div class="row wrap"><button class="btn primary big" id="again">再練一次</button>${r.wrong.length ? '<button class="btn big" id="redo">練答錯的題目</button>' : ''}<button class="btn big" data-go="#home">回首頁</button></div>`;
     $('#again').onclick = () => startQuiz(Q.cfg);
-    const rd = $('#redo'); if (rd) rd.onclick = () => startQuiz({ ids: r.wrong.map(q => q.id) });
+    const rd = $('#redo'); if (rd) rd.onclick = () => startQuiz({ ids: r.wrong.map(q => q.id), mode: 'redo' });
   }
 
   // ---------- 錯題庫 ----------
@@ -479,7 +486,7 @@
     const ids = mistakeIds().sort((a, b) => S.mistakes[b].t - S.mistakes[a].t);
     app.innerHTML = top('錯題庫') + `<div class="card"><p>答錯的題目會來這裡。同一題<b>連續答對 3 次</b>就會畢業離開 🎓</p><button class="btn primary big" id="onlym" ${ids.length ? '' : 'disabled'}>只練錯題（${ids.length} 題）</button></div>
       ${ids.length ? `<ul class="list card">${ids.map(id => { const m = E.byId[id], s = S.mistakes[id]; return `<li><span class="badge">${KE.TYPES[m.type]}</span> <span>${esc(m.title)}</span> <span class="dots">${'●'.repeat(s.c)}${'○'.repeat(3 - s.c)}</span> <small class="muted">錯 ${s.w} 次</small></li>`; }).join('')}</ul>` : '<p class="center muted">太棒了，目前沒有錯題！🎉</p>'}`;
-    $('#onlym').onclick = () => startQuiz({ ids, count: 30 });
+    $('#onlym').onclick = () => startQuiz({ ids, count: 30, mode: 'mistakes' });
   }
 
   // ---------- 例題庫 ----------
@@ -501,7 +508,7 @@
     $('#bm').onchange = e => { BF.m = e.target.value; BF.k = ''; draw(); };
     $('#bk').onchange = e => { BF.k = e.target.value; draw(); };
     $('#by').onchange = e => { BF.y = e.target.value; draw(); };
-    $('#bgo').onclick = () => startQuiz({ ids: pick().map(m => m.id), count: 30 });
+    $('#bgo').onclick = () => startQuiz({ ids: pick().map(m => m.id), count: 30, mode: 'bank' });
     draw();
   }
 

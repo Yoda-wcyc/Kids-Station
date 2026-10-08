@@ -128,7 +128,8 @@ end</pre></div></section><section class="card step"><div class="sh"><span class=
   end
 end</pre></div></section><section class="card step"><div class="sh"><span class="no">7</span><h3>結束時兵營別再派兵</h3><span class="sp">⛺ 角色：兵營</span></div><div class="tx"><p>在兵營「遊戲結束」那段的「隱藏」下面加 <b>停止 這個物件的其它程式</b>，讓派兵迴圈停下，播結束音效時就不會再冒出新小兵。</p></div><div class="bcap">完整腳本：兵營-遊戲結束（修改）</div><div class="bwrap"><pre class="blocks">當收到訊息 [遊戲結束 v]
 隱藏
-停止 [這個物件的其它程式 v]</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">玩一整場：<ul><li>史萊姆碰到小兵會停下來嗎？</li><li>雙方都一閃一閃扣血嗎？</li><li>結果畫面上兵營、小兵、史萊姆、塔都消失了嗎？</li></ul></div></section><section class="card chal"><div class="ck">🏆 挑戰題</div><div class="tx"><p>只靠兵營加 1 座塔，能撐到第幾波？兵營放在路的前段還是後段，哪個比較厲害？</p></div></section><section class="card"><h3>🎓 畢業啦！</h3><div class="tx"><p>你做出了一個完整的塔防遊戲：分身、變數、廣播、自己做的積木全都用上了。存好檔，玩給家人看吧！</p><p>點上面選單的 <b>檔案 → 下載到你的電腦</b> 存起來。</p></div></section><details class="parent"><summary>👨‍👩‍👧 家長版（點我展開）</summary>
+停止 [這個物件的其它程式 v]</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">玩一整場：<ul><li>史萊姆碰到小兵會停下來嗎？</li><li>雙方都一閃一閃扣血嗎？</li><li>結果畫面上兵營、小兵、史萊姆、塔都消失了嗎？</li></ul></div></section><section class="card chal"><div class="ck">🏆 挑戰題</div><div class="tx"><p>只靠兵營加 1 座塔，能撐到第幾波？兵營放在路的前段還是後段，哪個比較厲害？</p></div></section><section class="card"><h3>🎓 畢業啦！</h3><div class="tx"><p>你做出了一個完整的塔防遊戲：分身、變數、廣播、自己做的積木全都用上了。存好檔，玩給家人看吧！</p><p>點上面選單的 <b>檔案 → 下載到你的電腦</b> 存起來。</p></div></section><section class="card done-card noprint" id="kids-done" data-item="scratch-td:L7" hidden><h3>✅ 我完成了第 7 堂！</h3><div class="tx"><p>照著步驟拼好積木、按綠旗試玩過了嗎？做完了就按下面的按鈕，領學習幣 🪙！</p></div><button type="button" class="kd-btn" id="kids-done-btn">我完成了 ✅</button><p class="kd-msg" id="kids-done-msg" role="status" aria-live="polite"></p></section>
+<details class="parent"><summary>👨‍👩‍👧 家長版（點我展開）</summary>
 <h4>⏱️ 時間分配（40 分鐘）</h4><table><tr><th>時間</th><th>做什麼</th></tr>
 <tr><td>0–5 分</td><td>看目標：一起讀「今天的目標」，可以先打開完成檔玩一下（記得之後回到自己的檔案）</td></tr>
 <tr><td>5–30 分</td><td>拼積木：照步驟卡一張一張做，每到「試試看」就按綠旗</td></tr>
@@ -153,6 +154,30 @@ end</pre></div></section><section class="card step"><div class="sh"><span class=
  if(window.matchMedia){var mq=window.matchMedia('print');if(mq.addListener)mq.addListener(function(m){if(m.matches)openAll();});}
 })();
 </script>
-<script src="../../../kids-auth.js"></script>
+<script src="../../../kids-auth.js?v=eea8abdbb0"></script>
+<script src="../../../kids-coins.js?v=747b1f93cc"></script>
 <script>/* 會員閘門：讀講義免登入，下載 .sb3 遊戲檔要登入 */if(window.KidsAuth)KidsAuth.guard('a.dl','download');</script>
+<style>.done-card{border:3px solid #3ecf8e;background:#f3fff8}.kd-btn{display:inline-flex;align-items:center;justify-content:center;min-height:60px;min-width:12em;margin-top:.6rem;padding:.4rem 1.4rem;border:none;border-radius:16px;background:linear-gradient(135deg,#69db7c,#2f9e44);color:#fff;font:inherit;font-size:21px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(47,158,68,.3);touch-action:manipulation}.kd-btn[disabled]{background:#c9d6cf;box-shadow:none;cursor:default}.kd-btn.kd-done[disabled]{background:#e9fbf2;color:#1d8a5a;border:2.5px solid #a8ecc9}.kd-msg{margin:.5rem 0 0;font-weight:700;min-height:1.6em}</style>
+<script>/* 學習幣：網站版「我完成了」（按一下就給、一堂一次；已領過看後端回的 already_awarded，另存 kids_scratch_done 本機快取） */
+(function(){var c=document.getElementById('kids-done'),b=document.getElementById('kids-done-btn'),m=document.getElementById('kids-done-msg');
+if(!c||!b||!window.KidsAuth||!window.KidsCoins||!KidsAuth.configured())return;
+var item=c.getAttribute('data-item'),K='kids_scratch_done';
+function cache(){try{var o=JSON.parse(localStorage.getItem(K)||'{}');return o&&typeof o==='object'?o:{};}catch(e){return {};}}
+function key(){return KidsCoins.mid()+'|'+item;}
+function mark(){try{var o=cache();o[key()]=new Date().toISOString();localStorage.setItem(K,JSON.stringify(o));}catch(e){}}
+function done(t){b.disabled=true;b.classList.add('kd-done');b.textContent='已完成 ✅';m.textContent=t||'';}
+function draw(){if(KidsAuth.isLoggedIn()&&cache()[key()])done('');else{b.disabled=false;b.classList.remove('kd-done');b.textContent='我完成了 ✅';}}
+c.hidden=false;draw();
+window.addEventListener('storage',function(e){if(e.key==='kids_jwt'||e.key===K||e.key===null)draw();});
+b.addEventListener('click',function(){
+ if(!KidsAuth.requireLogin('領學習幣'))return;
+ if(cache()[key()]){done('');return;}
+ b.disabled=true;m.textContent='送出中…';
+ KidsCoins.report({type:'scratch_lesson_done',item:item,correct:1,total:1}).then(function(r){
+  if(r&&(r.granted>0||r.reason==='granted'||r.reason==='already_awarded'||r.reason==='duplicate')){mark();done(r.granted>0?'太棒了！拿到 '+r.granted+' 枚學習幣 🪙':'這一堂已經領過囉！');}
+  else if(r&&(r.reason==='daily_cap'||r.reason==='daily_limit')){b.disabled=false;m.textContent='今天的學習幣拿滿了，明天再來按一次！';}
+  else if(!r){mark();done('網路好像不太順，連上網路後會自動補送 🪄');}
+  else{b.disabled=false;m.textContent='這次沒有送成功，等一下再按一次看看。';}
+ });
+});})();</script>
 </body></html>

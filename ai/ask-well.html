@@ -32,7 +32,8 @@ body{font-family:-apple-system,'PingFang TC','Noto Sans TC','Segoe UI',sans-seri
 .center{display:flex;flex-direction:column;align-items:center;text-align:center}
 </style></head>
 <body><div id="app"></div>
-<script src="../kids-auth.js"></script>
+<script src="../kids-auth.js?v=eea8abdbb0"></script>
+<script src="../kids-coins.js?v=747b1f93cc"></script>
 <script>
 const GAME = {"title": "小朋友學 AI · 怎麼問得好", "opening": [{"m": "talk", "t": "嗨！我是 <b>Yoda</b> 👋 這一課教你一個超實用的本領——"}, {"m": "talk", "t": "<b>怎麼「問」AI，它才幫得上你</b>。"}, {"m": "idea", "t": "同樣一件事，問得爛 AI 就亂回答；問得好，它超好用。"}, {"m": "happy", "t": "記住三招，你就是提問高手！"}], "rounds": [{"tag": "第 1 招 · 講清楚", "m": "talk", "say": "第一招：<b>講清楚你要什麼</b>。<br>比比看，哪個問法比較好？", "q": "", "opts": ["「講個故事。」", "「講一個 3 句話的故事，主角是一隻怕黑的小恐龍，結局要開心。」", "「隨便啦。」"], "correct": 1, "fb": ["太籠統了，AI 只能亂猜，給的東西你不一定喜歡。", "答對！講清楚長度、主角、結局——AI 就給得剛剛好 🎯", "「隨便」AI 最難幫你，它又不會讀心。"], "peek": "講清楚你要什麼（長度、主題、風格、結局），AI 才給得到位。"}, {"tag": "第 2 招 · 給背景", "m": "talk", "say": "第二招：<b>給一點背景</b>。<br>你想請 AI 解釋一題數學，怎麼問比較好？", "q": "", "opts": ["「這題怎麼算？」", "「我是小五、還沒學過分數，請用簡單的方式解釋這題。」", "「快點給我答案。」"], "correct": 1, "fb": ["它不知道你的程度，可能講得太難或太簡單。", "答對！告訴 AI 你的年級、已經懂什麼，它就講得剛好懂 👍", "只要答案＝你沒學到，而且答案可能是唬爛的（要查證！）。"], "peek": "給背景——你的年級、已經懂什麼、要做什麼——AI 才會用適合你的方式回答。"}, {"tag": "第 3 招 · 說形式", "m": "idea", "say": "第三招：<b>說你要什麼形式</b>。<br>你想要一份「重點整理」，哪個問法最好？", "q": "", "opts": ["「跟我說說看。」", "「請用<b>條列 3 點</b>、每點一句話，幫我整理重點。」", "「越多越好。」"], "correct": 1, "fb": ["沒說形式，AI 可能給你一大段，難整理。", "答對！說清楚要「條列 3 點、每點一句」，AI 就照做 📋", "越多越難讀——說清楚形式和數量比較實用。"], "peek": "說清楚形式（條列還是一段、要幾點、多長），AI 的答案才好用。"}, {"tag": "第 4 招 · 別忘了查證", "m": "happy", "say": "最後一招，也最重要：<br>就算問得很好，AI 還是<b>可能唬爛</b>（記得上一課嗎？）。", "q": "拿到 AI 的答案後，聰明的你會？", "opts": ["直接用，反正我問得很好", "重要的地方<b>查證一下</b>、或問大人", "再也不相信 AI"], "correct": 1, "fb": ["問得好 ≠ 答得對，重要的還是要查一下。", "答對！問得好＋會查證＝你就是真正的 AI 高手 🌟", "也不用完全不信～它很好用，只是重要的事要查證。"], "peek": "問得好也要查證：AI 可能出錯，重要的答案要自己查一下或問大人。"}], "badge": "🎯", "badgeName": "提問高手", "resultText": "你學會了問 AI 的三招：<br><b>講清楚 → 給背景 → 說形式</b>，還記得<b>拿到答案要查證</b>。這樣 AI 就是你最強的幫手！", "parentNote": "這個小遊戲教孩子有效使用 AI 的提問素養：把需求講清楚、提供背景、指定形式，並在拿到結果後查證。全程無投資內容；可以先瀏覽介紹，開始挑戰時需要登入（免費註冊，帳號用家長的 email，只另記年齡和年級，不收孩子的姓名、照片等資料）。", "moreLine": "更多「小朋友學 AI」小遊戲，陸續登場 ✨"};
 const OPENING = GAME.opening, ROUNDS = GAME.rounds;
@@ -55,15 +56,16 @@ let idx=0,oi=0,score=0;
 function start(){oi=0;renderOpening();}
 function renderOpening(){const o=OPENING[oi],last=oi>=OPENING.length-1;
  APP.innerHTML=`<div class="center"><div class="brand">小朋友學 AI</div>${mascot(o.m)}<div class="bubble">${o.t}</div><button class="btn" onclick="nextOpening()">${last?'開始挑戰 🚀':'下一句 ›'}</button></div>`;}
-function nextOpening(){if(oi>=OPENING.length-1&&window.KidsAuth&&!KidsAuth.requireLogin('quiz'))return;/* 會員閘門：看開場免登入，按「開始挑戰」要登入 */oi++;if(oi>=OPENING.length){idx=0;showRound();}else renderOpening();}
+function nextOpening(){if(oi>=OPENING.length-1&&window.KidsAuth&&!KidsAuth.requireLogin('quiz'))return;/* 會員閘門：看開場免登入，按「開始挑戰」要登入 */oi++;if(oi>=OPENING.length){idx=0;score=0;showRound();}else renderOpening();}
 function showRound(){const r=ROUNDS[idx];
  APP.innerHTML=`${dots(idx)}<div class="center" style="width:100%">${mascot(r.m)}<div class="tag">${r.tag}</div><div class="bubble">${r.say}</div>${r.q?`<div class="q">${r.q}</div>`:''}<div class="opts">${r.opts.map((o,k)=>`<button class="opt" onclick="pick(${k})">${o}</button>`).join('')}</div><button class="peek" onclick="peek()">🙈 偷看答案</button></div>`;}
-function pick(k){const r=ROUNDS[idx];const ok=k===r.correct;if(ok)score++;
+function pick(k){const r=ROUNDS[idx];const ok=k===r.correct;if(ok)score++;if(window.KidsCoins)KidsCoins.answer(ok,'ai');
  APP.innerHTML=`${dots(idx)}<div class="center" style="width:100%">${mascot(ok?'happy':'oops')}<div class="tag">${r.tag}</div><div class="opts">${r.opts.map((o,j)=>`<div class="opt ${j===r.correct?'right':(j===k?'wrong':'dim')}">${j===r.correct?'✓ ':(j===k?'✗ ':'')}${o}</div>`).join('')}</div><div class="fb ${ok?'good':''}">${r.fb[k]}</div><button class="btn" onclick="next()">${idx>=ROUNDS.length-1?'看結果 🎉':'下一關 ›'}</button></div>`;}
-function peek(){const r=ROUNDS[idx];
+function peek(){if(window.KidsCoins)KidsCoins.activity('ai');const r=ROUNDS[idx];
  APP.innerHTML=`${dots(idx)}<div class="center" style="width:100%">${mascot('idea')}<div class="tag">${r.tag}</div><div class="opts">${r.opts.map((o,j)=>`<div class="opt ${j===r.correct?'right':'dim'}">${j===r.correct?'✓ ':''}${o}</div>`).join('')}</div><div class="fb good">💡 ${r.peek}</div><button class="btn" onclick="next()">${idx>=ROUNDS.length-1?'看結果 🎉':'下一關 ›'}</button></div>`;}
 function next(){idx++;if(idx>=ROUNDS.length)showResult();else showRound();}
 function showResult(){
+ if(window.KidsCoins)KidsCoins.report({type:'ai_page_done',item:'ai:'+location.pathname.split('/').pop().replace('.html',''),correct:score,total:ROUNDS.length});/* 學習幣：玩完就給（不看分數），每頁一次由後端判斷 */
  APP.innerHTML=`<div class="center" style="width:100%"><div class="brand">小朋友學 AI</div>${mascot('happy')}<div class="badge">${GAME.badge}</div><div class="big">${GAME.badgeName}！</div><div class="bubble" style="text-align:center">${GAME.resultText}<br><br>你答對了 ${score} / ${ROUNDS.length} 關 🌟</div><button class="btn" onclick="start()">再玩一次 🔁</button><div class="parent">👨‍👩‍👧 <b>給爸媽的話：</b>${GAME.parentNote}</div><div style="font-size:12px;color:#6b84a6;margin-top:1rem">${GAME.moreLine}</div></div>`;}
 ['nextOpening','showRound','pick','peek','next','showResult','start'].forEach(n=>window[n]=eval(n));
 start();
