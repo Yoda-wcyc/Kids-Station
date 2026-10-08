@@ -283,10 +283,52 @@ t('unlock chain: cave boss -> key recipe -> castle map', () => {
   assert(L.BADGES.some(b => b.id === 'castle' && b.name === '城堡征服者'));
 });
 
+// ---- 句型港口 ----
+t('harbor question mix + level weights', () => {
+  assert.deepStrictEqual(L.harborTypes(4, false), L.HARBOR_TYPES);
+  assert.strictEqual(L.harborTypes(8, true).filter(x => x === 'reorder').length, 4, 'bridge rooms are reorder-heavy');
+  const r = L.mulberry32(12), cnt = { 1: 0, 2: 0, 3: 0 }, N = 20000;
+  for (let i = 0; i < N; i++) cnt[L.pickPatternLv(r)]++;
+  assert(Math.abs(cnt[1] / N - 0.45) < 0.02 && Math.abs(cnt[2] / N - 0.40) < 0.02 && Math.abs(cnt[3] / N - 0.15) < 0.02, JSON.stringify(cnt));
+  for (let k = 0; k < 100; k++) { const b = L.harborBossTypes(r); assert.strictEqual(b.length, 6); assert.strictEqual(b[5], 'zh2en-type'); ['pattern-choose', 'reorder', 'pattern-fill'].forEach(tp => assert(b.includes(tp))); }
+  assert.strictEqual(L.damage({ combo: 1, cls: 'guard', map: 'harbor' }).dmg, 15, 'guardian ×1.5 in harbor');
+  assert.strictEqual(L.mapOf('h2'), 'harbor'); assert.deepStrictEqual(L.bossRule('harbor'), { q: 6, need: 5, playAll: true });
+});
+t('bridge: plank per correct word, wobble on wrong, done = crossed', () => {
+  let st = L.bridgeStart('I like apples .'.replace(' .', '.'));
+  assert.deepStrictEqual(st.tokens, ['I', 'like', 'apples.']);
+  let r = L.bridgeStep(st, 'like'); assert(!r.ok && r.hit === L.PLANK_HIT && r.st.laid === 0 && r.st.wobbles === 1); st = r.st;
+  r = L.bridgeStep(st, 'I'); assert(r.ok && !r.done && r.st.laid === 1); st = r.st;
+  r = L.bridgeStep(st, 'like'); st = r.st; r = L.bridgeStep(st, 'apples.'); assert(r.ok && r.done && r.st.laid === 3 && r.st.wobbles === 1);
+  assert.strictEqual(L.bridgeStep(r.st, 'x').done, true);
+  st = L.bridgeStart('go go home'); r = L.bridgeStep(st, 'go'); r = L.bridgeStep(r.st, 'go'); assert(r.ok && r.st.laid === 2, 'repeated words');
+});
+t('harbor drops with seed', () => {
+  const a = L.mulberry32(41), b = L.mulberry32(41);
+  for (let i = 0; i < 50; i++) assert.deepStrictEqual(L.rollDrop(a, 'normal', 'harbor'), L.rollDrop(b, 'normal', 'harbor'));
+  const r = L.mulberry32(17), N = 100000; let dia = 0, pearl = 0;
+  for (let i = 0; i < N; i++) { const d = L.rollDrop(r, 'normal', 'harbor'); assert(d.gold >= 1); dia += d.diamond; pearl += d.pearl; }
+  assert(dia / N > 0.092 && dia / N < 0.108, 'diamond ≈10% got ' + dia / N);
+  assert(pearl / N > 0.32 && pearl / N < 0.38, 'pearl ≈35% got ' + pearl / N);
+  const rb = L.mulberry32(2); for (let i = 0; i < 300; i++) { const d = L.rollDrop(rb, 'boss', 'harbor'); assert(d.pearl === 2 && d.gold >= 3); }
+});
+t('unlock chain: knight boss -> boat -> harbor; anchor +20% HP; lighthouse', () => {
+  let s = L.newSave(); Object.assign(s.items, { pick: 1, key: 1 }); s.mats = { wood: 20, stone: 9, iron: 9, gold: 9, pearl: 9, diamond: 0 };
+  assert(!L.recipesFor(s).some(r => r.id === 'boat')); assert(!L.mapUnlocked(s, 'harbor'));
+  s.defeated.kboss = true; assert(L.recipesFor(s).some(r => r.id === 'boat'));
+  assert(L.craftCheck(s, 'anchor').locked);
+  const b = L.craft(s, 'boat'); assert(b.ok); assert.deepStrictEqual([b.s.mats.gold, b.s.mats.iron, b.s.mats.wood], [7, 6, 10]);
+  assert(L.mapUnlocked(b.s, 'harbor'));
+  assert.strictEqual(L.maxHp(b.s), 100); const an = L.craft(b.s, 'anchor'); assert(an.ok); assert.strictEqual(L.maxHp(an.s), 120);
+  assert(L.placeTile(an.s, 0, 'lighthouse').ok);
+  assert(L.missionList(an.s).some(m => m.id === 'bridges' && m.goal === 3));
+  assert(L.BADGES.some(x => x.id === 'captain' && x.name === '港口船長'));
+});
+
 // ---- 聲音（audio.js 純邏輯） ----
 const AU = require('./audio.js');
 t('scene -> track mapping', () => {
-  const want = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', cave: 'cave', castle: 'castle', unknown: 'calm' };
+  const want = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', cave: 'cave', castle: 'castle', harbor: 'harbor', unknown: 'calm' };
   Object.keys(want).forEach(k => assert.strictEqual(AU.trackFor(k), want[k], k));
 });
 t('speech ducking state machine', () => {
