@@ -325,10 +325,64 @@ t('unlock chain: knight boss -> boat -> harbor; anchor +20% HP; lighthouse', () 
   assert(L.BADGES.some(x => x.id === 'captain' && x.name === '港口船長'));
 });
 
+// ---- 片語火山 ----
+global.window = global.window || global;
+require('../../data/phrases.js');
+const PHR = global.window.DATA_PHRASES;
+t('volcano question mix', () => {
+  assert.deepStrictEqual([...new Set(L.volcanoTypes(12, false))].sort(), ['en2zh', 'listen-choose', 'phrase-fill', 'phrase-hop', 'zh2en', 'zh2en-type']);
+  assert.strictEqual(L.volcanoTypes(10, true).filter(x => x === 'phrase-hop').length, 4);
+  const r = L.mulberry32(6);
+  for (let k = 0; k < 100; k++) { const b = L.volcanoBossTypes(r); assert.strictEqual(b.length, 7); assert.strictEqual(b[6], 'zh2en-type'); L.VOLCANO_TYPES.slice(0, 4).forEach(tp => assert(b.slice(0, 6).includes(tp))); assert(b.includes('phrase-hop')); }
+  assert.deepStrictEqual(L.bossRule('volcano'), { q: 7, need: 6, playAll: true });
+  assert.strictEqual(L.bossOutcome(6, 6, L.bossRule('volcano')), 'continue'); assert.strictEqual(L.bossOutcome(6, 7, L.bossRule('volcano')), 'win'); assert.strictEqual(L.bossOutcome(5, 7, L.bossRule('volcano')), 'lose');
+  assert.strictEqual(L.mapOf('v4'), 'volcano');
+});
+t('stepping stones: split, no fake-valid distractors, sink + reshuffle', () => {
+  const real = new Set(PHR.map(p => p.p.toLowerCase())), r = L.mulberry32(10);
+  PHR.filter(p => p.p.includes(' ')).forEach(ph => {
+    const hp = L.makeHop(PHR, ph, r);
+    assert.strictEqual(hp.head + ' ' + hp.answer, ph.p); assert(hp.options.includes(hp.answer)); assert.strictEqual(new Set(hp.options).size, hp.options.length);
+    hp.options.filter(o => o !== hp.answer).forEach(o => assert(!real.has((hp.head + ' ' + o).toLowerCase()), `${hp.head} ${o} is a real phrase`));
+  });
+  const lookFor = PHR.find(p => p.p === 'look for') || PHR.find(p => p.p.startsWith('look '));
+  if (lookFor) { const hp = L.makeHop(PHR, lookFor, r); assert(!hp.options.some(o => o !== hp.answer && real.has('look ' + o))); }
+  let st = { answer: 'for', options: ['at', 'for', 'up', 'down'], sunk: [] };
+  let x = L.hopPick(st, 'at', L.mulberry32(1)); assert(!x.ok && x.hit === L.STONE_HIT); assert.deepStrictEqual(x.st.options.slice().sort(), ['down', 'for', 'up']); assert.deepStrictEqual(x.st.sunk, ['at']);
+  x = L.hopPick(x.st, 'for', L.mulberry32(1)); assert(x.ok);
+});
+t('volcano drops with seed + flame sword', () => {
+  const a = L.mulberry32(55), b = L.mulberry32(55);
+  for (let i = 0; i < 50; i++) assert.deepStrictEqual(L.rollDrop(a, 'normal', 'volcano'), L.rollDrop(b, 'normal', 'volcano'));
+  const r = L.mulberry32(23), N = 100000; let dia = 0;
+  for (let i = 0; i < N; i++) { const d = L.rollDrop(r, 'normal', 'volcano'); assert(d.crystal >= 1 && d.crystal <= 2); dia += d.diamond; }
+  assert(dia / N > 0.112 && dia / N < 0.128, 'diamond ≈12% got ' + dia / N);
+  const rb = L.mulberry32(3); for (let i = 0; i < 300; i++) assert(L.rollDrop(rb, 'boss', 'volcano').crystal >= 3);
+  assert.strictEqual(L.damage({ combo: 1, sword: 'flame' }).dmg, 12); assert.strictEqual(L.damage({ combo: 3, sword: 'flame' }).dmg, 18);
+  const s = L.newSave(); s.items.sword = 1; s.items.iron = 1; s.items.flame = 1; assert.strictEqual(L.swordOf(s), 'flame');
+});
+t('full unlock chain forest -> volcano + ending', () => {
+  let s = L.newSave(); s.mats = { wood: 99, stone: 99, iron: 99, gold: 99, pearl: 99, crystal: 99, diamond: 0 };
+  const order = ['forest', 'cave', 'castle', 'harbor', 'volcano'];
+  assert.deepStrictEqual(order.map(m => L.mapUnlocked(s, m)), [true, false, false, false, false]);
+  let r = L.craft(s, 'pick'); s = r.s; assert(L.mapUnlocked(s, 'cave'));
+  assert(L.craftCheck(s, 'key').hidden); s.defeated.cboss = true; r = L.craft(s, 'key'); assert(r.ok); s = r.s; assert(L.mapUnlocked(s, 'castle'));
+  assert(L.craftCheck(s, 'boat').hidden); s.defeated.kboss = true; r = L.craft(s, 'boat'); assert(r.ok); s = r.s; assert(L.mapUnlocked(s, 'harbor'));
+  assert(L.craftCheck(s, 'boots').hidden); assert(L.craftCheck(s, 'flame').hidden); s.defeated.hboss = true;
+  r = L.craft(s, 'boots'); assert(r.ok); s = r.s; assert.deepStrictEqual([s.mats.pearl, s.mats.gold], [96, 94]); assert(L.mapUnlocked(s, 'volcano'));
+  r = L.craft(s, 'flame'); assert(r.ok); s = r.s; assert(L.placeTile(s, 0, 'lavalamp').ok);
+  assert.deepStrictEqual(order.map(m => L.mapUnlocked(s, m)), [true, true, true, true, true]);
+  assert.strictEqual(L.ROUTE.map(x => x.id).join('>'), 'forest>cave>castle>harbor>volcano'); assert(!L.ROUTE.some(x => x.soon));
+  assert(L.missionList(s).some(m => m.id === 'hops' && m.goal === 10));
+  assert(L.BADGES.some(b => b.id === 'hero' && b.name === '火山英雄'));
+  assert.strictEqual(L.endingTriggered(s, 'hboss'), false); assert.strictEqual(L.endingTriggered(s, 'vboss'), true);
+  s.ended = '2026-10-08'; assert.strictEqual(L.endingTriggered(s, 'vboss'), false, 'only the first time');
+});
+
 // ---- 聲音（audio.js 純邏輯） ----
 const AU = require('./audio.js');
 t('scene -> track mapping', () => {
-  const want = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', cave: 'cave', castle: 'castle', harbor: 'harbor', unknown: 'calm' };
+  const want = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', cave: 'cave', castle: 'castle', harbor: 'harbor', volcano: 'volcano', dragon: 'dragon', unknown: 'calm' };
   Object.keys(want).forEach(k => assert.strictEqual(AU.trackFor(k), want[k], k));
 });
 t('speech ducking state machine', () => {

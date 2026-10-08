@@ -5,7 +5,7 @@
   const AU = {};
 
   // ===================== 純邏輯 =====================
-  AU.SCENE_TRACK = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', cave: 'cave', castle: 'castle', harbor: 'harbor' };
+  AU.SCENE_TRACK = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', cave: 'cave', castle: 'castle', harbor: 'harbor', volcano: 'volcano', dragon: 'dragon' };
   AU.trackFor = scene => AU.SCENE_TRACK[scene] || 'calm';
   AU.DUCK = 0.15; AU.XFADE = 0.8;
   AU.DEFAULTS = { muted: false, music: 0.35, sfx: 0.7 };
@@ -66,6 +66,12 @@
     harbor: { bpm: 104, padCut: 900, padLv: .04, waves: true, chords: [[50, 57, 62, 65], [48, 55, 60, 64], [46, 53, 58, 62], [45, 52, 57, 61]],
       arp: [0, -1, -1, 1, -1, -1, 2, -1, 1, -1, -1, 2, -1, -1, 3, -1], arpOct: 12, arpLv: .05, bass: [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0],
       kick: [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], kickLv: .2 },
+    volcano: { bpm: 84, padCut: 600, padLv: .055, chords: [[40, 47, 52, 55], [41, 48, 53, 57], [40, 47, 52, 55], [38, 45, 50, 53]],
+      arp: [0, -1, -1, -1, 2, -1, -1, -1, 1, -1, -1, 3, -1, -1, -1, -1], arpOct: 24, arpLv: .03, bass: [1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+      kick: [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], kickLv: .35 },
+    dragon: { bpm: 132, padCut: 1100, padLv: .045, chords: [[57, 60, 64, 69], [53, 57, 60, 65], [48, 52, 55, 60], [55, 59, 62, 67], [57, 60, 64, 69], [53, 57, 60, 65], [50, 53, 57, 62], [52, 56, 59, 64]],
+      arp: [0, 2, 1, 2, 3, 2, 1, 2, 0, 2, 1, 2, 3, 2, 3, 1], arpOct: 12, arpLv: .03, bass: R(4, [1, 0, 1, 1]),
+      kick: R(4, [1, 0, 0, 0]), kickLv: .45, snare: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1], snLv: .1, hat: R(4, [0, 0, 1, 0]), hatLv: .04 },
     arena: { bpm: 128, padCut: 1300, padLv: .03, chords: [[52, 55, 59, 64], [48, 52, 55, 60], [43, 47, 50, 55], [50, 54, 57, 62]],
       arp: [0, 1, 2, 3, 2, 1, 0, 1, 0, 2, 1, 3, 2, 1, 2, 3], arpOct: 12, arpLv: .028, bass: R(4, [1, 0, 1, 1]),
       kick: R(4, [1, 0, 0, 0]), kickLv: .45, snare: R(2, [0, 0, 0, 0, 1, 0, 0, 0]), snLv: .11, hat: R(4, [1, 1, 1, 1]), hatLv: .03 }
@@ -199,6 +205,8 @@
       case 'door': { const o = tone(sfxBus, 'sawtooth', 110, t, 0.05, 0.05, 0.5, 500); o.frequency.exponentialRampToValueAtTime(150, t + 0.5); kick(sfxBus, t + 0.5, 0.25); tone(sfxBus, 'triangle', hz(79), t + 0.55, 0.01, 0.06, 0.5); break; }
       case 'plank': { const o = tone(sfxBus, 'sine', 320, t, 0.002, 0.16, 0.12); o.frequency.exponentialRampToValueAtTime(150, t + 0.1); noise(sfxBus, t, 'bandpass', 1400, 0.06, 0.05); break; }
       case 'splash': noise(sfxBus, t, 'lowpass', 900, 0.14, 0.4); noise(sfxBus, t + 0.05, 'bandpass', 2500, 0.05, 0.25); break;
+      case 'hop': { const o = tone(sfxBus, 'triangle', 330, t, 0.005, 0.12, 0.25); o.frequency.exponentialRampToValueAtTime(880, t + 0.18); break; }
+      case 'sink': { const o = tone(sfxBus, 'sine', 220, t, 0.01, 0.16, 0.5, 600); o.frequency.exponentialRampToValueAtTime(55, t + 0.45); noise(sfxBus, t, 'lowpass', 500, 0.08, 0.4); break; }
       case 'place': { const o = tone(sfxBus, 'sine', 200, t, 0.003, 0.18, 0.14); o.frequency.exponentialRampToValueAtTime(90, t + 0.12); break; }
     }
   };
