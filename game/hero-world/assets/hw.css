@@ -114,3 +114,7 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 .padlock { display: grid; place-items: center; margin: 6px 0; }
 .panel h3 { margin: 14px 0 6px; }
 .quest .of-t small { line-height: 1.4; }
+.mode-badge { background: var(--green); color: var(--paper); font-size: 16px; font-weight: 700; }
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 5px; max-height: 50vh; overflow: auto; }
+.cat-grid .slot { width: auto; aspect-ratio: 1; height: auto; }
+.pin-ask { background: var(--paper2); border-radius: 12px; padding: 10px 14px; margin-top: 10px; }
