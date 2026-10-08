@@ -111,3 +111,4 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 #hurt { position: fixed; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(224, 53, 43, .45)); opacity: 0; }
 #hurt.on { animation: hurt .45s ease-out; }
 @keyframes hurt { from { opacity: 1; } to { opacity: 0; } }
+.padlock { display: grid; place-items: center; margin: 6px 0; }
