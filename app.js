@@ -10,6 +10,8 @@
   const pad = n => String(n).padStart(2, '0');
   const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const srcLabel = s => KE.SRC_LABEL[s] || s;
+  // 會員閘門（kids-auth.js）：瀏覽免登入；開始練習／小測驗／學會了要登入。沒載入 kids-auth.js 時照舊放行
+  const authOK = why => !window.KidsAuth || KidsAuth.requireLogin(why);
 
   // ---------- 儲存 ----------
   function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
@@ -125,6 +127,7 @@
       e.preventDefault();
       // 題組全部答對過才解鎖；按下去還要通過小測驗才標記
       if (lb.dataset.learn) { startGate(lb.dataset.learn, rendered); return; }
+      if (!authOK('unlearn')) return; // 改學習紀錄一律要登入
       if (!confirm('確定要取消「已學會」嗎？')) return;
       S.learned = KE.unsetLearned(S.learned, lb.dataset.unlearn, new Date().toISOString());
       save('ke_learned', S.learned);
@@ -186,7 +189,7 @@
   }
 
   // ---------- 分享（網址固定用小朋友學習站正式網址）----------
-  const SHARE = { title: '小朋友學習站', text: '單字、字根、文法、句型：聽、選、拼、排句子一起練英文', url: 'https://yoda-wcyc.github.io/kids-english/' };
+  const SHARE = { title: '小朋友學習站', text: '單字、字根、文法、句型：聽、選、拼、排句子一起練英文', url: 'https://yoda-wcyc.github.io/Kids-Station/' };
   const shareRow = () => `<div class="share-row"><button class="btn share" data-share>🔗 分享這個網站</button><span class="share-msg muted" role="status" aria-live="polite"></span></div>`;
   function share(b) {
     const msg = b.parentNode.querySelector('.share-msg'), say = t => { if (msg) msg.textContent = t; };
@@ -210,6 +213,7 @@
 
   // 「學會了」要先通過小測驗：back＝測完要回去的學習頁（從 981d094 移植；題組沒完成時 E.gate 回 null，開不了）
   function startGate(itemId, back) {
+    if (!authOK('learn')) return;
     const g = E.gate(itemId, S.correct);
     if (!g || !g.qs.length) return;
     Q = { list: g.qs, i: 0, answers: [], answered: false, cfg: null, graduated: 0, result: null, gate: { itemId, need: g.need, total: g.total, back: back || '#learn' } };
@@ -217,12 +221,14 @@
   }
   // 練習這組：只出還沒答對過的題（打字題最後）；答錯會排回後面直到答對；中途離開進度照樣保留
   function startDrill(itemId, back) {
+    if (!authOK('practice')) return;
     const list = E.drill(itemId, S.correct);
     if (!list.length) return;
     Q = { list, i: 0, answers: [], answered: false, cfg: null, graduated: 0, result: null, drill: { itemId, back: back || '#learn' } };
     go('#quiz');
   }
   function startQuiz(cfg) {
+    if (!authOK('practice')) return;
     const list = cfg.ids ? KE.shuffle(cfg.ids).slice(0, cfg.count || 30).map(id => E.get(id)).filter(Boolean) : E.buildQuiz(cfg);
     if (!list.length) { alert('沒有符合條件的題目，換個選擇試試看！'); return; }
     Q = { list, i: 0, answers: [], answered: false, cfg, graduated: 0, result: null };
@@ -269,7 +275,7 @@
       $$('#wp [data-pg]').forEach(b => b.onclick = () => { LF.page += +b.dataset.pg; draw(); window.scrollTo(0, 0); });
     };
     ['lv', 'tag', 'src'].forEach(k => { const el = $('#f' + k); if (el) { el.value = LF[k]; el.onchange = () => { LF[k] = el.value; LF.page = 0; draw(); }; } });
-    const fq = $('#fq'); let qt = null; fq.value = LF.q; fq.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { LF.q = fq.value; LF.page = 0; draw(); }, 200); };
+    const fq = $('#fq'); let qt = null; fq.value = LF.q; fq.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { if (!fq.isConnected) return; /* 0.2 秒內已切頁：舊搜尋框不在畫面上，略過 */ LF.q = fq.value; LF.page = 0; draw(); }, 200); };
     $('#pw').onclick = () => { const ids = pick().flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)); startQuiz({ ids, count: 10 }); };
     bindLf('words', '單字', D.words.map(KE.wordItemId), draw);
   }

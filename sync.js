@@ -64,7 +64,7 @@
   function now() { if (!st.code) return; clearTimeout(timer); timer = setTimeout(syncNow, 200); }
 
   // ---------- 配對 ----------
-  const link = code => 'https://yoda-wcyc.github.io/kids-english/#sync=' + code;
+  const link = code => 'https://yoda-wcyc.github.io/Kids-Station/#sync=' + code;
   async function generate() { const code = await backend.create(); st = { code }; saveSt(); await syncNow(); return code; }
   async function check(code) {
     const c = SM.normCode(code); if (!c) throw new Error('同步碼格式不對：要 8 個英文字母或數字（像 ABCD-EFGH）');

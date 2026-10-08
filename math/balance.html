@@ -1493,7 +1493,7 @@ $('btn-import').addEventListener('click', function(){
 var SHARE = {
   title:'數學-天平解方程式',
   text:'用天平學加減方程式，可以自己出題，也有括號題',
-  url:'https://yoda-wcyc.github.io/kids-english/#s/math'
+  url:'https://yoda-wcyc.github.io/Kids-Station/#s/math'
 };
 var SHARE_WHY = { 'no-share':'（這個瀏覽器沒有分享選單，改成複製連結）', 'share-fail':'（分享選單打不開，改成複製連結）' };
 function shareSay(pos, text, reason){ var m = $('share-msg-' + pos); m.textContent = text; m.setAttribute('data-reason', reason || ''); }
@@ -1637,6 +1637,11 @@ try {
   document.body.setAttribute('data-selfcheck', JSON.stringify({ allOk:false, error:String(err) }));
 }
 })();
+</script>
+<script src="../kids-auth.js"></script>
+<script>
+/* 會員閘門：看說明、翻「常見錯誤」卡片免登入；按步驟／自動播放／選題／自己出題／管理題目要登入 */
+if (window.KidsAuth) KidsAuth.guard('#controls button, #dots .dot, #tabs .tab[data-k], #editor-sec .keypad .key, #editor-sec .row button, #manage-sec button', 'math', { keys: ['ArrowLeft', 'ArrowRight'] });
 </script>
 
 </body>

@@ -276,8 +276,8 @@ ok(fs.existsSync(balancePath) && fs.statSync(balancePath).size > 0, 'math/balanc
 const bal = fs.readFileSync(balancePath, 'utf8');
 ok(/<title>[^<]*天平解方程式<\/title>/.test(bal), 'balance.html is the 天平 page');
 ok(!fs.existsSync(path.join(root, 'sync_math.py')) && !fs.existsSync(path.join(root, 'build_single.py')), 'sync_math.py / build_single.py removed');
-ok(bal.includes("url:'https://yoda-wcyc.github.io/kids-english/#s/math'"), 'balance share url -> kids-english #s/math');
-ok(fs.readFileSync(path.join(root, 'app.js'), 'utf8').includes("url: 'https://yoda-wcyc.github.io/kids-english/'"), 'english share url -> kids-english root');
+ok(bal.includes("url:'https://yoda-wcyc.github.io/Kids-Station/#s/math'"), 'balance share url -> Kids-Station #s/math');
+ok(fs.readFileSync(path.join(root, 'app.js'), 'utf8').includes("url: 'https://yoda-wcyc.github.io/Kids-Station/'"), 'english share url -> Kids-Station root');
 ['app.js', 'subjects.js', 'math/balance.html', 'README.md'].forEach(f => ok(!fs.readFileSync(path.join(root, f), 'utf8').includes('github.io/game'), f + ' has no game-repo link'));
 ok(!/['"]ke_/.test(bal), 'balance.html does not use ke_* storage keys');
 const idx = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -297,7 +297,7 @@ const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 ok(srcs.length === 5, 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s), 'activity src exists: ' + s));
 // 講義互連與下載鈕：連到的檔案都在 web/，不再指向退場的 kids-ai
-const WEB = 'https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/';
+const WEB = 'https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/';
 fs.readdirSync(path.join(root, 'game/scratch-td/web')).filter(f => f.endsWith('.html')).forEach(f => {
   const h = fs.readFileSync(path.join(root, 'game/scratch-td/web', f), 'utf8');
   ok(!h.includes('kids-ai') && !h.includes('小朋友學 AI'), f + ' has no kids-ai link/brand');

@@ -64,7 +64,7 @@ a{color:#2d6bb0}
 <section class="card goal"><h3>🎯 今天的目標</h3><div class="tx"><p>做出完整的遊戲：按「開始」才出怪；一共 3 波，一波比一波多、一波比一波硬；打完 3 波就勝利！加上蓋塔、打倒、進城、勝利、失敗的音效，最後讓結束畫面乾乾淨淨。</p></div>
 <div class="see">👀 做完你會看到：畫面中間有「開始」按鈕，點下去第 1 波 5 隻、第 2 波 8 隻、第 3 波 11 隻；守住就換成勝利畫面，塔和史萊姆都會消失，只留下大大的「勝利！」。</div>
 <div class="tx" style="font-size:16px;color:#5b6f8f;margin-top:.5rem">今天大約要拼 41 塊積木。</div>
-<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson4-done.sb3" download="塔防_第4堂完成.sb3">⬇️ 下載起始檔<small>塔防_第4堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson5-done.sb3" download="塔防_第5堂完成.sb3">⬇️ 下載完成檔<small>塔防_第5堂完成.sb3</small></a></div>
+<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson4-done.sb3" download="塔防_第4堂完成.sb3">⬇️ 下載起始檔<small>塔防_第4堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson5-done.sb3" download="塔防_第5堂完成.sb3">⬇️ 下載完成檔<small>塔防_第5堂完成.sb3</small></a></div>
 <div class="tx" style="font-size:15px;color:#5b6f8f;margin-top:.3rem">iPad 點按鈕 → 「下載」，檔案會在「檔案」App 的「下載項目」，再到 Scratch 用「檔案 → 從你的電腦挑選」打開。完成檔是老師的解答，卡住時再用。</div></section><div class="tip">📢 這堂大約 41 塊，比平常多一點。步驟 1–6 先做（遊戲就能玩了），步驟 7–8 的「清場」放最後，時間不夠下次補。</div><h2>🧩 開始拼積木</h2><section class="card step"><div class="sh"><span class="no">1</span><h3>建立變數和廣播</h3></div><div class="tx"><p>建立兩個變數（都選 <b>適用於所有角色</b>）：<b>波次</b>、<b>場上怪物</b>。再到「事件」→ 廣播訊息的下拉選「新的訊息」，建立兩個訊息：<b>開始</b>、<b>遊戲結束</b>。</p></div></section><section class="card step"><div class="sh"><span class="no">2</span><h3>開始按鈕</h3><span class="sp">▶️ 角色：開始按鈕</span></div><div class="tx"><p>點 <b>開始按鈕</b> 角色，拼兩段：</p></div><div class="bcap">完整腳本：按鈕-出現（新增）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
 顯示</pre></div><div class="bcap">完整腳本：按鈕-按下開始（新增）</div><div class="bwrap"><pre class="blocks">當角色被點擊
 隱藏
@@ -175,4 +175,6 @@ end</pre></div></section><section class="card check"><div class="ck">🔍 試試
  if(window.matchMedia){var mq=window.matchMedia('print');if(mq.addListener)mq.addListener(function(m){if(m.matches)openAll();});}
 })();
 </script>
+<script src="../../../kids-auth.js"></script>
+<script>/* 會員閘門：讀講義免登入，下載 .sb3 遊戲檔要登入 */if(window.KidsAuth)KidsAuth.guard('a.dl','download');</script>
 </body></html>

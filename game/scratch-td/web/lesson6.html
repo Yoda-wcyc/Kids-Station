@@ -64,7 +64,7 @@ a{color:#2d6bb0}
 <section class="card goal"><h3>🎯 今天的目標</h3><div class="tx"><p>蓋一座兵營（70 元），它會派出一隻藍色騎士小兵，走到路上的集合點站好。今天小兵先「站崗」，下一堂才會跟史萊姆打架。</p></div>
 <div class="see">👀 做完你會看到：點兵營花 70 元，紫色空營地變成帳篷，藍色騎士小兵走到路上站著；遊戲結束時兵營和小兵也會消失。</div>
 <div class="tx" style="font-size:16px;color:#5b6f8f;margin-top:.5rem">今天大約要拼 23 塊積木。</div>
-<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson5-done.sb3" download="塔防_第5堂完成.sb3">⬇️ 下載起始檔<small>塔防_第5堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson6-done.sb3" download="塔防_第6堂完成.sb3">⬇️ 下載完成檔<small>塔防_第6堂完成.sb3</small></a></div>
+<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson5-done.sb3" download="塔防_第5堂完成.sb3">⬇️ 下載起始檔<small>塔防_第5堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson6-done.sb3" download="塔防_第6堂完成.sb3">⬇️ 下載完成檔<small>塔防_第6堂完成.sb3</small></a></div>
 <div class="tx" style="font-size:15px;color:#5b6f8f;margin-top:.3rem">iPad 點按鈕 → 「下載」，檔案會在「檔案」App 的「下載項目」，再到 Scratch 用「檔案 → 從你的電腦挑選」打開。完成檔是老師的解答，卡住時再用。</div></section><h2>🧩 開始拼積木</h2><section class="card step"><div class="sh"><span class="no">1</span><h3>兵營出現</h3><span class="sp">⛺ 角色：兵營</span></div><div class="tx"><p>點 <b>兵營</b> 角色（紫色旗子）。按綠旗時換回空營地並顯示：</p></div><div class="bcap">完整腳本：兵營-出現（新增）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
 造型換成 [空營地 v]
 顯示</pre></div></section><section class="card step"><div class="sh"><span class="no">2</span><h3>點一下蓋兵營</h3><span class="sp">⛺ 角色：兵營</span></div><div class="tx"><p>偷吃步 🪄：到塔位角色，把「當角色被點擊」整段<b>拖到右下角的兵營角色上</b>放開，就複製過去了。回到兵營改：</p><ul><li>條件改成「造型 名稱 = 空營地」</li><li>50 改成 70</li><li>「否則」裡面換成：造型換成兵營、金錢 −70、建立 小兵 的分身、播放音效 派兵</li></ul></div><div class="bcap">完整腳本：兵營-點一下蓋兵營（新增）</div><div class="bwrap"><pre class="blocks">當角色被點擊
@@ -106,4 +106,6 @@ end</pre></div></section><section class="card check"><div class="ck">🔍 試試
  if(window.matchMedia){var mq=window.matchMedia('print');if(mq.addListener)mq.addListener(function(m){if(m.matches)openAll();});}
 })();
 </script>
+<script src="../../../kids-auth.js"></script>
+<script>/* 會員閘門：讀講義免登入，下載 .sb3 遊戲檔要登入 */if(window.KidsAuth)KidsAuth.guard('a.dl','download');</script>
 </body></html>

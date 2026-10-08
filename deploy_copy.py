@@ -1,4 +1,4 @@
-r"""把正本（小朋友學英文\）複製到部署夾 _deploy\kids-english\（git 只在部署夾跑）。
+r"""把正本（小朋友學英文\）複製到部署夾 _deploy\Kids-Station\（git 只在部署夾跑）。
 
 不複製：game\scratch-td\ 底下除了 web\ 以外的東西（_build\ 腳本、中文檔名正本講義與 .sb3、.md 規格），__pycache__。
 不刪除：部署夾裡多出來的檔案只列出來，要刪請到部署夾 git rm。
@@ -6,7 +6,7 @@ r"""把正本（小朋友學英文\）複製到部署夾 _deploy\kids-english\�
 import os, shutil, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DST = os.path.join(os.path.dirname(HERE), "_deploy", "kids-english")
+DST = os.path.join(os.path.dirname(HERE), "_deploy", "Kids-Station")
 
 
 def skip(rel):

@@ -64,7 +64,7 @@ a{color:#2d6bb0}
 <section class="card goal"><h3>🎯 今天的目標</h3><div class="tx"><p>讓小兵真的上戰場：史萊姆碰到小兵就停下來互打，雙方都會扣血；小兵倒下後，兵營每 4 秒檢查一次，自動補兵（場上最多 2 隻）。</p></div>
 <div class="see">👀 做完你會看到：史萊姆走到小兵面前停住，一閃一閃被打；小兵被打倒消失，過一下兵營又派一隻補上。</div>
 <div class="tx" style="font-size:16px;color:#5b6f8f;margin-top:.5rem">今天大約要拼 24 塊積木。</div>
-<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson6-done.sb3" download="塔防_第6堂完成.sb3">⬇️ 下載起始檔<small>塔防_第6堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson7-done.sb3" download="塔防_第7堂完成.sb3">⬇️ 下載完成檔<small>塔防_第7堂完成.sb3</small></a></div>
+<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson6-done.sb3" download="塔防_第6堂完成.sb3">⬇️ 下載起始檔<small>塔防_第6堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson7-done.sb3" download="塔防_第7堂完成.sb3">⬇️ 下載完成檔<small>塔防_第7堂完成.sb3</small></a></div>
 <div class="tx" style="font-size:15px;color:#5b6f8f;margin-top:.3rem">iPad 點按鈕 → 「下載」，檔案會在「檔案」App 的「下載項目」，再到 Scratch 用「檔案 → 從你的電腦挑選」打開。完成檔是老師的解答，卡住時再用。</div></section><h2>🧩 開始拼積木</h2><section class="card step"><div class="sh"><span class="no">1</span><h3>建立兩個變數</h3></div><div class="tx"><p>① <b>小兵數</b>：選 <b>適用於所有角色</b>。</p><p>② 點 <b>小兵</b> 角色，在小兵裡建立 <b>血量</b>，選 <b>僅適用於當前角色</b>。（它跟怪物的血量是不同的兩個變數，名字一樣沒關係。）</p></div></section><section class="card step"><div class="sh"><span class="no">2</span><h3>舞台開場：小兵數歸零</h3><span class="sp">🖼️ 角色：舞台</span></div><div class="tx"><p>在「場上怪物 設為 0」下面補一塊 <b>變數 小兵數 設為 0</b>。</p></div><div class="bcap">完整腳本：舞台-開場與失敗（修改）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
 背景換成 [草地 v]
 變數 [金錢 v] 設為 (100)
@@ -153,4 +153,6 @@ end</pre></div></section><section class="card step"><div class="sh"><span class=
  if(window.matchMedia){var mq=window.matchMedia('print');if(mq.addListener)mq.addListener(function(m){if(m.matches)openAll();});}
 })();
 </script>
+<script src="../../../kids-auth.js"></script>
+<script>/* 會員閘門：讀講義免登入，下載 .sb3 遊戲檔要登入 */if(window.KidsAuth)KidsAuth.guard('a.dl','download');</script>
 </body></html>

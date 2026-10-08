@@ -64,7 +64,7 @@ a{color:#2d6bb0}
 <section class="card goal"><h3>🎯 今天的目標</h3><div class="tx"><p>自己發明一塊「往 () 走 () 步」積木，讓史萊姆一步一步走；再讓每隻史萊姆有自己的血量，碰到塔的攻擊圈就扣血，打倒一隻得 10 元。</p></div>
 <div class="see">👀 做完你會看到：蓋好 2 座塔後，史萊姆一進塔的圈圈就閃一下、被打倒消失，金錢一隻一隻往上加（8 隻全打倒會加到 80）。</div>
 <div class="tx" style="font-size:16px;color:#5b6f8f;margin-top:.5rem">今天大約要拼 28 塊積木。</div>
-<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson3-done.sb3" download="塔防_第3堂完成.sb3">⬇️ 下載起始檔<small>塔防_第3堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson4-done.sb3" download="塔防_第4堂完成.sb3">⬇️ 下載完成檔<small>塔防_第4堂完成.sb3</small></a></div>
+<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson3-done.sb3" download="塔防_第3堂完成.sb3">⬇️ 下載起始檔<small>塔防_第3堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson4-done.sb3" download="塔防_第4堂完成.sb3">⬇️ 下載完成檔<small>塔防_第4堂完成.sb3</small></a></div>
 <div class="tx" style="font-size:15px;color:#5b6f8f;margin-top:.3rem">iPad 點按鈕 → 「下載」，檔案會在「檔案」App 的「下載項目」，再到 Scratch 用「檔案 → 從你的電腦挑選」打開。完成檔是老師的解答，卡住時再用。</div></section><h2>🧩 開始拼積木</h2><section class="card step"><div class="sh"><span class="no">1</span><h3>做一塊自己的積木</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>點怪物角色 →「函式積木」→「建立一個積木」：</p><ol><li>先打「往」</li><li>按「加入輸入方塊（數字或文字）」，取名 <b>方向</b></li><li>再打「走」</li><li>再加一個輸入方塊，取名 <b>步數</b></li><li>最後打「步」</li></ol><p>⚠️「執行畫面不重新整理」<b>不要勾</b>。按確定後會出現一頂「定義」帽子。</p></div></section><section class="card step"><div class="sh"><span class="no">2</span><h3>教它怎麼走</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>在「定義」帽子下面接積木。<b>方向</b>、<b>步數</b>要從帽子上直接<b>拖下來</b>放進格子，不是自己打字。</p></div><div class="bcap">完整腳本：怪物-走路積木（函式積木）（新增）</div><div class="bwrap"><pre class="blocks">定義 往 (方向) 走 (步數) 步
 面朝 (方向 :: custom-arg) 度
 重複 (步數 :: custom-arg) 次
@@ -119,4 +119,6 @@ end</pre></div></section><section class="card check"><div class="ck">🔍 試試
  if(window.matchMedia){var mq=window.matchMedia('print');if(mq.addListener)mq.addListener(function(m){if(m.matches)openAll();});}
 })();
 </script>
+<script src="../../../kids-auth.js"></script>
+<script>/* 會員閘門：讀講義免登入，下載 .sb3 遊戲檔要登入 */if(window.KidsAuth)KidsAuth.guard('a.dl','download');</script>
 </body></html>

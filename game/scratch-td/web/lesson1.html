@@ -64,7 +64,7 @@ a{color:#2d6bb0}
 <section class="card goal"><h3>🎯 今天的目標</h3><div class="tx"><p>讓史萊姆怪物從入口出發，沿著彎彎曲曲的路，一段一段滑到城堡門口。</p></div>
 <div class="see">👀 做完你會看到：按下綠旗，史萊姆從左上角出發，轉 7 個彎，最後停在城堡門口，一邊走還一邊蹦蹦跳。</div>
 <div class="tx" style="font-size:16px;color:#5b6f8f;margin-top:.5rem">今天大約要拼 15 塊積木。</div>
-<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/start.sb3" download="塔防_起始.sb3">⬇️ 下載起始檔<small>塔防_起始.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson1-done.sb3" download="塔防_第1堂完成.sb3">⬇️ 下載完成檔<small>塔防_第1堂完成.sb3</small></a></div>
+<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/start.sb3" download="塔防_起始.sb3">⬇️ 下載起始檔<small>塔防_起始.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson1-done.sb3" download="塔防_第1堂完成.sb3">⬇️ 下載完成檔<small>塔防_第1堂完成.sb3</small></a></div>
 <div class="tx" style="font-size:15px;color:#5b6f8f;margin-top:.3rem">iPad 點按鈕 → 「下載」，檔案會在「檔案」App 的「下載項目」，再到 Scratch 用「檔案 → 從你的電腦挑選」打開。完成檔是老師的解答，卡住時再用。</div></section><h2>🧩 開始拼積木</h2><section class="card step"><div class="sh"><span class="no">1</span><h3>打開起始檔、找到怪物</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>載入 <b>塔防_起始.sb3</b>（方法見總覽頁）。在右下角的角色區點一下 <b>怪物</b>（綠色史萊姆）。</p><p>看看舞台：路上有 8 個數字圓點，1–7 是轉角，8 是城堡門口。</p></div></section><section class="card step"><div class="sh"><span class="no">2</span><h3>按綠旗回到起點</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>從「事件」拖出 <b>當綠旗被點擊</b>，從「外觀」拖 <b>顯示</b>，從「動作」拖 <b>定位到 x: y:</b>，把數字改成 -240 和 130。</p></div><div class="bwrap"><pre class="blocks">當綠旗被點擊
 顯示
 定位到 x:(-240) y:(130)</pre></div></section><section class="card check"><div class="ck">🔍 試試看</div><div class="tx">按綠旗，史萊姆有沒有跳到左上角的入口？<br>小提醒：負號「-」要記得打，iPad 鍵盤在數字頁可以找到。</div></section><section class="card step"><div class="sh"><span class="no">3</span><h3>前 4 段滑行（入口 → 點 4）</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>把史萊姆拖到圓點 1 上，看角色資訊的 x、y，就是要填的數字。從「動作」拖 <b>滑行 () 秒到 x: y:</b> 接在下面，一段一塊：</p></div><div class="bwrap"><pre class="blocks">滑行 (1) 秒到 x:(-170) y:(130)
@@ -112,4 +112,6 @@ end</pre></div></section><section class="card check"><div class="ck">🔍 試試
  if(window.matchMedia){var mq=window.matchMedia('print');if(mq.addListener)mq.addListener(function(m){if(m.matches)openAll();});}
 })();
 </script>
+<script src="../../../kids-auth.js"></script>
+<script>/* 會員閘門：讀講義免登入，下載 .sb3 遊戲檔要登入 */if(window.KidsAuth)KidsAuth.guard('a.dl','download');</script>
 </body></html>

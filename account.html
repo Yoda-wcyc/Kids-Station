@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff8ec">
+<meta name="color-scheme" content="light">
+<meta name="format-detection" content="telephone=no">
+<meta name="robots" content="noindex">
+<title>我的帳號 · 小朋友學習站</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23ffd166'/%3E%3Ctext x='90' y='120' font-size='86' text-anchor='middle' font-family='Arial,sans-serif' font-weight='bold' fill='%23263445'%3EAB%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+<style>
+.mbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:3px solid var(--line);box-shadow:0 2px 10px rgba(38,52,69,.06)}
+.mbar-in{max-width:620px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:12px}
+.mbar-in .brand{flex:1;font-size:1.1rem;font-weight:800;color:var(--ink);text-decoration:none}
+.wrapm{max-width:620px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+.hero{text-align:center;margin:6px 0 14px}.hero .big-i{font-size:3rem;line-height:1.2}.hero h1{font-size:1.45rem}
+.info{display:grid;grid-template-columns:auto 1fr;gap:10px 14px;margin:0}
+.info dt{color:var(--muted);font-size:.95rem;white-space:nowrap}.info dd{margin:0;font-weight:700;word-break:break-all}
+.fld{display:block;margin:0 0 14px}.fld>span{display:block;font-weight:700;margin:0 0 6px}
+.fld small{display:block;color:var(--muted);font-size:.85rem;margin-top:4px}
+.inp{width:100%;min-height:56px;font:inherit;font-size:1.05rem;padding:8px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
+.inp:focus{outline:3px solid #ffd6b8;border-color:var(--pri)}
+.msg{border-radius:14px;padding:12px 14px;margin:0 0 14px;font-weight:600}
+.msg.bad{background:var(--no-bg);color:#a3262a;border:2px solid #f5c2c3}
+.msg.good{background:var(--ok-bg);color:#1d7a48;border:2px solid #b5e8cb}
+.msg.info{background:#fff8ec;border:2px solid var(--line)}
+.msg[hidden],[hidden]{display:none!important}
+</style>
+</head>
+<body data-kids-widget="off">
+<header class="mbar"><div class="mbar-in"><a class="brand" href="index.html">🎈 小朋友學習站</a><a class="btn" href="index.html">← 回學習站</a></div></header>
+<main class="wrapm">
+  <div class="hero"><div class="big-i">🧑‍🏫</div><h1>我的帳號</h1></div>
+  <p class="msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+  <section class="card center" id="out" hidden>
+    <p id="out-t">還沒有登入喔！</p>
+    <a class="btn primary big" id="out-go" href="login.html">🔑 去登入</a>
+  </section>
+
+  <div id="in" hidden>
+    <section class="card">
+      <h2>👋 帳號資料</h2>
+      <dl class="info">
+        <dt>會員編號</dt><dd id="v-pub"></dd>
+        <dt>帳號（email）</dt><dd id="v-email"></dd>
+        <dt>暱稱</dt><dd id="v-kid"></dd>
+        <dt>年齡</dt><dd id="v-age"></dd>
+        <dt>年級</dt><dd id="v-grade"></dd>
+        <dt>方案</dt><dd id="v-plan"></dd>
+        <dt>狀態</dt><dd id="v-status"></dd>
+        <dt>登入有效到</dt><dd id="v-exp"></dd>
+      </dl>
+      <p class="muted" style="margin:12px 0 0">每個月有來練習，登入就會自動延長，不用常常重新登入。</p>
+    </section>
+
+    <form class="card" id="f-pw" novalidate>
+      <h2>🔒 改密碼</h2>
+      <label class="fld"><span>現在的密碼</span><input class="inp" type="password" name="old" autocomplete="current-password" required></label>
+      <label class="fld"><span>新密碼</span><input class="inp" type="password" name="new1" autocomplete="new-password" minlength="6" required><small>要 6 個字以上，而且要有英文字母和數字喔！</small></label>
+      <label class="fld"><span>再輸入一次新密碼</span><input class="inp" type="password" name="new2" autocomplete="new-password" required></label>
+      <button class="btn primary big wide" type="submit">改密碼</button>
+    </form>
+
+    <section class="card">
+      <h2>🚪 登出</h2>
+      <p class="muted">登出後還是可以看介紹和讀講義；要開始練習、玩遊戲時再登入就好。</p>
+      <button class="btn big wide danger" type="button" id="logout">登出這台裝置</button>
+    </section>
+  </div>
+  <p class="center muted" style="margin:18px 0 0"><a href="terms.html">📄 使用條款與隱私權說明</a></p>
+</main>
+<script src="kids-auth.js"></script>
+<script>
+(function () {
+  'use strict';
+  var A = window.KidsAuth;
+  var $ = function (s) { return document.querySelector(s); };
+  var msg = $('#msg');
+  function say(text, kind) { msg.textContent = text || ''; msg.className = 'msg ' + (kind || 'bad'); msg.hidden = !text; }
+  var STATUS = { active: '✅ 使用中', pending: '⏳ 待開通', inactive: '尚未開通付費', expired: '已到期', cancelled: '已取消' };
+  function fmt(sec) {
+    if (!sec) return '—';
+    try { return new Date(sec * 1000).toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: 'long', day: 'numeric' }); } catch (e) { return new Date(sec * 1000).toISOString().slice(0, 10); }
+  }
+  function showOut(text) { $('#in').hidden = true; $('#out').hidden = false; $('#out-t').textContent = text; $('#out-go').href = A.loginUrl(A.base + 'account.html'); }
+  function draw(m) {
+    $('#out').hidden = true; $('#in').hidden = false;
+    $('#v-pub').textContent = m.pub_id || '—';
+    $('#v-email').textContent = m.email || '—';
+    $('#v-kid').textContent = m.child_nickname || '小朋友';
+    $('#v-age').textContent = m.age ? m.age + ' 歲' : '—';
+    $('#v-grade').textContent = A.gradeText(m.grade) || '—';
+    $('#v-plan').textContent = m.plan || '免費會員';
+    $('#v-status').textContent = STATUS[m.status] || m.status || '—';
+    $('#v-exp').textContent = fmt(A.exp());
+  }
+  if (!A.configured()) { showOut('會員系統還在準備中，現在不用登入也可以練習和玩遊戲喔！'); $('#out-go').hidden = true; return; }
+  if (!A.isLoggedIn()) { showOut('還沒有登入喔！'); return; }
+  draw(A.member() || {});
+  // 向後端拿最新資料（也順便確認票還有效）
+  A.api('memberProfile', { token: A.token() }).then(function (r) {
+    var cur = A.member() || {};
+    A.saveSession({ token: A.token(), exp: A.exp(), member: Object.assign(cur, r.member || {}) });
+    draw(A.member() || {});
+  }, function (x) {
+    if (x.code === 'expired' || x.code === 'revoked') { A.logout(); showOut(A.errorText(x.code)); }
+    else say(A.errorText(x.code) + '（下面先顯示這台裝置記得的資料）', 'info');
+  });
+
+  $('#f-pw').addEventListener('submit', function (e) {
+    e.preventDefault(); var f = e.target;
+    if (!f.old.value) return say('請輸入現在的密碼。');
+    var pwBad = A.checkPassword(f.new1.value); if (pwBad) return say(A.errorText(pwBad));
+    if (f.new1.value !== f.new2.value) return say('兩次輸入的新密碼不一樣，請再輸入一次。');
+    var all = f.querySelectorAll('input,button'); all.forEach(function (x) { x.disabled = true; }); say('處理中…', 'info');
+    A.api('changePassword', { token: A.token(), old_password: f.old.value, new_password: f.new1.value }).then(function (r) {
+      A.saveSession(r); f.reset(); all.forEach(function (x) { x.disabled = false; });
+      draw(A.member() || {}); say('密碼改好了！其他裝置下次要用新密碼登入。', 'good');
+    }, function (x) {
+      all.forEach(function (y) { y.disabled = false; });
+      if (x.code === 'expired' || x.code === 'revoked') { A.logout(); showOut(A.errorText(x.code)); return; }
+      say(x.code === 'bad_credentials' ? '現在的密碼不對，請再試一次。' : A.errorText(x.code));
+    });
+  });
+  $('#logout').addEventListener('click', function () {
+    A.logout(); say('已經登出了，下次要練習時再登入就好。', 'good'); showOut('已經登出了。');
+  });
+})();
+</script>
+</body>
+</html>

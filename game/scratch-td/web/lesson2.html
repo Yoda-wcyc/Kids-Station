@@ -64,7 +64,7 @@ a{color:#2d6bb0}
 <section class="card goal"><h3>🎯 今天的目標</h3><div class="tx"><p>用「分身」讓史萊姆一隻接一隻排隊出發；走到城堡就扣 1 條生命，生命用完就輸。</p></div>
 <div class="see">👀 做完你會看到：按綠旗後，每 1.5 秒冒出一隻史萊姆，總共 8 隻排隊走到城堡；左上角的「生命」從 10 一路往下掉。</div>
 <div class="tx" style="font-size:16px;color:#5b6f8f;margin-top:.5rem">今天大約要拼 17 塊積木。</div>
-<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson1-done.sb3" download="塔防_第1堂完成.sb3">⬇️ 下載起始檔<small>塔防_第1堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/kids-english/game/scratch-td/web/lesson2-done.sb3" download="塔防_第2堂完成.sb3">⬇️ 下載完成檔<small>塔防_第2堂完成.sb3</small></a></div>
+<div class="dls"><a class="dl" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson1-done.sb3" download="塔防_第1堂完成.sb3">⬇️ 下載起始檔<small>塔防_第1堂完成.sb3</small></a><a class="dl done" href="https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/lesson2-done.sb3" download="塔防_第2堂完成.sb3">⬇️ 下載完成檔<small>塔防_第2堂完成.sb3</small></a></div>
 <div class="tx" style="font-size:15px;color:#5b6f8f;margin-top:.3rem">iPad 點按鈕 → 「下載」，檔案會在「檔案」App 的「下載項目」，再到 Scratch 用「檔案 → 從你的電腦挑選」打開。完成檔是老師的解答，卡住時再用。</div></section><h2>🧩 開始拼積木</h2><section class="card step"><div class="sh"><span class="no">1</span><h3>建立變數「生命」</h3></div><div class="tx"><p>點「變數」→「建立一個變數」，名稱打 <b>生命</b>，選 <b>適用於所有角色</b>，按確定。</p></div></section><section class="card step"><div class="sh"><span class="no">2</span><h3>本尊藏起來</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>點怪物角色，拼一段新的：本尊只負責被複製，自己躲起來。</p></div><div class="bcap">完整腳本：怪物-本尊隱藏（新增）</div><div class="bwrap"><pre class="blocks">當綠旗被點擊
 隱藏</pre></div></section><section class="card step"><div class="sh"><span class="no">3</span><h3>走路線換帽子＋扣生命</h3><span class="sp">👾 角色：怪物</span></div><div class="tx"><p>把「走路線」最上面的 <b>當綠旗被點擊</b> 拿掉，換成「控制」裡的 <b>當分身產生</b>。</p><p>小技巧：按住「顯示」往下拖，會把下面整串一起拖走；把舊帽子拖回左邊積木區丟掉，再把整串接到新帽子下。</p><p>最後在底下補兩塊：<b>變數 生命 改變 -1</b> 和 <b>分身刪除</b>。</p></div><div class="bcap">完整腳本：怪物-走路線（修改）</div><div class="bwrap"><pre class="blocks">當分身產生
 顯示
@@ -116,4 +116,6 @@ end</pre></div></section><section class="card check"><div class="ck">🔍 試試
  if(window.matchMedia){var mq=window.matchMedia('print');if(mq.addListener)mq.addListener(function(m){if(m.matches)openAll();});}
 })();
 </script>
+<script src="../../../kids-auth.js"></script>
+<script>/* 會員閘門：讀講義免登入，下載 .sb3 遊戲檔要登入 */if(window.KidsAuth)KidsAuth.guard('a.dl','download');</script>
 </body></html>

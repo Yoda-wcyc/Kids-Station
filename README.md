@@ -1,6 +1,6 @@
-# 小朋友學習站（repo：kids-english）
+# 小朋友學習站（repo：Kids-Station）
 
-給國小孩子（iPad Safari 優先）的多科目學習網站。純 HTML/CSS/JS，不用安裝、不連網路，直接開 `index.html` 也能用（file://）。
+給國小孩子（iPad Safari 優先）的多科目學習網站。純 HTML/CSS/JS，不用安裝。瀏覽內容可離線（直接開 `index.html` 也能看），登入與練習需要連網（練習與遊戲要先登入會員）。
 
 ## 科目
 
@@ -34,7 +34,7 @@ Scratch 塔防重做：在 `game\scratch-td\_build\` 依序跑 `python build_sb3
 
 遊戲庫（game repo）已不放單獨的天平或英文頁，只有一張「小朋友學習站」卡片連到本站。
 
-線上版：https://yoda-wcyc.github.io/kids-english/
+線上版：https://yoda-wcyc.github.io/Kids-Station/
 
 ## 結構
 
@@ -76,7 +76,7 @@ deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 
 ## 裝置同步（iPad ↔ 電腦）
 
-家長頁「☁️ 裝置同步」：第一台按「產生同步碼」（像 `ABCD-EFGH`），另一台輸入同一組碼或打開同步連結（`https://yoda-wcyc.github.io/kids-english/#sync=ABCD-EFGH`），兩台的紀錄就自動合在一起。不用帳號。
+家長頁「☁️ 裝置同步」：第一台按「產生同步碼」（像 `ABCD-EFGH`），另一台輸入同一組碼或打開同步連結（`https://yoda-wcyc.github.io/Kids-Station/#sync=ABCD-EFGH`），兩台的紀錄就自動合在一起。不用帳號。
 
 - **會同步**：作答紀錄（`ke_log`）、學會紀錄（`ke_learned`）、錯題庫（`ke_mistakes`）。題組進度、能不能按「學會了」都從合併後的作答紀錄算，所以也會一起同步。語音速度等設定**不**同步。
 - **什麼時候**：打開網站、切回這個分頁、做完一回合、按學會了／取消、任何變動後約 3 秒。沒網路就記下來，下次再同步。只有內容真的不一樣才上傳。
@@ -111,7 +111,7 @@ deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 ## 部署
 
 正本在 `G:\Yoda x Claude\小朋友學英文\`（Google Drive 鏡像夾，不在這裡跑 git）。
-部署副本在 `G:\Yoda x Claude\_deploy\kids-english\`：
+部署副本在 `G:\Yoda x Claude\_deploy\Kids-Station\`：
 
 1. 在正本跑 `python deploy_copy.py`：複製到部署副本（覆蓋），`game\scratch-td\` 只帶 `web\`（不帶 `_build\`、.md、中文檔名正本）。部署夾多出來的舊檔它只會列出來，要刪就在部署夾 `git rm`。部署版 `index.html` 的 .js/.css 會自動加 `?v=時間戳`，避免 iPad 用到快取的舊檔。
 2. 在部署副本跑 `node test/smoke.js`，再 `git add -A`、`git commit`、`git push`。
