@@ -2,10 +2,56 @@
   "_doc": "合成表（不分形狀，材料夠就能做）。in＝材料 {id: 數量}；out＝{id, count}；needs＝要在哪個方塊旁邊（null＝背包裡就能做）；blueprint＝要先在商店買過那張藍圖。smelt＝熔爐：in 燒成 out，time 秒，每 1 個煤炭可以燒 fuelPerCoal 個",
   "fuelPerCoal": 4,
   "recipes": [
-    { "id": "spruce_planks", "name_zh": "木板（雲杉）", "in": { "spruce_log": 1 }, "out": { "id": "planks", "count": 4 }, "needs": null },
-    { "id": "sandstone", "name_zh": "砂岩", "in": { "sand": 4 }, "out": { "id": "sandstone", "count": 1 }, "needs": null },
-    { "id": "torch", "name_zh": "火把", "in": { "coal": 1, "stick": 1 }, "out": { "id": "torch", "count": 4 }, "needs": null },
-    { "id": "bed", "name_zh": "重生點床", "in": { "planks": 3, "wool": 3 }, "out": { "id": "bed", "count": 1 }, "needs": "crafting_table" },
+    {
+      "id": "spruce_planks",
+      "name_zh": "雲杉木板",
+      "in": {
+        "spruce_log": 1
+      },
+      "out": {
+        "id": "spruce_planks",
+        "count": 4
+      },
+      "needs": null
+    },
+    {
+      "id": "sandstone",
+      "name_zh": "砂岩",
+      "in": {
+        "sand": 4
+      },
+      "out": {
+        "id": "sandstone",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "torch",
+      "name_zh": "火把",
+      "in": {
+        "coal": 1,
+        "stick": 1
+      },
+      "out": {
+        "id": "torch",
+        "count": 4
+      },
+      "needs": null
+    },
+    {
+      "id": "bed",
+      "name_zh": "重生點床",
+      "in": {
+        "planks": 3,
+        "wool": 3
+      },
+      "out": {
+        "id": "bed",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
     {
       "id": "planks",
       "name_zh": "木板",
@@ -281,6 +327,724 @@
       },
       "needs": "crafting_table",
       "blueprint": "bp_diamond"
+    },
+    {
+      "id": "dye_red",
+      "name_zh": "紅色染料",
+      "in": {
+        "flower_rose": 1
+      },
+      "out": {
+        "id": "dye_red",
+        "count": 2
+      },
+      "needs": null
+    },
+    {
+      "id": "wool_red",
+      "name_zh": "紅羊毛",
+      "in": {
+        "wool": 1,
+        "dye_red": 1
+      },
+      "out": {
+        "id": "wool_red",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "glass_red",
+      "name_zh": "紅色玻璃",
+      "in": {
+        "glass": 8,
+        "dye_red": 1
+      },
+      "out": {
+        "id": "glass_red",
+        "count": 8
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "paper_red",
+      "name_zh": "紅色紙磚",
+      "in": {
+        "sandstone": 1,
+        "dye_red": 1
+      },
+      "out": {
+        "id": "paper_red",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "carpet_red",
+      "name_zh": "紅地毯",
+      "in": {
+        "wool_red": 2
+      },
+      "out": {
+        "id": "carpet_red",
+        "count": 3
+      },
+      "needs": null
+    },
+    {
+      "id": "dye_orange",
+      "name_zh": "橘色染料",
+      "in": {
+        "flower_marigold": 1
+      },
+      "out": {
+        "id": "dye_orange",
+        "count": 2
+      },
+      "needs": null
+    },
+    {
+      "id": "wool_orange",
+      "name_zh": "橘羊毛",
+      "in": {
+        "wool": 1,
+        "dye_orange": 1
+      },
+      "out": {
+        "id": "wool_orange",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "glass_orange",
+      "name_zh": "橘色玻璃",
+      "in": {
+        "glass": 8,
+        "dye_orange": 1
+      },
+      "out": {
+        "id": "glass_orange",
+        "count": 8
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "paper_orange",
+      "name_zh": "橘色紙磚",
+      "in": {
+        "sandstone": 1,
+        "dye_orange": 1
+      },
+      "out": {
+        "id": "paper_orange",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "carpet_orange",
+      "name_zh": "橘地毯",
+      "in": {
+        "wool_orange": 2
+      },
+      "out": {
+        "id": "carpet_orange",
+        "count": 3
+      },
+      "needs": null
+    },
+    {
+      "id": "dye_yellow",
+      "name_zh": "黃色染料",
+      "in": {
+        "flower_dandelion": 1
+      },
+      "out": {
+        "id": "dye_yellow",
+        "count": 2
+      },
+      "needs": null
+    },
+    {
+      "id": "wool_yellow",
+      "name_zh": "黃羊毛",
+      "in": {
+        "wool": 1,
+        "dye_yellow": 1
+      },
+      "out": {
+        "id": "wool_yellow",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "glass_yellow",
+      "name_zh": "黃色玻璃",
+      "in": {
+        "glass": 8,
+        "dye_yellow": 1
+      },
+      "out": {
+        "id": "glass_yellow",
+        "count": 8
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "paper_yellow",
+      "name_zh": "黃色紙磚",
+      "in": {
+        "sandstone": 1,
+        "dye_yellow": 1
+      },
+      "out": {
+        "id": "paper_yellow",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "carpet_yellow",
+      "name_zh": "黃地毯",
+      "in": {
+        "wool_yellow": 2
+      },
+      "out": {
+        "id": "carpet_yellow",
+        "count": 3
+      },
+      "needs": null
+    },
+    {
+      "id": "wool_green",
+      "name_zh": "綠羊毛",
+      "in": {
+        "wool": 1,
+        "dye_green": 1
+      },
+      "out": {
+        "id": "wool_green",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "glass_green",
+      "name_zh": "綠色玻璃",
+      "in": {
+        "glass": 8,
+        "dye_green": 1
+      },
+      "out": {
+        "id": "glass_green",
+        "count": 8
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "paper_green",
+      "name_zh": "綠色紙磚",
+      "in": {
+        "sandstone": 1,
+        "dye_green": 1
+      },
+      "out": {
+        "id": "paper_green",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "carpet_green",
+      "name_zh": "綠地毯",
+      "in": {
+        "wool_green": 2
+      },
+      "out": {
+        "id": "carpet_green",
+        "count": 3
+      },
+      "needs": null
+    },
+    {
+      "id": "dye_cyan",
+      "name_zh": "青色染料",
+      "in": {
+        "flower_hydrangea": 1
+      },
+      "out": {
+        "id": "dye_cyan",
+        "count": 2
+      },
+      "needs": null
+    },
+    {
+      "id": "wool_cyan",
+      "name_zh": "青羊毛",
+      "in": {
+        "wool": 1,
+        "dye_cyan": 1
+      },
+      "out": {
+        "id": "wool_cyan",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "glass_cyan",
+      "name_zh": "青色玻璃",
+      "in": {
+        "glass": 8,
+        "dye_cyan": 1
+      },
+      "out": {
+        "id": "glass_cyan",
+        "count": 8
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "paper_cyan",
+      "name_zh": "青色紙磚",
+      "in": {
+        "sandstone": 1,
+        "dye_cyan": 1
+      },
+      "out": {
+        "id": "paper_cyan",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "carpet_cyan",
+      "name_zh": "青地毯",
+      "in": {
+        "wool_cyan": 2
+      },
+      "out": {
+        "id": "carpet_cyan",
+        "count": 3
+      },
+      "needs": null
+    },
+    {
+      "id": "dye_blue",
+      "name_zh": "藍色染料",
+      "in": {
+        "flower_cornflower": 1
+      },
+      "out": {
+        "id": "dye_blue",
+        "count": 2
+      },
+      "needs": null
+    },
+    {
+      "id": "wool_blue",
+      "name_zh": "藍羊毛",
+      "in": {
+        "wool": 1,
+        "dye_blue": 1
+      },
+      "out": {
+        "id": "wool_blue",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "glass_blue",
+      "name_zh": "藍色玻璃",
+      "in": {
+        "glass": 8,
+        "dye_blue": 1
+      },
+      "out": {
+        "id": "glass_blue",
+        "count": 8
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "paper_blue",
+      "name_zh": "藍色紙磚",
+      "in": {
+        "sandstone": 1,
+        "dye_blue": 1
+      },
+      "out": {
+        "id": "paper_blue",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "carpet_blue",
+      "name_zh": "藍地毯",
+      "in": {
+        "wool_blue": 2
+      },
+      "out": {
+        "id": "carpet_blue",
+        "count": 3
+      },
+      "needs": null
+    },
+    {
+      "id": "dye_purple",
+      "name_zh": "紫色染料",
+      "in": {
+        "flower_lavender": 1
+      },
+      "out": {
+        "id": "dye_purple",
+        "count": 2
+      },
+      "needs": null
+    },
+    {
+      "id": "wool_purple",
+      "name_zh": "紫羊毛",
+      "in": {
+        "wool": 1,
+        "dye_purple": 1
+      },
+      "out": {
+        "id": "wool_purple",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "glass_purple",
+      "name_zh": "紫色玻璃",
+      "in": {
+        "glass": 8,
+        "dye_purple": 1
+      },
+      "out": {
+        "id": "glass_purple",
+        "count": 8
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "paper_purple",
+      "name_zh": "紫色紙磚",
+      "in": {
+        "sandstone": 1,
+        "dye_purple": 1
+      },
+      "out": {
+        "id": "paper_purple",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "carpet_purple",
+      "name_zh": "紫地毯",
+      "in": {
+        "wool_purple": 2
+      },
+      "out": {
+        "id": "carpet_purple",
+        "count": 3
+      },
+      "needs": null
+    },
+    {
+      "id": "dye_pink",
+      "name_zh": "粉紅色染料",
+      "in": {
+        "flower_peony": 1
+      },
+      "out": {
+        "id": "dye_pink",
+        "count": 2
+      },
+      "needs": null
+    },
+    {
+      "id": "wool_pink",
+      "name_zh": "粉紅羊毛",
+      "in": {
+        "wool": 1,
+        "dye_pink": 1
+      },
+      "out": {
+        "id": "wool_pink",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "glass_pink",
+      "name_zh": "粉紅色玻璃",
+      "in": {
+        "glass": 8,
+        "dye_pink": 1
+      },
+      "out": {
+        "id": "glass_pink",
+        "count": 8
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "paper_pink",
+      "name_zh": "粉紅色紙磚",
+      "in": {
+        "sandstone": 1,
+        "dye_pink": 1
+      },
+      "out": {
+        "id": "paper_pink",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "carpet_pink",
+      "name_zh": "粉紅地毯",
+      "in": {
+        "wool_pink": 2
+      },
+      "out": {
+        "id": "carpet_pink",
+        "count": 3
+      },
+      "needs": null
+    },
+    {
+      "id": "hay_bale",
+      "name_zh": "乾草捆",
+      "in": {
+        "tallgrass": 9
+      },
+      "out": {
+        "id": "hay_bale",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "stone_bricks",
+      "name_zh": "石磚",
+      "in": {
+        "stone": 4
+      },
+      "out": {
+        "id": "stone_bricks",
+        "count": 4
+      },
+      "needs": null
+    },
+    {
+      "id": "mossy_stone_bricks",
+      "name_zh": "青苔石磚",
+      "in": {
+        "stone_bricks": 1,
+        "leaves": 1
+      },
+      "out": {
+        "id": "mossy_stone_bricks",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "mossy_cobblestone",
+      "name_zh": "青苔碎石",
+      "in": {
+        "cobblestone": 1,
+        "leaves": 1
+      },
+      "out": {
+        "id": "mossy_cobblestone",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "chiseled_stone",
+      "name_zh": "雕紋石",
+      "in": {
+        "stone_bricks": 2
+      },
+      "out": {
+        "id": "chiseled_stone",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "polished_stone",
+      "name_zh": "磨光石",
+      "in": {
+        "smooth_stone": 4
+      },
+      "out": {
+        "id": "polished_stone",
+        "count": 4
+      },
+      "needs": null
+    },
+    {
+      "id": "bricks",
+      "name_zh": "紅磚",
+      "in": {
+        "brick_item": 4
+      },
+      "out": {
+        "id": "bricks",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "cut_sandstone",
+      "name_zh": "切割砂岩",
+      "in": {
+        "sandstone": 4
+      },
+      "out": {
+        "id": "cut_sandstone",
+        "count": 4
+      },
+      "needs": null
+    },
+    {
+      "id": "checker_white",
+      "name_zh": "白格地磚",
+      "in": {
+        "smooth_stone": 2,
+        "wool": 1
+      },
+      "out": {
+        "id": "checker_white",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "checker_black",
+      "name_zh": "黑格地磚",
+      "in": {
+        "smooth_stone": 2,
+        "coal": 1
+      },
+      "out": {
+        "id": "checker_black",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "bookshelf",
+      "name_zh": "書架",
+      "in": {
+        "planks": 6,
+        "leather": 3
+      },
+      "out": {
+        "id": "bookshelf",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "barrel",
+      "name_zh": "木桶",
+      "in": {
+        "planks": 6,
+        "stick": 2
+      },
+      "out": {
+        "id": "barrel",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "crate",
+      "name_zh": "木箱",
+      "in": {
+        "planks": 4,
+        "stick": 4
+      },
+      "out": {
+        "id": "crate",
+        "count": 2
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "door",
+      "name_zh": "木門",
+      "in": {
+        "planks": 6
+      },
+      "out": {
+        "id": "door",
+        "count": 3
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "ladder",
+      "name_zh": "梯子",
+      "in": {
+        "stick": 7
+      },
+      "out": {
+        "id": "ladder",
+        "count": 3
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "lantern",
+      "name_zh": "提燈",
+      "in": {
+        "torch": 1,
+        "iron_ingot": 1
+      },
+      "out": {
+        "id": "lantern",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "paper_lantern",
+      "name_zh": "紅紙燈籠",
+      "in": {
+        "torch": 1,
+        "paper_red": 1
+      },
+      "out": {
+        "id": "paper_lantern",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "sea_lantern",
+      "name_zh": "青色燈",
+      "in": {
+        "torch": 1,
+        "glass_cyan": 1
+      },
+      "out": {
+        "id": "sea_lantern",
+        "count": 1
+      },
+      "needs": null
     }
   ],
   "smelt": [
@@ -302,6 +1066,31 @@
     {
       "in": "cobblestone",
       "out": "stone",
+      "time": 4
+    },
+    {
+      "in": "cactus",
+      "out": "dye_green",
+      "time": 4
+    },
+    {
+      "in": "stone",
+      "out": "smooth_stone",
+      "time": 4
+    },
+    {
+      "in": "stone_bricks",
+      "out": "cracked_stone_bricks",
+      "time": 4
+    },
+    {
+      "in": "dirt",
+      "out": "brick_item",
+      "time": 4
+    },
+    {
+      "in": "sandstone",
+      "out": "smooth_sandstone",
       "time": 4
     }
   ]
