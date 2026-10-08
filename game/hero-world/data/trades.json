@@ -1,0 +1,18 @@
+{
+  "_doc": "村民交易表。professions：村民的職業和他賣的東西（give＋count＝物品，blueprint＝藍圖，price＝金幣）。quests：英文委託（module＝題庫單元，types＝題型，count 題要答對 need 題才算完成），每個委託每天只能領一次獎。每個村民有 2 個委託（依村民編號固定）",
+  "professions": [
+    { "id": "merchant", "name_zh": "商人", "color": "#2F5A34", "offers": [
+      { "give": "lamp", "count": 2, "price": 7 }, { "give": "glass", "count": 16, "price": 4 }, { "give": "bed", "count": 1, "price": 5 }, { "give": "torch", "count": 8, "price": 3 }, { "give": "wool", "count": 6, "price": 4 } ] },
+    { "id": "smith", "name_zh": "鐵匠", "color": "#3B3D3A", "offers": [
+      { "give": "iron_ingot", "count": 4, "price": 10 }, { "give": "gold_ingot", "count": 3, "price": 12 }, { "give": "diamond", "count": 1, "price": 20 }, { "blueprint": "bp_iron", "price": 28 } ] },
+    { "id": "librarian", "name_zh": "圖書館員", "color": "#6B4A33", "offers": [
+      { "blueprint": "bp_diamond", "price": 75 }, { "give": "gold_block", "count": 2, "price": 6 }, { "give": "ruby_ore", "count": 1, "price": 15 } ] }
+  ],
+  "quests": [
+    { "id": "q_words", "title_zh": "單字小幫手", "desc": "幫我認 5 個單字", "module": "words", "types": ["zh2en", "en2zh"], "lv": 1, "count": 5, "need": 4, "reward": { "coins": 4, "items": { "planks": 16 } } },
+    { "id": "q_phrases", "title_zh": "片語跑腿", "desc": "5 題片語", "module": "phrases", "types": ["zh2en", "en2zh", "phrase-fill"], "count": 5, "need": 4, "reward": { "coins": 5, "items": { "iron_ingot": 2 } } },
+    { "id": "q_grammar", "title_zh": "文法修理工", "desc": "5 題文法填空", "module": "grammar", "types": ["grammar-fill"], "count": 5, "need": 4, "reward": { "coins": 6, "items": { "gold_ingot": 2 } } },
+    { "id": "q_patterns", "title_zh": "句型信差", "desc": "4 題句型", "module": "patterns", "types": ["pattern-choose"], "count": 4, "need": 3, "reward": { "coins": 6, "items": { "glass": 16 } } },
+    { "id": "q_typing", "title_zh": "打字挑戰", "desc": "打出 3 個英文字", "module": "words", "types": ["zh2en-type"], "lv": 1, "count": 3, "need": 2, "reward": { "coins": 8, "items": { "diamond": 1 } } }
+  ]
+}

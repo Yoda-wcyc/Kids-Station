@@ -112,3 +112,5 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 #hurt.on { animation: hurt .45s ease-out; }
 @keyframes hurt { from { opacity: 1; } to { opacity: 0; } }
 .padlock { display: grid; place-items: center; margin: 6px 0; }
+.panel h3 { margin: 14px 0 6px; }
+.quest .of-t small { line-height: 1.4; }

@@ -36,7 +36,8 @@
     { "id": "snow", "n": 32, "name_zh": "雪", "colors": { "top": "#F1EEE6", "side": "#8A6A48", "bottom": "#8A6A48" }, "pattern": "snow", "hardness": 0.3, "tool": "shovel", "tier": 0, "drops": "self", "buy": null },
     { "id": "ice", "n": 33, "name_zh": "冰", "colors": { "top": "#BFD6D6" }, "pattern": "ice", "transparent": true, "hardness": 0.5, "tool": "pickaxe", "tier": 0, "drops": null, "buy": null },
     { "id": "spruce_log", "n": 34, "name_zh": "雲杉木", "colors": { "top": "#9C7A55", "side": "#4A3A2A", "bottom": "#9C7A55" }, "pattern": "log", "hardness": 1.6, "tool": "axe", "tier": 0, "drops": "self", "buy": null },
-    { "id": "spruce_leaves", "n": 35, "name_zh": "雲杉葉", "colors": { "top": "#2C4434" }, "pattern": "leaves", "hardness": 0.2, "drops": null, "buy": null }
+    { "id": "spruce_leaves", "n": 35, "name_zh": "雲杉葉", "colors": { "top": "#2C4434" }, "pattern": "leaves", "hardness": 0.2, "drops": null, "buy": null },
+    { "id": "path", "n": 36, "name_zh": "小路", "colors": { "top": "#B59A6E", "side": "#8A6A48" }, "pattern": "sand", "hardness": 0.5, "tool": "shovel", "tier": 0, "drops": "dirt", "buy": null }
   ],
   "items": [
     { "id": "stick", "name_zh": "木棍", "icon": "stick", "color": "#8C6640", "maxStack": 64, "buy": null },
