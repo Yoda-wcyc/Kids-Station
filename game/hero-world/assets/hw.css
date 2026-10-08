@@ -104,3 +104,10 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 .slot .dur.low i { background: var(--red); }
 .owned { font-weight: 700; color: var(--leaf); padding: 0 8px; }
 .furnace-st { background: var(--paper2); border-radius: 12px; padding: 10px 14px; margin: 8px 0; font-size: 17px; }
+#hearts { display: flex; gap: 3px; background: rgba(239, 235, 221, .7); padding: 5px 8px; border-radius: 10px; }
+.ht { width: 18px; height: 16px; display: block; clip-path: polygon(50% 100%, 3% 45%, 0 22%, 12% 4%, 30% 0, 50% 16%, 70% 0, 88% 4%, 100% 22%, 97% 45%); background: rgba(21, 23, 20, .22); }
+.ht.full { background: var(--red); }
+.ht.half { background: linear-gradient(90deg, var(--red) 50%, rgba(21, 23, 20, .22) 50%); }
+#hurt { position: fixed; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(224, 53, 43, .45)); opacity: 0; }
+#hurt.on { animation: hurt .45s ease-out; }
+@keyframes hurt { from { opacity: 1; } to { opacity: 0; } }

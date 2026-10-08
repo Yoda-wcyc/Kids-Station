@@ -1,5 +1,5 @@
 {
-  "_doc": "方塊與物品登錄表。新增方塊＝在 blocks 加一筆（n 是存檔用的數字代碼，取一個沒用過的 1~255，之後不要改）。colors: top/side/bottom 色塊；pattern: plain|grass|stone|ore|log|leaves|planks|glass|water|lamp|stele|table|sand|gold|bedrock|furnace；hardness: 秒數係數（-1＝挖不動）；tool: 用哪種工具挖比較快（pickaxe/axe/shovel）；tier: 至少要幾級的對應工具才會掉東西（0＝徒手也行；1 木、2 石、3 鐵、4 鑽石）；drops: \"self\"＝掉自己、null＝不掉、其他 id＝掉那個；buy: null 或 {price, qty, locked?}。items 的 tool: {type, tier, durability}。blueprints: 商店用金幣買一次就永久擁有，解鎖有 blueprint 欄位的合成配方",
+  "_doc": "方塊與物品登錄表。新增方塊＝在 blocks 加一筆（n 是存檔用的數字代碼，取一個沒用過的 1~255，之後不要改）。colors: top/side/bottom 色塊；pattern: plain|grass|torch|bed|wool|stone|ore|log|leaves|planks|glass|water|lamp|stele|table|sand|gold|bedrock|furnace；hardness: 秒數係數（-1＝挖不動）；tool: 用哪種工具挖比較快（pickaxe/axe/shovel）；tier: 至少要幾級的對應工具才會掉東西（0＝徒手也行；1 木、2 石、3 鐵、4 鑽石）；drops: \"self\"＝掉自己、null＝不掉、其他 id＝掉那個；light: 會發光的亮度 0~15；shape: torch＝細長小柱；buy: null 或 {price, qty, locked?}。items 的 tool: {type, tier, durability}。blueprints: 商店用金幣買一次就永久擁有，解鎖有 blueprint 欄位的合成配方",
   "blocks": [
     { "id": "air", "n": 0, "name_zh": "空氣", "solid": false, "hardness": 0, "drops": null, "buy": null },
     { "id": "grass", "n": 1, "name_zh": "草地", "colors": { "top": "#3E6B3A", "side": "#8A6A48", "bottom": "#8A6A48" }, "pattern": "grass", "hardness": 0.6, "tool": "shovel", "tier": 0, "drops": "dirt", "buy": null },
@@ -22,7 +22,10 @@
     { "id": "crafting_table", "n": 18, "name_zh": "工作台", "colors": { "top": "#A97E4E", "side": "#8C6640", "bottom": "#C49A63" }, "pattern": "table", "hardness": 1.8, "tool": "axe", "tier": 0, "drops": "self", "interact": "craft", "buy": null },
     { "id": "gold_ore", "n": 19, "name_zh": "金礦", "colors": { "top": "#8C8A84" }, "accent": "#D9A63A", "pattern": "ore", "hardness": 3.0, "tool": "pickaxe", "tier": 3, "drops": "self", "buy": null },
     { "id": "diamond_ore", "n": 20, "name_zh": "鑽石礦", "colors": { "top": "#8C8A84" }, "accent": "#6FC7C0", "pattern": "ore", "hardness": 3.4, "tool": "pickaxe", "tier": 3, "drops": "diamond", "buy": null },
-    { "id": "furnace", "n": 21, "name_zh": "熔爐", "colors": { "top": "#6E6C67", "side": "#7A7873", "bottom": "#6E6C67" }, "accent": "#26302A", "pattern": "furnace", "hardness": 2.2, "tool": "pickaxe", "tier": 1, "drops": "self", "interact": "furnace", "buy": null }
+    { "id": "furnace", "n": 21, "name_zh": "熔爐", "colors": { "top": "#6E6C67", "side": "#7A7873", "bottom": "#6E6C67" }, "accent": "#26302A", "pattern": "furnace", "hardness": 2.2, "tool": "pickaxe", "tier": 1, "drops": "self", "interact": "furnace", "buy": null },
+    { "id": "torch", "n": 22, "name_zh": "火把", "colors": { "top": "#F2C46B", "side": "#8C6640", "bottom": "#8C6640" }, "accent": "#E0352B", "pattern": "torch", "shape": "torch", "solid": false, "transparent": true, "emissive": true, "light": 14, "hardness": 0, "drops": "self", "buy": null },
+    { "id": "bed", "n": 23, "name_zh": "重生點床", "colors": { "top": "#E0352B", "side": "#A97E4E", "bottom": "#8C6640" }, "accent": "#EFEBDD", "pattern": "bed", "hardness": 0.6, "tool": "axe", "tier": 0, "drops": "self", "interact": "bed", "buy": { "price": 6, "qty": 1 } },
+    { "id": "wool", "n": 24, "name_zh": "羊毛", "colors": { "top": "#EDE6D0" }, "pattern": "wool", "hardness": 0.8, "tier": 0, "drops": "self", "buy": null }
   ],
   "items": [
     { "id": "stick", "name_zh": "木棍", "icon": "stick", "color": "#8C6640", "maxStack": 64, "buy": null },

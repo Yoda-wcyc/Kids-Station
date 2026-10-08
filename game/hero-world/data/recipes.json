@@ -2,6 +2,8 @@
   "_doc": "合成表（不分形狀，材料夠就能做）。in＝材料 {id: 數量}；out＝{id, count}；needs＝要在哪個方塊旁邊（null＝背包裡就能做）；blueprint＝要先在商店買過那張藍圖。smelt＝熔爐：in 燒成 out，time 秒，每 1 個煤炭可以燒 fuelPerCoal 個",
   "fuelPerCoal": 4,
   "recipes": [
+    { "id": "torch", "name_zh": "火把", "in": { "coal": 1, "stick": 1 }, "out": { "id": "torch", "count": 4 }, "needs": null },
+    { "id": "bed", "name_zh": "重生點床", "in": { "planks": 3, "wool": 3 }, "out": { "id": "bed", "count": 1 }, "needs": "crafting_table" },
     {
       "id": "planks",
       "name_zh": "木板",
