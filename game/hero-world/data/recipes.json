@@ -1,0 +1,8 @@
+{
+  "_doc": "合成表（M1：不分形狀，材料夠就能做）。in＝材料 {id: 數量}；out＝{id, count}；needs＝要站在哪個方塊旁邊（null＝背包裡就能做）",
+  "recipes": [
+    { "id": "planks", "name_zh": "木板", "in": { "log": 1 }, "out": { "id": "planks", "count": 4 }, "needs": null },
+    { "id": "stick", "name_zh": "木棍", "in": { "planks": 2 }, "out": { "id": "stick", "count": 4 }, "needs": null },
+    { "id": "crafting_table", "name_zh": "工作台", "in": { "planks": 4 }, "out": { "id": "crafting_table", "count": 1 }, "needs": null }
+  ]
+}

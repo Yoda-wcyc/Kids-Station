@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#EFEBDD">
+<meta name="color-scheme" content="light">
+<meta name="format-detection" content="telephone=no">
+<title>勇者島 · 方塊世界</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23EFEBDD'/%3E%3Cpolygon points='32,8 56,20 32,32 8,20' fill='%233E6B3A'/%3E%3Cpolygon points='8,20 32,32 32,58 8,46' fill='%238A6A48'/%3E%3Cpolygon points='56,20 32,32 32,58 56,46' fill='%2363492F'/%3E%3Ccircle cx='50' cy='12' r='5' fill='%23E0352B'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/hw.css?v=a5735ce6f8">
+</head>
+<body>
+<canvas id="c" aria-label="方塊世界"></canvas>
+<div id="grain" aria-hidden="true"></div>
+<div id="ui">
+  <div id="hud-l"><div class="pill"><span class="coin"></span><b id="coins">0</b><span class="lbl">金幣</span></div><div id="dbg" hidden></div></div>
+  <div id="hud-r">
+    <button id="b-inv" class="hb-btn">背包</button>
+    <button id="b-shop" class="hb-btn">商店</button>
+    <button id="b-view" class="hb-btn">視角</button>
+    <button id="b-set" class="hb-btn" aria-label="設定">設定</button>
+  </div>
+  <div id="cross" aria-hidden="true"></div>
+  <div id="selname" aria-live="polite"></div>
+  <div id="hotbar"></div>
+  <div id="joy" hidden><div id="knob"></div></div>
+  <div id="tbtns">
+    <button id="b-place" class="tb">放置</button>
+    <button id="b-fly" class="tb">飛</button>
+    <button id="b-down" class="tb">下</button>
+    <button id="b-jump" class="tb big">跳</button>
+  </div>
+  <div id="toasts" aria-live="polite"></div>
+  <div id="loading" hidden>地圖產生中…</div>
+  <div id="lockhint">點一下畫面繼續</div>
+</div>
+<div id="ov" class="overlay" hidden></div>
+<div id="start" class="overlay" hidden>
+  <div class="panel start">
+    <h1>勇者島 · 方塊世界</h1>
+    <p class="muted">挖方塊、蓋房子；去「練習石碑」答英文題賺金幣，到商店買稀有方塊。</p>
+    <div class="help">
+      <div class="h-touch"><b>iPad</b>：左手拖曳＝走路；右手拖曳＝轉頭；<b>按住方塊</b>＝挖；<b>點一下</b>＝放方塊／跟石碑互動；右下按鈕：跳、飛、放置。</div>
+      <div class="h-desk"><b>電腦</b>：WASD 走、滑鼠看、左鍵挖、右鍵放／互動、空白鍵跳、F 飛、V 視角、E 背包、1–9 換方塊、Shift 跑步。</div>
+    </div>
+    <button id="go" class="btn big">開始</button>
+  </div>
+</div>
+<div id="err" hidden></div>
+<script src="assets/hw.js?v=a5735ce6f8"></script>
+</body>
+</html>
