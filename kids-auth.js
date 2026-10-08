@@ -1,13 +1,14 @@
 /* kids-auth.js — 小朋友學習站 會員登入（全站共用）
    規則（Yoda）：免登入就可以瀏覽整個網站，但是要登入才可以開始練習和玩遊戲。
-   - 只存 localStorage 的 kids_jwt（票）與 kids_member（會員資料 JSON，附 exp）；絕不存密碼，不碰 yoda_* 任何 key。
+   - 只存 localStorage 的 kids_jwt（票）、kids_member（會員資料 JSON，附 exp）與 kids_quota（今天練習次數是否用完的快取）；絕不存密碼，不碰 yoda_* 任何 key。
    - 後端網址只在下面 KIDS_GAS_URL 一處設定。還是佔位字時＝後端沒上線：一律放行、不顯示登入元件（誤推上線也不會把小朋友擋住）。
    - 前端只看票的到期時間（exp），不驗簽；真正的權限判斷在後端。 */
 (function () {
   'use strict';
   var KIDS_GAS_URL = 'https://script.google.com/macros/s/AKfycbz9XcZk7kcihMTXTgbfRSP0FGdPHv8DcBRyG0xbLmNSGdIkaGWcNaZMtJmwPtrDCwIv/exec'; // ← 唯一設定處：kids GAS 網頁應用程式網址
+  var KIDS_PAY_URL = 'https://kids-member.vercel.app'; // ← 唯一設定處：kids 綠界建單（Vercel）網域，結尾不加 /
   var PLACEHOLDER = 'REPLACE_WITH_KIDS_GAS_URL';
-  var K_JWT = 'kids_jwt', K_MEMBER = 'kids_member';
+  var K_JWT = 'kids_jwt', K_MEMBER = 'kids_member', K_QUOTA = 'kids_quota';
   var DAY = 86400, RENEW_BEFORE = 30 * DAY;
 
   // 這支檔案所在的資料夾＝網站根目錄（子頁用 ../kids-auth.js 載入也算得對）
@@ -47,7 +48,7 @@
     refreshWidget();
     return ok;
   }
-  function logout() { del(K_JWT); del(K_MEMBER); refreshWidget(); }
+  function logout() { del(K_JWT); del(K_MEMBER); del(K_QUOTA); refreshWidget(); }
 
   // ---------- 呼叫後端（介面合約：POST text/plain JSON → JSON） ----------
   function err(code, body) { var e = new Error(code); e.code = code; e.body = body; return e; }
@@ -219,11 +220,80 @@
     return renewing;
   }
 
+  // ---------- 練習額度（後端 startActivity；介面見 kids-member/docs/ECPAY_CONTRACT.md §3、§4） ----------
+  // 用法：requireLogin 通過後 if (!KidsAuth.startActivity(kind, 重來一次的函式)) return;
+  // - 平常：立刻放行（回 true），背景通知後端；回應記在 kids_quota（帳號＋台北日期），不拖慢開始練習。
+  // - 本機已知「今天的次數用完了」：這次先問後端（最多等 3 秒）→ allowed 才呼叫 retry() 重新開始；不行就跳提示框。
+  // - 後端說不行之外的任何狀況（斷線、逾時、後端還沒有這個 action、伺服器忙）一律放行，絕不擋小孩。
+  var GATE_MS = 3000, gatePass = false, gateBusy = false;
+  function tpeDay() { var d = new Date(Date.now() + 8 * 3600 * 1000); return d.toISOString().slice(0, 10); }
+  function quotaMid() { var t = token(), s = ''; try { var p = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); while (p.length % 4) p += '='; s = String(JSON.parse(atob(p)).sub || ''); } catch (e) { } if (s) return s; var m = readMember(); return m ? String(m.pub_id || m.email || '') : ''; }
+  function quotaRead() {
+    var c = null; try { c = JSON.parse(get(K_QUOTA) || 'null'); } catch (e) { }
+    return c && c.mid === quotaMid() && c.date === tpeDay() ? c : { mid: quotaMid(), date: tpeDay() };
+  }
+  function quotaWrite(c) { if (c.out || c.free) set(K_QUOTA, JSON.stringify(c)); else del(K_QUOTA); }
+  // checked＝這次是「已知用完、先問後端」的回應
+  function quotaRemember(r, checked) {
+    if (!r || typeof r !== 'object') return;
+    var c = quotaRead();
+    if (r.paid === true || (checked && r.allowed === true)) { c.out = false; c.free = true; } // 付費、或後端今天其實沒在擋 → 今天不再預先攔
+    else if (r.allowed === false) c.out = true;
+    else c.out = !c.free && typeof r.limit === 'number' && r.limit > 0 && typeof r.remaining === 'number' && r.remaining <= 0;
+    quotaWrite(c);
+  }
+  function timed(p, ms) {
+    return new Promise(function (res, rej) {
+      var t = setTimeout(function () { rej(err('timeout')); }, ms);
+      p.then(function (v) { clearTimeout(t); res(v); }, function (e) { clearTimeout(t); rej(e); });
+    });
+  }
+  function showLimit(open) {
+    css(); closePrompt();
+    lastFocus = document.activeElement;
+    modal = document.createElement('div');
+    modal.className = 'ka-modal ka-limit'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true'); modal.setAttribute('aria-labelledby', 'ka-t');
+    modal.innerHTML = '<div class="ka-card"><div class="ka-i">🌙</div><div class="ka-t" id="ka-t">今天的免費練習用完了，明天再來！</div>'
+      + (open ? '<p class="ka-s">請爸爸媽媽到帳號頁看看會員方案</p>' : '')
+      + '<div class="ka-row">' + (open ? '<a class="ka-b" data-ka="acct">👨‍👩‍👧 帳號頁</a>' : '') + '<button type="button" class="ka-b ka-p" data-ka="later">好</button></div></div>';
+    var acct = modal.querySelector('[data-ka="acct"]');
+    if (acct) { acct.href = BASE + 'account.html'; acct.addEventListener('click', function (e) { e.preventDefault(); goTop(BASE + 'account.html'); }); }
+    var ok = modal.querySelector('[data-ka="later"]');
+    ok.addEventListener('click', closePrompt);
+    modal.addEventListener('click', function (e) { if (e.target === modal) closePrompt(); });
+    document.addEventListener('keydown', onEsc, true);
+    document.body.appendChild(modal);
+    try { ok.focus(); } catch (e) { }
+  }
+  // 擋下時要不要多一句「看看會員方案」：只有後端說 open=true 才說（startActivity 沒帶 open 就問 memberSubscription；問不到＝不說）
+  function limitOpen(r) {
+    if (r && typeof r.open === 'boolean') return Promise.resolve(r.open);
+    return timed(api('memberSubscription', { token: token() }), GATE_MS).then(function (s) { return s.open === true; }, function () { return false; });
+  }
+  function startActivity(kind, retry) {
+    if (!configured() || !isLoggedIn()) return true; // 登入與否交給 requireLogin
+    if (gatePass) { gatePass = false; return true; }  // 剛問過後端、說可以 → 這一次直接開始
+    var c = quotaRead(), body = { token: token(), kind: String(kind || '') };
+    if (!c.out) { // 平常：先放行，背景回報
+      api('startActivity', body).then(function (r) { quotaRemember(r, false); }, function () { });
+      return true;
+    }
+    if (gateBusy) return false;
+    gateBusy = true;
+    var go = function () { gateBusy = false; if (typeof retry === 'function') { gatePass = true; try { retry(); } finally { gatePass = false; } } };
+    timed(api('startActivity', body), GATE_MS).then(function (r) {
+      quotaRemember(r, true);
+      if (r.allowed !== false) return go();
+      return limitOpen(r).then(function (open) { gateBusy = false; showLimit(open); });
+    }, function () { go(); }); // 斷線、逾時、後端還沒這個 action：放行
+    return false;
+  }
+
   window.KidsAuth = {
     isLoggedIn: function () { return configured() ? isLoggedIn() : false; },
-    member: member, logout: logout, requireLogin: requireLogin, guard: guard,
+    member: member, logout: logout, requireLogin: requireLogin, guard: guard, startActivity: startActivity,
     configured: configured, token: token, exp: exp, api: api, saveSession: saveSession, errorText: errorText, checkPassword: checkPassword, grades: GRADES, gradeText: gradeText,
-    loginUrl: loginUrl, safeNext: safeNext, base: BASE, autoRenew: autoRenew, refreshWidget: refreshWidget
+    loginUrl: loginUrl, safeNext: safeNext, base: BASE, autoRenew: autoRenew, refreshWidget: refreshWidget, payUrl: KIDS_PAY_URL
   };
 
   function boot() { refreshWidget(); autoRenew(); }

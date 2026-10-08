@@ -64,12 +64,12 @@
         <dt>暱稱</dt><dd id="v-kid"></dd>
         <dt>年齡</dt><dd id="v-age"></dd>
         <dt>年級</dt><dd id="v-grade"></dd>
-        <dt>方案</dt><dd id="v-plan"></dd>
-        <dt>狀態</dt><dd id="v-status"></dd>
         <dt>登入有效到</dt><dd id="v-exp"></dd>
       </dl>
       <p class="muted" style="margin:12px 0 0">每個月有來練習，登入就會自動延長，不用常常重新登入。</p>
     </section>
+
+    <div id="plan-slot"></div>
 
     <section class="card" id="coins">
       <h2>🪙 學習幣</h2>
@@ -103,7 +103,7 @@
   </div>
   <p class="center muted" style="margin:18px 0 0"><a href="terms.html">📄 使用條款與隱私權說明</a></p>
 </main>
-<script src="kids-auth.js?v=eea8abdbb0"></script>
+<script src="kids-auth.js?v=16915da323"></script>
 <script src="kids-coins.js?v=747b1f93cc"></script>
 <script>
 (function () {
@@ -112,7 +112,6 @@
   var $ = function (s) { return document.querySelector(s); };
   var msg = $('#msg');
   function say(text, kind) { msg.textContent = text || ''; msg.className = 'msg ' + (kind || 'bad'); msg.hidden = !text; }
-  var STATUS = { active: '✅ 使用中', pending: '⏳ 待開通', inactive: '尚未開通付費', expired: '已到期', cancelled: '已取消' };
   function fmt(sec) {
     if (!sec) return '—';
     try { return new Date(sec * 1000).toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: 'long', day: 'numeric' }); } catch (e) { return new Date(sec * 1000).toISOString().slice(0, 10); }
@@ -132,8 +131,6 @@
     $('#v-kid').textContent = m.child_nickname || '小朋友';
     $('#v-age').textContent = m.age ? m.age + ' 歲' : '—';
     $('#v-grade').textContent = A.gradeText(m.grade) || '—';
-    $('#v-plan').textContent = m.plan || '免費會員';
-    $('#v-status').textContent = STATUS[m.status] || m.status || '—';
     $('#v-exp').textContent = fmt(A.exp());
   }
   if (!A.configured()) { showOut('會員系統還在準備中，現在不用登入也可以練習和玩遊戲喔！'); $('#out-go').hidden = true; return; }
@@ -188,6 +185,71 @@
     if (x.code === 'expired' || x.code === 'revoked') { A.logout(); showOut(A.errorText(x.code)); }
     else say(A.errorText(x.code) + '（下面先顯示這台裝置記得的資料）', 'info');
   });
+
+  // ---------- 會員方案卡（ECPAY_CONTRACT §0-1、§4）：只有後端說 open=true，或這個帳號真的付過款，才畫出來；否則 #plan-slot 保持空白 ----------
+  var PST = { active: '✅ 使用中', cancelled: '已取消自動扣款（用到期末）', expired: '已到期', pending: '⏳ 待開通', refunded: '已退款', inactive: '免費會員' };
+  function fmtDay(v) {
+    if (!v) return '—';
+    var s = String(v), m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (m) return +m[1] + ' 年 ' + +m[2] + ' 月 ' + +m[3] + ' 日';
+    var d = new Date(isFinite(+s) && s.trim() !== '' ? (+s < 1e12 ? +s * 1000 : +s) : s);
+    if (isNaN(d.getTime())) return s;
+    try { return d.toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: 'long', day: 'numeric' }); } catch (e) { return d.toISOString().slice(0, 10); }
+  }
+  function money(n) { n = Number(n); return isFinite(n) && n > 0 ? 'NT$ ' + n.toLocaleString('en-US') : ''; }
+  function hasPay(r) { var lp = r.last_payment; return !!(lp && (lp.trade_no || lp.ts)) || r.has_payments === true; }
+  function paidBefore(r) { return hasPay(r) || r.status === 'active' || r.status === 'cancelled'; }
+  // 付費有效＝後端 isPaidActive（paid 欄）；舊後端沒這欄時，用 active／取消後還在期內推估
+  function paidActive(r) { return typeof r.paid === 'boolean' ? r.paid : (r.status === 'active' || (r.status === 'cancelled' && r.cancel_pending === true)); }
+  function drawPlan(r) {
+    var slot = $('#plan-slot'); slot.innerHTML = '';
+    if (!r || !(r.open === true || paidBefore(r))) return;
+    var sec = document.createElement('section'); sec.className = 'card'; sec.id = 'plan';
+    var h = document.createElement('h2'); h.textContent = '💳 會員方案'; sec.appendChild(h);
+    var dl = document.createElement('dl'); dl.className = 'info';
+    function row(k, v, id) { var dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; if (id) dd.id = id; dl.appendChild(dt); dl.appendChild(dd); }
+    var cancelled = r.status === 'cancelled' || r.cancel_pending === true;
+    row('方案', (r.plan ? r.plan + ' · ' : '') + '學期會員' + (money(r.amount) ? '（每學期 ' + money(r.amount) + '）' : ''), 'p-plan');
+    var free = !hasPay(r) && (!r.status || r.status === 'pending' || r.status === 'inactive'); // 註冊後一律 pending：沒付過款就是免費會員
+    row('狀態', free ? '免費會員' : r.cancel_pending === true && r.status !== 'cancelled' ? '取消處理中' : (PST[r.status] || r.status || '—'), 'p-status');
+    if (r.next_charge_date) row(cancelled ? '可以用到' : '下次扣款日', fmtDay(r.next_charge_date), 'p-next');
+    if (+r.paid_periods > 0) row('已付期數', r.paid_periods + ' 期', 'p-periods');
+    var lp = r.last_payment;
+    row('上次付款', lp && (lp.ts || lp.trade_no) ? fmtDay(lp.ts) + (money(lp.amount) ? ' · ' + money(lp.amount) : '') : '還沒有付款紀錄', 'p-last');
+    sec.appendChild(dl);
+    var note = document.createElement('p'); note.className = 'muted'; note.style.margin = '12px 0 0';
+    note.innerHTML = '每學期自動扣款；扣款後 7 天內可以申請退款；取消後不會再扣下一期，這一期可以用到期末。詳細規則請看<a href="terms.html#s8">使用條款第八節</a>。';
+    sec.appendChild(note);
+    // 開放訂閱後、這個帳號目前不是付費有效 → 給一顆按鈕去 subscribe.html（open=false 時整張卡本來就不畫，按鈕也不會出現）
+    if (r.open === true && !paidActive(r)) {
+      var go = document.createElement('a'); go.className = 'btn primary big wide'; go.id = 'p-subscribe'; go.style.marginTop = '12px';
+      go.href = 'subscribe.html'; go.textContent = '👉 看看會員方案';
+      sec.appendChild(go);
+    }
+    if (r.can_cancel === true && !cancelled) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'btn big wide danger'; b.id = 'p-cancel'; b.style.marginTop = '12px'; b.textContent = '取消自動扣款';
+      b.addEventListener('click', function () {
+        var until = r.next_charge_date ? fmtDay(r.next_charge_date) : '這一期結束';
+        if (!confirm('要取消自動扣款嗎？\n取消後不會再扣下一期，會員可以用到 ' + until + '。')) return;
+        if (!confirm('再確認一次：真的要取消自動扣款嗎？')) return;
+        b.disabled = true; say('處理中…', 'info');
+        A.api('requestCancel', { token: A.token() }).then(function (x) {
+          say('已經取消自動扣款，會員可以用到 ' + fmtDay(x.until || r.next_charge_date) + '。', 'good');
+          loadPlan();
+        }, function (x) {
+          b.disabled = false;
+          if (x.code === 'expired' || x.code === 'revoked') { A.logout(); showOut(A.errorText(x.code)); return; }
+          say('取消沒有成功：' + A.errorText(x.code) + ' 也可以來信 iamtwispin@gmail.com 請我們幫忙。');
+        });
+      });
+      sec.appendChild(b);
+    }
+    slot.appendChild(sec);
+  }
+  function loadPlan() {
+    return A.api('memberSubscription', { token: A.token() }).then(drawPlan, function () { $('#plan-slot').innerHTML = ''; }); // 讀不到（含後端還沒這個 action）＝不顯示
+  }
+  loadPlan();
 
   $('#f-pw').addEventListener('submit', function (e) {
     e.preventDefault(); var f = e.target;

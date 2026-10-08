@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff8ec">
+<meta name="color-scheme" content="light">
+<meta name="format-detection" content="telephone=no">
+<meta name="robots" content="noindex, nofollow">
+<title>學期會員 · 小朋友學習站</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23ffd166'/%3E%3Ctext x='90' y='120' font-size='86' text-anchor='middle' font-family='Arial,sans-serif' font-weight='bold' fill='%23263445'%3EAB%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css?v=e3ebece108">
+<style>
+.mbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:3px solid var(--line);box-shadow:0 2px 10px rgba(38,52,69,.06)}
+.mbar-in{max-width:620px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:12px}
+.mbar-in .brand{flex:1;font-size:1.1rem;font-weight:800;color:var(--ink);text-decoration:none}
+.wrapm{max-width:620px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+.hero{text-align:center;margin:6px 0 14px}.hero .big-i{font-size:3rem;line-height:1.2}.hero h1{font-size:1.45rem}
+.msg{border-radius:14px;padding:12px 14px;margin:0 0 14px;font-weight:600}
+.msg.bad{background:var(--no-bg);color:#a3262a;border:2px solid #f5c2c3}
+.msg.info{background:#fff8ec;border:2px solid var(--line)}
+[hidden]{display:none!important}
+.price{text-align:center;margin:4px 0 10px}.price b{font-size:2.4rem;line-height:1.1;font-variant-numeric:tabular-nums}.price small{display:block;color:var(--muted);margin-top:4px}
+.rules{margin:0 0 12px 1.2em;padding:0}.rules li{margin:4px 0}
+.agree{display:flex;gap:12px;align-items:flex-start;padding:12px;border:2px solid var(--line);border-radius:14px;background:#fff8ec;margin:4px 0 14px;cursor:pointer}
+.agree input{width:30px;height:30px;flex:none;margin:2px 0 0;accent-color:var(--pri)}
+</style>
+</head>
+<body data-kids-widget="off">
+<header class="mbar"><div class="mbar-in"><a class="brand" href="index.html">🎈 小朋友學習站</a><a class="btn" href="account.html">我的帳號</a></div></header>
+<main class="wrapm">
+  <div class="hero"><div class="big-i">🎒</div><h1 id="title">學期會員</h1></div>
+  <p class="msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+  <section class="card center" id="s-login" hidden>
+    <p id="login-t">請爸爸或媽媽先登入。</p>
+    <a class="btn primary big" id="login-go" href="login.html">🔑 去登入</a>
+  </section>
+
+  <section class="card center" id="s-soon" hidden>
+    <p style="font-size:1.25rem;font-weight:800;margin:0 0 6px">訂閱即將開放</p>
+    <p class="muted" style="margin:0">現在所有內容都可以免費使用，開放時會在網站上公告。</p>
+    <a class="btn big" href="index.html" style="margin-top:12px">← 回學習站</a>
+  </section>
+
+  <section class="card" id="s-plan" hidden>
+    <h2 id="p-name">學期會員</h2>
+    <div class="price"><b id="p-amount"></b><small id="p-per"></small><small id="p-month"></small></div>
+    <ul class="rules">
+      <li><b>每學期自動扣款</b>：用信用卡定期定額，每學期扣一次，金額同上。</li>
+      <li><b>扣款後 7 天內可以退款</b>：來信 <a href="mailto:iamtwispin@gmail.com">iamtwispin@gmail.com</a> 申請。</li>
+      <li><b>隨時可以取消</b>：到「我的帳號」取消後不會再扣下一期，這一期可以用到期末。</li>
+      <li>信用卡卡號由爸爸媽媽在綠界科技的付款頁輸入，本站不經手、也不保存卡號。</li>
+    </ul>
+    <p class="muted" style="margin:0 0 12px">完整規則請看<a href="terms.html#s8">使用條款第八節</a>。</p>
+    <label class="agree"><input type="checkbox" id="agree"><span>我是爸爸或媽媽，已經看過使用條款，同意每學期自動扣款。</span></label>
+    <button class="btn primary big wide" type="button" id="pay">前往綠界付款 ➜</button>
+  </section>
+</main>
+<script src="kids-auth.js?v=16915da323"></script>
+<script>
+(function () {
+  'use strict';
+  // 訂閱頁（ECPAY_CONTRACT §4）：不從任何頁面連過來、noindex。金額全部來自後端 subscribeQuote，頁面不寫任何數字。
+  var A = window.KidsAuth;
+  var $ = function (s) { return document.querySelector(s); };
+  function say(text, kind) { var m = $('#msg'); m.textContent = text || ''; m.className = 'msg ' + (kind || 'bad'); m.hidden = !text; }
+  function show(id) { ['#s-login', '#s-soon', '#s-plan'].forEach(function (s) { $(s).hidden = s !== id; }); }
+  function money(n) { return 'NT$ ' + Number(n).toLocaleString('en-US'); }
+  function needLogin(text) { show('#s-login'); $('#login-t').textContent = text; $('#login-go').href = A.loginUrl(A.base + 'subscribe.html'); }
+  if (!A || !A.configured()) { show('#s-soon'); return; }
+  if (!A.isLoggedIn()) { needLogin('請爸爸或媽媽先登入。'); return; }
+  say('讀取中…', 'info');
+  A.api('subscribeQuote', { token: A.token() }).then(function (r) {
+    say('');
+    if (r.reason === 'already_active') { location.replace(A.base + 'account.html'); return; }
+    var amount = Number(r.amount);
+    if (r.allowed !== true || r.reason === 'not_open' || !(amount > 0)) { show('#s-soon'); return; } // 不在預覽名單：只說即將開放，不露價格
+    $('#p-name').textContent = (r.plan ? r.plan + ' · ' : '') + '學期會員';
+    $('#p-amount').textContent = money(amount);
+    var months = Number(r.period_months);
+    $('#p-per').textContent = months > 0 ? '每學期（' + months + ' 個月）' : '每學期';
+    $('#p-month').textContent = months > 0 ? '平均每月約 ' + money(Math.round(amount / months)) : '';
+    show('#s-plan');
+  }, function (x) {
+    if (x.code === 'expired' || x.code === 'revoked') { A.logout(); needLogin(A.errorText(x.code)); return; }
+    show(''); say(x.code === 'price_unavailable' ? '價格資料暫時讀不到，請稍後再試。' : A.errorText(x.code));
+  });
+  $('#pay').addEventListener('click', function () {
+    if (!$('#agree').checked) { say('請先勾選「我是爸爸或媽媽，已經看過使用條款」。'); return; }
+    if (!A.isLoggedIn()) { needLogin(A.errorText('expired')); return; }
+    say('正在前往綠界付款頁…', 'info'); $('#pay').disabled = true;
+    // 用表單送出（target=_self）：Vercel 回自動送出的表單頁 → 綠界付款頁
+    var f = document.createElement('form');
+    f.method = 'POST'; f.action = A.payUrl + '/api/ecpay-create'; f.target = '_self'; f.style.display = 'none';
+    var i = document.createElement('input'); i.type = 'hidden'; i.name = 'token'; i.value = A.token(); f.appendChild(i);
+    document.body.appendChild(f); f.submit();
+    setTimeout(function () { $('#pay').disabled = false; }, 8000); // 使用者按「上一頁」回來時可以再按
+  });
+})();
+</script>
+</body>
+</html>

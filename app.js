@@ -12,6 +12,8 @@
   const srcLabel = s => KE.SRC_LABEL[s] || s;
   // 會員閘門（kids-auth.js）：瀏覽免登入；開始練習／小測驗／學會了要登入。沒載入 kids-auth.js 時照舊放行
   const authOK = why => !window.KidsAuth || KidsAuth.requireLogin(why);
+  // 練習額度（kids-auth.js startActivity）：登入後再問；回 false＝這次先不開始（提示框或等後端回覆後自己呼叫 retry）
+  const quotaOK = (kind, retry) => !window.KidsAuth || !KidsAuth.startActivity || KidsAuth.startActivity(kind, retry);
 
   // ---------- 儲存 ----------
   function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
@@ -216,6 +218,7 @@
     if (!authOK('learn')) return;
     const g = E.gate(itemId, S.correct);
     if (!g || !g.qs.length) return;
+    if (!quotaOK('test', () => startGate(itemId, back))) return;
     Q = { list: g.qs, i: 0, answers: [], answered: false, cfg: null, graduated: 0, result: null, gate: { itemId, need: g.need, total: g.total, back: back || '#learn' } };
     go('#quiz');
   }
@@ -224,6 +227,7 @@
     if (!authOK('practice')) return;
     const list = E.drill(itemId, S.correct);
     if (!list.length) return;
+    if (!quotaOK('english', () => startDrill(itemId, back))) return;
     Q = { list, i: 0, answers: [], answered: false, cfg: null, graduated: 0, result: null, drill: { itemId, back: back || '#learn' } };
     go('#quiz');
   }
@@ -231,6 +235,7 @@
     if (!authOK('practice')) return;
     const list = cfg.ids ? KE.shuffle(cfg.ids).slice(0, cfg.count || 30).map(id => E.get(id)).filter(Boolean) : E.buildQuiz(cfg);
     if (!list.length) { alert('沒有符合條件的題目，換個選擇試試看！'); return; }
+    if (!quotaOK('english', () => startQuiz(cfg))) return;
     Q = { list, i: 0, answers: [], answered: false, cfg, graduated: 0, result: null };
     go('#quiz');
   }

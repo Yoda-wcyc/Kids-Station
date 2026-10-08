@@ -937,7 +937,7 @@ function verifyStages(L, s){
 /* ================= 狀態 ================= */
 var BUILTIN = ['x+5=12', 'x−3=9', '12+x=20', 'x+8−2=15', '(x+3)−2=10', '(x−5)+4=12', 'x−(6−2)=7', 'x+(10−4)=15'];
 function builtinList(){ return BUILTIN.map(function(q){ return { q:q, own:false }; }); }
-var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, storeOK:true, store:null, solved:{}, coinSent:{} };
+var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, storeOK:true, store:null, solved:{}, coinSent:{}, quotaAsked:{} };
 var timers = [], anims = [];
 function later(fn, ms){ var id = setTimeout(fn, ms); timers.push(id); return id; }
 function clearAll(){
@@ -1358,6 +1358,11 @@ function renderTry(nudge){
 function trySubmit(){
   if (window.KidsAuth && !KidsAuth.requireLogin('math')) return;
   var inp = $('try-in'); if (!inp || isSolved()) return;
+  /* 練習額度：每一題第一次按「確定」才算開始一次（同一次載入同一題只問一次） */
+  if (!S.quotaAsked[S.P.q]){
+    if (window.KidsAuth && KidsAuth.startActivity && !KidsAuth.startActivity('math', trySubmit)) return;
+    S.quotaAsked[S.P.q] = true;
+  }
   var raw = normalize(inp.value);
   if (!/^[0-9]+$/.test(raw)){ tryMsg('先在格子裡寫一個數字喔！', false); return; }
   var ok = Number(raw) === S.P.sol;
@@ -1745,7 +1750,7 @@ try {
 }
 })();
 </script>
-<script src="../kids-auth.js?v=eea8abdbb0"></script>
+<script src="../kids-auth.js?v=16915da323"></script>
 <script src="../kids-coins.js?v=747b1f93cc"></script>
 <script>
 /* 會員閘門：看說明、翻「常見錯誤」卡片免登入；按步驟／自動播放／選題／換你算算看／自己出題／管理題目要登入 */
