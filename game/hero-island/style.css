@@ -325,3 +325,15 @@ button:disabled { cursor: default; }
   .cls-grid { grid-template-columns: 1fr 1fr; } .tools { grid-template-columns: repeat(3, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* 上方中間：計時膠囊＋聲音開關（一直看得到） */
+#topc { position: fixed; z-index: 830; top: max(6px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; }
+#topc #timer { position: static; transform: none; }
+#snd[hidden] { display: none; }
+.snd-b { width: 48px; height: 48px; border: 0; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 20px; box-shadow: var(--soft); }
+.snd-b:active { transform: scale(.94); }
+.snd-set { display: flex; flex-direction: column; gap: 2px; min-width: 240px; }
+.snd-row { display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 10px; min-height: 48px; font-weight: 700; }
+.snd-row input { width: 100%; height: 32px; accent-color: var(--g7); }
+.t-copy { top: max(44px, 6vh); } .t-title { font-size: clamp(56px, 10vw, 104px); } .t-sub { margin: 6px 0 14px; } .t-demo { margin-top: 16px; gap: 6px; } .t-row { margin-top: 0; }
+@media (orientation: portrait) { #timer .p-plan { display: none; } }

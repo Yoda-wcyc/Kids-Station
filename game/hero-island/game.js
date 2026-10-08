@@ -254,7 +254,8 @@
   if (typeof document === 'undefined') return;
 
   // ===================== 畫面 =====================
-  const A = root.HIArt, KE = root.KE;
+  const A = root.HIArt, KE = root.KE, AU = root.HIAudio || null;
+  const au = (fn, a) => { try { if (AU && AU[fn]) return AU[fn](a); } catch (e) { /* 沒有聲音也能玩 */ } };
   const $ = (q, el) => (el || document).querySelector(q);
   function h(tag, at) {
     const e = document.createElement(tag);
@@ -318,11 +319,18 @@
   let voice = null;
   function pickVoice() { try { const vs = speechSynthesis.getVoices(); voice = vs.find(v => /^en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null; } catch (e) { /* */ } }
   if ('speechSynthesis' in root) { pickVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) { /* */ } }
+  let duckId = null;
+  function endDuck() { if (duckId != null) { au('duckEnd', duckId); duckId = null; } }
   function speak(t, vol) {
     try {
       if (!('speechSynthesis' in root) || !t) return;
-      speechSynthesis.cancel();
+      speechSynthesis.cancel(); endDuck();
       const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = 0.9; if (voice) u.voice = voice; if (vol != null) u.volume = vol;
+      if (vol !== 0) {  // 英文語音播放時把音樂壓到 15%，講完才恢復
+        const id = duckId = au('duckStart'), done = () => { if (duckId === id) duckId = null; au('duckEnd', id); clearTimeout(safe); };
+        const safe = setTimeout(done, 1500 + String(t).length * 180);
+        u.onend = done; u.onerror = done;
+      }
       speechSynthesis.speak(u);
     } catch (e) { /* */ }
   }
@@ -346,7 +354,7 @@
   }
   function gainXp(n) {
     const r = L.addXp(S, n); S.lv = r.lv; S.xp = r.xp;
-    if (r.ups) setTimeout(() => toast(`升級！Lv ${S.lv}`, 'lvl'), 600);
+    if (r.ups) setTimeout(() => { toast(`升級！Lv ${S.lv}`, 'lvl'); au('sting', 'levelup'); }, 900);
   }
   function award(id) {
     if (S.badges[id]) return;
@@ -359,14 +367,15 @@
     fx.innerHTML = '';
     fx.append(h('div', { class: 'gem-art', html: A.diamond() }), h('div', { class: 'gem-t' }, '✨ 稀有掉落：鑽石！ ✨'), h('div', { class: 'gem-s' }, '每一場只有 3% 的機會'));
     for (let i = 0; i < 10; i++) fx.append(h('i', { class: 'spark', style: `--a:${i * 36}deg;--d:${0.05 * i}s` }, '✦'));
-    fx.hidden = false; anim(fx, 'go');
+    fx.hidden = false; anim(fx, 'go'); au('sting', 'diamond');
     const close = () => { fx.hidden = true; fx.removeEventListener('click', close); };
     fx.addEventListener('click', close); setTimeout(close, 2600);
   }
 
   // ---- 畫面切換 ----
   let cur = 'title';
-  function show(id) { cur = id; document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === 'scr-' + id)); renderTimer(); }
+  function show(id) { cur = id; document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === 'scr-' + id)); renderTimer(); musicScene(); }
+  function musicScene() { au('scene', cur === 'battle' && B && B.boss ? 'boss' : cur === 'island' && N ? 'night' : cur); }
   const RENDER = { title: renderTitle, class: renderClass, hub: renderHub, map: renderMap, island: renderIsland, arena: renderArenaLobby, rewards: renderRewards };
   function go(id) { if (id !== 'island') N = null; if (id !== 'arena') stopArenaTimer(); if (RENDER[id]) RENDER[id](); show(id); }
 
@@ -392,9 +401,9 @@
         h('div', { class: 'eyebrow' }, 'HERO ISLAND · DEMO'),
         h('h1', { class: 't-title' }, '勇者島'),
         h('p', { class: 't-sub' }, '答對英文就是出招。打怪、撿材料，回島上蓋房子。'),
-        h('button', { class: 'btn big', onclick: () => { speak(' ', 0); go(S.cls ? 'hub' : 'class'); } }, '開始'),
+        h('button', { class: 'btn big', onclick: () => { au('unlock'); speak(' ', 0); go(S.cls ? 'hub' : 'class'); } }, '開始'),
         h('div', { class: 't-demo' }, h('div', { class: 'eyebrow' }, '試玩設定 · 帳號類型'), seg,
-          h('button', { class: 'btn ghost small', onclick: openParent }, '家長設定'))));
+          h('div', { class: 'row t-row' }, h('button', { class: 'btn ghost small', onclick: openParent }, '家長設定'), h('a', { class: 'linkish', href: '../../#s/game' }, '← 回小朋友學習站')), soundSliders())));
   }
 
   // ---- 選職業 ----
@@ -464,6 +473,7 @@
     const ctrl = { hint() { }, timeout() { if (!answered) finish(false, true); }, get answered() { return answered; } };
     function finish(ok, timeUp) {
       if (answered) return; answered = true; box.classList.add('done');
+      au('sfx', ok ? 'correct' : 'wrong');
       if (o.onAnswer) o.onAnswer(ok);
       if (ok) { fb.className = 'q-fb ok'; fb.textContent = ['答對了！', '漂亮！', '命中！', '好厲害！'][Math.floor(Math.random() * 4)]; setTimeout(() => o.onDone && o.onDone(true), 750); return; }
       fb.className = 'q-fb bad'; fb.innerHTML = '';
@@ -543,13 +553,13 @@
       B.correct++; S.mastery[S.cls] = (S.mastery[S.cls] || 0) + 1; missions().correct++;
       const d = L.damage({ combo: B.combo, typed: isTyped(q), cls: S.cls, sword: !!S.items.sword });
       B.hp = Math.max(0, B.hp - (B.boss ? 1 : d.dmg));
-      anim($('#bHero'), 'atk'); setTimeout(() => anim($('#bMon'), 'hit'), 170);
+      anim($('#bHero'), 'atk'); setTimeout(() => { anim($('#bMon'), 'hit'); au('sfx', d.crit ? 'crit' : 'hit'); }, 170);
       floatText(stage, (d.crit ? '暴擊！' : '') + '-' + d.dmg, 'dmg' + (d.crit ? ' crit' : ''), 70, 28);
       if (B.combo >= 2) announce(`連續答對 ×${B.combo}！`, B.combo >= 3);
       if (B.combo >= 3) award('combo3');
     } else {
       B.php = Math.max(0, B.php - L.HIT_BACK); addMistake(q);
-      anim($('#bMon'), 'atk'); setTimeout(() => { anim($('#bHero'), 'hit'); flash(); }, 170);
+      anim($('#bMon'), 'atk'); setTimeout(() => { anim($('#bHero'), 'hit'); flash(); au('sfx', 'hit'); }, 170);
       floatText(stage, '-' + L.HIT_BACK, 'dmg hurt', 24, 32);
     }
     saveS(); updBattle();
@@ -572,12 +582,12 @@
       card.append(h('div', { class: 'eyebrow' }, 'VICTORY'), h('h2', {}, `打倒${B.mon.name}了！`),
         h('div', { class: 'drops' }, dropChip('wood', drop.wood), drop.stone ? dropChip('stone', drop.stone) : null, drop.diamond ? dropChip('diamond', drop.diamond, true) : null, h('span', { class: 'drop xp' }, `+${xp} XP`)),
         h('p', { class: 'muted' }, `答對 ${B.correct} 題 · ${L.CLASSES[S.cls].name}熟練度 ${S.mastery[S.cls]}`));
-      gainXp(xp);
+      gainXp(xp); au('sting', 'victory');
       if (drop.diamond) { award('diamond'); setTimeout(diamondMoment, 450); }
     } else {
       card.append(h('div', { class: 'eyebrow' }, 'TRY AGAIN'), h('h2', {}, B.boss ? `差一點！要答對 ${L.BOSS_NEED} 題才打得倒` : '差一點！'),
         h('p', {}, '答錯的題目會變成「錯題怪」，晚上來島上。再打一次就記住了！'));
-      gainXp(5);
+      gainXp(5); au('sting', 'defeat');
     }
     saveS();
     card.append(h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => go('map') }, '回地圖'),
@@ -632,7 +642,7 @@
   function doCraft(r) {
     const res = L.craft(S, r.id);
     if (!res.ok) return toast(res.reason);
-    S = res.s; saveS();
+    S = res.s; saveS(); au('sfx', 'craft');
     toast(r.id === 'pick' ? '做好石鎬了！地圖上的「字根洞窟」可以挖開了' : r.id === 'sword' ? '做好木劍了！冒險傷害 +5%' : '做好一盞路燈！選「路燈」放到島上');
     if (r.id === 'lamp') tool = 'lamp';
     renderIsland();
@@ -646,7 +656,7 @@
     } else {
       const r = L.placeTile(S, i, tool);
       if (!r.ok) return toast(r.reason);
-      S = r.s; missions().build++; saveS();
+      S = r.s; missions().build++; saveS(); au('sfx', 'place');
     }
     renderIsland();
     const cell = document.querySelector(`.cell[data-i="${i}"]`); if (cell && S.grid[i]) anim(cell, 'pop');
@@ -658,7 +668,7 @@
     if (!qs.length) { qs = sampleQs(3); sample = true; }
     const hi = houseIdx(), hx = (hi % 8 + 0.5) / 8 * 100, hy = (Math.floor(hi / 8) + 0.5) / 6 * 100;
     N = { qs, i: 0, sample, hx, hy, win: 0, back: 0, mons: qs.map((q, k) => ({ from: SPAWN[k % SPAWN.length], t: 0, state: 'walk' })) };
-    renderIsland();
+    renderIsland(); musicScene();
     setTimeout(nightNext, 600);
   }
   function placeMons() {
@@ -698,7 +708,7 @@
     const side = $('#islSide'); side.innerHTML = '';
     side.append(h('div', { class: 'eyebrow' }, 'MORNING'), h('div', { class: 'night-t' }, '守住了！'),
       h('p', {}, `打倒 ${N.win} 隻錯題怪（每隻 +1 木頭）`), N.back ? h('p', {}, `${N.back} 隻「明晚再來」——它們還在錯題本裡。`) : h('p', {}, '錯題本清空了，太棒了！'),
-      h('button', { class: 'btn', onclick: () => { N = null; renderIsland(); toast('天亮了！'); }, html: A.icon('sun') + '<span>天亮了</span>' }));
+      h('button', { class: 'btn', onclick: () => { N = null; renderIsland(); musicScene(); toast('天亮了！'); }, html: A.icon('sun') + '<span>天亮了</span>' }));
   }
 
   // ---- 競技場 ----
@@ -789,7 +799,7 @@
     const res = L.arenaResult(AR.m, AR.sim), rk = L.rankAfter(S.rank, res.win), d = today();
     const rw = L.arenaReward(res.win, S.firstWinDay, d);
     S.rank = rk.r; if (rw.first) S.firstWinDay = d;
-    S.mats.wood += rw.wood; gainXp(rw.xp); saveS();
+    S.mats.wood += rw.wood; gainXp(rw.xp); saveS(); au('sting', res.win ? 'victory' : 'defeat');
     const s = $('#scr-arena'); s.innerHTML = '';
     s.append(hud('ARENA · RESULT', res.win ? '勝利！' : '差一點！', 'hub'),
       h('div', { class: 'ar-result' },
@@ -823,6 +833,7 @@
           h('small', { class: 'muted' }, '每天台北時間 0 點重新開始')),
         h('section', { class: 'card' }, h('div', { class: 'eyebrow' }, 'BADGES · 徽章'),
           h('div', { class: 'badges' }, L.BADGES.map(b => h('div', { class: 'badge' + (S.badges[b.id] ? ' on' : '') }, h('span', { class: 'b-ico', html: A.icon(b.id === 'diamond' ? 'diamond' : 'star') }), h('b', {}, b.name), h('small', {}, S.badges[b.id] || '還沒拿到'))))),
+        h('section', { class: 'card' }, soundSliders()),
         h('section', { class: 'card' }, h('div', { class: 'eyebrow' }, 'BAG · 背包'),
           h('div', { class: 'drops' }, dropChip('wood', S.mats.wood), dropChip('stone', S.mats.stone), dropChip('diamond', S.mats.diamond, S.mats.diamond > 0)),
           h('p', {}, `木劍 ${S.items.sword ? '✓' : '—'} · 石鎬 ${S.items.pick ? '✓' : '—'} · 路燈 ${S.items.lamp || 0} 盞 · 錯題本 ${S.mistakes.length} 題`),
@@ -847,6 +858,8 @@
     pill.append(h('span', { class: 'p-plan' }, L.PLANS[T.plan].name), h('b', {}, left === Infinity ? '∞ 今日無限' : '剩 ' + L.fmtClock(left)), !active && left > 0 ? h('small', {}, '暫停') : null);
     pill.classList.toggle('low', left !== Infinity && left <= 60);
     const out = left <= 0;
+    au('setLocked', out);
+    if (out) { try { speechSynthesis.cancel(); } catch (e) { /* */ } endDuck(); }
     $('#lock').hidden = !(out && T.plan === 'free');
     const rest = $('#rest');
     if (out && T.plan === 'paid') { if (rest.hidden) openRest(); } else rest.hidden = true;
@@ -944,9 +957,27 @@
       } })]);
   }
 
+  // ---- 聲音開關（一直看得到）＋音量設定 ----
+  function soundSliders() {
+    if (!AU) return null;
+    const s = AU.get();
+    return h('div', { class: 'snd-set' }, h('div', { class: 'eyebrow' }, 'SOUND · 聲音'),
+      ['music', 'sfx'].map(k => h('label', { class: 'snd-row' }, h('span', {}, k === 'music' ? '音樂' : '音效'),
+        h('input', { type: 'range', min: 0, max: 100, step: 5, value: Math.round(s[k] * 100), 'aria-label': k === 'music' ? '音樂音量' : '音效音量', oninput: e => { AU.set({ [k]: e.target.value / 100 }); }, onchange: () => { au('unlock'); if (k === 'sfx') au('sfx', 'correct'); } }))),
+      h('small', { class: 'muted' }, '念英文的時候，音樂會自動變小聲'));
+  }
+  function renderSound() {
+    const box = $('#snd'); if (!box) return;
+    if (!AU) { box.hidden = true; return; }
+    const s = AU.get(); box.innerHTML = '';
+    box.append(h('button', { class: 'snd-b', 'aria-label': s.muted ? '打開聲音' : '關掉聲音', onclick: () => { au('unlock'); AU.toggle(); renderSound(); } }, s.muted ? '🔇' : '🔊'));
+  }
   // ---- 開機 ----
   document.getElementById('defs').innerHTML = A.defs();
-  renderLock(); renderTitle(); show('title');
+  renderLock(); renderTitle(); renderSound(); show('title');
+  // 第一次點畫面就建立／恢復 AudioContext（iOS 要使用者手勢）；按鈕輕點音效
+  document.addEventListener('pointerdown', () => au('unlock'), { capture: true, once: true });
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('button') && !e.target.closest('.opt,.chip,.kp-k')) au('sfx', 'tap'); }, true);
   window.addEventListener('resize', () => { if (N) placeMons(); });
   root.HIDebug = { get S() { return S; }, get T() { return T; }, get E() { return E; }, get q() { return lastQ; }, go, startBattle };
 })(typeof window !== 'undefined' ? window : globalThis);

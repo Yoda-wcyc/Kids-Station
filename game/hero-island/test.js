@@ -154,4 +154,32 @@ t('xp + missions', () => {
   const m = L.missionsFor(null, 'a'); m.correct = 5; assert.strictEqual(L.missionsFor(m, 'a').correct, 5); assert.strictEqual(L.missionsFor(m, 'b').correct, 0);
 });
 
+// ---- 聲音（audio.js 純邏輯） ----
+const AU = require('./audio.js');
+t('scene -> track mapping', () => {
+  const want = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', unknown: 'calm' };
+  Object.keys(want).forEach(k => assert.strictEqual(AU.trackFor(k), want[k], k));
+});
+t('speech ducking state machine', () => {
+  const s = AU.normalize(null), D = AU.Ducker();
+  assert.strictEqual(AU.musicGain(s, D.ducked, false), 0.35);
+  const a = D.start(); assert(D.ducked); assert.strictEqual(+AU.musicGain(s, D.ducked, false).toFixed(4), +(0.35 * 0.15).toFixed(4));
+  const b = D.start();            // 重疊：第二段語音開始
+  D.end(a); assert(D.ducked, 'still ducked while b speaks');
+  D.end(a); assert(D.ducked, 'double end is harmless');
+  D.end(b); assert(!D.ducked); assert.strictEqual(AU.musicGain(s, D.ducked, false), 0.35);
+  assert.strictEqual(AU.musicGain(s, true, true), 0, 'lock screen silences music');
+  assert.strictEqual(AU.sfxGain(s, true), 0);
+});
+t('mute + volume persistence', () => {
+  const store = mem();
+  assert.deepStrictEqual(AU.loadSettings(store), { muted: false, music: 0.35, sfx: 0.7 });
+  AU.saveSettings(store, AU.toggleMute(AU.loadSettings(store)));
+  assert.strictEqual(AU.loadSettings(store).muted, true);
+  assert.strictEqual(AU.musicGain(AU.loadSettings(store), false, false), 0);
+  AU.saveSettings(store, Object.assign(AU.loadSettings(store), { muted: false, music: 3, sfx: -1 }));
+  assert.deepStrictEqual(AU.loadSettings(store), { muted: false, music: 1, sfx: 0 });
+  assert(store.dump().includes('hi_audio'));
+});
+
 console.log(`hero-island test: ${n} groups passed`);
