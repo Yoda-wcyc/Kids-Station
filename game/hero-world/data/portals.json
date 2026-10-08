@@ -1,0 +1,10 @@
+{
+  "_doc": "傳送門：每張勇者島地圖一個傳送門方塊（blocks.json 的 portal_*）。進去＝開 ../hero-island/?map=<id>&from=world；在那邊打倒 Boss，回來會領到 reward（金幣＋材料）。森林傳送門在出生點旁邊就找得到，其他在商店買",
+  "portals": [
+    { "map": "forest", "name_zh": "單字森林", "block": "portal_forest", "reward": { "coins": 5, "items": { "log": 8, "coal": 4 } } },
+    { "map": "cave", "name_zh": "字根洞窟", "block": "portal_cave", "reward": { "coins": 8, "items": { "iron_ore": 4, "coal": 6 } } },
+    { "map": "castle", "name_zh": "文法城堡", "block": "portal_castle", "reward": { "coins": 10, "items": { "iron_ingot": 4, "gold_ingot": 2 } } },
+    { "map": "harbor", "name_zh": "句型港口", "block": "portal_harbor", "reward": { "coins": 12, "items": { "gold_ingot": 3, "glass": 8 } } },
+    { "map": "volcano", "name_zh": "片語火山", "block": "portal_volcano", "reward": { "coins": 15, "items": { "diamond": 2, "torch": 8 } } }
+  ]
+}

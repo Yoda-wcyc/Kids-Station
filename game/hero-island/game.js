@@ -998,6 +998,8 @@
       const drop = L.rollDrop(Math.random, B.boss ? 'boss' : 'normal', M), xp = B.boss ? 50 : 20;
       Object.keys(MAT_NAME).forEach(k => { S.mats[k] = (S.mats[k] || 0) + (drop[k] || 0); });
       S.defeated[B.mon.id] = true; missions().wins++; if (M === 'cave') missions().cave = (missions().cave || 0) + 1;
+      // 從方塊世界傳送門來的：打倒 Boss 時寫一筆獎勵，回方塊世界時領（方塊世界只讀這個 key）
+      if (PORTAL && B.boss) { try { const k = 'hw_portal_rewards', a = JSON.parse(localStorage.getItem(k) || '[]'); a.push({ id: M + '-' + Date.now(), map: M || 'forest', boss: B.mon.id, at: new Date().toISOString() }); localStorage.setItem(k, JSON.stringify(a.slice(-50))); toast('方塊世界的獎勵準備好了！回方塊世界領取'); } catch (e) { /* 存不了就算了 */ } }
       if (B.boss) award('boss');
       if (B.boss && M === 'cave') award('caver');
       if (B.boss && M === 'castle') award('castle');
@@ -1433,7 +1435,15 @@
 
   // ---- 開機 ----
   document.getElementById('defs').innerHTML = A.defs();
+  const PORTAL = (() => { try { const q = new URLSearchParams(location.search); return q.get('from') === 'world' ? { map: q.get('map') } : null; } catch (e) { return null; } })();
   renderLock(); renderTitle(); renderSound(); show('title');
+  // 方塊世界（hero-world）傳送門：?map=<id>&from=world → 直接進那張地圖、左下角有「回方塊世界」
+  if (PORTAL) {
+    const r = L.ROUTE.find(x => x.id === PORTAL.map);
+    if (r && S.cls) go(r.scr);
+    const back = document.createElement('a'); back.href = '../hero-world/'; back.className = 'btn small'; back.textContent = '回方塊世界';
+    back.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:60'; document.body.appendChild(back);
+  }
   // 第一次點畫面就建立／恢復 AudioContext（iOS 要使用者手勢）；按鈕輕點音效
   document.addEventListener('pointerdown', () => au('unlock'), { capture: true, once: true });
   document.addEventListener('click', e => { if (e.target.closest && e.target.closest('button') && !e.target.closest('.opt,.chip,.kp-k')) au('sfx', 'tap'); }, true);
