@@ -180,7 +180,41 @@
       s += `<polygon points="76,124 124,124 120,134 80,134" fill="${C.ink}"/><polygon points="58,60 70,84 64,100" fill="${C.ink}" opacity=".5"/><polygon points="140,110 150,128 146,140" fill="${C.ink}" opacity=".5"/>`;
       s += `<text x="100" y="178" text-anchor="middle" font-size="16" font-weight="900" fill="${C.cream}" font-family="Georgia,serif" letter-spacing="2">un · re · dis</text>`;
       return s;
-    },    ghost() { // 晚上的錯題怪
+    },    gargoyle() { // 時態之門後面的石像鬼
+      let s = ground(100, 190, 66, 8);
+      s += both(`<path d="M100 70 L28 40 L44 84 L20 100 L60 104 Z" fill="${C.stone2}"/>`, 'hi-shadeL') + both(`<path d="M100 70 L172 40 L156 84 L180 100 L140 104 Z" fill="${C.stone}"/>`);
+      s += both(`<polygon points="62,186 70,96 130,96 138,186" fill="${C.stone3}"/>`) + `<polygon points="100,96 130,96 138,186 104,150" fill="${C.stone}"/>`;
+      s += both(`<circle cx="100" cy="82" r="30" fill="${C.stone3}"/>`) + `<polygon points="76,62 70,36 90,56" fill="${C.stone2}"/><polygon points="124,62 130,36 110,56" fill="${C.stone2}"/>`;
+      s += `<rect x="84" y="76" width="10" height="6" fill="${C.ink}"/><rect x="106" y="76" width="10" height="6" fill="${C.ink}"/><polygon points="88,96 112,96 106,104 100,98 94,104" fill="${C.ink}"/>`;
+      return s;
+    },
+    trapjaw() { // 改錯陷阱：一張會夾人的鐵嘴
+      let s = ground(100, 186, 76, 8);
+      s += both(`<path d="M24 120 Q100 168 176 120 L170 150 Q100 196 30 150 Z" fill="${C.stone2}"/>`);
+      s += both(`<path d="M24 112 Q100 40 176 112 L168 88 Q100 22 32 88 Z" fill="${C.stone}"/>`);
+      for (let i = 0; i < 7; i++) { const x = 42 + i * 19.5; s += `<polygon points="${x - 7},${108 - Math.sin(i / 6 * Math.PI) * 18} ${x + 7},${108 - Math.sin(i / 6 * Math.PI) * 18} ${x},${126 - Math.sin(i / 6 * Math.PI) * 10}" fill="${C.cream}"/>`; }
+      s += `<circle cx="78" cy="70" r="9" fill="${C.cream}"/><circle cx="122" cy="70" r="9" fill="${C.cream}"/><circle cx="78" cy="72" r="4" fill="${C.red}"/><circle cx="122" cy="72" r="4" fill="${C.red}"/>`;
+      return s;
+    },
+    armor() { // 盔甲哨兵
+      let s = ground(100, 190, 60, 8) + cap(84, 150, 80, 186, 16, C.stone2) + cap(116, 150, 120, 186, 16, C.stone);
+      s += both(`<polygon points="66,70 134,70 128,156 72,156" fill="${C.stone3}"/>`) + `<polygon points="100,70 134,70 128,156 100,156" fill="${C.stone}"/>`;
+      s += both(`<path d="M74 70 Q74 22 100 22 Q126 22 126 70 Z" fill="${C.stone3}"/>`) + `<rect x="80" y="44" width="40" height="6" fill="${C.ink}"/><rect x="98" y="50" width="4" height="16" fill="${C.ink}"/>`;
+      s += `<rect x="96" y="6" width="8" height="18" rx="3" fill="${C.g7}"/>` + cap(140, 80, 160, 40, 6, C.ink) + `<polygon points="160,40 170,10 152,34" fill="#D8D2BE"/>`;
+      s += `<rect x="60" y="88" width="22" height="42" rx="6" fill="${C.g9}"/><polygon points="66,96 76,96 71,110" fill="${C.cream}"/>`;
+      return s;
+    },
+    knight() { // 時態騎士王
+      let s = ground(100, 192, 84, 8);
+      s += cap(86, 150, 78, 188, 18, C.ink) + cap(116, 150, 124, 188, 18, C.g9);
+      s += both(`<polygon points="58,72 142,72 150,158 50,158" fill="${C.g9}"/>`) + `<polygon points="100,72 142,72 150,158 104,158" fill="${C.g7}"/>`;
+      s += `<polygon points="88,80 112,80 106,150 94,150" fill="${C.gold}"/><circle cx="100" cy="112" r="12" fill="${C.cream}"/><text x="100" y="117" text-anchor="middle" font-size="13" font-weight="900" fill="${C.ink}" font-family="Georgia,serif">-ed</text>`;
+      s += both(`<path d="M74 72 Q72 22 100 20 Q128 22 126 72 Z" fill="${C.stone3}"/>`) + `<rect x="80" y="44" width="40" height="7" fill="${C.ink}"/><circle cx="90" cy="48" r="4" fill="url(#hi-red)"/><circle cx="110" cy="48" r="4" fill="url(#hi-red)"/>`;
+      s += `<path d="M100 20 Q130 -4 150 14 Q128 8 112 26 Z" fill="${C.red}"/><polygon points="78,22 84,6 92,18 100,2 108,18 116,6 122,22" fill="${C.gold}"/>`;
+      s += cap(150, 150, 176, 30, 7, C.ink) + `<polygon points="170,40 182,0 188,40" fill="#D8D2BE"/>` + cap(160, 70, 190, 70, 8, C.gold);
+      return s;
+    },
+    ghost() { // 晚上的錯題怪
       let s = `<ellipse cx="100" cy="186" rx="56" ry="8" fill="url(#hi-ground)"/>`;
       s += both(`<path d="M40 180 L40 90 Q40 24 100 24 Q160 24 160 90 L160 180 L140 164 L120 180 L100 164 L80 180 L60 164 Z" fill="#0E1A12"/>`);
       s += `<ellipse cx="80" cy="92" rx="12" ry="16" fill="#F4E9B8"/><ellipse cx="120" cy="92" rx="12" ry="16" fill="#F4E9B8"/><circle cx="82" cy="96" r="5" fill="${C.red}"/><circle cx="118" cy="96" r="5" fill="${C.red}"/>`;
@@ -236,9 +270,9 @@
         : `<text y="${r * 0.36}" text-anchor="middle" font-size="${r * 0.95}" font-weight="900" fill="${C.cream}" font-family="system-ui,-apple-system,sans-serif">${n.status === 'done' ? '✓' : n.num}</text>`;
       s += `<rect x="${-w / 2}" y="${r + 10}" width="${w}" height="34" rx="17" fill="${C.cream}"/><text y="${r + 34}" text-anchor="middle" font-size="20" font-weight="800" fill="${C.ink}" font-family="system-ui,-apple-system,'PingFang TC',sans-serif">${n.label}</text>`;
       if (n.tag) {
-        const tw = n.tag.length * 12 + 18 + (n.shield ? 24 : 0);
-        s += `<g transform="translate(${r - 4} ${-r - 6})"><rect width="${tw}" height="26" rx="4" fill="${n.boss ? C.red : C.ink}"/><text x="9" y="18" font-size="16" font-weight="800" fill="${C.cream}" font-family="Georgia,serif">${n.tag}</text>` +
-          (n.shield ? `<path transform="translate(${tw - 22} 4)" d="M0 2 Q8 -1 16 2 L15 11 Q12 16 8 18 Q4 16 1 11 Z" fill="${C.gold}"/>` : '') + `</g>`;
+        const tw = [...n.tag].reduce((a, ch) => a + (ch.charCodeAt(0) > 255 ? 16 : 10), 0) + 18 + (n.shield || n.trap ? 24 : 0);
+        s += `<g transform="translate(${r - 4} ${-r - 6})"><rect width="${tw}" height="26" rx="4" fill="${n.boss ? C.red : C.ink}"/><text x="9" y="18" font-size="16" font-weight="800" fill="${C.cream}" font-family="Georgia,'PingFang TC',serif">${n.tag}</text>` +
+          (n.trap ? `<polygon transform="translate(${tw - 22} 5)" points="8,0 16,16 0,16" fill="${C.red}"/>` : '') + (n.shield ? `<path transform="translate(${tw - 22} 4)" d="M0 2 Q8 -1 16 2 L15 11 Q12 16 8 18 Q4 16 1 11 Z" fill="${C.gold}"/>` : '') + `</g>`;
       }
       s += `</g>`;
     });
@@ -263,8 +297,33 @@
     s += `<text x="40" y="44" font-size="18" font-weight="900" letter-spacing="5" fill="${C.cream}" font-family="Helvetica Neue,Arial,sans-serif">ROOT CAVE</text>`;
     return `<svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" class="forest cave">${s}${nodesSvg(nodes)}</svg>`;
   };
+  // 文法城堡：淡石牆、深綠旗、窗戶暖光；樓梯往右上爬；紅色只給 Boss 與陷阱
+  A.castleMid = x => 560 - 0.42 * x;
+  A.castle = function (nodes) {
+    const stair = x => 600 - 0.42 * x;
+    let s = `<rect width="1000" height="620" fill="#ECE7D8"/>`;
+    s += both(`<polygon points="0,620 0,330 120,330 120,300 1000,300 1000,620" fill="#D8D2C2"/>`, 'hi-shadeL');
+    for (let x = 0; x < 1000; x += 46) s += `<rect x="${x + 6}" y="282" width="28" height="22" fill="#D8D2C2"/>`;
+    for (let y = 340; y < 620; y += 34) for (let x = (y / 34 % 2) * 40; x < 1000; x += 80) s += `<rect x="${x}" y="${y}" width="76" height="2" fill="#C9C2AF"/>`;
+    [[60, 90, 150, 340], [820, 40, 170, 300]].forEach(([x, y, w, b]) => { s += both(`<rect x="${x}" y="${y}" width="${w}" height="${b - y}" fill="#CFC8B5"/>`); for (let k = 0; k < w; k += 34) s += `<rect x="${x + k}" y="${y - 22}" width="22" height="24" fill="#CFC8B5"/>`; });
+    s += both(`<polygon points="870,40 940,40 905,-20" fill="${C.g9}"/>`);
+    [[180, 120, 1], [470, 110, 1], [700, 110, .9]].forEach(([x, y, k]) => { s += `<rect x="${x}" y="${y}" width="${46 * k}" height="${150 * k}" fill="${C.g9}"/><polygon points="${x},${y + 150 * k} ${x + 23 * k},${y + 130 * k} ${x + 46 * k},${y + 150 * k} ${x + 46 * k},${y + 170 * k} ${x},${y + 170 * k}" fill="${C.g9}"/><circle cx="${x + 23 * k}" cy="${y + 50 * k}" r="${10 * k}" fill="${C.gold}"/>`; });
+    [[100, 180], [330, 170], [590, 150], [870, 130]].forEach(([x, y]) => { s += `<ellipse cx="${x + 14}" cy="${y + 24}" rx="70" ry="60" fill="url(#hi-torch)"/><path d="M${x} ${y + 50} V${y + 14} Q${x + 14} ${y - 6} ${x + 28} ${y + 14} V${y + 50} Z" fill="#F7C77E"/><rect x="${x + 13}" y="${y + 6}" width="2" height="44" fill="#B98A4A"/>`; });
+    // 樓梯（往右上爬）
+    for (let x = 0; x < 1000; x += 40) { const y = stair(x); s += `<rect x="${x}" y="${r1(y)}" width="42" height="${r1(620 - y)}" fill="#BDB49B"/><rect x="${x}" y="${r1(y)}" width="42" height="7" fill="#E4DDC8"/><rect x="${x}" y="${r1(y + 7)}" width="42" height="10" fill="#A9A08A" opacity=".7"/>`; }
+    s += `<ellipse cx="900" cy="170" rx="140" ry="80" fill="url(#hi-red)" opacity=".28"/>`;
+    s += `<text x="40" y="44" font-size="18" font-weight="900" letter-spacing="5" fill="${C.ink}" font-family="Helvetica Neue,Arial,sans-serif">GRAMMAR CASTLE</text>`;
+    return `<svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" class="forest castle">${s}${nodesSvg(nodes)}</svg>`;
+  };
+  A.castleStage = () => `<svg viewBox="0 0 1000 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect width="1000" height="420" fill="#E4DED0"/>` +
+    [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => `<rect x="${i * 120 - 20}" y="${40 + (i % 2) * 34}" width="110" height="2" fill="#C9C2AF"/><rect x="${i * 120 + 40}" y="${140 + (i % 2) * 34}" width="110" height="2" fill="#C9C2AF"/>`).join('') +
+    `<ellipse cx="500" cy="120" rx="160" ry="120" fill="url(#hi-torch)"/><path d="M470 190 V90 Q500 46 530 90 V190 Z" fill="#F7C77E"/><rect x="498" y="70" width="4" height="120" fill="#B98A4A"/>` +
+    `<rect x="120" y="0" width="70" height="230" fill="${C.g9}"/><polygon points="120,230 155,205 190,230 190,256 120,256" fill="${C.g9}"/><circle cx="155" cy="80" r="16" fill="${C.gold}"/>` +
+    `<rect x="800" y="0" width="70" height="210" fill="${C.g9}"/><polygon points="800,210 835,185 870,210 870,236 800,236" fill="${C.g9}"/><circle cx="835" cy="70" r="16" fill="${C.red}"/>` +
+    `<polygon points="0,340 1000,300 1000,420 0,420" fill="#BDB49B"/><polygon points="0,340 1000,300 1000,308 0,350" fill="#E4DDC8"/></svg>`;
+
   // 戰鬥背景
-  A.stage = map => map === 'cave' ? A.caveStage() : `<svg viewBox="0 0 1000 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect width="1000" height="420" fill="${C.paper}"/>` +
+  A.stage = map => map === 'cave' ? A.caveStage() : map === 'castle' ? A.castleStage() : `<svg viewBox="0 0 1000 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect width="1000" height="420" fill="${C.paper}"/>` +
     `<polygon points="120,40 136,40 360,420 -120,420" fill="url(#hi-cone)" opacity=".55" filter="url(#hi-blur-s)"/>` +
     `<rect x="40" y="10" width="7" height="330" fill="${C.ink}"/><path d="M40 10 Q40 -6 64 -6 L140 0 L140 6 L64 2 Q47 2 47 10Z" fill="${C.ink}"/>` +
     bush(860, 300, 120) + bush(980, 250, 110) + bush(740, 330, 70) +
@@ -285,6 +344,7 @@
     house: () => base + `<rect x="18" y="24" width="80" height="72" fill="#0b1a10" opacity=".3" filter="url(#hi-blur)"/>` +
       `<rect class="t-wall" x="12" y="76" width="76" height="14"/><rect x="44" y="78" width="12" height="12" fill="${C.ink}"/><rect class="t-win" x="20" y="79" width="12" height="7"/><rect class="t-win" x="68" y="79" width="12" height="7"/>` +
       `<polygon class="t-roof2" points="12,14 88,14 50,46"/><polygon class="t-roof2" points="12,14 12,78 50,46"/><polygon class="t-roof" points="88,14 88,78 50,46"/><polygon class="t-roof" points="12,78 88,78 50,46"/><rect x="62" y="22" width="9" height="9" fill="${C.ink}"/>`,
+    flag: () => base + `<rect x="44" y="14" width="5" height="76" fill="#0b1a10" opacity=".25" transform="rotate(30 46 88)"/><circle cx="46" cy="86" r="7" fill="${C.stone2}"/><rect x="43" y="12" width="6" height="76" fill="${C.ink}"/><polygon class="t-flag" points="49,14 86,14 86,46 72,38 49,46"/><circle cx="67" cy="28" r="5" fill="${C.gold}"/>`,
     torch: () => base + `<circle cx="50" cy="54" r="22" fill="#0b1a10" opacity=".25" filter="url(#hi-blur-s)"/><circle cx="50" cy="50" r="17" fill="${C.stone2}"/><circle cx="50" cy="50" r="11" fill="${C.ink}"/><path d="M50 30 Q64 48 50 60 Q36 48 50 30Z" fill="#F2A541"/><path d="M50 42 Q57 51 50 58 Q43 51 50 42Z" fill="${C.red}"/>`,
     lamp: () => base + `<rect x="50" y="48" width="44" height="5" fill="#0b1a10" opacity=".28" transform="rotate(28 50 50)"/><circle cx="50" cy="50" r="11" fill="${C.ink}"/><circle class="t-bulb" cx="50" cy="50" r="5"/>`
   };
@@ -301,6 +361,9 @@
     moon: `<path d="M15 3a9 9 0 1 0 6 15A8 8 0 0 1 15 3Z" fill="currentColor"/>`,
     sun: `<circle cx="12" cy="12" r="6" fill="currentColor"/>`,
     gold: `<circle cx="12" cy="12" r="9" fill="${C.gold}"/><circle cx="12" cy="12" r="5.5" fill="#E2C877"/>`,
+    goldbar: `<polygon points="2,16 6,8 22,8 18,16" fill="#B8913A"/><polygon points="6,8 22,8 20,11 7,11" fill="#E2C877"/>`,
+    key: `<circle cx="7" cy="12" r="5" fill="${C.gold}"/><circle cx="7" cy="12" r="2" fill="${C.paper}"/><rect x="11" y="10.5" width="11" height="3" fill="${C.gold}"/><rect x="17" y="13" width="2.5" height="4" fill="${C.gold}"/><rect x="20" y="13" width="2" height="3" fill="${C.gold}"/>`,
+    gshield: `<path d="M3 4 Q12 1 21 4 L20 13 Q17 20 12 22 Q7 20 4 13 Z" fill="${C.gold}"/><path d="M12 2 L12 22 Q7 20 4 13 L3 4 Q8 2.5 12 2Z" fill="#E2C877"/>`,
     iron: `<polygon points="2,16 6,8 22,8 18,16" fill="#8E979A"/><polygon points="6,8 22,8 20,11 7,11" fill="#C3C9CB"/>`,
     sword: `<polygon points="4,20 16,6 19,5 18,8 6,22" fill="#D8D2BE"/><rect x="2" y="17" width="9" height="3" rx="1.5" fill="${C.ink}" transform="rotate(45 6.5 18.5)"/>`,
     pick: `<path d="M3 8 Q12 1 21 8 L19 9 Q12 4 5 9 Z" fill="${C.stone2}"/><rect x="11" y="6" width="3" height="16" rx="1.5" fill="${C.wood}"/>`,

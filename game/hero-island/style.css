@@ -356,3 +356,30 @@ button:disabled { cursor: default; }
 .shield.broken .sh-parts b:last-of-type { transform: translate3d(60px, 40px, 0) rotate(35deg); }
 .float.note { font-size: 18px; color: var(--paper); background: var(--ink); padding: 4px 10px; border-radius: 999px; }
 .hud-t { max-width: calc(50% - 130px); } .hud-t .eyebrow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 文法城堡 */
+#scr-castle { background: #ECE7D8; }
+.t-flag { fill: var(--g9); } #scr-island.night .t-flag { fill: #0B140E; }
+.b-stage.castle .mon-tag { background: var(--g9); }
+.door { position: absolute; left: 50%; bottom: 6%; width: 74%; height: 76%; transform: translateX(-50%); z-index: 3; border-radius: 120px 120px 6px 6px; background: #6B4A32; color: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; box-shadow: inset -18px 0 0 rgba(0, 0, 0, .18), 0 20px 30px -18px rgba(0, 0, 0, .6); transform-origin: left center; transition: transform .8s var(--ease), opacity .8s var(--ease); }
+.door small { font-size: 11px; font-weight: 800; letter-spacing: .12em; opacity: .8; }
+.door b { padding: 4px 12px; border-radius: 8px; background: var(--g9); font-size: 20px; }
+.door span { font-size: 12px; opacity: .85; padding: 0 8px; }
+.door.open { transform: translateX(-50%) perspective(600px) rotateY(-80deg); opacity: 0; }
+.trap { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 4; max-width: 70%; padding: 8px 14px; border-radius: 12px; background: var(--ink); color: var(--paper); text-align: center; box-shadow: 0 0 0 3px var(--red); transition: opacity .3s; }
+.trap small { color: #FF8A70; font-weight: 800; font-size: 11px; letter-spacing: .1em; display: block; }
+.trap-s { font-size: 18px; text-decoration: line-through var(--red) 2px; }
+.trap span { font-size: 12px; opacity: .8; }
+.trap.off { opacity: .55; } .trap.off .trap-s { display: none; }
+.trap.snap { animation: snap .35s var(--ease); }
+@keyframes snap { 30% { transform: translateX(-50%) scale(1.12); } 60% { transform: translateX(-50%) scale(.94); } }
+/* 地圖路線 */
+.route { flex: none; display: flex; align-items: center; gap: 4px; overflow-x: auto; padding: 6px 2px 0; }
+.route-b { min-height: 48px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--paper2); color: var(--ink); font-weight: 800; font-size: 15px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.route-b.on { background: var(--ink); color: var(--paper); }
+.route-b.locked { opacity: .55; } .route-b.soon { background: transparent; box-shadow: inset 0 0 0 2px var(--paper3); color: #6b6f66; }
+.route-b .silhouette { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: var(--paper3); color: var(--paper); align-items: center; justify-content: center; font-size: 13px; }
+.route-b .ico { width: 16px; height: 16px; }
+.route-arrow { color: #8a8d84; font-weight: 900; }
+#scr-cave .route-b { background: #26302A; color: var(--paper); } #scr-cave .route-b.on { background: var(--paper); color: var(--ink); } #scr-cave .route-b.soon { background: transparent; color: var(--paper3); }
+@media (orientation: portrait) { .hud-r .lv .bar { display: none; } .mats { gap: 6px; } .mat { font-size: 14px; } }

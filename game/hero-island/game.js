@@ -37,12 +37,15 @@
   L.comboNext = (combo, ok) => ok ? combo + 1 : 0;
   // o: {combo（含這題）, typed, cls, sword（'iron' 鐵劍 ×1.10、其他真值＝木劍 ×1.05）, double, map, forceCrit, shieldMult}
   // 打字題：森林 法師 ×1.8／其他 ×1.3；洞窟 法師 ×1.5／其他 ×1.2。連擊 ≥3 暴擊 ×1.5（洞窟劍士 ≥2）
+  // 城堡：劍士（文法職業）所有答對 ×1.5
   L.CAVE_CLASS = { mage: { typed: 1.5 }, sword: { critAt: 2 }, archer: { readAloud: true }, guard: { hitBack: 6 } };
+  L.CASTLE_CLASS = { mage: { typed: 1.5 }, sword: { all: 1.5 } };
+  L.mapClass = (map, cls) => ((map === 'cave' ? L.CAVE_CLASS : map === 'castle' ? L.CASTLE_CLASS : {})[cls]) || {};
   L.damage = function (o) {
     o = o || {};
-    const cave = o.map === 'cave', cc = (cave && L.CAVE_CLASS[o.cls]) || {};
-    let m = 1;
-    if (o.typed) m *= cave ? (cc.typed || 1.2) : (o.cls === 'mage' ? 1.8 : 1.3);
+    const forest = !o.map || o.map === 'forest', cc = L.mapClass(o.map, o.cls);
+    let m = cc.all || 1;
+    if (o.typed) m *= forest ? (o.cls === 'mage' ? 1.8 : 1.3) : (cc.typed || 1.2);
     const crit = !!o.forceCrit || (o.combo || 0) >= (cc.critAt || 3);
     if (crit) m *= 1.5;
     if (o.sword) m *= o.sword === 'iron' ? 1.10 : 1.05;
@@ -50,7 +53,10 @@
     if (o.shieldMult) m *= o.shieldMult;
     return { dmg: Math.round(L.BASE_DMG * m), crit };
   };
-  L.hitBack = (map, cls) => (map === 'cave' && L.CAVE_CLASS[cls] && L.CAVE_CLASS[cls].hitBack) || L.HIT_BACK;
+  // 被打：洞窟守護者只扣 6；有金盾再少 20%
+  L.hitBack = (map, cls, s) => Math.round((L.mapClass(map, cls).hitBack || L.HIT_BACK) * (s && s.items && s.items.gshield ? 0.8 : 1));
+  L.TRAP_SNAP = 8;
+  L.trapSnap = s => Math.round(L.TRAP_SNAP * (s && s.items && s.items.gshield ? 0.8 : 1));
   L.FOREST = [
     { id: 'f1', name: '葉子怪', kind: 'leaf', hp: 30, x: 190 },
     { id: 'f2', name: '蘑菇怪', kind: 'mush', hp: 30, x: 430 },
@@ -66,10 +72,38 @@
     { id: 'cboss', name: '字根石像王', tag: '字根', kind: 'statue', boss: true, x: 860 }
   ];
   L.CAVE_TYPES = ['root-meaning', 'root-word', 'root-type'];
-  L.mapOf = id => L.CAVE.some(x => x.id === id) ? 'cave' : 'forest';
-  L.monster = id => L.FOREST.concat(L.CAVE).find(x => x.id === id);
+  // 文法城堡：往右上爬的 5 個房間＋王座。door＝時態之門（那個時態答對才開）；traps＝改錯陷阱個數
+  L.CASTLE = [
+    { id: 'k1', name: '過去式之門', tag: '過去式', kind: 'gargoyle', hp: 30, x: 120, door: 'past' },
+    { id: 'k2', name: '改錯陷阱房', tag: '陷阱', kind: 'trapjaw', hp: 30, x: 280, traps: 2 },
+    { id: 'k3', name: '進行式之門', tag: '現在進行式', kind: 'gargoyle', hp: 30, x: 440, door: 'progressive' },
+    { id: 'k4', name: '盔甲哨兵', tag: '文法', kind: 'armor', hp: 36, x: 600 },
+    { id: 'k5', name: '陷阱長廊', tag: '陷阱', kind: 'trapjaw', hp: 36, x: 760, traps: 2 },
+    { id: 'kboss', name: '時態騎士王', tag: '時態', kind: 'knight', boss: true, x: 900 }
+  ];
+  L.CASTLE_TYPES = ['grammar-fill', 'grammar-fix', 'zh2en-type'];
+  L.mapOf = id => L.CAVE.some(x => x.id === id) ? 'cave' : L.CASTLE.some(x => x.id === id) ? 'castle' : 'forest';
+  L.monster = id => L.FOREST.concat(L.CAVE, L.CASTLE).find(x => x.id === id);
   L.BOSS_Q = 5; L.BOSS_NEED = 4; L.CAVE_BOSS_Q = 6; L.CAVE_BOSS_NEED = 5;
-  L.bossRule = map => map === 'cave' ? { q: L.CAVE_BOSS_Q, need: L.CAVE_BOSS_NEED, playAll: true } : { q: L.BOSS_Q, need: L.BOSS_NEED, playAll: false };
+  L.bossRule = map => map === 'forest' || !map ? { q: L.BOSS_Q, need: L.BOSS_NEED, playAll: false } : { q: L.CAVE_BOSS_Q, need: L.CAVE_BOSS_NEED, playAll: true };
+  // 城堡房間下一題：門沒開→考那個時態（填空／挑對句）；還有陷阱→改錯題（grammar-fix）；都過了→三種輪流
+  L.castleRoomNext = function (st) {
+    if (st.door && !st.doorOpen) return { types: ['grammar-fill', 'grammar-fix'], topic: st.door };
+    if (st.traps > 0) return { types: ['grammar-fix'], topic: null };
+    return { types: [L.CASTLE_TYPES[(st.asked || 0) % 3]], topic: null };
+  };
+  // 陷阱：答對改錯題＝解除；答錯＝陷阱夾一下（扣一點血，陷阱還在）
+  L.trapResolve = (traps, ok) => ok ? { traps: Math.max(0, traps - 1), disarmed: true, snap: false } : { traps, disarmed: false, snap: true };
+  // 時態之門：只有「答對、而且是那個時態的題目」才打得開
+  L.doorResolve = (open, ok, qTopic, door) => !!open || (!!ok && qTopic === door);
+  // 騎士王 6 題：前 5 題填空／挑對句混合、主題盡量不重複；第 6 題一定是整句中翻英打字
+  L.castleBossPlan = function (topics, rng) {
+    const ts = topics.slice();
+    for (let i = ts.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [ts[i], ts[j]] = [ts[j], ts[i]]; }
+    const types = ['grammar-fill', 'grammar-fix', 'grammar-fill', 'grammar-fix', 'grammar-fill'];
+    for (let i = types.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [types[i], types[j]] = [types[j], types[i]]; }
+    return types.map((t, i) => ({ type: t, topic: ts[i % ts.length] })).concat([{ type: 'zh2en-type', topic: ts[5 % ts.length] }]);
+  };
   L.nodeStatus = function (s, i, list) {
     list = list || L.FOREST; const n = list[i];
     if (s.defeated && s.defeated[n.id]) return 'done';
@@ -101,20 +135,26 @@
   };
 
   // ---- 掉落：森林 木頭一定有、石頭有時候、鑽石 3%（Boss 石頭保底）；洞窟 石頭一定有、鐵有時候（Boss 保底 2）、鑽石 6% ----
-  L.DIAMOND_RATE = 0.03; L.STONE_RATE = 0.35; L.CAVE_DIAMOND_RATE = 0.06; L.IRON_RATE = 0.4;
+  L.DIAMOND_RATE = 0.03; L.STONE_RATE = 0.35; L.CAVE_DIAMOND_RATE = 0.06; L.IRON_RATE = 0.4; L.CASTLE_DIAMOND_RATE = 0.08; L.GOLD_RATE = 0.35;
   L.rollDrop = function (rng, tier, map) {
     const boss = tier === 'boss';
+    if (map === 'castle') {  // 城堡：鐵一定有、金有時候（Boss 保底 2）、鑽石 8%
+      const iron = (boss ? 3 : 1) + Math.floor(rng() * 2), gr = rng();
+      const gold = boss ? 2 : (gr < L.GOLD_RATE ? 1 : 0);
+      const diamond = rng() < L.CASTLE_DIAMOND_RATE ? 1 : 0;
+      return { wood: 0, stone: 0, iron, gold, diamond };
+    }
     if (map === 'cave') {
       const stone = (boss ? 3 : 1) + Math.floor(rng() * 2), ir = rng();
       const iron = boss ? 2 : (ir < L.IRON_RATE ? 1 : 0);
       const diamond = rng() < L.CAVE_DIAMOND_RATE ? 1 : 0;
-      return { wood: 0, stone, iron, diamond };
+      return { wood: 0, stone, iron, gold: 0, diamond };
     }
     const wood = (boss ? 4 : 2) + Math.floor(rng() * 3);
     const sr = rng(), sn = rng();
     const stone = boss ? 2 + Math.floor(sn * 2) : (sr < L.STONE_RATE ? 1 + Math.floor(sn * 2) : 0);
     const diamond = rng() < L.DIAMOND_RATE ? 1 : 0;
-    return { wood, stone, iron: 0, diamond };
+    return { wood, stone, iron: 0, gold: 0, diamond };
   };
 
   // ---- 合成台 ----
@@ -122,13 +162,27 @@
     { id: 'sword', name: '木劍', icon: 'sword', cost: { wood: 4 }, desc: '冒險傷害 +5%', once: true },
     { id: 'pick', name: '石鎬', icon: 'pick', cost: { wood: 2, stone: 3 }, desc: '挖開下一張地圖「字根洞窟」', once: true },
     { id: 'lamp', name: '路燈', icon: 'lampi', cost: { wood: 1, stone: 2 }, desc: '放在島上，晚上會發光', lock: 'un', lockText: '學會 un- 字根才解鎖' },
-    { id: 'iron', name: '鐵劍', icon: 'sword', cost: { iron: 3, wood: 2 }, desc: '冒險傷害 +10%（取代木劍）', once: true, needItem: 'pick', needText: '先做石鎬，到字根洞窟找鐵' }
+    { id: 'iron', name: '鐵劍', icon: 'sword', cost: { iron: 3, wood: 2 }, desc: '冒險傷害 +10%（取代木劍）', once: true, needItem: 'pick', needText: '先做石鎬，到字根洞窟找鐵' },
+    { id: 'key', name: '城堡鑰匙', icon: 'key', cost: { iron: 3, stone: 5 }, desc: '打開「文法城堡」', once: true, appearAfter: 'cboss' },
+    { id: 'gshield', name: '金盾', icon: 'gshield', cost: { gold: 3, iron: 2 }, desc: '被打少 20%（陷阱也是）', once: true, needItem: 'key', needText: '先打開文法城堡，在那裡找金', appearAfter: 'cboss' }
   ];
+  // 有 appearAfter 的配方：打倒那隻 Boss 之後才會出現在合成台
+  L.recipesFor = s => L.RECIPES.filter(r => !r.appearAfter || (s.defeated && s.defeated[r.appearAfter]));
+  // 地圖路線：森林 → 洞窟（石鎬）→ 城堡（城堡鑰匙）→ 之後的地圖（還沒開放）
+  L.ROUTE = [
+    { id: 'forest', name: '單字森林', scr: 'map', boss: 'boss' },
+    { id: 'cave', name: '字根洞窟', scr: 'cave', boss: 'cboss', need: 'pick' },
+    { id: 'castle', name: '文法城堡', scr: 'castle', boss: 'kboss', need: 'key' },
+    { id: 'harbor', name: '句型港口', soon: true },
+    { id: 'volcano', name: '片語火山', soon: true }
+  ];
+  L.mapUnlocked = (s, id) => { const r = L.ROUTE.find(x => x.id === id); return !!r && !r.soon && (!r.need || !!(s.items && s.items[r.need])); };
   L.swordOf = s => (s.items && s.items.iron) ? 'iron' : ((s.items && s.items.sword) ? 'wood' : null);
   L.canAfford = (w, cost) => Object.keys(cost).every(k => (w[k] || 0) >= cost[k]);
   L.craftCheck = function (s, id) {
     const r = L.RECIPES.find(x => x.id === id);
     if (!r) return { ok: false, reason: '沒有這個配方' };
+    if (r.appearAfter && !(s.defeated || {})[r.appearAfter]) return { ok: false, hidden: true, locked: true, reason: '還沒出現' };
     if (r.lock && !(s.learned || {})[r.lock]) return { ok: false, locked: true, reason: r.lockText };
     if (r.needItem && !(s.items || {})[r.needItem]) return { ok: false, locked: true, reason: r.needText };
     if (r.once && (s.items || {})[id]) return { ok: false, done: true, reason: '已經做好了' };
@@ -153,7 +207,8 @@
     { id: 'tree', name: '樹', cost: { wood: 2 } },
     { id: 'house', name: '房子', cost: { wood: 6, stone: 4 } },
     { id: 'lamp', name: '路燈', cost: { lamp: 1 } },
-    { id: 'torch', name: '火把', cost: { wood: 1, iron: 1 } }
+    { id: 'torch', name: '火把', cost: { wood: 1, iron: 1 } },
+    { id: 'flag', name: '城堡旗幟', cost: { gold: 1, wood: 1 } }
   ];
   L.wallet = s => Object.assign({}, s.mats, { lamp: (s.items && s.items.lamp) || 0 });
   L.placeTile = function (s, i, id) {
@@ -292,12 +347,13 @@
   L.MISSIONS = [{ id: 'correct', name: '答對 10 題', goal: 10 }, { id: 'wins', name: '打倒 3 隻怪物', goal: 3 }, { id: 'build', name: '在島上蓋 2 個東西', goal: 2 }];
   // 有石鎬（洞窟打開）後，「打倒 3 隻怪物」換成洞窟版
   L.CAVE_MISSION = { id: 'cave', name: '打倒 3 隻洞窟怪', goal: 3 };
-  L.missionList = s => (s.items && s.items.pick) ? L.MISSIONS.map(m => m.id === 'wins' ? L.CAVE_MISSION : m) : L.MISSIONS;
+  L.CASTLE_MISSION = { id: 'traps', name: '解除 3 個改錯陷阱', goal: 3 };
+  L.missionList = s => L.MISSIONS.map(m => m.id !== 'wins' ? m : (s.items && s.items.key) ? L.CASTLE_MISSION : (s.items && s.items.pick) ? L.CAVE_MISSION : m);
   L.MISSION_REWARD = { wood: 3, stone: 1 };
-  L.missionsFor = (ms, today) => (!ms || ms.day !== today) ? { day: today, correct: 0, wins: 0, cave: 0, build: 0, claimed: {} } : ms;
-  L.BADGES = [{ id: 'boss', name: '第一次打倒 Boss' }, { id: 'diamond', name: '第一顆鑽石' }, { id: 'combo3', name: '連續答對 3 題' }, { id: 'caver', name: '洞窟探險家' }];
+  L.missionsFor = (ms, today) => (!ms || ms.day !== today) ? { day: today, correct: 0, wins: 0, cave: 0, traps: 0, build: 0, claimed: {} } : ms;
+  L.BADGES = [{ id: 'boss', name: '第一次打倒 Boss' }, { id: 'diamond', name: '第一顆鑽石' }, { id: 'combo3', name: '連續答對 3 題' }, { id: 'caver', name: '洞窟探險家' }, { id: 'castle', name: '城堡征服者' }];
   L.newSave = () => ({
-    v: 1, cls: null, lv: 1, xp: 0, mats: { wood: 4, stone: 2, iron: 0, diamond: 0 }, items: { sword: 0, pick: 0, lamp: 0, iron: 0 }, learned: {},
+    v: 1, cls: null, lv: 1, xp: 0, mats: { wood: 4, stone: 2, iron: 0, gold: 0, diamond: 0 }, items: { sword: 0, pick: 0, lamp: 0, iron: 0, key: 0, gshield: 0 }, learned: {},
     grid: L.initGrid(), free: [10, 11, 12, 18, 19, 20, 26, 27, 28, 35], mastery: { mage: 0, sword: 0, archer: 0, guard: 0 },
     mistakes: [], badges: {}, defeated: {}, missions: null, rank: { tier: 0, stars: 1, protectUsed: false }, firstWinDay: ''
   });
@@ -429,7 +485,7 @@
   let cur = 'title';
   function show(id) { cur = id; document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === 'scr-' + id)); renderTimer(); musicScene(); }
   function musicScene() { au('scene', cur === 'battle' && B && B.boss ? 'boss' : cur === 'island' && N ? 'night' : cur); }
-  const RENDER = { title: renderTitle, class: renderClass, hub: renderHub, map: () => renderMap('forest'), cave: () => renderMap('cave'), island: renderIsland, arena: renderArenaLobby, rewards: renderRewards };
+  const RENDER = { title: renderTitle, class: renderClass, hub: renderHub, map: () => renderMap('forest'), cave: () => renderMap('cave'), castle: () => renderMap('castle'), island: renderIsland, arena: renderArenaLobby, rewards: renderRewards };
   function go(id) { if (id !== 'island') N = null; if (id !== 'arena') stopArenaTimer(); if (RENDER[id]) RENDER[id](); show(id); }
 
   function hud(eyebrow, title, back) {
@@ -439,7 +495,7 @@
       h('div', { class: 'hud-t' }, h('div', { class: 'eyebrow' }, eyebrow), h('div', { class: 'hud-title' }, title)),
       h('div', { class: 'hud-r' },
         h('div', { class: 'lv' }, h('b', {}, 'Lv ' + S.lv), h('div', { class: 'bar' }, h('i', { style: `transform:scaleX(${(S.xp / need).toFixed(3)})` }))),
-        h('div', { class: 'mats' }, ['wood', 'stone', 'iron', 'diamond'].filter(k => k !== 'iron' || S.items.pick || S.mats.iron).map(k => h('span', { class: 'mat', title: { wood: '木頭', stone: '石頭', iron: '鐵', diamond: '鑽石' }[k], html: A.icon(k) + `<b>${S.mats[k] || 0}</b>` })))));
+        h('div', { class: 'mats' }, ['wood', 'stone', 'iron', 'gold', 'diamond'].filter(k => (k !== 'iron' || S.items.pick || S.mats.iron) && (k !== 'gold' || S.items.key || S.mats.gold)).map(k => h('span', { class: 'mat', title: MAT_NAME[k], html: A.icon(MAT_ICON[k]) + `<b>${S.mats[k] || 0}</b>` })))));
   }
 
   // ---- 首頁 ----
@@ -483,38 +539,53 @@
           h('div', { class: 'eyebrow' }, `${c.en} · 熟練度 ${S.mastery[S.cls] || 0}`), h('div', { class: 'hub-name' }, c.name),
           h('button', { class: 'linkish', onclick: () => go('class') }, '換職業')),
         h('div', { class: 'hub-tiles' },
-          tile('t-adv', 'DAY · WORD FOREST', '冒險', S.items.pick ? '單字森林 → 字根洞窟' : '單字森林', A.monster('leaf'), () => go('map')),
+          tile('t-adv', 'DAY · WORD FOREST', '冒險', S.items.key ? '森林 → 洞窟 → 城堡' : S.items.pick ? '單字森林 → 字根洞窟' : '單字森林', A.monster('leaf'), () => go('map')),
           tile('t-isl', 'ISLAND', '我的島', '蓋東西 · 合成台 · 守夜', A.tile('house'), () => go('island')),
           tile('t-arena', 'ARENA', '競技場', '影子對戰', A.hero('sword', 'shadow'), () => go('arena')),
           tile('t-rew', 'REWARDS', '獎勵', `今日任務 ${done}/3`, A.icon('star'), () => go('rewards')))));
   }
 
-  // ---- 地圖（森林／洞窟共用） ----
+  // ---- 地圖（森林／洞窟／城堡共用） ----
   const MAPUI = {
     forest: { scr: '#scr-map', list: () => L.FOREST, eyebrow: 'DAY · WORD FOREST', title: '單字森林', back: 'hub', mid: x => A.roadMid(x), art: n => A.forest(n) },
-    cave: { scr: '#scr-cave', list: () => L.CAVE, eyebrow: 'UNDERGROUND · ROOT CAVE', title: '字根洞窟', back: 'map', mid: x => A.caveMid(x), art: n => A.cave(n) }
+    cave: { scr: '#scr-cave', list: () => L.CAVE, eyebrow: 'UNDERGROUND · ROOT CAVE', title: '字根洞窟', back: 'map', mid: x => A.caveMid(x), art: n => A.cave(n) },
+    castle: { scr: '#scr-castle', list: () => L.CASTLE, eyebrow: 'UPSTAIRS · GRAMMAR CASTLE', title: '文法城堡', back: 'cave', mid: x => A.castleMid(x), art: n => A.castle(n) }
   };
   const CAVE_BONUS = { mage: '打字題傷害 ×1.5', sword: '連續答對 2 題就暴擊', archer: '答完會念出那個單字給你聽', guard: '被打只扣一半的血' };
   function demoUnlockCave() { S.items.pick = 1; saveS(); toast('（試玩）直接拿到石鎬，字根洞窟打開了！'); go('cave'); }
+  function demoUnlockCastle() { S.items.pick = 1; S.items.key = 1; saveS(); toast('（試玩）直接拿到城堡鑰匙，文法城堡打開了！'); go('castle'); }
+  // 地圖路線：森林 ✓ → 洞窟 ✓ → 城堡 → 句型港口（鎖）→ 片語火山（鎖）
+  function routeBar(curId) {
+    return h('nav', { class: 'route', 'aria-label': '地圖路線' }, L.ROUTE.map((r, i) => {
+      const open = L.mapUnlocked(S, r.id), done = r.boss && S.defeated[r.boss];
+      return [i ? h('span', { class: 'route-arrow', 'aria-hidden': 'true' }, '→') : null,
+        h('button', { class: 'route-b' + (r.id === curId ? ' on' : '') + (open ? '' : ' locked') + (r.soon ? ' soon' : ''), disabled: !open || r.id === curId,
+          title: r.soon ? '之後的地圖' : '', onclick: () => go(r.scr) }, r.soon ? h('span', { class: 'silhouette' }, '?') : null, r.name, done ? ' ✓' : '', !open ? h('span', { html: A.icon('lock') }) : null)];
+    }));
+  }
   function renderMap(mapId) {
-    mapId = mapId === 'cave' ? 'cave' : 'forest';
+    mapId = MAPUI[mapId] ? mapId : 'forest';
     const M = MAPUI[mapId], list = M.list(), s = $(M.scr); s.innerHTML = '';
-    const nodes = list.map((n, i) => ({ id: n.id, x: n.x, y: Math.round(M.mid(n.x)) - 6, r: n.boss ? 44 : 34, boss: n.boss, kind: n.kind, label: n.name, tag: n.tag, shield: n.shield, num: i + 1, status: L.nodeStatus(S, i, list) }));
+    const nodes = list.map((n, i) => ({ id: n.id, x: n.x, y: Math.round(M.mid(n.x)) - 6, r: n.boss ? 44 : 34, boss: n.boss, kind: n.kind, label: n.name, tag: n.tag, shield: n.shield, trap: !!n.traps, num: i + 1, status: L.nodeStatus(S, i, list) }));
     if (mapId === 'forest') nodes.push({ id: 'cave', x: 905, y: 536, r: 28, label: '字根洞窟', num: '↓', status: S.items.pick ? 'open' : 'locked' });
+    if (mapId === 'cave') nodes.push({ id: 'castle', x: 930, y: 250, r: 28, label: '文法城堡', num: '↑', status: S.items.key ? 'open' : 'locked' });
     const wrap = h('div', { class: 'map-wrap', html: M.art(nodes) });
     wrap.addEventListener('click', e => {
       const g = e.target.closest('[data-node]'); if (!g) return;
       const id = g.getAttribute('data-node');
       if (id === 'cave') return S.items.pick ? go('cave') : toast('洞口被石頭堵住了：先到合成台做「石鎬」');
+      if (id === 'castle') return S.items.key ? go('castle') : toast(S.defeated.cboss ? '城門鎖著：到合成台做「城堡鑰匙」（鐵 ×3＋石頭 ×5）' : '先打倒字根石像王，合成台才會出現「城堡鑰匙」');
       const i = list.findIndex(x => x.id === id);
       if (L.nodeStatus(S, i, list) === 'locked') return toast('先打倒前一隻怪物');
       startBattle(id);
     });
     const c = L.CLASSES[S.cls];
     const note = mapId === 'cave'
-      ? [`不分職業都考字根。帶 🛡 的怪有「拆字護盾」：要答對打字題才拆得開。Boss 6 題要答對 5 題，最後一題一定是打字題。${c.name}在洞窟：${CAVE_BONUS[S.cls]}。`]
-      : [`${c.name}的題目：${c.skill}。打倒前一隻，下一隻才會出現；Boss 5 題要答對 4 題。`, !S.items.pick ? h('button', { class: 'linkish', onclick: demoUnlockCave }, '試玩：直接解鎖字根洞窟') : null];
-    s.append(hud(M.eyebrow, M.title, M.back), wrap, h('div', { class: 'map-note' }, note));
+      ? [`不分職業都考字根。帶 🛡 的怪有「拆字護盾」：要答對打字題才拆得開。Boss 6 題要答對 5 題，最後一題一定是打字題。${c.name}在洞窟：${CAVE_BONUS[S.cls]}。`, !S.items.key ? h('button', { class: 'linkish', onclick: demoUnlockCastle }, '試玩：直接解鎖文法城堡') : null]
+      : mapId === 'castle'
+        ? [`不分職業都考文法。「時態之門」要答對那個時態才打得開；「改錯陷阱」要挑出對的句子才解除，答錯會被夾一下。騎士王 6 題要對 5 題，最後一題是整句中翻英。` + (S.cls === 'sword' ? '劍士在城堡：傷害 ×1.5！' : '')]
+        : [`${c.name}的題目：${c.skill}。打倒前一隻，下一隻才會出現；Boss 5 題要答對 4 題。`, !S.items.pick ? h('button', { class: 'linkish', onclick: demoUnlockCave }, '試玩：直接解鎖字根洞窟') : null];
+    s.append(hud(M.eyebrow, M.title, M.back), wrap, h('div', { class: 'map-note' }, note), routeBar(mapId));
   }
 
   // ---- 題目元件（戰鬥／守夜／競技場共用） ----
@@ -579,7 +650,9 @@
 
   // ---- 戰鬥 ----
   let B = null;
-  const MAT_NAME = { wood: '木頭', stone: '石頭', iron: '鐵', diamond: '鑽石' };
+  const MAT_NAME = { wood: '木頭', stone: '石頭', iron: '鐵', gold: '金', diamond: '鑽石' };
+  const MAT_ICON = { wood: 'wood', stone: 'stone', iron: 'iron', gold: 'goldbar', diamond: 'diamond' };
+  const MAP_EYEBROW = { forest: 'BATTLE · WORD FOREST', cave: 'BATTLE · ROOT CAVE', castle: 'BATTLE · GRAMMAR CASTLE' };
   // 洞窟題組：優先出這隻怪自己的字根（un- 怪就考 un-），不夠再從整個字根單元補
   function caveQs(mon, n) {
     if (!E) return sampleQs(3);
@@ -592,48 +665,78 @@
       return id ? E.get(id) : null;
     }).filter(Boolean);
   }
-  const mapQs = (n) => B.map === 'cave' ? caveQs(B.mon, n) : quizFor(S.cls, n);
+  // 城堡：文法題（12 個主題的填空／挑對句／整句中翻英），用過的不重複
+  function grammarPick(types, topic) {
+    if (!E) return null;
+    const pool = E.list({ modules: ['grammar'], types, topics: topic ? ['grammar:' + topic] : null }).filter(m => !B.used.has(m.id));
+    const m = pool[Math.floor(Math.random() * pool.length)] || E.list({ modules: ['grammar'], types })[0];
+    if (!m) return null; B.used.add(m.id); return E.get(m.id);
+  }
+  function castleBossQs() {
+    if (!E) return sampleQs(3);
+    return L.castleBossPlan(E.D.grammar.map(g => g.id), Math.random).map(p => grammarPick([p.type], p.topic)).filter(Boolean);
+  }
+  function mapQs(n) {
+    if (B.map === 'cave') return caveQs(B.mon, n);
+    if (B.map === 'castle') {
+      if (B.boss) return castleBossQs();
+      const p = L.castleRoomNext({ door: B.door, doorOpen: B.doorOpen, traps: B.traps, asked: B.asked });
+      return [grammarPick(p.types, p.topic) || sampleQs(1)[0]];
+    }
+    return quizFor(S.cls, n);
+  }
   function shieldParts(mon) {
     const r = E && E.D.roots.find(x => x.p === mon.tag), w = r && r.words[0];
     return w ? w.parts : [String(mon.tag || '').replace(/-/g, ''), '???'];
   }
   function startBattle(id) {
     const mon = L.monster(id), boss = !!mon.boss, map = L.mapOf(id), rule = L.bossRule(map);
-    B = { mon, boss, map, rule, shield: !!mon.shield, hp: boss ? rule.need : mon.hp, maxHp: boss ? rule.need : mon.hp, php: L.PLAYER_HP, combo: 0, qi: 0, asked: 0, correct: 0, over: false };
-    B.qs = mapQs(boss ? rule.q : 10);
+    B = { mon, boss, map, rule, shield: !!mon.shield, door: mon.door || null, doorOpen: !mon.door, traps: mon.traps || 0, used: new Set(),
+      hp: boss ? rule.need : mon.hp, maxHp: boss ? rule.need : mon.hp, php: L.PLAYER_HP, combo: 0, qi: 0, asked: 0, correct: 0, over: false };
+    B.qs = (map === 'castle' && !boss) ? [] : mapQs(boss ? rule.q : 10);
     renderBattle(); show('battle'); nextQ();
   }
-  const mapScr = () => B && B.map === 'cave' ? 'cave' : 'map';
+  const mapScr = () => B ? ({ cave: 'cave', castle: 'castle' }[B.map] || 'map') : 'map';
+  const doorName = t => (E && (E.D.grammar.find(g => g.id === t) || {}).title || t).replace(/（.*?）/, '');
   function renderBattle() {
-    const s = $('#scr-battle'), cave = B.map === 'cave'; s.innerHTML = '';
+    const s = $('#scr-battle'), M = B.map; s.innerHTML = '';
     s.append(
       h('header', { class: 'hud' }, h('button', { class: 'icon-btn', onclick: () => { B.over = true; go(mapScr()); }, 'aria-label': '離開戰鬥' }, '←'),
-        h('div', { class: 'hud-t' }, h('div', { class: 'eyebrow' }, B.boss ? `BOSS · ${B.rule.q} 題要答對 ${B.rule.need} 題${cave ? ' · 最後一題打字' : ''}` : cave ? 'BATTLE · ROOT CAVE' : 'BATTLE · WORD FOREST'), h('div', { class: 'hud-title' }, B.mon.name)),
+        h('div', { class: 'hud-t' }, h('div', { class: 'eyebrow' }, B.boss ? `BOSS · ${B.rule.q} 題要答對 ${B.rule.need} 題${M !== 'forest' ? ' · 最後一題打字' : ''}` : MAP_EYEBROW[M]), h('div', { class: 'hud-title' }, B.mon.name)),
         h('div', { class: 'b-info', id: 'bInfo' })),
-      h('div', { class: 'b-stage' + (cave ? ' cave' : ''), id: 'bStage' },
-        h('div', { class: 'b-bg', html: A.stage(B.map) }),
+      h('div', { class: 'b-stage ' + M, id: 'bStage' },
+        h('div', { class: 'b-bg', html: A.stage(M) }),
         h('div', { class: 'b-side b-hero' }, h('div', { class: 'hp' }, h('span', {}, '我'), h('div', { class: 'bar' }, h('i', { id: 'bPhp' }))), h('div', { class: 'b-art', id: 'bHero', html: A.hero(S.cls) })),
         h('div', { class: 'b-side b-mon' + (B.boss ? ' boss' : '') },
-          h('div', { class: 'hp mon' }, h('span', {}, B.mon.name), B.mon.tag ? h('span', { class: 'mon-tag en' }, B.mon.tag) : null, h('div', { class: 'bar' + (B.boss ? ' seg' : ''), style: `--n:${B.maxHp}` }, h('i', { id: 'bMhp' }))),
+          h('div', { class: 'hp mon' }, h('span', {}, B.mon.name), B.mon.tag && M === 'cave' ? h('span', { class: 'mon-tag en' }, B.mon.tag) : null, h('div', { class: 'bar' + (B.boss ? ' seg' : ''), style: `--n:${B.maxHp}` }, h('i', { id: 'bMhp' }))),
           h('div', { class: 'b-art', id: 'bMon', html: A.monster(B.mon.kind) }),
-          B.shield ? h('div', { class: 'shield', id: 'bShield', 'aria-label': '拆字護盾' }, h('small', {}, '拆字護盾'), h('div', { class: 'sh-parts' }, shieldParts(B.mon).map((p, i) => [i ? h('i', {}, '|') : null, h('b', { class: 'en' }, p)]))) : null)),
+          B.shield ? h('div', { class: 'shield', id: 'bShield', 'aria-label': '拆字護盾' }, h('small', {}, '拆字護盾'), h('div', { class: 'sh-parts' }, shieldParts(B.mon).map((p, i) => [i ? h('i', {}, '|') : null, h('b', { class: 'en' }, p)]))) : null,
+          B.door ? h('div', { class: 'door', id: 'bDoor', 'aria-label': '時態之門' }, h('small', {}, '時態之門'), h('b', {}, doorName(B.door)), h('span', {}, '答對這個時態才打得開')) : null),
+        B.traps ? h('div', { class: 'trap', id: 'bTrap' }, h('small', {}, '改錯陷阱'), h('div', { class: 'trap-s en', id: 'bTrapS' }, ''), h('span', { id: 'bTrapN' }, '')) : null),
       h('div', { class: 'qbox', id: 'bQ' }));
   }
   function updBattle() {
     $('#bPhp').style.transform = `scaleX(${B.php / L.PLAYER_HP})`;
     $('#bMhp').style.transform = `scaleX(${B.hp / B.maxHp})`;
-    $('#bInfo').textContent = B.boss ? `第 ${Math.min(B.asked + 1, B.rule.q)}/${B.rule.q} 題 · 答對 ${B.correct}` : B.shield ? '🛡 打字題才拆得開' : (B.combo >= 2 ? `COMBO ×${B.combo}` : '');
+    $('#bInfo').textContent = B.boss ? `第 ${Math.min(B.asked + 1, B.rule.q)}/${B.rule.q} 題 · 答對 ${B.correct}` : B.shield ? '🛡 打字題才拆得開' : (B.door && !B.doorOpen) ? '🚪 門還關著' : B.traps ? `⚠ 陷阱 ×${B.traps}` : (B.combo >= 2 ? `COMBO ×${B.combo}` : '');
+    const tn = $('#bTrapN'); if (tn) tn.textContent = B.traps ? `還有 ${B.traps} 個陷阱：挑出對的句子就解除` : '陷阱全部解除了！';
   }
   function nextQ() {
     if (B.over) return;
     if (B.qi >= B.qs.length) B.qs = B.qs.concat(mapQs(6));
     const q = B.qs[B.qi++];
+    // 改錯陷阱：把錯的那一句掛在陷阱上
+    const ts = $('#bTrapS');
+    if (ts) { const wrong = B.traps && q.type === 'grammar-fix' ? (q.options || []).find(o => o !== q.answer) : ''; ts.textContent = wrong || ''; $('#bTrap').classList.toggle('off', !wrong); }
     askQ($('#bQ'), q, { onAnswer: ok => battleHit(ok, q), onDone: afterQ });
     updBattle();
   }
   function battleHit(ok, q) {
     B.asked++; B.combo = L.comboNext(B.combo, ok);
     const stage = $('#bStage'), typed = isTyped(q), sh = L.shieldResolve(B.shield, ok, typed);
+    const room = B.map === 'castle' && !B.boss;
+    const trap = room && B.traps > 0 && q.type === 'grammar-fix' ? L.trapResolve(B.traps, ok) : null;
+    const opened = room && B.door && !B.doorOpen && L.doorResolve(false, ok, q.topic, B.door);
     if (ok) {
       B.correct++; S.mastery[S.cls] = (S.mastery[S.cls] || 0) + 1; missions().correct++;
       const d = L.damage({ combo: B.combo, typed, cls: S.cls, sword: L.swordOf(S), map: B.map, forceCrit: sh.crit, shieldMult: sh.mult });
@@ -642,14 +745,24 @@
       floatText(stage, (d.crit ? '暴擊！' : '') + '-' + d.dmg, 'dmg' + (d.crit ? ' crit' : ''), 70, 28);
       if (sh.broke) { B.shield = false; const el = $('#bShield'); if (el) { el.classList.add('broken'); setTimeout(() => el.remove(), 800); } au('sfx', 'shield'); announce('拆字護盾破了！', true); }
       else if (B.shield) floatText(stage, '護盾擋掉一半！', 'note', 70, 12);
+      else if (opened) { B.doorOpen = true; const el = $('#bDoor'); if (el) { el.classList.add('open'); setTimeout(() => el.remove(), 900); } au('sfx', 'door'); announce(doorName(B.door) + '之門打開了！', true); }
+      else if (trap && trap.disarmed) { B.traps = trap.traps; missions().traps = (missions().traps || 0) + 1; announce('陷阱解除！', true); au('sfx', 'door'); }
       else if (B.combo >= 2) announce(`連續答對 ×${B.combo}！`, B.combo >= 3);
       if (B.combo >= 3) award('combo3');
     } else {
-      const hb = L.hitBack(B.map, S.cls);
-      B.php = Math.max(0, B.php - hb); addMistake(q);
-      anim($('#bMon'), 'atk'); setTimeout(() => { anim($('#bHero'), 'hit'); flash(); au('sfx', 'hit'); }, 170);
-      floatText(stage, '-' + hb, 'dmg hurt', 24, 32);
-      if (B.shield) floatText(stage, '護盾還在', 'note', 70, 12);
+      addMistake(q);
+      if (trap && trap.snap) {  // 陷阱夾一下：扣一點血，就這樣
+        const hb = L.trapSnap(S); B.php = Math.max(0, B.php - hb);
+        anim($('#bTrap'), 'snap'); setTimeout(() => { anim($('#bHero'), 'hit'); au('sfx', 'trap'); }, 120);
+        floatText(stage, '喀！陷阱夾到 -' + hb, 'dmg hurt', 30, 30);
+      } else {
+        const hb = L.hitBack(B.map, S.cls, S);
+        B.php = Math.max(0, B.php - hb);
+        anim($('#bMon'), 'atk'); setTimeout(() => { anim($('#bHero'), 'hit'); flash(); au('sfx', 'hit'); }, 170);
+        floatText(stage, '-' + hb, 'dmg hurt', 24, 32);
+        if (B.shield) floatText(stage, '護盾還在', 'note', 70, 12);
+        if (room && B.door && !B.doorOpen) floatText(stage, '門還關著', 'note', 70, 12);
+      }
     }
     // 射手在洞窟：答完念出那個單字
     if (B.map === 'cave' && S.cls === 'archer' && q.speakText) setTimeout(() => speak(q.speakText), 450);
@@ -661,19 +774,21 @@
     else { if (B.hp <= 0) return endBattle(true); if (B.php <= 0) return endBattle(false); }
     nextQ();
   }
-  const dropChip = (k, n, rare) => h('span', { class: 'drop' + (rare ? ' rare' : ''), html: A.icon(k) + `<b>${MAT_NAME[k]} ×${n}</b>` });
+  const dropChip = (k, n, rare) => h('span', { class: 'drop' + (rare ? ' rare' : ''), html: A.icon(MAT_ICON[k]) + `<b>${MAT_NAME[k]} ×${n}</b>` });
   function endBattle(win) {
     B.over = true;
-    const s = $('#scr-battle'), res = h('div', { class: 'result' }), card = h('div', { class: 'result-card' }), cave = B.map === 'cave';
+    const s = $('#scr-battle'), res = h('div', { class: 'result' }), card = h('div', { class: 'result-card' }), M = B.map;
     if (win) {
-      const drop = L.rollDrop(Math.random, B.boss ? 'boss' : 'normal', B.map), xp = B.boss ? 50 : 20;
+      const drop = L.rollDrop(Math.random, B.boss ? 'boss' : 'normal', M), xp = B.boss ? 50 : 20;
       Object.keys(MAT_NAME).forEach(k => { S.mats[k] = (S.mats[k] || 0) + (drop[k] || 0); });
-      S.defeated[B.mon.id] = true; missions().wins++; if (cave) missions().cave = (missions().cave || 0) + 1;
+      S.defeated[B.mon.id] = true; missions().wins++; if (M === 'cave') missions().cave = (missions().cave || 0) + 1;
       if (B.boss) award('boss');
-      if (B.boss && cave) award('caver');
+      if (B.boss && M === 'cave') award('caver');
+      if (B.boss && M === 'castle') award('castle');
+      const tip = M === 'cave' && B.boss && !S.items.key ? ' · 合成台出現「城堡鑰匙」了！' : M === 'cave' && drop.iron ? ' · 鐵可以做鐵劍、火把' : M === 'castle' && drop.gold ? ' · 金可以做金盾、城堡旗幟' : '';
       card.append(h('div', { class: 'eyebrow' }, 'VICTORY'), h('h2', {}, `打倒${B.mon.name}了！`),
         h('div', { class: 'drops' }, Object.keys(MAT_NAME).filter(k => drop[k]).map(k => dropChip(k, drop[k], k === 'diamond')), h('span', { class: 'drop xp' }, `+${xp} XP`)),
-        h('p', { class: 'muted' }, `答對 ${B.correct} 題 · ${L.CLASSES[S.cls].name}熟練度 ${S.mastery[S.cls]}` + (cave && drop.iron ? ' · 鐵可以做鐵劍、火把' : '')));
+        h('p', { class: 'muted' }, `答對 ${B.correct} 題 · ${L.CLASSES[S.cls].name}熟練度 ${S.mastery[S.cls]}` + tip));
       gainXp(xp); au('sting', 'victory');
       if (drop.diamond) { award('diamond'); setTimeout(diamondMoment, 450); }
     } else {
@@ -690,7 +805,7 @@
 
   // ---- 島：建造、合成台、守夜 ----
   let tool = 'grass', N = null;
-  const costText = c => Object.keys(c).length ? Object.keys(c).map(k => `${{ wood: '木', stone: '石', iron: '鐵', lamp: '路燈' }[k]}${c[k]}`).join(' ') : '免費';
+  const costText = c => Object.keys(c).length ? Object.keys(c).map(k => `${{ wood: '木', stone: '石', iron: '鐵', gold: '金', lamp: '路燈' }[k]}${c[k]}`).join(' ') : '免費';
   function renderIsland() {
     const s = $('#scr-island'); s.innerHTML = '';
     s.classList.toggle('night', !!N);
@@ -707,7 +822,7 @@
   function renderGlows() {
     const fx = $('#islFx'); if (!fx) return; fx.innerHTML = '';
     S.grid.forEach((t, i) => {
-      if (t !== 'lamp' && t !== 'house' && t !== 'torch') return;
+      if (t !== 'lamp' && t !== 'house' && t !== 'torch' && t !== 'flag') return;
       const x = (i % 8 + 0.5) / 8 * 100, y = (Math.floor(i / 8) + 0.5) / 6 * 100;
       fx.append(h('i', { class: 'glow ' + t, style: `left:${x}%;top:${y}%` }));
     });
@@ -719,7 +834,7 @@
       return h('button', { class: 'tool' + (tool === t.id ? ' on' : '') + (can ? '' : ' poor'), onclick: () => { tool = t.id; renderBuildSide(); } },
         h('span', { class: 'tool-art', html: A.tile(t.id) }), h('b', {}, t.name), h('small', {}, t.id === 'lamp' ? `有 ${S.items.lamp || 0} 盞` : costText(t.cost)));
     }));
-    const recipes = h('div', { class: 'recipes' }, L.RECIPES.map(r => {
+    const recipes = h('div', { class: 'recipes' }, L.recipesFor(S).map(r => {
       const c = L.craftCheck(S, r.id);
       return h('div', { class: 'recipe' + (c.locked ? ' locked' : '') + (c.done ? ' done' : '') },
         h('span', { class: 'r-ico', html: A.icon(c.locked ? 'lock' : r.icon) }),
@@ -736,7 +851,7 @@
     const res = L.craft(S, r.id);
     if (!res.ok) return toast(res.reason);
     S = res.s; saveS(); au('sfx', 'craft');
-    toast(r.id === 'pick' ? '做好石鎬了！地圖上的「字根洞窟」可以挖開了' : r.id === 'sword' ? '做好木劍了！冒險傷害 +5%' : r.id === 'iron' ? '做好鐵劍了！冒險傷害 +10%（取代木劍）' : '做好一盞路燈！選「路燈」放到島上');
+    toast(r.id === 'pick' ? '做好石鎬了！地圖上的「字根洞窟」可以挖開了' : r.id === 'sword' ? '做好木劍了！冒險傷害 +5%' : r.id === 'iron' ? '做好鐵劍了！冒險傷害 +10%（取代木劍）' : r.id === 'key' ? '做好城堡鑰匙了！文法城堡打開了' : r.id === 'gshield' ? '做好金盾了！被打少 20%' : '做好一盞路燈！選「路燈」放到島上');
     if (r.id === 'lamp') tool = 'lamp';
     renderIsland();
   }
@@ -925,17 +1040,18 @@
           }),
           h('small', { class: 'muted' }, '每天台北時間 0 點重新開始')),
         h('section', { class: 'card' }, h('div', { class: 'eyebrow' }, 'BADGES · 徽章'),
-          h('div', { class: 'badges' }, L.BADGES.map(b => h('div', { class: 'badge' + (S.badges[b.id] ? ' on' : '') }, h('span', { class: 'b-ico', html: A.icon(b.id === 'diamond' ? 'diamond' : b.id === 'caver' ? 'pick' : 'star') }), h('b', {}, b.name), h('small', {}, S.badges[b.id] || '還沒拿到'))))),
+          h('div', { class: 'badges' }, L.BADGES.map(b => h('div', { class: 'badge' + (S.badges[b.id] ? ' on' : '') }, h('span', { class: 'b-ico', html: A.icon(b.id === 'diamond' ? 'diamond' : b.id === 'caver' ? 'pick' : b.id === 'castle' ? 'key' : 'star') }), h('b', {}, b.name), h('small', {}, S.badges[b.id] || '還沒拿到'))))),
         h('section', { class: 'card' }, soundSliders()),
         h('section', { class: 'card' }, h('div', { class: 'eyebrow' }, 'BAG · 背包'),
-          h('div', { class: 'drops' }, dropChip('wood', S.mats.wood), dropChip('stone', S.mats.stone), dropChip('diamond', S.mats.diamond, S.mats.diamond > 0)),
-          h('p', {}, `木劍 ${S.items.sword ? '✓' : '—'} · 鐵劍 ${S.items.iron ? '✓' : '—'} · 石鎬 ${S.items.pick ? '✓' : '—'} · 路燈 ${S.items.lamp || 0} 盞 · 錯題本 ${S.mistakes.length} 題`),
+          h('div', { class: 'drops' }, ['wood', 'stone', 'iron', 'gold'].map(k => dropChip(k, S.mats[k] || 0)), dropChip('diamond', S.mats.diamond, S.mats.diamond > 0)),
+          h('p', {}, `木劍 ${S.items.sword ? '✓' : '—'} · 鐵劍 ${S.items.iron ? '✓' : '—'} · 金盾 ${S.items.gshield ? '✓' : '—'} · 城堡鑰匙 ${S.items.key ? '✓' : '—'} · 石鎬 ${S.items.pick ? '✓' : '—'} · 路燈 ${S.items.lamp || 0} 盞 · 錯題本 ${S.mistakes.length} 題`),
           h('p', {}, `競技場：${L.TIERS[S.rank.tier]}段位 `, stars(S.rank.stars)),
           h('button', { class: 'btn ghost small', onclick: () => {
             if (!confirm('重置試玩？等級、材料、島、遊戲時間與延長紀錄都會清掉（只清勇者島 hi_ 的資料；家長密碼是全站共用的，不會清）。')) return;
             ['save', 'timer', 'parent'].forEach(LS.del); location.reload();
           } }, '重置試玩'),
-          !S.items.pick ? h('button', { class: 'btn ghost small', onclick: demoUnlockCave }, '試玩：直接解鎖字根洞窟') : null)));
+          !S.items.pick ? h('button', { class: 'btn ghost small', onclick: demoUnlockCave }, '試玩：直接解鎖字根洞窟') : null,
+          !S.items.key ? h('button', { class: 'btn ghost small', onclick: demoUnlockCastle }, '試玩：直接解鎖文法城堡') : null)));
   }
 
   // ---- 遊玩時間、鎖定、休息、家長設定 ----

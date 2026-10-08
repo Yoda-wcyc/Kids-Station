@@ -212,10 +212,67 @@ t('recipes: iron sword needs pick; torch tile; cave mission + badge', () => {
   assert(L.BADGES.some(b => b.id === 'caver' && b.name === '洞窟探險家'));
 });
 
+// ---- 文法城堡 ----
+const TOPICS = ['be', 'present', 'progressive', 'past', 'future', 'plural', 'article', 'pronoun', 'compare', 'prep', 'modal', 'wh'];
+t('castle question mix', () => {
+  assert.deepStrictEqual(L.castleRoomNext({ door: 'past', doorOpen: false, traps: 0, asked: 3 }), { types: ['grammar-fill', 'grammar-fix'], topic: 'past' });
+  assert.deepStrictEqual(L.castleRoomNext({ door: null, doorOpen: true, traps: 2, asked: 0 }).types, ['grammar-fix']);
+  const mix = [0, 1, 2].map(a => L.castleRoomNext({ traps: 0, asked: a }).types[0]); assert.deepStrictEqual(mix, L.CASTLE_TYPES);
+  assert.strictEqual(L.CASTLE.length, 6); assert(L.CASTLE[5].boss); assert.strictEqual(L.CASTLE.filter(r => r.door).length, 2); assert.strictEqual(L.CASTLE.filter(r => r.traps).length, 2);
+  assert.strictEqual(L.mapOf('k3'), 'castle');
+});
+t('trap + door logic', () => {
+  assert.deepStrictEqual(L.trapResolve(2, true), { traps: 1, disarmed: true, snap: false });
+  assert.deepStrictEqual(L.trapResolve(2, false), { traps: 2, disarmed: false, snap: true });
+  assert.strictEqual(L.trapSnap(L.newSave()), 8);
+  const s = L.newSave(); s.items.gshield = 1; assert.strictEqual(L.trapSnap(s), 6); assert.strictEqual(L.hitBack('castle', 'mage', s), 10); assert.strictEqual(L.hitBack('castle', 'mage', L.newSave()), 12);
+  assert.strictEqual(L.doorResolve(false, true, 'past', 'past'), true);
+  assert.strictEqual(L.doorResolve(false, true, 'future', 'past'), false, 'other topic does not open');
+  assert.strictEqual(L.doorResolve(false, false, 'past', 'past'), false, 'wrong answer does not open');
+  assert.strictEqual(L.doorResolve(true, false, 'x', 'past'), true, 'stays open');
+  assert.strictEqual(L.damage({ combo: 1, cls: 'sword', map: 'castle' }).dmg, 15, 'sword grammar ×1.5 in castle');
+  assert.strictEqual(L.damage({ combo: 1, cls: 'sword' }).dmg, 10);
+});
+t('castle boss: 6 questions, >=5, mixed topics, last typed', () => {
+  const r = L.mulberry32(8);
+  for (let k = 0; k < 200; k++) {
+    const p = L.castleBossPlan(TOPICS, r);
+    assert.strictEqual(p.length, 6); assert.strictEqual(p[5].type, 'zh2en-type');
+    assert(p.slice(0, 5).every(x => x.type === 'grammar-fill' || x.type === 'grammar-fix'));
+    assert.strictEqual(new Set(p.map(x => x.topic)).size, 6, 'six different topics');
+  }
+  const R = L.bossRule('castle'); assert.deepStrictEqual([R.q, R.need, R.playAll], [6, 5, true]);
+  assert.strictEqual(L.bossOutcome(5, 5, R), 'continue'); assert.strictEqual(L.bossOutcome(5, 6, R), 'win'); assert.strictEqual(L.bossOutcome(4, 6, R), 'lose');
+});
+t('castle drops with seed', () => {
+  const a = L.mulberry32(99), b = L.mulberry32(99);
+  for (let i = 0; i < 50; i++) assert.deepStrictEqual(L.rollDrop(a, 'normal', 'castle'), L.rollDrop(b, 'normal', 'castle'));
+  const r = L.mulberry32(31), N = 100000; let dia = 0, gold = 0;
+  for (let i = 0; i < N; i++) { const d = L.rollDrop(r, 'normal', 'castle'); assert(d.iron >= 1); dia += d.diamond; gold += d.gold; }
+  assert(dia / N > 0.073 && dia / N < 0.087, 'diamond ≈8% got ' + dia / N);
+  assert(gold / N > 0.32 && gold / N < 0.38, 'gold ≈35% got ' + gold / N);
+  const rb = L.mulberry32(4); for (let i = 0; i < 300; i++) { const d = L.rollDrop(rb, 'boss', 'castle'); assert(d.gold === 2 && d.iron >= 3); }
+});
+t('unlock chain: cave boss -> key recipe -> castle map', () => {
+  let s = L.newSave(); s.items.pick = 1; s.mats = { wood: 9, stone: 9, iron: 9, gold: 9, diamond: 0 };
+  assert(!L.recipesFor(s).some(r => r.id === 'key'), 'key hidden before cave boss');
+  assert(L.craftCheck(s, 'key').hidden); assert(!L.mapUnlocked(s, 'castle'));
+  s.defeated.cboss = true;
+  assert(L.recipesFor(s).some(r => r.id === 'key'));
+  assert.strictEqual(L.craftCheck(s, 'gshield').reason, '先打開文法城堡，在那裡找金');
+  const k = L.craft(s, 'key'); assert(k.ok); assert.deepStrictEqual([k.s.mats.iron, k.s.mats.stone], [6, 4]);
+  assert(L.mapUnlocked(k.s, 'castle'));
+  const g = L.craft(k.s, 'gshield'); assert(g.ok); assert.strictEqual(g.s.mats.gold, 6);
+  assert(L.placeTile(g.s, 0, 'flag').ok);
+  assert(!L.mapUnlocked(g.s, 'harbor') && !L.mapUnlocked(g.s, 'volcano'), 'later maps are teasers');
+  assert(L.missionList(g.s).some(m => m.id === 'traps' && m.goal === 3));
+  assert(L.BADGES.some(b => b.id === 'castle' && b.name === '城堡征服者'));
+});
+
 // ---- 聲音（audio.js 純邏輯） ----
 const AU = require('./audio.js');
 t('scene -> track mapping', () => {
-  const want = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', cave: 'cave', unknown: 'calm' };
+  const want = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', cave: 'cave', castle: 'castle', unknown: 'calm' };
   Object.keys(want).forEach(k => assert.strictEqual(AU.trackFor(k), want[k], k));
 });
 t('speech ducking state machine', () => {
