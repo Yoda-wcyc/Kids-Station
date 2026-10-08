@@ -30,7 +30,13 @@
     { "id": "portal_cave", "n": 26, "name_zh": "傳送門・字根洞窟", "colors": { "top": "#26302A", "side": "#26302A" }, "accent": "#8C8A84", "pattern": "portal", "emissive": true, "light": 10, "hardness": 2.0, "tool": "pickaxe", "tier": 0, "drops": "self", "interact": "portal", "portal": "cave", "buy": { "price": 50, "qty": 1 } },
     { "id": "portal_castle", "n": 27, "name_zh": "傳送門・文法城堡", "colors": { "top": "#26302A", "side": "#26302A" }, "accent": "#D9A63A", "pattern": "portal", "emissive": true, "light": 10, "hardness": 2.0, "tool": "pickaxe", "tier": 0, "drops": "self", "interact": "portal", "portal": "castle", "buy": { "price": 50, "qty": 1 } },
     { "id": "portal_harbor", "n": 28, "name_zh": "傳送門・句型港口", "colors": { "top": "#26302A", "side": "#26302A" }, "accent": "#4F7F86", "pattern": "portal", "emissive": true, "light": 10, "hardness": 2.0, "tool": "pickaxe", "tier": 0, "drops": "self", "interact": "portal", "portal": "harbor", "buy": { "price": 50, "qty": 1 } },
-    { "id": "portal_volcano", "n": 29, "name_zh": "傳送門・片語火山", "colors": { "top": "#26302A", "side": "#26302A" }, "accent": "#E0352B", "pattern": "portal", "emissive": true, "light": 10, "hardness": 2.0, "tool": "pickaxe", "tier": 0, "drops": "self", "interact": "portal", "portal": "volcano", "buy": { "price": 50, "qty": 1 } }
+    { "id": "portal_volcano", "n": 29, "name_zh": "傳送門・片語火山", "colors": { "top": "#26302A", "side": "#26302A" }, "accent": "#E0352B", "pattern": "portal", "emissive": true, "light": 10, "hardness": 2.0, "tool": "pickaxe", "tier": 0, "drops": "self", "interact": "portal", "portal": "volcano", "buy": { "price": 50, "qty": 1 } },
+    { "id": "sandstone", "n": 30, "name_zh": "砂岩", "colors": { "top": "#D8C79C", "side": "#CDBB8E", "bottom": "#D8C79C" }, "pattern": "sandstone", "hardness": 1.2, "tool": "pickaxe", "tier": 1, "drops": "self", "buy": null },
+    { "id": "cactus", "n": 31, "name_zh": "仙人掌", "colors": { "top": "#6E8C55", "side": "#5E7D4A", "bottom": "#6E8C55" }, "pattern": "cactus", "hardness": 0.4, "tier": 0, "drops": "self", "buy": null },
+    { "id": "snow", "n": 32, "name_zh": "雪", "colors": { "top": "#F1EEE6", "side": "#8A6A48", "bottom": "#8A6A48" }, "pattern": "snow", "hardness": 0.3, "tool": "shovel", "tier": 0, "drops": "self", "buy": null },
+    { "id": "ice", "n": 33, "name_zh": "冰", "colors": { "top": "#BFD6D6" }, "pattern": "ice", "transparent": true, "hardness": 0.5, "tool": "pickaxe", "tier": 0, "drops": null, "buy": null },
+    { "id": "spruce_log", "n": 34, "name_zh": "雲杉木", "colors": { "top": "#9C7A55", "side": "#4A3A2A", "bottom": "#9C7A55" }, "pattern": "log", "hardness": 1.6, "tool": "axe", "tier": 0, "drops": "self", "buy": null },
+    { "id": "spruce_leaves", "n": 35, "name_zh": "雲杉葉", "colors": { "top": "#2C4434" }, "pattern": "leaves", "hardness": 0.2, "drops": null, "buy": null }
   ],
   "items": [
     { "id": "stick", "name_zh": "木棍", "icon": "stick", "color": "#8C6640", "maxStack": 64, "buy": null },
