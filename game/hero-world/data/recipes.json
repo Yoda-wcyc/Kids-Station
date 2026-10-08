@@ -824,7 +824,7 @@
       "id": "hay_bale",
       "name_zh": "乾草捆",
       "in": {
-        "tallgrass": 9
+        "wheat": 9
       },
       "out": {
         "id": "hay_bale",
@@ -1189,6 +1189,236 @@
         "count": 4
       },
       "needs": "crafting_table"
+    },
+    {
+      "needs": "crafting_table",
+      "id": "chest",
+      "name_zh": "箱子",
+      "in": {
+        "planks": 8
+      },
+      "out": {
+        "id": "chest",
+        "count": 1
+      }
+    },
+    {
+      "needs": null,
+      "id": "bread",
+      "name_zh": "麵包",
+      "in": {
+        "wheat": 3
+      },
+      "out": {
+        "id": "bread",
+        "count": 1
+      }
+    },
+    {
+      "needs": "crafting_table",
+      "id": "wood_hoe",
+      "name_zh": "木鋤頭",
+      "in": {
+        "planks": 2,
+        "stick": 2
+      },
+      "out": {
+        "id": "wood_hoe",
+        "count": 1
+      }
+    },
+    {
+      "needs": "crafting_table",
+      "id": "stone_hoe",
+      "name_zh": "石鋤頭",
+      "in": {
+        "cobblestone": 2,
+        "stick": 2
+      },
+      "out": {
+        "id": "stone_hoe",
+        "count": 1
+      }
+    },
+    {
+      "needs": "crafting_table",
+      "id": "iron_hoe",
+      "name_zh": "鐵鋤頭",
+      "in": {
+        "iron_ingot": 2,
+        "stick": 2
+      },
+      "out": {
+        "id": "iron_hoe",
+        "count": 1
+      },
+      "blueprint": "bp_iron"
+    },
+    {
+      "needs": "crafting_table",
+      "id": "diamond_hoe",
+      "name_zh": "鑽石鋤頭",
+      "in": {
+        "diamond": 2,
+        "stick": 2
+      },
+      "out": {
+        "id": "diamond_hoe",
+        "count": 1
+      },
+      "blueprint": "bp_diamond"
+    },
+    {
+      "needs": "crafting_table",
+      "id": "leather_helmet",
+      "name_zh": "皮頭盔",
+      "in": {
+        "leather": 5
+      },
+      "out": {
+        "id": "leather_helmet",
+        "count": 1
+      }
+    },
+    {
+      "needs": "crafting_table",
+      "id": "leather_chest",
+      "name_zh": "皮胸甲",
+      "in": {
+        "leather": 8
+      },
+      "out": {
+        "id": "leather_chest",
+        "count": 1
+      }
+    },
+    {
+      "needs": "crafting_table",
+      "id": "leather_legs",
+      "name_zh": "皮護腿",
+      "in": {
+        "leather": 7
+      },
+      "out": {
+        "id": "leather_legs",
+        "count": 1
+      }
+    },
+    {
+      "needs": "crafting_table",
+      "id": "leather_boots",
+      "name_zh": "皮靴子",
+      "in": {
+        "leather": 4
+      },
+      "out": {
+        "id": "leather_boots",
+        "count": 1
+      }
+    },
+    {
+      "needs": "crafting_table",
+      "id": "iron_helmet",
+      "name_zh": "鐵頭盔",
+      "in": {
+        "iron_ingot": 5
+      },
+      "out": {
+        "id": "iron_helmet",
+        "count": 1
+      },
+      "blueprint": "bp_iron"
+    },
+    {
+      "needs": "crafting_table",
+      "id": "iron_chest",
+      "name_zh": "鐵胸甲",
+      "in": {
+        "iron_ingot": 8
+      },
+      "out": {
+        "id": "iron_chest",
+        "count": 1
+      },
+      "blueprint": "bp_iron"
+    },
+    {
+      "needs": "crafting_table",
+      "id": "iron_legs",
+      "name_zh": "鐵護腿",
+      "in": {
+        "iron_ingot": 7
+      },
+      "out": {
+        "id": "iron_legs",
+        "count": 1
+      },
+      "blueprint": "bp_iron"
+    },
+    {
+      "needs": "crafting_table",
+      "id": "iron_boots",
+      "name_zh": "鐵靴子",
+      "in": {
+        "iron_ingot": 4
+      },
+      "out": {
+        "id": "iron_boots",
+        "count": 1
+      },
+      "blueprint": "bp_iron"
+    },
+    {
+      "needs": "crafting_table",
+      "id": "diamond_helmet",
+      "name_zh": "鑽石頭盔",
+      "in": {
+        "diamond": 5
+      },
+      "out": {
+        "id": "diamond_helmet",
+        "count": 1
+      },
+      "blueprint": "bp_diamond"
+    },
+    {
+      "needs": "crafting_table",
+      "id": "diamond_chest",
+      "name_zh": "鑽石胸甲",
+      "in": {
+        "diamond": 8
+      },
+      "out": {
+        "id": "diamond_chest",
+        "count": 1
+      },
+      "blueprint": "bp_diamond"
+    },
+    {
+      "needs": "crafting_table",
+      "id": "diamond_legs",
+      "name_zh": "鑽石護腿",
+      "in": {
+        "diamond": 7
+      },
+      "out": {
+        "id": "diamond_legs",
+        "count": 1
+      },
+      "blueprint": "bp_diamond"
+    },
+    {
+      "needs": "crafting_table",
+      "id": "diamond_boots",
+      "name_zh": "鑽石靴子",
+      "in": {
+        "diamond": 4
+      },
+      "out": {
+        "id": "diamond_boots",
+        "count": 1
+      },
+      "blueprint": "bp_diamond"
     }
   ],
   "smelt": [

@@ -77,7 +77,7 @@
     {"n":73,"id":"glass_pink","name_zh":"粉紅色玻璃","colors":{"top":"#D99AA5"},"pattern":"stained","transparent":true,"hardness":0.3,"drops":"self","buy":null},
     {"n":74,"id":"paper_pink","name_zh":"粉紅色紙磚","colors":{"top":"#D99AA5"},"pattern":"paper","hardness":1,"tool":"pickaxe","tier":0,"drops":"self","buy":null},
     {"n":75,"id":"carpet_pink","name_zh":"粉紅地毯","colors":{"top":"#D99AA5"},"pattern":"wool","shape":"carpet","solid":false,"cutout":true,"hardness":0.1,"drops":"self","buy":null},
-    {"n":76,"id":"tallgrass","name_zh":"長草","colors":{"top":"#5E8B4E"},"pattern":"tallgrass","shape":"cross","solid":false,"cutout":true,"hardness":0,"drops":"self","plant":true,"buy":null},
+    {"n":76,"id":"tallgrass","name_zh":"長草","colors":{"top":"#5E8B4E"},"pattern":"tallgrass","shape":"cross","solid":false,"cutout":true,"hardness":0,"drops":"seeds","plant":true,"buy":null},
     {"n":77,"id":"fern","name_zh":"蕨類","colors":{"top":"#3E6B3A"},"pattern":"fern","shape":"cross","solid":false,"cutout":true,"hardness":0,"drops":"self","plant":true,"buy":null},
     {"n":78,"id":"deadbush","name_zh":"枯樹叢","colors":{"top":"#8C6640"},"pattern":"deadbush","shape":"cross","solid":false,"cutout":true,"hardness":0,"drops":"stick","plant":true,"buy":null},
     {"n":79,"id":"mushroom_red","name_zh":"紅蘑菇","colors":{"top":"#EDE6D0"},"accent":"#C2443A","pattern":"mushroom","shape":"cross","solid":false,"cutout":true,"hardness":0,"drops":"self","plant":true,"buy":null},
@@ -140,7 +140,13 @@
     {"n":136,"id":"stairs_sandstone","name_zh":"砂岩樓梯","shape":"stairs","facing":0,"drops":"stairs_sandstone","place":"stairs","hidden":false,"colors":{"top":"#D8C79C","side":"#CDBB8E","bottom":"#D8C79C"},"pattern":"sandstone","hardness":1.2,"tool":"pickaxe","tier":1,"tileOf":"sandstone","buy":null},
     {"n":137,"id":"stairs_sandstone_e","name_zh":"砂岩樓梯","shape":"stairs","facing":1,"drops":"stairs_sandstone","hidden":true,"colors":{"top":"#D8C79C","side":"#CDBB8E","bottom":"#D8C79C"},"pattern":"sandstone","hardness":1.2,"tool":"pickaxe","tier":1,"tileOf":"sandstone","buy":null},
     {"n":138,"id":"stairs_sandstone_s","name_zh":"砂岩樓梯","shape":"stairs","facing":2,"drops":"stairs_sandstone","hidden":true,"colors":{"top":"#D8C79C","side":"#CDBB8E","bottom":"#D8C79C"},"pattern":"sandstone","hardness":1.2,"tool":"pickaxe","tier":1,"tileOf":"sandstone","buy":null},
-    {"n":139,"id":"stairs_sandstone_w","name_zh":"砂岩樓梯","shape":"stairs","facing":3,"drops":"stairs_sandstone","hidden":true,"colors":{"top":"#D8C79C","side":"#CDBB8E","bottom":"#D8C79C"},"pattern":"sandstone","hardness":1.2,"tool":"pickaxe","tier":1,"tileOf":"sandstone","buy":null}
+    {"n":139,"id":"stairs_sandstone_w","name_zh":"砂岩樓梯","shape":"stairs","facing":3,"drops":"stairs_sandstone","hidden":true,"colors":{"top":"#D8C79C","side":"#CDBB8E","bottom":"#D8C79C"},"pattern":"sandstone","hardness":1.2,"tool":"pickaxe","tier":1,"tileOf":"sandstone","buy":null},
+    {"n":140,"id":"chest","name_zh":"箱子","colors":{"top":"#B88B55","side":"#A97E4E","bottom":"#8C6640"},"accent":"#26302A","pattern":"chest","hardness":1.2,"tool":"axe","tier":0,"drops":"self","interact":"chest","buy":null},
+    {"n":141,"id":"farmland","name_zh":"耕地","colors":{"top":"#5C4330","side":"#8A6A48","bottom":"#8A6A48"},"pattern":"farmland","hardness":0.5,"tool":"shovel","tier":0,"drops":"dirt","buy":null},
+    {"n":142,"id":"wheat_0","name_zh":"小麥（長大中）","colors":{"top":"#6E8C55"},"accent":"#5E8B4E","pattern":"wheat","stage":0,"shape":"cross","solid":false,"cutout":true,"plant":true,"crop":true,"hardness":0,"drops":"seeds","hidden":true,"buy":null},
+    {"n":143,"id":"wheat_1","name_zh":"小麥（長大中）","colors":{"top":"#6E8C55"},"accent":"#5E8B4E","pattern":"wheat","stage":1,"shape":"cross","solid":false,"cutout":true,"plant":true,"crop":true,"hardness":0,"drops":"seeds","hidden":true,"buy":null},
+    {"n":144,"id":"wheat_2","name_zh":"小麥（長大中）","colors":{"top":"#6E8C55"},"accent":"#5E8B4E","pattern":"wheat","stage":2,"shape":"cross","solid":false,"cutout":true,"plant":true,"crop":true,"hardness":0,"drops":"seeds","hidden":true,"buy":null},
+    {"n":145,"id":"wheat_3","name_zh":"小麥（成熟）","colors":{"top":"#D9B860"},"accent":"#C9A24A","pattern":"wheat","stage":3,"shape":"cross","solid":false,"cutout":true,"plant":true,"crop":true,"hardness":0,"drops":"wheat","hidden":true,"buy":null}
   ],
   "items": [
     {"id":"stick","name_zh":"木棍","icon":"stick","color":"#8C6640","maxStack":64,"buy":null},
@@ -174,10 +180,29 @@
     {"maxStack":64,"buy":null,"id":"dye_blue","name_zh":"藍色染料","icon":"dye","color":"#4D6A99"},
     {"maxStack":64,"buy":null,"id":"dye_purple","name_zh":"紫色染料","icon":"dye","color":"#7A5C8E"},
     {"maxStack":64,"buy":null,"id":"dye_pink","name_zh":"粉紅色染料","icon":"dye","color":"#D99AA5"},
-    {"maxStack":64,"buy":null,"id":"brick_item","name_zh":"磚塊","icon":"ingot","color":"#A65A45"}
+    {"maxStack":64,"buy":null,"id":"brick_item","name_zh":"磚塊","icon":"ingot","color":"#A65A45"},
+    {"maxStack":64,"buy":null,"id":"seeds","name_zh":"種子","icon":"seeds","color":"#8C9A55","place":"crop"},
+    {"maxStack":64,"buy":null,"id":"wheat","name_zh":"小麥","icon":"wheat","color":"#D9B860"},
+    {"maxStack":64,"buy":null,"id":"bread","name_zh":"麵包","icon":"bread","color":"#C9904F","food":5},
+    {"maxStack":1,"buy":null,"id":"wood_hoe","name_zh":"木鋤頭","icon":"hoe","color":"#A97E4E","tool":{"type":"hoe","tier":1,"durability":60}},
+    {"maxStack":1,"buy":null,"id":"stone_hoe","name_zh":"石鋤頭","icon":"hoe","color":"#8C8A84","tool":{"type":"hoe","tier":2,"durability":132}},
+    {"maxStack":1,"buy":null,"id":"iron_hoe","name_zh":"鐵鋤頭","icon":"hoe","color":"#D8D4CA","tool":{"type":"hoe","tier":3,"durability":250}},
+    {"maxStack":1,"buy":null,"id":"diamond_hoe","name_zh":"鑽石鋤頭","icon":"hoe","color":"#6FC7C0","tool":{"type":"hoe","tier":4,"durability":1561}},
+    {"maxStack":1,"buy":null,"id":"leather_helmet","name_zh":"皮頭盔","icon":"armor_helmet","color":"#8C6640","armor":{"slot":0,"points":1}},
+    {"maxStack":1,"buy":null,"id":"leather_chest","name_zh":"皮胸甲","icon":"armor_chest","color":"#8C6640","armor":{"slot":1,"points":3}},
+    {"maxStack":1,"buy":null,"id":"leather_legs","name_zh":"皮護腿","icon":"armor_legs","color":"#8C6640","armor":{"slot":2,"points":2}},
+    {"maxStack":1,"buy":null,"id":"leather_boots","name_zh":"皮靴子","icon":"armor_boots","color":"#8C6640","armor":{"slot":3,"points":1}},
+    {"maxStack":1,"buy":null,"id":"iron_helmet","name_zh":"鐵頭盔","icon":"armor_helmet","color":"#D8D4CA","armor":{"slot":0,"points":2}},
+    {"maxStack":1,"buy":null,"id":"iron_chest","name_zh":"鐵胸甲","icon":"armor_chest","color":"#D8D4CA","armor":{"slot":1,"points":6}},
+    {"maxStack":1,"buy":null,"id":"iron_legs","name_zh":"鐵護腿","icon":"armor_legs","color":"#D8D4CA","armor":{"slot":2,"points":5}},
+    {"maxStack":1,"buy":null,"id":"iron_boots","name_zh":"鐵靴子","icon":"armor_boots","color":"#D8D4CA","armor":{"slot":3,"points":2}},
+    {"maxStack":1,"buy":null,"id":"diamond_helmet","name_zh":"鑽石頭盔","icon":"armor_helmet","color":"#6FC7C0","armor":{"slot":0,"points":3}},
+    {"maxStack":1,"buy":null,"id":"diamond_chest","name_zh":"鑽石胸甲","icon":"armor_chest","color":"#6FC7C0","armor":{"slot":1,"points":8}},
+    {"maxStack":1,"buy":null,"id":"diamond_legs","name_zh":"鑽石護腿","icon":"armor_legs","color":"#6FC7C0","armor":{"slot":2,"points":6}},
+    {"maxStack":1,"buy":null,"id":"diamond_boots","name_zh":"鑽石靴子","icon":"armor_boots","color":"#6FC7C0","armor":{"slot":3,"points":3}}
   ],
   "blueprints": [
-    {"id":"bp_iron","name_zh":"鐵工具藍圖","price":30,"desc":"解鎖：鐵鎬、鐵斧、鐵鏟、鐵劍"},
-    {"id":"bp_diamond","name_zh":"鑽石工具藍圖","price":80,"desc":"解鎖：鑽石鎬、鑽石斧、鑽石鏟、鑽石劍"}
+    {"id":"bp_iron","name_zh":"鐵工具藍圖","price":30,"desc":"解鎖：鐵鎬、鐵斧、鐵鏟、鐵劍、鐵鋤頭、鐵盔甲"},
+    {"id":"bp_diamond","name_zh":"鑽石工具藍圖","price":80,"desc":"解鎖：鑽石鎬、鑽石斧、鑽石鏟、鑽石劍、鑽石鋤頭、鑽石盔甲"}
   ]
 }
