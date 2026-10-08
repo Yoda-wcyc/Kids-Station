@@ -57,17 +57,17 @@
     cardHtml() {
       const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       const on = API.isSet(), get = k => { try { return JSON.parse(root.localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
-      const T = get('hi_timer'), log = ((get('hi_parent') || {}).log || []).slice(-10).reverse();
+      const T = get('hi_timer'), log = ((get('hi_parent') || {}).log || []).slice(-10).reverse(), timeOn = !!(get('hi_cfg') || {}).timeLimits;
       const mm = s => `${Math.floor(s / 60)} 分 ${Math.floor(s % 60)} 秒`;
       const pin = n => `<input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" class="code-in" id="${n[0]}" placeholder="${n[1]}" aria-label="${n[1]}">`;
       const at = iso => { try { return new Date(iso).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false }); } catch (e) { return iso; } };
       return `<section class="card pin-card"><h2>🔒 家長密碼</h2>
-        <p>狀態：<b>${on ? '已設定' : '未設定'}</b>（4–6 位數字；勇者島遊戲時間到了，要輸入這組密碼才能延長）</p>
+        <p>狀態：<b>${on ? '已設定' : '未設定'}</b>（4–6 位數字${timeOn ? "；勇者島遊戲時間到了，要輸入這組密碼才能延長" : ""}）</p>
         <div class="row wrap">${(on ? [['pinold', '舊密碼']] : []).concat([['pin1', '新密碼'], ['pin2', '再輸入一次']]).map(pin).join('')}<button class="btn primary" id="pinsave">${on ? '修改密碼' : '設定密碼'}</button></div>
         <p class="muted">只存加密後的雜湊，不存密碼本身；只存在這台裝置。</p>
-        <h3>勇者島 遊戲時間</h3>
+        ${timeOn ? `<h3>勇者島 遊戲時間</h3>
         ${T ? `<p>${esc(T.day)}：${T.plan === 'paid' ? '付費會員（每天 60 分）' : '未付費（每天 10 分）'}，今天已玩 ${mm(T.used || 0)}${T.inf ? '，今日無限' : T.ext ? `，已延長 ${Math.round(T.ext / 60)} 分` : ''}</p>` : '<p class="muted">還沒玩過勇者島。</p>'}
-        ${log.length ? `<ul>${log.map(x => `<li>${esc(x.date)}：${x.minutes === 'inf' ? '今日無限' : '+' + esc(x.minutes) + ' 分'}（${esc(at(x.at))}）</li>`).join('')}</ul>` : '<p class="muted">沒有延長紀錄。</p>'}</section>`;
+        ${log.length ? `<ul>${log.map(x => `<li>${esc(x.date)}：${x.minutes === 'inf' ? '今日無限' : '+' + esc(x.minutes) + ' 分'}（${esc(at(x.at))}）</li>`).join('')}</ul>` : '<p class="muted">沒有延長紀錄。</p>'}` : ''}</section>`;
     },
     bindCard(rerender) {
       const b = document.getElementById('pinsave'); if (!b) return;

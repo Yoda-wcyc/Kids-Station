@@ -383,3 +383,4 @@ button:disabled { cursor: default; }
 .route-arrow { color: #8a8d84; font-weight: 900; }
 #scr-cave .route-b { background: #26302A; color: var(--paper); } #scr-cave .route-b.on { background: var(--paper); color: var(--ink); } #scr-cave .route-b.soon { background: transparent; color: var(--paper3); }
 @media (orientation: portrait) { .hud-r .lv .bar { display: none; } .mats { gap: 6px; } .mat { font-size: 14px; } }
+#timer[hidden] { display: none; }

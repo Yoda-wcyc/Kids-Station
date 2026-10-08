@@ -4,6 +4,9 @@
 (function (root) {
   'use strict';
   const L = {};
+  // ⚙ 遊玩時間限制總開關：目前整個遊戲免費、不限時間（false）。改成 true 就恢復 未付費 10 分／付費會員 60 分＋家長密碼延長。
+  const TIME_LIMITS_ENABLED = false;
+  L.TIME_LIMITS_ENABLED = TIME_LIMITS_ENABLED;
   const clone = o => JSON.parse(JSON.stringify(o));
   const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -319,6 +322,13 @@
     return { ok: true, st: opt === 'inf' ? Object.assign({}, st, { inf: true }) : Object.assign({}, st, { ext: st.ext + opt * 60 }) };
   };
   L.logExtension = (log, date, minutes, at) => (log || []).concat([{ date, minutes, at }]).slice(-50);
+  // 開關關掉時：不計時、不顯示膠囊、永遠不鎖（舊的 hi_timer 狀態一律忽略）
+  L.playTick = (st, sec, active, enabled) => enabled ? L.timerTick(st, sec, active) : st;
+  L.timeView = function (st, enabled) {
+    if (!enabled) return { pill: false, lock: null };
+    const left = L.timerLeft(st);
+    return { pill: true, left, lock: left > 0 ? null : (st.plan === 'paid' ? 'rest' : 'lock') };
+  };
   L.fmtClock = s => { s = Math.max(0, Math.floor(s)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
 
   // ---- 家長密碼：雜湊存在全站共用的 ks_parent_pin（../../parent-pin.js，家長頁也讀寫同一個鍵）；
@@ -511,7 +521,7 @@
         h('h1', { class: 't-title' }, '勇者島'),
         h('p', { class: 't-sub' }, '答對英文就是出招。打怪、撿材料，回島上蓋房子。'),
         h('button', { class: 'btn big', onclick: () => { au('unlock'); speak(' ', 0); go(S.cls ? 'hub' : 'class'); } }, '開始'),
-        h('div', { class: 't-demo' }, h('div', { class: 'eyebrow' }, '試玩設定 · 帳號類型'), seg,
+        h('div', { class: 't-demo' }, h('div', { class: 'eyebrow' }, TIME_LIMITS_ENABLED ? '試玩設定 · 帳號類型' : '試玩設定'), TIME_LIMITS_ENABLED ? seg : null,
           h('div', { class: 'row t-row' }, h('button', { class: 'btn ghost small', onclick: openParent }, '家長設定'), h('a', { class: 'linkish', href: '../../#s/game' }, '← 回小朋友學習站')), soundSliders())));
   }
 
@@ -1063,7 +1073,12 @@
   const timerActive = () => !document.hidden && focused && cur !== 'title' && !modalOpen && L.timerLeft(T) > 0;
   function renderTimer() {
     const pill = $('#timer'); if (!pill) return;
-    const left = L.timerLeft(T), active = timerActive();
+    const view = L.timeView(T, TIME_LIMITS_ENABLED);
+    if (!view.pill) {  // 不限時間：沒有膠囊、沒有鎖定／休息畫面
+      pill.hidden = true; pill.innerHTML = ''; $('#lock').hidden = true; $('#rest').hidden = true; au('setLocked', false); return;
+    }
+    pill.hidden = false;
+    const left = view.left, active = timerActive();
     pill.innerHTML = '';
     pill.append(h('span', { class: 'p-plan' }, L.PLANS[T.plan].name), h('b', {}, left === Infinity ? '∞ 今日無限' : '剩 ' + L.fmtClock(left)), !active && left > 0 ? h('small', {}, '暫停') : '');
     pill.classList.toggle('low', left !== Infinity && left <= 60);
@@ -1077,7 +1092,7 @@
   setInterval(() => {
     const d = today();
     if (T.day !== d) { T = L.timerLoad(T, d); saveT(); }
-    if (timerActive()) { T = L.timerTick(T, 1, true); saveT(); }
+    if (TIME_LIMITS_ENABLED && timerActive()) { T = L.playTick(T, 1, true, TIME_LIMITS_ENABLED); saveT(); }
     renderTimer();
   }, 1000);
   function renderLock() {
@@ -1141,9 +1156,10 @@
     if (!PIN.isSet()) return parentSetPin('第一次使用：設定家長密碼', null);
     const left = L.timerLeft(T), log = (P.log || []).slice().reverse().slice(0, 10);
     modalCard([h('div', { class: 'eyebrow' }, 'PARENTS'), h('h2', {}, '家長設定'),
-      h('p', {}, `今天（${T.day}）· ${L.PLANS[T.plan].name} · 已玩 ${L.fmtClock(T.used)} · ${left === Infinity ? '今日無限' : '剩 ' + L.fmtClock(left)}`),
-      h('div', { class: 'eyebrow mt' }, '延長紀錄'),
-      log.length ? h('ul', { class: 'log' }, log.map(x => h('li', {}, h('b', {}, x.date), ` ${x.minutes === 'inf' ? '今日無限' : '+' + x.minutes + ' 分'} `, h('span', { class: 'muted' }, fmtAt(x.at))))) : h('p', { class: 'muted' }, '還沒有延長紀錄'),
+      TIME_LIMITS_ENABLED ? [h('p', {}, `今天（${T.day}）· ${L.PLANS[T.plan].name} · 已玩 ${L.fmtClock(T.used)} · ${left === Infinity ? '今日無限' : '剩 ' + L.fmtClock(left)}`),
+        h('div', { class: 'eyebrow mt' }, '延長紀錄'),
+        log.length ? h('ul', { class: 'log' }, log.map(x => h('li', {}, h('b', {}, x.date), ` ${x.minutes === 'inf' ? '今日無限' : '+' + x.minutes + ' 分'} `, h('span', { class: 'muted' }, fmtAt(x.at))))) : h('p', { class: 'muted' }, '還沒有延長紀錄')]
+        : h('p', { class: 'muted' }, '勇者島目前完全免費、不限遊玩時間。'),
       h('div', { class: 'row' }, h('button', { class: 'btn small', onclick: parentChange }, '修改密碼')),
       h('p', { class: 'note' }, '密碼只存加鹽的 SHA-256 雜湊，跟學習站「家長」頁共用同一組。試玩版的時間與紀錄只存在這台裝置；正式版會放在會員後端（每個小朋友一份），清掉瀏覽器資料也改不了。')]);
   }
@@ -1182,6 +1198,9 @@
     const s = AU.get(); box.innerHTML = '';
     box.append(h('button', { class: 'snd-b', 'aria-label': s.muted ? '打開聲音' : '關掉聲音', onclick: () => { au('unlock'); AU.toggle(); renderSound(); } }, s.muted ? '🔇' : '🔊'));
   }
+  // 讓學習站「家長」頁知道要不要顯示「勇者島 遊戲時間」（以這裡的開關為準）
+  LS.set('cfg', { timeLimits: TIME_LIMITS_ENABLED });
+
   // ---- 開機 ----
   document.getElementById('defs').innerHTML = A.defs();
   renderLock(); renderTitle(); renderSound(); show('title');

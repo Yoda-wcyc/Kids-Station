@@ -115,6 +115,20 @@ t('paid: 60 min lock -> PIN -> each extension, unlimited', () => {
   const log = L.logExtension(L.logExtension([], 'd', 30, 'x'), 'd', 'inf', 'y'); assert.deepStrictEqual(log.map(x => x.minutes), [30, 'inf']);
 });
 
+t('free play: flag off -> 2 hours never locks, no pill; flag on -> locks', () => {
+  assert.strictEqual(L.TIME_LIMITS_ENABLED, false, 'shipping config is free / no limit');
+  ['free', 'paid'].forEach(plan => {
+    let T = L.timerLoad({ day: 'd', plan }, 'd');
+    for (let s = 0; s < 7200; s++) { T = L.playTick(T, 1, true, false); assert.deepStrictEqual(L.timeView(T, false), { pill: false, lock: null }); }
+    assert.strictEqual(T.used, 0, 'time not counted');
+    const old = { day: 'd', plan, used: 99999, ext: 0, inf: false };      // 舊的 hi_timer 已經用完
+    assert.deepStrictEqual(L.timeView(L.timerLoad(old, 'd'), false), { pill: false, lock: null }, 'old state ignored');
+    let T2 = L.timerLoad({ day: 'd', plan }, 'd');
+    for (let s = 0; s < 7200; s++) T2 = L.playTick(T2, 1, true, true);
+    const v = L.timeView(T2, true); assert(v.pill); assert.strictEqual(v.lock, plan === 'paid' ? 'rest' : 'lock');
+  });
+});
+
 // ---- 家長密碼（全站共用 ks_parent_pin） ----
 t('sha256 matches node crypto', () => {
   ['', 'abc', '1234', 'salt|123456', '勇者島', 'x'.repeat(200)].forEach(s => assert.strictEqual(PIN.sha256(s), crypto.createHash('sha256').update(s, 'utf8').digest('hex')));
