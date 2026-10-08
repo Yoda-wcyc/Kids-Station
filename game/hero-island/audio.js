@@ -5,7 +5,7 @@
   const AU = {};
 
   // ===================== 純邏輯 =====================
-  AU.SCENE_TRACK = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena' };
+  AU.SCENE_TRACK = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', cave: 'cave' };
   AU.trackFor = scene => AU.SCENE_TRACK[scene] || 'calm';
   AU.DUCK = 0.15; AU.XFADE = 0.8;
   AU.DEFAULTS = { muted: false, music: 0.35, sfx: 0.7 };
@@ -35,7 +35,7 @@
 
   // ===================== 合成器 =====================
   const AC = root.AudioContext || root.webkitAudioContext;
-  let ctx = null, musicBus = null, sfxBus = null, delay = null, noiseBuf = null, cur = null, want = 'calm', locked = false;
+  let ctx = null, musicBus = null, sfxBus = null, delay = null, fbGain = null, noiseBuf = null, cur = null, want = 'calm', locked = false;
   const store = (() => { try { return root.localStorage; } catch (e) { return null; } })();
   let S = store ? AU.loadSettings(store) : AU.normalize(null);
   const duck = AU.Ducker();
@@ -57,6 +57,9 @@
       kick: R(4, [1, 0, 0, 0]), kickLv: .45, snare: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1], snLv: .12, hat: R(4, [0, 0, 1, 0]), hatLv: .05 },
     night: { bpm: 66, padCut: 700, padLv: .06, chords: [[52, 55, 59, 62, 66], [48, 52, 55, 59], [45, 48, 52, 55], [47, 52, 54, 57]],
       arp: [3, -1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 2, -1, -1, -1], arpOct: 24, arpLv: .035, bass: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+    cave: { bpm: 60, padCut: 480, padLv: .055, echo: true, chords: [[45, 52, 57, 60], [43, 50, 55, 59], [41, 48, 53, 57], [40, 47, 52, 56]],
+      arp: [0, -1, -1, -1, -1, -1, -1, -1, 2, -1, -1, -1, -1, -1, -1, -1], arpOct: 24, arpLv: .03, bass: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      drip: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] },
     arena: { bpm: 128, padCut: 1300, padLv: .03, chords: [[52, 55, 59, 64], [48, 52, 55, 60], [43, 47, 50, 55], [50, 54, 57, 62]],
       arp: [0, 1, 2, 3, 2, 1, 0, 1, 0, 2, 1, 3, 2, 1, 2, 3], arpOct: 12, arpLv: .028, bass: R(4, [1, 0, 1, 1]),
       kick: R(4, [1, 0, 0, 0]), kickLv: .45, snare: R(2, [0, 0, 0, 0, 1, 0, 0, 0]), snLv: .11, hat: R(4, [1, 1, 1, 1]), hatLv: .03 }
@@ -85,11 +88,17 @@
     o.connect(fl); fl.connect(g); g.connect(dest); g.connect(delay); env(g, t, 0.005, lv, 0.45); o.start(t); o.stop(t + 0.55);
   }
 
+  function drip(dest, t) {  // 水滴：高音快速下滑，送進回音
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(1500 + Math.random() * 500, t); o.frequency.exponentialRampToValueAtTime(650, t + 0.07);
+    o.connect(g); g.connect(dest); g.connect(delay); env(g, t, 0.003, 0.05, 0.1); o.start(t); o.stop(t + 0.15);
+  }
   function Track(name) {
     const d = TRACKS[name]; this.name = name; this.d = d;
     this.out = ctx.createGain(); this.out.gain.value = 0.0001; this.out.connect(musicBus);
     this.step = 0; this.next = ctx.currentTime + 0.06;
     const now = ctx.currentTime; this.out.gain.setValueAtTime(0.0001, now); this.out.gain.linearRampToValueAtTime(1, now + AU.XFADE);
+    // 洞窟：回音拉長（delay 長一點、回授多一點）
+    delay.delayTime.setTargetAtTime(d.echo ? 0.46 : 0.33, now, 0.4); fbGain.gain.setTargetAtTime(d.echo ? 0.52 : 0.28, now, 0.4);
     this.timer = setInterval(() => this.tick(), 60);
   }
   Track.prototype.tick = function () {
@@ -102,6 +111,7 @@
       if (d.kick && d.kick[s]) kick(this.out, t, d.kickLv);
       if (d.snare && d.snare[s]) noise(this.out, t, 'bandpass', 1800, d.snLv, 0.13);
       if (d.hat && d.hat[s]) noise(this.out, t, 'highpass', 7000, d.hatLv, 0.04);
+      if (d.drip && d.drip[s] && Math.random() < 0.7) drip(this.out, t);
       this.next += sx; this.step = (this.step + 1) % (16 * bars);
     }
   };
@@ -132,7 +142,7 @@
         ctx = new AC();
         musicBus = ctx.createGain(); sfxBus = ctx.createGain(); musicBus.gain.value = 0; sfxBus.gain.value = 0;
         const comp = ctx.createDynamicsCompressor(); musicBus.connect(comp); sfxBus.connect(comp); comp.connect(ctx.destination);
-        delay = ctx.createDelay(1); delay.delayTime.value = 0.33; const fb = ctx.createGain(), wet = ctx.createGain(); fb.gain.value = 0.28; wet.gain.value = 0.25;
+        delay = ctx.createDelay(1); delay.delayTime.value = 0.33; const fb = fbGain = ctx.createGain(), wet = ctx.createGain(); fb.gain.value = 0.28; wet.gain.value = 0.25;
         delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(musicBus);
         noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate); const ch = noiseBuf.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
         // iOS：用一個無聲 buffer 解鎖
@@ -172,6 +182,7 @@
       case 'hit': kick(sfxBus, t, 0.35); noise(sfxBus, t, 'bandpass', 1200, 0.12, 0.12); break;
       case 'crit': kick(sfxBus, t, 0.4); noise(sfxBus, t, 'bandpass', 1500, 0.14, 0.15); [84, 88, 91].forEach((m, i) => tone(sfxBus, 'sine', hz(m), t + 0.05 + i * 0.05, 0.005, 0.07, 0.4)); break;
       case 'craft': [0, 0.12, 0.24].forEach(dt => { const o = tone(sfxBus, 'sine', 420, t + dt, 0.002, 0.12, 0.09); o.frequency.exponentialRampToValueAtTime(180, t + dt + 0.08); }); tone(sfxBus, 'sine', hz(84), t + 0.4, 0.01, 0.08, 0.6); break;
+      case 'shield': noise(sfxBus, t, 'highpass', 2500, 0.16, 0.25); kick(sfxBus, t, 0.3); [96, 91, 87, 84].forEach((m, i) => tone(sfxBus, 'triangle', hz(m), t + 0.03 + i * 0.05, 0.003, 0.07, 0.3)); break;
       case 'place': { const o = tone(sfxBus, 'sine', 200, t, 0.003, 0.18, 0.14); o.frequency.exponentialRampToValueAtTime(90, t + 0.12); break; }
     }
   };

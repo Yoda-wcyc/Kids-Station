@@ -154,10 +154,68 @@ t('xp + missions', () => {
   const m = L.missionsFor(null, 'a'); m.correct = 5; assert.strictEqual(L.missionsFor(m, 'a').correct, 5); assert.strictEqual(L.missionsFor(m, 'b').correct, 0);
 });
 
+// ---- 字根洞窟 ----
+t('cave question mix', () => {
+  const r = L.mulberry32(3);
+  for (let k = 0; k < 200; k++) {
+    const b = L.caveBossTypes(r);
+    assert.strictEqual(b.length, 6); assert.strictEqual(b[5], 'root-type', 'boss last is typed');
+    L.CAVE_TYPES.forEach(tp => assert(b.slice(0, 5).includes(tp), 'all three types in first 5'));
+  }
+  const m = L.caveMonTypes(9, true); assert.strictEqual(m[1], 'root-type'); assert.strictEqual(m.filter(x => x === 'root-type').length, 3);
+  assert.deepStrictEqual([...new Set(L.caveMonTypes(6, false))].sort(), L.CAVE_TYPES.slice().sort());
+  assert.strictEqual(L.mapOf('c2'), 'cave'); assert.strictEqual(L.mapOf('f1'), 'forest');
+  assert.strictEqual(L.CAVE.length, 5); assert(L.CAVE[4].boss); assert(L.CAVE.slice(0, 4).every(x => /-$/.test(x.tag)));
+});
+t('shield: only a correct typed answer breaks it', () => {
+  assert.deepStrictEqual(L.shieldResolve(true, true, false), { shield: true, broke: false, mult: 0.5 });
+  assert.deepStrictEqual(L.shieldResolve(true, false, true), { shield: true, broke: false, mult: 1 });
+  assert.deepStrictEqual(L.shieldResolve(true, false, false), { shield: true, broke: false, mult: 1 });
+  const b = L.shieldResolve(true, true, true); assert(b.broke && !b.shield && b.crit);
+  assert.strictEqual(L.damage({ combo: 1, typed: true, cls: 'sword', map: 'cave', forceCrit: b.crit }).crit, true);
+  assert.strictEqual(L.shieldResolve(false, true, true).broke, false);
+  assert.strictEqual(L.damage({ combo: 1, map: 'cave', shieldMult: 0.5 }).dmg, 5);
+});
+t('cave class bonuses + iron sword', () => {
+  assert.strictEqual(L.damage({ combo: 1, typed: true, cls: 'mage', map: 'cave' }).dmg, 15);
+  assert.strictEqual(L.damage({ combo: 1, typed: true, cls: 'mage' }).dmg, 18);
+  assert.strictEqual(L.damage({ combo: 2, cls: 'sword', map: 'cave' }).crit, true);
+  assert.strictEqual(L.damage({ combo: 2, cls: 'sword' }).crit, false);
+  assert.strictEqual(L.hitBack('cave', 'guard'), 6); assert.strictEqual(L.hitBack('forest', 'guard'), 12);
+  assert.strictEqual(L.damage({ combo: 3, sword: 'iron' }).dmg, 17); assert.strictEqual(L.damage({ combo: 3, sword: 'wood' }).dmg, 16);
+  const s = L.newSave(); assert.strictEqual(L.swordOf(s), null); s.items.sword = 1; assert.strictEqual(L.swordOf(s), 'wood'); s.items.iron = 1; assert.strictEqual(L.swordOf(s), 'iron');
+});
+t('cave boss rule: 6 questions, >=5, plays all 6', () => {
+  const R = L.bossRule('cave'); assert.deepStrictEqual([R.q, R.need, R.playAll], [6, 5, true]);
+  assert.strictEqual(L.bossOutcome(5, 5, R), 'continue', 'still asks the typed 6th');
+  assert.strictEqual(L.bossOutcome(5, 6, R), 'win'); assert.strictEqual(L.bossOutcome(6, 6, R), 'win');
+  assert.strictEqual(L.bossOutcome(4, 6, R), 'lose'); assert.strictEqual(L.bossOutcome(2, 4, R), 'lose');
+  assert.strictEqual(L.bossOutcome(4, 5, R), 'continue');
+});
+t('cave drops with seed', () => {
+  const a = L.mulberry32(77), b = L.mulberry32(77);
+  for (let i = 0; i < 50; i++) assert.deepStrictEqual(L.rollDrop(a, 'normal', 'cave'), L.rollDrop(b, 'normal', 'cave'));
+  const r = L.mulberry32(21), N = 100000; let dia = 0, iron = 0;
+  for (let i = 0; i < N; i++) { const d = L.rollDrop(r, 'normal', 'cave'); assert(d.stone >= 1 && d.wood === 0); dia += d.diamond; iron += d.iron; }
+  assert(dia / N > 0.054 && dia / N < 0.066, 'diamond ≈6% got ' + dia / N);
+  assert(iron / N > 0.37 && iron / N < 0.43, 'iron ≈40% got ' + iron / N);
+  const rb = L.mulberry32(5); for (let i = 0; i < 500; i++) { const d = L.rollDrop(rb, 'boss', 'cave'); assert(d.iron === 2 && d.stone >= 3); }
+});
+t('recipes: iron sword needs pick; torch tile; cave mission + badge', () => {
+  let s = L.newSave(); s.mats = { wood: 9, stone: 9, iron: 9, diamond: 0 };
+  const c = L.craftCheck(s, 'iron'); assert(c.locked); assert(/石鎬/.test(c.reason));
+  s.items.pick = 1; const r = L.craft(s, 'iron'); assert(r.ok); assert.strictEqual(r.s.mats.iron, 6); assert.strictEqual(r.s.mats.wood, 7);
+  assert.strictEqual(L.craft(r.s, 'iron').ok, false);
+  const p = L.placeTile(r.s, 0, 'torch'); assert(p.ok); assert.strictEqual(p.s.mats.iron, 5);
+  assert.strictEqual(L.placeTile(Object.assign(L.newSave(), { mats: { wood: 5, stone: 0, iron: 0 } }), 0, 'torch').reason, '材料不夠');
+  assert(!L.missionList(L.newSave()).some(m => m.id === 'cave')); assert(L.missionList(r.s).some(m => m.id === 'cave' && m.goal === 3));
+  assert(L.BADGES.some(b => b.id === 'caver' && b.name === '洞窟探險家'));
+});
+
 // ---- 聲音（audio.js 純邏輯） ----
 const AU = require('./audio.js');
 t('scene -> track mapping', () => {
-  const want = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', unknown: 'calm' };
+  const want = { title: 'calm', class: 'calm', hub: 'calm', island: 'calm', rewards: 'calm', map: 'adventure', battle: 'battle', boss: 'boss', night: 'night', arena: 'arena', cave: 'cave', unknown: 'calm' };
   Object.keys(want).forEach(k => assert.strictEqual(AU.trackFor(k), want[k], k));
 });
 t('speech ducking state machine', () => {

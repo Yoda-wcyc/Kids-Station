@@ -30,6 +30,7 @@
 <radialGradient id="hi-glow"><stop offset="0" stop-color="#F4E9B8" stop-opacity=".95"/><stop offset=".35" stop-color="#9FC4A0" stop-opacity=".5"/><stop offset="1" stop-color="#5E8C6A" stop-opacity="0"/></radialGradient>
 <radialGradient id="hi-red"><stop offset="0" stop-color="#FF7A5C"/><stop offset=".3" stop-color="#E0352B" stop-opacity=".75"/><stop offset="1" stop-color="#E0352B" stop-opacity="0"/></radialGradient>
 <radialGradient id="hi-bush" cx="32%" cy="22%" r="85%"><stop offset="0" stop-color="#3C6B4C"/><stop offset=".55" stop-color="#2F5A40"/><stop offset="1" stop-color="#1F3D2B"/></radialGradient>
+<radialGradient id="hi-torch"><stop offset="0" stop-color="#F7C77E" stop-opacity=".75"/><stop offset=".4" stop-color="#E89A4A" stop-opacity=".28"/><stop offset="1" stop-color="#E89A4A" stop-opacity="0"/></radialGradient>
 <filter id="hi-blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="8"/></filter>
 <filter id="hi-blur-s" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
 </defs></svg>`;
@@ -137,7 +138,49 @@
       s += `<polygon points="84,130 116,130 108,140 100,134 92,140" fill="${C.ink}"/>`;
       return s;
     },
-    ghost() { // 晚上的錯題怪
+    bat() { // 反轉蝙蝠 un-：倒掛
+      let s = ground(100, 190, 50, 6) + `<rect x="98" y="0" width="4" height="34" fill="${C.stone2}"/>`;
+      s += `<g transform="rotate(180 100 96)">`;
+      s += both(`<path d="M100 92 L30 60 L42 92 L22 104 L56 112 L100 128 Z" fill="${C.g7}"/>`, 'hi-shadeL') + both(`<path d="M100 92 L170 60 L158 92 L178 104 L144 112 L100 128 Z" fill="${C.g6}"/>`);
+      s += `<polygon points="100,92 50,68 54,96" fill="${C.g5}" opacity=".7"/><polygon points="100,92 150,68 146,96" fill="${C.g5}" opacity=".5"/>`;
+      s += both(`<ellipse cx="100" cy="104" rx="24" ry="30" fill="#3A423B"/>`) + `<polygon points="82,80 88,62 94,78" fill="#3A423B"/><polygon points="106,78 112,62 118,80" fill="#3A423B"/>`;
+      s += `<circle cx="91" cy="98" r="6" fill="${C.cream}"/><circle cx="109" cy="98" r="6" fill="${C.cream}"/><circle cx="91" cy="99" r="2.6" fill="${C.red}"/><circle cx="109" cy="99" r="2.6" fill="${C.red}"/><polygon points="94,114 106,114 100,120" fill="${C.cream}"/>`;
+      return s + `</g>`;
+    },
+    golem() { // 重來石怪 re-
+      let s = ground(100, 190, 70, 8);
+      s += both(`<polygon points="50,186 44,120 76,104 128,102 158,124 152,186" fill="${C.stone}"/>`) + `<polygon points="128,102 158,124 152,186 124,150" fill="${C.stone2}"/>`;
+      s += both(`<polygon points="62,104 70,46 104,30 140,44 142,100 100,112" fill="${C.stone3}"/>`) + `<polygon points="104,30 140,44 142,100 112,70" fill="${C.stone}"/>`;
+      s += `<polygon points="80,66 98,70 96,78 80,76" fill="${C.cream}"/><polygon points="108,70 126,66 126,76 110,78" fill="${C.cream}"/>`;
+      s += `<path d="M86 148 a18 18 0 1 0 18 -18 l0 -8 l-12 12 l12 12 l0 -8 a10 10 0 1 1 -10 10 Z" fill="${C.cream}" opacity=".85"/>`;
+      return s;
+    },
+    wisp() { // 遠方幽靈 tele-
+      let s = `<ellipse cx="100" cy="190" rx="44" ry="6" fill="url(#hi-ground)"/>`;
+      s += `<path d="M100 186 C70 170 168 150 132 120 C120 108 150 92 140 70" fill="none"/>`;
+      s += both(`<path d="M60 92 Q60 36 104 36 Q148 36 148 90 Q148 120 130 136 Q140 160 112 184 Q118 160 98 150 Q72 140 60 112 Z" fill="${C.g3}"/>`);
+      s += `<rect x="102" y="6" width="4" height="34" fill="${C.ink}"/><path d="M84 8 Q104 26 124 8 L120 4 Q104 16 88 4 Z" fill="${C.ink}"/>`;
+      s += `<ellipse cx="88" cy="82" rx="7" ry="10" fill="${C.ink}"/><ellipse cx="120" cy="82" rx="7" ry="10" fill="${C.ink}"/><ellipse cx="104" cy="108" rx="6" ry="4" fill="${C.ink}"/>`;
+      return s;
+    },
+    spider() { // 不要蜘蛛 dis-
+      let s = ground(100, 188, 76, 8);
+      [[70, 120, 22, 168], [64, 110, 14, 130], [66, 98, 18, 82], [74, 92, 36, 52], [130, 120, 178, 168], [136, 110, 186, 130], [134, 98, 182, 82], [126, 92, 164, 52]].forEach(l => { s += cap(l[0], l[1], l[2], l[3], 8, C.stone2); });
+      s += both(`<ellipse cx="100" cy="128" rx="40" ry="34" fill="#3A423B"/>`) + both(`<circle cx="100" cy="88" r="24" fill="${C.ink}"/>`);
+      s += `<circle cx="90" cy="84" r="4" fill="${C.red}"/><circle cx="110" cy="84" r="4" fill="${C.red}"/><circle cx="95" cy="94" r="2.5" fill="${C.red}"/><circle cx="105" cy="94" r="2.5" fill="${C.red}"/>`;
+      s += `<polygon points="80,124 120,124 116,132 84,132" fill="${C.cream}" opacity=".8"/><polygon points="96,118 104,118 104,138 96,138" fill="${C.cream}" opacity=".8" transform="rotate(45 100 128)"/>`;
+      return s;
+    },
+    statue() { // 字根石像王
+      let s = ground(100, 192, 90, 8);
+      s += both(`<polygon points="40,192 48,150 152,150 160,192" fill="${C.stone2}"/>`);
+      s += both(`<polygon points="46,150 38,70 70,30 130,30 162,70 154,150" fill="${C.stone}"/>`) + `<polygon points="70,30 130,30 120,70 76,74" fill="${C.stone3}"/><polygon points="130,30 162,70 154,150 124,112" fill="${C.stone2}"/>`;
+      s += `<polygon points="60,30 70,6 84,22 100,0 116,22 130,6 140,30" fill="${C.ink}"/>`;
+      s += `<circle cx="80" cy="92" r="18" fill="url(#hi-red)"/><circle cx="120" cy="92" r="18" fill="url(#hi-red)"/><rect x="70" y="88" width="20" height="7" fill="#FFD9CC"/><rect x="110" y="88" width="20" height="7" fill="#FFD9CC"/>`;
+      s += `<polygon points="76,124 124,124 120,134 80,134" fill="${C.ink}"/><polygon points="58,60 70,84 64,100" fill="${C.ink}" opacity=".5"/><polygon points="140,110 150,128 146,140" fill="${C.ink}" opacity=".5"/>`;
+      s += `<text x="100" y="178" text-anchor="middle" font-size="16" font-weight="900" fill="${C.cream}" font-family="Georgia,serif" letter-spacing="2">un · re · dis</text>`;
+      return s;
+    },    ghost() { // 晚上的錯題怪
       let s = `<ellipse cx="100" cy="186" rx="56" ry="8" fill="url(#hi-ground)"/>`;
       s += both(`<path d="M40 180 L40 90 Q40 24 100 24 Q160 24 160 90 L160 180 L140 164 L120 180 L100 164 L80 180 L60 164 Z" fill="#0E1A12"/>`);
       s += `<ellipse cx="80" cy="92" rx="12" ry="16" fill="#F4E9B8"/><ellipse cx="120" cy="92" rx="12" ry="16" fill="#F4E9B8"/><circle cx="82" cy="96" r="5" fill="${C.red}"/><circle cx="118" cy="96" r="5" fill="${C.red}"/>`;
@@ -179,8 +222,8 @@
   A.sceneSvg = o => `<svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${A.scene(o)}</svg>`;
 
   // 單字森林地圖：nodes = [{id,x,y,r,status:'open'|'done'|'locked'|'next',kind,label,num}]
-  A.forest = function (nodes) {
-    let s = A.scene({ cave: true });
+  function nodesSvg(nodes) {
+    let s = '';
     nodes.forEach(n => {
       const r = n.r || 34, fill = n.status === 'done' ? C.g5 : n.status === 'locked' ? C.paper3 : (n.boss ? C.ink : C.g9);
       const w = n.label.length * 24 + 28;
@@ -192,18 +235,46 @@
       s += n.status === 'locked' ? `<g transform="translate(-11 -14)"><rect x="0" y="10" width="22" height="18" rx="3" fill="${C.ink}"/><path d="M4 11 V6 a7 7 0 0 1 14 0 V11 h-4 V6 a3 3 0 0 0 -6 0 V11Z" fill="${C.ink}"/></g>`
         : `<text y="${r * 0.36}" text-anchor="middle" font-size="${r * 0.95}" font-weight="900" fill="${C.cream}" font-family="system-ui,-apple-system,sans-serif">${n.status === 'done' ? '✓' : n.num}</text>`;
       s += `<rect x="${-w / 2}" y="${r + 10}" width="${w}" height="34" rx="17" fill="${C.cream}"/><text y="${r + 34}" text-anchor="middle" font-size="20" font-weight="800" fill="${C.ink}" font-family="system-ui,-apple-system,'PingFang TC',sans-serif">${n.label}</text>`;
+      if (n.tag) {
+        const tw = n.tag.length * 12 + 18 + (n.shield ? 24 : 0);
+        s += `<g transform="translate(${r - 4} ${-r - 6})"><rect width="${tw}" height="26" rx="4" fill="${n.boss ? C.red : C.ink}"/><text x="9" y="18" font-size="16" font-weight="800" fill="${C.cream}" font-family="Georgia,serif">${n.tag}</text>` +
+          (n.shield ? `<path transform="translate(${tw - 22} 4)" d="M0 2 Q8 -1 16 2 L15 11 Q12 16 8 18 Q4 16 1 11 Z" fill="${C.gold}"/>` : '') + `</g>`;
+      }
       s += `</g>`;
     });
-    return `<svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" class="forest">${s}</svg>`;
-  };
+    return s;
+  }
+  A.forest = nodes => `<svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" class="forest">${A.scene({ cave: true })}${nodesSvg(nodes)}</svg>`;
 
+  // 字根洞窟：往右下斜的隧道，石頭灰＋深綠黑，火把的暖光池，紅色只給危險（Boss）
+  const ceil = x => 60 + 0.37 * x, floorTop = x => 220 + 0.38 * x;
+  A.caveMid = x => 196 + 0.38 * x;
+  A.cave = function (nodes) {
+    let s = `<rect width="1000" height="620" fill="#0E1712"/>`;
+    s += `<polygon points="0,${ceil(0) + 40} 1000,${ceil(1000) + 40} 1000,${floorTop(1000)} 0,${floorTop(0)}" fill="#14211A"/>`;
+    [[240, 1], [600, 1], [920, .8]].forEach(([x, k]) => { const y = (ceil(x) + floorTop(x)) / 2; s += `<ellipse cx="${x}" cy="${r1(y)}" rx="${190 * k}" ry="${150 * k}" fill="url(#hi-torch)"/>`; });
+    s += `<polygon points="0,0 1000,0 1000,${ceil(1000)} 0,${ceil(0)}" fill="#1B2620"/>`;
+    for (let x = 20; x < 1000; x += 86) { const y = ceil(x), l = 30 + (x * 7 % 50); s += `<polygon points="${x},${r1(y - 2)} ${x + 26},${r1(ceil(x + 26) - 2)} ${x + 11},${r1(y + l)}" fill="#3A423B"/><polygon points="${x + 11},${r1(y)} ${x + 26},${r1(ceil(x + 26) - 2)} ${x + 11},${r1(y + l)}" fill="#2A322C"/>`; if (x % 3 === 2) s += `<ellipse cx="${x + 11}" cy="${r1(y + l + 14)}" rx="2.2" ry="4" fill="${C.cream}" opacity=".7"/>`; }
+    s += both(`<polygon points="0,${floorTop(0)} 1000,${floorTop(1000)} 1000,620 0,620" fill="#26302A"/>`, 'hi-shadeL');
+    s += `<polygon points="0,${floorTop(0)} 1000,${floorTop(1000)} 1000,${floorTop(1000) + 8} 0,${floorTop(0) + 8}" fill="${C.stone2}"/>`;
+    for (let x = 60; x < 1000; x += 140) s += `<polygon points="${x},${r1(floorTop(x) + 40)} ${x + 60},${r1(floorTop(x + 60) + 30)} ${x + 90},${r1(floorTop(x + 90) + 70)} ${x + 20},${r1(floorTop(x + 20) + 80)}" fill="#323B34"/>`;
+    [[240, 1], [600, 1], [920, .8]].forEach(([x, k]) => { const y = ceil(x) + 70 * k; s += `<rect x="${x - 4}" y="${r1(y)}" width="8" height="${30 * k}" fill="${C.ink}"/><path d="M${x} ${r1(y - 34 * k)} Q${x + 14 * k} ${r1(y - 10 * k)} ${x} ${r1(y)} Q${x - 14 * k} ${r1(y - 10 * k)} ${x} ${r1(y - 34 * k)}Z" fill="#F2A541"/><path d="M${x} ${r1(y - 18 * k)} Q${x + 6 * k} ${r1(y - 6 * k)} ${x} ${r1(y)} Q${x - 6 * k} ${r1(y - 6 * k)} ${x} ${r1(y - 18 * k)}Z" fill="${C.red}"/>`; s += `<ellipse cx="${x + 20}" cy="${r1(floorTop(x + 20) + 6)}" rx="${110 * k}" ry="${16 * k}" fill="#F7C77E" opacity=".22" filter="url(#hi-blur)"/>`; });
+    s += `<ellipse cx="880" cy="520" rx="130" ry="70" fill="url(#hi-red)" opacity=".35"/>`;
+    s += `<text x="40" y="44" font-size="18" font-weight="900" letter-spacing="5" fill="${C.cream}" font-family="Helvetica Neue,Arial,sans-serif">ROOT CAVE</text>`;
+    return `<svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" class="forest cave">${s}${nodesSvg(nodes)}</svg>`;
+  };
   // 戰鬥背景
-  A.stage = () => `<svg viewBox="0 0 1000 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect width="1000" height="420" fill="${C.paper}"/>` +
+  A.stage = map => map === 'cave' ? A.caveStage() : `<svg viewBox="0 0 1000 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect width="1000" height="420" fill="${C.paper}"/>` +
     `<polygon points="120,40 136,40 360,420 -120,420" fill="url(#hi-cone)" opacity=".55" filter="url(#hi-blur-s)"/>` +
     `<rect x="40" y="10" width="7" height="330" fill="${C.ink}"/><path d="M40 10 Q40 -6 64 -6 L140 0 L140 6 L64 2 Q47 2 47 10Z" fill="${C.ink}"/>` +
     bush(860, 300, 120) + bush(980, 250, 110) + bush(740, 330, 70) +
     `<polygon points="0,350 1000,290 1000,420 0,420" fill="${C.paper3}"/><polygon points="0,350 1000,290 1000,300 0,362" fill="${C.cream}"/></svg>`;
 
+  A.caveStage = () => `<svg viewBox="0 0 1000 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect width="1000" height="420" fill="#0E1712"/>` +
+    `<ellipse cx="180" cy="200" rx="300" ry="220" fill="url(#hi-torch)"/><ellipse cx="840" cy="250" rx="240" ry="180" fill="url(#hi-red)" opacity=".18"/>` +
+    `<polygon points="0,0 1000,0 1000,60 0,90" fill="#1B2620"/>` + [80, 260, 430, 610, 790, 940].map((x, i) => `<polygon points="${x},${88 - x * .03} ${x + 34},${88 - (x + 34) * .03} ${x + 14},${150 + (i % 3) * 30}" fill="#3A423B"/>`).join('') +
+    `<rect x="176" y="120" width="10" height="44" fill="${C.ink}"/><path d="M181 74 Q200 104 181 122 Q162 104 181 74Z" fill="#F2A541"/><path d="M181 98 Q190 110 181 122 Q172 110 181 98Z" fill="${C.red}"/>` +
+    `<polygon points="0,350 1000,290 1000,420 0,420" fill="#26302A"/><polygon points="0,350 1000,290 1000,298 0,360" fill="${C.stone2}"/></svg>`;
   // ---------- 島上方塊（俯視，viewBox 100×100；顏色走 CSS class，晚上換色） ----------
   const base = `<rect class="t-grass" width="100" height="100"/>`;
   const TILE = {
@@ -214,6 +285,7 @@
     house: () => base + `<rect x="18" y="24" width="80" height="72" fill="#0b1a10" opacity=".3" filter="url(#hi-blur)"/>` +
       `<rect class="t-wall" x="12" y="76" width="76" height="14"/><rect x="44" y="78" width="12" height="12" fill="${C.ink}"/><rect class="t-win" x="20" y="79" width="12" height="7"/><rect class="t-win" x="68" y="79" width="12" height="7"/>` +
       `<polygon class="t-roof2" points="12,14 88,14 50,46"/><polygon class="t-roof2" points="12,14 12,78 50,46"/><polygon class="t-roof" points="88,14 88,78 50,46"/><polygon class="t-roof" points="12,78 88,78 50,46"/><rect x="62" y="22" width="9" height="9" fill="${C.ink}"/>`,
+    torch: () => base + `<circle cx="50" cy="54" r="22" fill="#0b1a10" opacity=".25" filter="url(#hi-blur-s)"/><circle cx="50" cy="50" r="17" fill="${C.stone2}"/><circle cx="50" cy="50" r="11" fill="${C.ink}"/><path d="M50 30 Q64 48 50 60 Q36 48 50 30Z" fill="#F2A541"/><path d="M50 42 Q57 51 50 58 Q43 51 50 42Z" fill="${C.red}"/>`,
     lamp: () => base + `<rect x="50" y="48" width="44" height="5" fill="#0b1a10" opacity=".28" transform="rotate(28 50 50)"/><circle cx="50" cy="50" r="11" fill="${C.ink}"/><circle class="t-bulb" cx="50" cy="50" r="5"/>`
   };
   A.tile = id => TILE[id] ? `<svg viewBox="0 0 100 100" aria-hidden="true">${TILE[id]()}</svg>` : '';
@@ -229,6 +301,7 @@
     moon: `<path d="M15 3a9 9 0 1 0 6 15A8 8 0 0 1 15 3Z" fill="currentColor"/>`,
     sun: `<circle cx="12" cy="12" r="6" fill="currentColor"/>`,
     gold: `<circle cx="12" cy="12" r="9" fill="${C.gold}"/><circle cx="12" cy="12" r="5.5" fill="#E2C877"/>`,
+    iron: `<polygon points="2,16 6,8 22,8 18,16" fill="#8E979A"/><polygon points="6,8 22,8 20,11 7,11" fill="#C3C9CB"/>`,
     sword: `<polygon points="4,20 16,6 19,5 18,8 6,22" fill="#D8D2BE"/><rect x="2" y="17" width="9" height="3" rx="1.5" fill="${C.ink}" transform="rotate(45 6.5 18.5)"/>`,
     pick: `<path d="M3 8 Q12 1 21 8 L19 9 Q12 4 5 9 Z" fill="${C.stone2}"/><rect x="11" y="6" width="3" height="16" rx="1.5" fill="${C.wood}"/>`,
     lampi: `<rect x="7" y="4" width="2.4" height="18" fill="${C.ink}"/><path d="M7 5 Q7 2 10 2 L18 3 L18 5 L10 4 Q9 4 9 5Z" fill="${C.ink}"/><ellipse cx="17" cy="6" rx="3" ry="1.4" fill="#F4E9B8"/>`
