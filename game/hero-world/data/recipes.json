@@ -1419,6 +1419,57 @@
         "count": 1
       },
       "blueprint": "bp_diamond"
+    },
+    {
+      "id": "boat",
+      "name_zh": "船",
+      "in": {
+        "planks": 5
+      },
+      "out": {
+        "id": "boat",
+        "count": 1
+      },
+      "needs": null
+    },
+    {
+      "id": "minecart",
+      "name_zh": "礦車",
+      "in": {
+        "iron_ingot": 5
+      },
+      "out": {
+        "id": "minecart",
+        "count": 1
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "rail",
+      "name_zh": "鐵軌",
+      "in": {
+        "iron_ingot": 6,
+        "stick": 1
+      },
+      "out": {
+        "id": "rail",
+        "count": 16
+      },
+      "needs": "crafting_table"
+    },
+    {
+      "id": "powered_rail",
+      "name_zh": "動力鐵軌",
+      "in": {
+        "gold_ingot": 6,
+        "stick": 1,
+        "coal": 1
+      },
+      "out": {
+        "id": "powered_rail",
+        "count": 6
+      },
+      "needs": "crafting_table"
     }
   ],
   "smelt": [

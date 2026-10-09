@@ -124,3 +124,7 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 .armor-slot { display: flex; flex-direction: column; align-items: center; font-size: 12px; }
 .armor-hud { font-size: 13px; background: rgba(239,235,221,.7); padding: 2px 8px; border-radius: 8px; }
 .armor-hud:empty { display: none; }
+
+/* M6：騎乘 */
+#b-ride { background: #E0352B; color: #EFEBDD; }
+#b-ride[hidden] { display: none; }

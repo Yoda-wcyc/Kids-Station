@@ -2,7 +2,7 @@
   "_doc": "村民交易表。professions：村民的職業和他賣的東西（give＋count＝物品，blueprint＝藍圖，price＝金幣）。quests：英文委託（module＝題庫單元，types＝題型，count 題要答對 need 題才算完成），每個委託每天只能領一次獎。每個村民有 2 個委託（依村民編號固定）",
   "professions": [
     { "id": "merchant", "name_zh": "商人", "color": "#2F5A34", "offers": [
-      { "give": "lamp", "count": 2, "price": 7 }, { "give": "glass", "count": 16, "price": 4 }, { "give": "bed", "count": 1, "price": 5 }, { "give": "torch", "count": 8, "price": 3 }, { "give": "wool", "count": 6, "price": 4 } ] },
+      { "give": "lamp", "count": 2, "price": 7 }, { "give": "glass", "count": 16, "price": 4 }, { "give": "bed", "count": 1, "price": 5 }, { "give": "torch", "count": 8, "price": 3 }, {"give": "saddle", "count": 1, "price": 20}, { "give": "wool", "count": 6, "price": 4 } ] },
     { "id": "smith", "name_zh": "鐵匠", "color": "#3B3D3A", "offers": [
       { "give": "iron_ingot", "count": 4, "price": 10 }, { "give": "gold_ingot", "count": 3, "price": 12 }, { "give": "diamond", "count": 1, "price": 20 }, { "blueprint": "bp_iron", "price": 28 } ] },
     { "id": "librarian", "name_zh": "圖書館員", "color": "#6B4A33", "offers": [

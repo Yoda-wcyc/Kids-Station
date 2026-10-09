@@ -3,6 +3,7 @@
   "mobs": [
     { "id": "sheep", "name_zh": "羊", "kind": "animal", "size": [0.9, 1.25], "speed": 1.0, "hp": 2, "drops": { "id": "wool", "min": 1, "max": 2 }, "colors": { "body": "#EDE6D0", "head": "#3B3D3A", "leg": "#3B3D3A" } },
     { "id": "cow", "name_zh": "牛", "kind": "animal", "size": [0.95, 1.35], "speed": 0.9, "hp": 2, "drops": { "id": "leather", "min": 1, "max": 2 }, "colors": { "body": "#6B4A33", "head": "#6B4A33", "leg": "#3B3D3A", "patch": "#EDE6D0" } },
+    {"id":"horse","name_zh":"馬","kind":"animal","biome":"plains","size":[0.9,1.6],"speed":1.1,"hp":99,"drops":{"id":"leather","min":1,"max":1},"_note":"馬不會被打倒（點牠＝餵食／裝馬鞍／騎），drops 只是資料格式需要","colors":{"body":"#8C5A3A","head":"#8C5A3A","leg":"#4A3426","patch":"#EDE6D0"}},
     { "id": "chicken", "name_zh": "雞", "kind": "animal", "size": [0.45, 0.75], "speed": 1.1, "hp": 1, "drops": { "id": "feather", "min": 1, "max": 2 }, "colors": { "body": "#F4EFE2", "head": "#F4EFE2", "leg": "#D9A63A", "comb": "#E0352B" } },
     { "id": "villager", "name_zh": "村民", "kind": "villager", "size": [0.6, 1.8], "speed": 0.8, "hp": 1, "drops": null, "colors": { "body": "#2F5A34", "head": "#E7CDA6", "leg": "#26302A", "hat": "#151714" } },
     { "id": "quizling", "name_zh": "錯題怪", "kind": "quiz", "size": [0.8, 1.5], "speed": 1.1, "hp": 1, "drops": null, "colors": { "body": "#2F5A34", "head": "#26302A", "eye": "#EFEBDD" } }
