@@ -161,7 +161,15 @@
     {"n":157,"id":"dark_crystal_ore","name_zh":"暗晶礦","colors":{"top":"#8C8A84"},"pattern":"ore","hardness":3,"tool":"pickaxe","tier":3,"drops":"dark_crystal","buy":null,"accent":"#7A5BB0"},
     {"n":158,"id":"dark_crystal","name_zh":"暗晶","colors":{"top":"#2A2238"},"pattern":"chiseled","hardness":4,"tool":"pickaxe","tier":3,"drops":"self","buy":null,"accent":"#7A5BB0"},
     {"n":159,"id":"shadow_portal","name_zh":"暗影傳送門","colors":{"top":"#3A1F4A"},"pattern":"portal","hardness":-1,"tool":null,"tier":0,"drops":null,"buy":null,"accent":"#E0352B","solid":false,"transparent":true,"emissive":true,"light":11,"hidden":true,"interact":"shadow_portal"},
-    {"n":160,"id":"shadow_bricks","name_zh":"暗影石磚","colors":{"top":"#2B3A30"},"pattern":"stonebricks","hardness":1.5,"tool":"pickaxe","tier":1,"drops":"self","buy":null}
+    {"n":160,"id":"shadow_bricks","name_zh":"暗影石磚","colors":{"top":"#2B3A30"},"pattern":"stonebricks","hardness":1.5,"tool":"pickaxe","tier":1,"drops":"self","buy":null},
+    {"n":161,"id":"rail_asc_n","name_zh":"鐵軌（坡）","colors":{"top":"#8C8A84"},"pattern":"rail","tileOf":"rail","shape":"ramp","facing":0,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"rail","rail":"asc_n","hidden":true,"buy":null},
+    {"n":162,"id":"rail_asc_e","name_zh":"鐵軌（坡）","colors":{"top":"#8C8A84"},"pattern":"rail","tileOf":"rail_ew","shape":"ramp","facing":1,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"rail","rail":"asc_e","hidden":true,"buy":null},
+    {"n":163,"id":"rail_asc_s","name_zh":"鐵軌（坡）","colors":{"top":"#8C8A84"},"pattern":"rail","tileOf":"rail","shape":"ramp","facing":2,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"rail","rail":"asc_s","hidden":true,"buy":null},
+    {"n":164,"id":"rail_asc_w","name_zh":"鐵軌（坡）","colors":{"top":"#8C8A84"},"pattern":"rail","tileOf":"rail_ew","shape":"ramp","facing":3,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"rail","rail":"asc_w","hidden":true,"buy":null},
+    {"n":165,"id":"powered_rail_asc_n","name_zh":"動力鐵軌（坡）","colors":{"top":"#D9A63A"},"pattern":"rail","tileOf":"powered_rail","shape":"ramp","facing":0,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","rail":"asc_n","powered":true,"hidden":true,"buy":null},
+    {"n":166,"id":"powered_rail_asc_e","name_zh":"動力鐵軌（坡）","colors":{"top":"#D9A63A"},"pattern":"rail","tileOf":"powered_rail_ew","shape":"ramp","facing":1,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","rail":"asc_e","powered":true,"hidden":true,"buy":null},
+    {"n":167,"id":"powered_rail_asc_s","name_zh":"動力鐵軌（坡）","colors":{"top":"#D9A63A"},"pattern":"rail","tileOf":"powered_rail","shape":"ramp","facing":2,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","rail":"asc_s","powered":true,"hidden":true,"buy":null},
+    {"n":168,"id":"powered_rail_asc_w","name_zh":"動力鐵軌（坡）","colors":{"top":"#D9A63A"},"pattern":"rail","tileOf":"powered_rail_ew","shape":"ramp","facing":3,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","rail":"asc_w","powered":true,"hidden":true,"buy":null}
   ],
   "items": [
     {"id":"stick","name_zh":"木棍","icon":"stick","color":"#8C6640","maxStack":64,"buy":null},
@@ -221,7 +229,8 @@
     {"id":"fishing_rod","name_zh":"釣竿","icon":"rod","color":"#8C6640","maxStack":1,"buy":null,"tool":{"type":"rod","tier":0,"durability":48}},
     {"id":"raw_fish","name_zh":"生魚","icon":"fish","color":"#8FA7AE","maxStack":64,"buy":null,"food":2},
     {"id":"cooked_fish","name_zh":"烤魚","icon":"fish","color":"#C9904F","maxStack":64,"buy":null,"food":6},
-    {"id":"shadow_flint","name_zh":"暗影火種","icon":"gem","color":"#E0352B","maxStack":16,"buy":{"price":40,"qty":1}}
+    {"id":"shadow_flint","name_zh":"暗影火種","icon":"gem","color":"#E0352B","maxStack":16,"buy":{"price":40,"qty":1}},
+    {"id":"apple","name_zh":"蘋果","icon":"apple","color":"#C2443A","maxStack":64,"buy":null,"food":4}
   ],
   "blueprints": [
     {"id":"bp_iron","name_zh":"鐵工具藍圖","price":30,"desc":"解鎖：鐵鎬、鐵斧、鐵鏟、鐵劍、鐵鋤頭、鐵盔甲"},

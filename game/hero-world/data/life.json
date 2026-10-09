@@ -1,5 +1,5 @@
 {
-  "_doc": "生活系統資料。fishing.loot：釣魚抽獎表（w＝權重；id＋n＝物品，coins＝金幣；treasure＝算寶物）。achievements：成就（stat 計數器到 need 就達成；coins＝獎勵金幣，創造模式不給）。stat 名稱：mine:<方塊 id>（木頭統一叫 mine:wood）、craft:<成品 id>、place:<方塊 id>、placed、house、smelted、bed、harvested、bred、ride:<boat|minecart|horse>、fish、treasure、traded、quiz_wins、stele_answers、quests、boss:<傳送門 map>、shadow、dragon。",
+  "_doc": "生活系統資料。fishing.loot：釣魚抽獎表（w＝權重；id＋n＝物品，coins＝金幣；treasure＝算寶物）。achievements：成就（stat 計數器到 need 就達成；coins＝獎勵金幣，創造模式不給）。stat 名稱：mine:<方塊 id>（木頭統一叫 mine:wood）、craft:<成品 id>、place:<方塊 id>、placed、house、smelted、bed、harvested、bred、ride:<boat|minecart|horse>、fish、treasure、traded、quiz_wins、stele_answers、quests、boss:<傳送門 map>、shadow、dragon。 appleChance：打掉樹葉掉蘋果的機率。",
   "fishing": {
     "loot": [
       {
@@ -265,5 +265,6 @@
       "need": 1,
       "coins": 0
     }
-  ]
+  ],
+  "appleChance": 0.1
 }
