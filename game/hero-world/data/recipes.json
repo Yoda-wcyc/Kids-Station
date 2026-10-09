@@ -1470,6 +1470,19 @@
         "count": 6
       },
       "needs": "crafting_table"
+    },
+    {
+      "id": "fishing_rod",
+      "name_zh": "釣竿",
+      "in": {
+        "stick": 3,
+        "wool": 1
+      },
+      "out": {
+        "id": "fishing_rod",
+        "count": 1
+      },
+      "needs": null
     }
   ],
   "smelt": [
@@ -1516,6 +1529,11 @@
     {
       "in": "sandstone",
       "out": "smooth_sandstone",
+      "time": 4
+    },
+    {
+      "in": "raw_fish",
+      "out": "cooked_fish",
       "time": 4
     }
   ]

@@ -128,3 +128,17 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 /* M6：騎乘 */
 #b-ride { background: #E0352B; color: #EFEBDD; }
 #b-ride[hidden] { display: none; }
+
+/* M6：小地圖、地圖、成就 */
+#minimap { position: fixed; top: 64px; right: 14px; width: 128px; height: 128px; border: 3px solid #26302A; border-radius: 4px; background: #EFEBDD; box-shadow: 3px 3px 0 rgba(21,23,20,.25); transform: rotate(-1.2deg); image-rendering: pixelated; pointer-events: none; z-index: 5; }
+#minimap[hidden] { display: none; }
+.toast.ach { display: flex; align-items: center; gap: 8px; }
+.toast.ach b { color: #F2C46B; }
+.badge { display: inline-block; width: 22px; height: 22px; flex: 0 0 22px; background: #D9A63A; clip-path: polygon(50% 0, 63% 32%, 98% 35%, 71% 57%, 79% 92%, 50% 73%, 21% 92%, 29% 57%, 2% 35%, 37% 32%); }
+.ach-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; max-height: 62vh; overflow: auto; }
+.ach-item { display: flex; gap: 10px; align-items: center; padding: 8px 10px; background: rgba(38,48,42,.06); border-radius: 4px; opacity: .62; }
+.ach-item.done { opacity: 1; background: rgba(217,166,58,.2); }
+.ach-item:not(.done) .badge { background: #B9B6AE; }
+.ach-item small { display: block; }
+.panel.map canvas.bigmap { display: block; max-width: 100%; border: 3px solid #26302A; border-radius: 4px; image-rendering: pixelated; margin: 6px 0; background: #D9D3C0; }
+.set.inline { display: inline-flex; gap: 6px; align-items: center; margin-left: 8px; }

@@ -210,7 +210,10 @@
     {"maxStack":1,"buy":null,"id":"diamond_boots","name_zh":"鑽石靴子","icon":"armor_boots","color":"#6FC7C0","armor":{"slot":3,"points":3,"dur":330}},
     {"id":"boat","name_zh":"船","icon":"boat","color":"#A97E4E","maxStack":1,"buy":null,"place":"boat"},
     {"id":"minecart","name_zh":"礦車","icon":"minecart","color":"#6E7470","maxStack":1,"buy":null,"place":"minecart"},
-    {"id":"saddle","name_zh":"馬鞍","icon":"saddle","color":"#8C5A3A","maxStack":1,"buy":{"price":25,"qty":1}}
+    {"id":"saddle","name_zh":"馬鞍","icon":"saddle","color":"#8C5A3A","maxStack":1,"buy":{"price":25,"qty":1}},
+    {"id":"fishing_rod","name_zh":"釣竿","icon":"rod","color":"#8C6640","maxStack":1,"buy":null,"tool":{"type":"rod","tier":0,"durability":48}},
+    {"id":"raw_fish","name_zh":"生魚","icon":"fish","color":"#8FA7AE","maxStack":64,"buy":null,"food":2},
+    {"id":"cooked_fish","name_zh":"烤魚","icon":"fish","color":"#C9904F","maxStack":64,"buy":null,"food":6}
   ],
   "blueprints": [
     {"id":"bp_iron","name_zh":"鐵工具藍圖","price":30,"desc":"解鎖：鐵鎬、鐵斧、鐵鏟、鐵劍、鐵鋤頭、鐵盔甲"},

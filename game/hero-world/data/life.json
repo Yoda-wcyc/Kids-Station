@@ -1,0 +1,41 @@
+{
+  "_doc": "生活系統資料。fishing.loot：釣魚抽獎表（w＝權重；id＋n＝物品，coins＝金幣；treasure＝算寶物）。achievements：成就（stat 計數器到 need 就達成；coins＝獎勵金幣，創造模式不給）。stat 名稱：mine:<方塊 id>（木頭統一叫 mine:wood）、craft:<成品 id>、place:<方塊 id>、placed、house、smelted、bed、harvested、bred、ride:<boat|minecart|horse>、fish、treasure、traded、quiz_wins、stele_answers、quests、boss:<傳送門 map>、shadow、dragon。",
+  "fishing": {
+    "loot": [
+      { "id": "raw_fish", "n": 1, "w": 80 },
+      { "coins": 5, "w": 9, "treasure": true },
+      { "id": "gold_ingot", "n": 2, "w": 6, "treasure": true },
+      { "id": "diamond", "n": 1, "w": 3, "treasure": true },
+      { "id": "ruby_ore", "n": 1, "w": 2, "treasure": true }
+    ]
+  },
+  "achievements": [
+    { "id": "first_wood", "name_zh": "第一塊木頭", "desc_zh": "砍下一塊木頭", "stat": "mine:wood", "need": 1, "coins": 1 },
+    { "id": "first_iron", "name_zh": "第一塊鐵礦", "desc_zh": "挖到一塊鐵礦", "stat": "mine:iron_ore", "need": 1, "coins": 2 },
+    { "id": "diamond", "name_zh": "閃亮亮", "desc_zh": "挖到鑽石礦", "stat": "mine:diamond_ore", "need": 1, "coins": 5 },
+    { "id": "workbench", "name_zh": "我的工作台", "desc_zh": "做一個工作台", "stat": "craft:crafting_table", "need": 1, "coins": 1 },
+    { "id": "furnace", "name_zh": "生火了", "desc_zh": "做一個熔爐", "stat": "craft:furnace", "need": 1, "coins": 1 },
+    { "id": "smelter", "name_zh": "熔爐師傅", "desc_zh": "從熔爐拿出 20 個東西", "stat": "smelted", "need": 20, "coins": 3 },
+    { "id": "torch", "name_zh": "點亮黑夜", "desc_zh": "放一支火把", "stat": "place:torch", "need": 1, "coins": 1 },
+    { "id": "builder", "name_zh": "小建築師", "desc_zh": "放 200 個方塊", "stat": "placed", "need": 200, "coins": 5 },
+    { "id": "house", "name_zh": "我的小屋", "desc_zh": "在一小塊地方蓋 30 個方塊（蓋一間房子）", "stat": "house", "need": 1, "coins": 5 },
+    { "id": "bed", "name_zh": "好好睡一覺", "desc_zh": "用床設定重生點", "stat": "bed", "need": 1, "coins": 1 },
+    { "id": "farmer", "name_zh": "小農夫", "desc_zh": "收成 5 次成熟的小麥", "stat": "harvested", "need": 5, "coins": 3 },
+    { "id": "animal_friend", "name_zh": "動物好朋友", "desc_zh": "讓動物生一隻小寶寶", "stat": "bred", "need": 1, "coins": 2 },
+    { "id": "ride_horse", "name_zh": "小騎士", "desc_zh": "騎上自己的馬", "stat": "ride:horse", "need": 1, "coins": 5 },
+    { "id": "ride_boat", "name_zh": "出航囉", "desc_zh": "坐船出海", "stat": "ride:boat", "need": 1, "coins": 2 },
+    { "id": "ride_cart", "name_zh": "礦車快遞", "desc_zh": "坐上礦車", "stat": "ride:minecart", "need": 1, "coins": 2 },
+    { "id": "first_fish", "name_zh": "第一條魚", "desc_zh": "釣到第一次", "stat": "fish", "need": 1, "coins": 2 },
+    { "id": "fisher", "name_zh": "釣魚高手", "desc_zh": "釣到 20 次", "stat": "fish", "need": 20, "coins": 8 },
+    { "id": "treasure", "name_zh": "撈到寶藏", "desc_zh": "釣魚釣到寶物", "stat": "treasure", "need": 1, "coins": 3 },
+    { "id": "trader", "name_zh": "第一筆交易", "desc_zh": "跟村民買東西", "stat": "traded", "need": 1, "coins": 1 },
+    { "id": "quiz_buster", "name_zh": "錯題剋星", "desc_zh": "打敗 10 隻錯題怪", "stat": "quiz_wins", "need": 10, "coins": 10 },
+    { "id": "stele_100", "name_zh": "石碑學者", "desc_zh": "在練習石碑答 100 題", "stat": "stele_answers", "need": 100, "coins": 20 },
+    { "id": "quests_10", "name_zh": "英文委託達人", "desc_zh": "完成 10 個英文委託", "stat": "quests", "need": 10, "coins": 20 },
+    { "id": "boss_forest", "name_zh": "森林勇者", "desc_zh": "打倒森林巨木王", "stat": "boss:forest", "need": 1, "coins": 5 },
+    { "id": "boss_cave", "name_zh": "洞窟勇者", "desc_zh": "打倒字根石像王", "stat": "boss:cave", "need": 1, "coins": 5 },
+    { "id": "boss_castle", "name_zh": "城堡勇者", "desc_zh": "打倒時態騎士王", "stat": "boss:castle", "need": 1, "coins": 5 },
+    { "id": "boss_harbor", "name_zh": "港口勇者", "desc_zh": "打倒句型海怪", "stat": "boss:harbor", "need": 1, "coins": 5 },
+    { "id": "boss_volcano", "name_zh": "火山勇者", "desc_zh": "打倒片語火龍", "stat": "boss:volcano", "need": 1, "coins": 5 }
+  ]
+}
