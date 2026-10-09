@@ -197,9 +197,9 @@ R.forEach(r => {
   ok(ids.slice(-n).map(id => E.get(id).answer).join() === r.words.map(x => x.w).join(), 'root typed answers ' + r.p);
   ids.slice(-n).forEach((id, i) => { const q = E.get(id); ok(q.prompt.includes('___') && q.prompt.includes(r.words[i].zh), 'root-type hint ' + id); });
 });
-// 文法／句型題組（2026-10-09 起）：10 題非打字＋5 題打字，打字題排最後
+// 文法／句型題組（2026-10-09 起）：10 題非打字＋5 題打字，打字題排最後（E.sets＝基本組成；練習這組再從裡面換 2 題成口說）
 G.forEach(gr => {
-  const ids = E.itemSet(KE.grammarItemId(gr)), t = typesOfIds(ids);
+  const ids = E.sets[KE.grammarItemId(gr)], t = typesOfIds(ids);
   ok(ids.length === 15 && unique(ids) && t.slice(0, 10).every(x => ['grammar-fill', 'grammar-fix'].includes(x)) && t.slice(-5).every(x => ['zh2en-type', 'grammar-fill-type', 'grammar-fix-type'].includes(x)), 'grammar set ' + gr.id + ' ' + t);
   ok(t.slice(-5).filter(x => x === 'zh2en-type').length === Math.min(5, gr.typed.length) && t.filter(x => x === 'grammar-fill-type').length === Math.min(5 - gr.typed.length, gr.q.filter(q => q.type === 'fill').length), 'grammar typed mix: existing typed first, then fill→type ' + gr.id);
   ids.slice(-5).forEach(id => { const q = E.get(id); ok(q.prompt && q.answer && q.input === 'type' && !q.play && KE.isTyped(q), 'grammar typed ' + id); });
@@ -208,7 +208,7 @@ G.forEach(gr => {
   ids.filter(id => /:type$/.test(id)).forEach(id => { const base = id.replace(/:type$/, ''); ok(E.byId[base] && !ids.includes(base) && E.get(id).answer === (gr.q[+base.split(':')[2]].a || gr.q[+base.split(':')[2]].right), 'grammar fill→type answer ' + id); });
 });
 P.forEach(p => {
-  const ids = E.itemSet(KE.patternItemId(p)), t = typesOfIds(ids);
+  const ids = E.sets[KE.patternItemId(p)], t = typesOfIds(ids);
   ok(ids.length === 15 && unique(ids) && t.slice(0, 5).every(x => x === 'reorder') && t.slice(5, 10).every(x => x === 'pattern-choose') && t.slice(-5).every(x => x === 'zh2en-type'), 'pattern set ' + p.id + ' ' + t);
   ok(ids.slice(-5).map(id => E.get(id).answer).join('|') === p.typed.map(x => x.en).concat(p.extra.map(x => x.en)).slice(0, 5).join('|'), 'pattern typed = typed then extra ' + p.id);
 });
@@ -216,8 +216,14 @@ P.forEach(p => {
 ok(KE.composeSet(['a', 'b', 'c', 'd'], ['x', 'y']).join() === 'a,b,c,d,x,y' && KE.composeSet('abcdefghijkl'.split(''), ['x']).join('') === 'abcdefghijklx', 'composeSet short');
 ok(KE.composeSet('abcdefghijkl'.split(''), ['x', 'y', 'z', 'u', 'v', 'w']).join('') === 'abcdefghijxyzuv', 'composeSet 10+5');
 ok(KE.composeSet(['a', 'b', 'c', 'd', 'e', 'f'], ['x', 'y', 'z']).join() === 'a,b,c,d,e,f,x,y,z', 'composeSet keeps typed last');
-ok(allItems.every(id => E.itemSet(id).every(q => E.byId[q] && E.byId[q].type !== 'speak')), 'sets have no speak when speak is off (default: unsupported or no parent consent)');
-// ---- 🎤 口說題進題組（支援語音辨識＋家長同意時）----
+ok(allItems.every(id => E.itemSet(id).every(q => E.byId[q] && E.byId[q].type !== 'speak')), 'unlock sets have no speak when speak is off (device has no speech recognition)');
+// ---- 🎤 練習這組一律有口說題（2026-10-09 起不看家長同意、不看裝置支援）；解鎖只在裝置支援時算口說 ----
+ok(allItems.filter(id => !/^root:/.test(id)).every(id => E.drill(id, new Set()).some(q => q.type === 'speak')) && allItems.filter(id => /^root:/.test(id)).every(id => E.drill(id, new Set()).every(q => q.type !== 'speak')), 'drill always has speak (speak off too); roots never');
+ok(allItems.every(id => E.drillIds(id).join() === E.drillIds(id, { speak: true }).join() && E.itemSet(id).join() === E.drillIds(id).filter(q => E.byId[q].type !== 'speak').join() && E.itemSet(id, { speak: true }).join() === E.drillIds(id).join()), 'unlock set = drill set (speak on) / drill set minus speak (speak off)');
+const wOff = E.drill('word:apple', new Set()).map(q => q.type).join(); ok(wOff === 'listen-choose,zh2en,speak,word-gap,word-gap,zh2en-type', 'word drill speak off: 6 with speak 3rd ' + wOff);
+const wOk5 = new Set(E.drillIds('word:apple').filter(q => !/:speak$/.test(q))); ok(E.progress('word:apple', wOk5).complete && E.drill('word:apple', wOk5).map(q => q.id).join() === 'w:apple:speak' && !E.progress('word:apple', wOk5, { speak: true }).complete, 'speak off: other 5 right → unlocked; drill still offers speak');
+const wv1 = { waive: new Set(['w:apple:speak']) }; ok(E.drill('word:apple', new Set(), wv1).length === 5 && E.progress('word:apple', wOk5, Object.assign({ speak: true }, wv1)).complete, 'waived speak: not re-offered this round, not counted');
+const gOff = E.drill('grammar:be', new Set()).map(q => q.type); ok(gOff.length === 15 && gOff.slice(0, 10).filter(x => x === 'speak').length === 2 && E.itemSet('grammar:be').length === 13, 'grammar drill speak off: 15 with 2 speak; unlock 13');
 const SON = { speak: true }, tOf = (id, o) => E.itemSet(id, o).map(q => E.byId[q].type);
 W.forEach(w => { const one = w.w.replace(/[^A-Za-z]/g, '').length < 2, id = KE.wordItemId(w);
   ok(tOf(id, SON).join() === (one ? 'listen-choose,zh2en,speak,zh2en-type' : 'listen-choose,zh2en,speak,word-gap,word-gap,zh2en-type'), 'word speak set ' + w.w);
@@ -245,9 +251,9 @@ ok(KE.typedRank({ type: 'reorder' }) === 0 && KE.typedRank({ type: 'speak' }) ==
 P.forEach(p => E.itemSet(KE.patternItemId(p)).map(id => E.get(id)).filter(q => q.type === 'reorder').forEach(q => ok(q.options.slice().sort().join('|') === q.answer.split(/\s+/).sort().join('|') && E.check(q, q.answer).ok, 'chips rebuild ' + q.id)));
 ok(E.itemSet('word:nope').length === 0 && !E.progress('word:nope', new Set()).complete, 'unknown item');
 // 解鎖：9/10 鎖住、全部答對過才解鎖；先錯後對算數；從作答紀錄追溯
-const gset = E.itemSet('grammar:be');
-const C14 = new Set(gset.slice(0, 14)); ok(E.progress('grammar:be', C14).done === 14 && !E.progress('grammar:be', C14).complete, 'grammar 14/15 locked');
-ok(E.progress('grammar:be', new Set(gset)).complete, 'grammar 15/15 unlocked');
+const gset = E.itemSet('grammar:be', SON);
+const C14 = new Set(gset.slice(0, 14)); ok(E.progress('grammar:be', C14, SON).done === 14 && !E.progress('grammar:be', C14, SON).complete, 'grammar 14/15 locked');
+ok(E.progress('grammar:be', new Set(gset), SON).complete, 'grammar 15/15 unlocked');
 const wset = E.itemSet('word:apple'), now = Date.now();
 const log1 = wset.map((id, i) => ({ t: now + i, id, ok: i === 4 ? 0 : 1 }));
 ok(E.progress('word:apple', KE.correctIds(log1)).done === 4 && !E.progress('word:apple', KE.correctIds(log1)).complete, 'word 4/5 locked');
@@ -260,8 +266,10 @@ ok(E.progress('pattern:lets', KE.correctIds(oldPractice)).done === E.itemSet('pa
 const drill = E.drill('grammar:be', new Set());
 ok(drill.length === 15 && drill.slice(-5).every(KE.isTyped) && drill.slice(0, 10).every(q => !KE.isTyped(q)), 'drill: 10 non-typed then 5 typed (grammar)');
 const pdr = E.drill('pattern:lets', new Set()); ok(pdr.length === 15 && pdr.slice(-5).every(q => q.type === 'zh2en-type') && pdr.slice(0, 10).every(q => !KE.isTyped(q)), 'drill: 10 non-typed then 5 typed (pattern)');
-const wd = E.drill('word:apple', new Set()); ok(wd.map(q => q.type).join() === 'listen-choose,zh2en,word-gap,word-gap,zh2en-type' && wd.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,type', 'drill: word set in fixed order (word)');
-ok(E.drill('word:apple', new Set(['w:apple:zh2en'])).map(q => q.id.split(':')[2]).join() === 'listen,gap1,gap2,type', 'drill: word fixed order keeps order when some answered');
+ok(E.drill('word:apple', new Set()).map(q => q.id.split(':')[2]).join() === 'listen,zh2en,speak,gap1,gap2,type', 'drill: word set in fixed order (word, with speak)');
+const WV = { waive: new Set(['w:apple:speak']) }; // 以下重排測試用不含口說的 5 題
+const wd = E.drill('word:apple', new Set(), WV); ok(wd.map(q => q.type).join() === 'listen-choose,zh2en,word-gap,word-gap,zh2en-type' && wd.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,type', 'drill: word set in fixed order (speak waived)');
+ok(E.drill('word:apple', new Set(['w:apple:zh2en'])).map(q => q.id.split(':')[2]).join() === 'listen,speak,gap1,gap2,type', 'drill: word fixed order keeps order when some answered');
 // 答錯重排：選擇題插在填空拼字前、填空拼字插在完整打字前、打字放最後
 const wq = KE.requeue(wd, 0, wd[0]); ok(wq.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,listen,gap1,gap2,type', 'word requeue choice before gaps');
 const wg = KE.requeue(wd, 2, wd[2]); ok(wg.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,gap1,type', 'word requeue gap before final typing');
@@ -270,13 +278,13 @@ const wt = KE.requeue(wd, 4, wd[4]); ok(wt.map(q => q.id.split(':')[2]).join() =
 const oldW = new Set(['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(s => 'w:apple:' + s));
 ok(E.progress('word:apple', oldW).done === 3 && E.progress('word:apple', oldW).missing.join() === 'w:apple:gap1,w:apple:gap2', 'old word progress kept 3/5, gaps to redo');
 const rq = KE.requeue(drill, 0, drill[0]);
-ok(rq.length === 16 && rq.slice(-5).every(KE.isTyped) && rq[10].id === drill[0].id, 'requeue non-typed before typed');
+ok(rq.length === 16 && rq.slice(-5).every(KE.isTyped) && rq[drill.findIndex(q => KE.typedRank(q) > 0)].id === drill[0].id, 'requeue choice before speak/typed');
 // 舊進度：以前答對過的 15 題（13 題選擇＋2 題中翻英打字）換新題組後，仍算的有 12 題（不歸零）；換進來的 3 題打字題要再答對
 const oldGrammar = new Set(gr0Old('be'));
 function gr0Old(id) { const g = G.find(x => x.id === id); return g.q.map((q, i) => `g:${id}:${i}`).concat(g.typed.map((t, k) => `g:${id}:t${k}`)); }
-ok(E.progress('grammar:be', oldGrammar).done === 12 && !E.progress('grammar:be', oldGrammar).complete, 'old grammar progress kept 12/15');
+ok(E.sets['grammar:be'].filter(id => oldGrammar.has(id)).length === 12 && E.progress('grammar:be', oldGrammar).done === 10 && E.progress('grammar:be', oldGrammar).total === 13 && !E.progress('grammar:be', oldGrammar).complete, 'old grammar progress kept 12/15 of base set (10/13 with 2 swapped for speak, speak off)');
 const oldPat = new Set(P.find(p => p.id === 'lets').ex.flatMap((e, j) => [`p:lets:${j}:reorder`, `p:lets:${j}:choose`]).concat([0, 1, 2].map(k => `p:lets:x${k}:reorder`), [0, 1].map(k => `p:lets:t${k}`)));
-ok(E.progress('pattern:lets', oldPat).done === 12, 'old pattern progress kept 12/15');
+ok(E.sets['pattern:lets'].filter(id => oldPat.has(id)).length === 12 && E.progress('pattern:lets', oldPat).done === 10, 'old pattern progress kept 12/15 of base set (10/13 speak off)');
 const rq2 = KE.requeue(rq, 14, rq[14]); ok(rq2[rq2.length - 1].id === rq[14].id, 'requeue typed at end');
 // 打字判分
 const tg = (a, alts, s) => KE.typeGrade(a, alts, s).ok;

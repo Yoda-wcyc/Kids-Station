@@ -79,15 +79,13 @@
   document.addEventListener('click', () => { if (unlocked || !synth) return; unlocked = true; try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; synth.speak(u); } catch (e) { } });
 
   // ---------- 🎤 說說看（瀏覽器內建語音辨識；本站不錄音、不保存、不上傳，只比對轉好的文字）----------
-  const SPEAK_CONSENT = 'kids_speak_consent'; // 家長同意紀錄 {at}（只存在這台裝置；家長頁可撤銷）
+  // 2026-10-09 起不需要家長同意（舊的 kids_speak_consent 旗標留著不用、不清除）；iPad 自己的麥克風權限詢問照常
   const NO_SPEAK_MSG = '這台裝置的瀏覽器不支援說說看，請用 iPad 的 Safari';
-  const CONSENT_TEXT = '按麥克風後，聲音會交給 iPad 內建（Apple）的語音辨識轉成文字；本站不錄音、不保存、不上傳。';
+  const SPEAK_NOTE = '按麥克風後，聲音會交給裝置內建（例如 iPad 的 Apple）語音辨識轉成文字；本站不錄音、不保存、不接收聲音，只拿轉好的文字來比對答案。';
+  const MIC_ALLOW = '第一次按 🎤 時，iPad 會問可不可以用麥克風，請按「允許」。';
   const SPEAK_TRIES = 3, SPEAK_SILENCE_MS = 8000;
-  function speakConsent() { const c = load(SPEAK_CONSENT, null); return c && c.at ? c : null; }
-  function setSpeakConsent(on) { try { if (on) localStorage.setItem(SPEAK_CONSENT, JSON.stringify({ at: new Date().toISOString() })); else localStorage.removeItem(SPEAK_CONSENT); } catch (e) { } syncSpeak(); }
-  // 「練習這組」要不要放口說題：裝置支援語音辨識＋家長同意才放（不然不出、也不算進「學會了」的解鎖條件，不會卡關）
-  function syncSpeak() { E.speakOn = canSpeak && !!speakConsent(); }
-  syncSpeak();
+  // 「練習這組」一律有口說題；裝置支援語音辨識 → 口說題算進「學會了」的解鎖條件，不支援 → 可以先跳過、不算（不會卡關）
+  E.speakOn = canSpeak;
   const DEVICE_ERRS = ['network', 'audio-capture', 'not-allowed', 'service-not-allowed', 'language-not-supported'];
   let REC = null; // 正在聽的辨識器（換頁、跳過、作答時停掉）
   function stopRec() { const r = REC; REC = null; if (r) { try { r.onresult = r.onerror = r.onend = null; r.abort(); } catch (e) { } } }
@@ -388,19 +386,16 @@
   // 每題最多試 3 次（只有聽到東西才算一次；沒聲音、網路等錯誤不算）；說對 → answer() 記答對；第 3 次還沒對 → 記答錯；隨時可以跳過
   function spkState(q) { if (!Q.spk || Q.spk.i !== Q.i || Q.spk.id !== q.id) Q.spk = { i: Q.i, id: q.id, tries: [] }; return Q.spk; }
   function micBody(q) {
-    if (!canSpeak) return `<div class="card center"><p>🎤 ${NO_SPEAK_MSG}</p></div><div class="row"><button class="btn big" id="skip">跳過 ➜</button></div>`;
-    if (!speakConsent()) return `<section class="card" id="spconsent"><h2>👨‍👩‍👧 給爸爸媽媽：說說看要用麥克風</h2><p>${CONSENT_TEXT}</p>
-      <p class="muted">畫面上只拿轉好的文字來比對答案。第一次按 🎤 時，iPad 會問可不可以用麥克風，請按「允許」。同意後，可以隨時到「家長」頁撤銷。</p>
-      <div class="row wrap"><button class="btn primary big" id="spok">✅ 爸爸媽媽同意，開始</button><button class="btn" id="skip">先不要，跳過這題</button></div></section>`;
+    // 裝置不支援：提示＋「先跳過」（不算對錯、不算進解鎖、這回合不重出）
+    if (!canSpeak) return `<div class="card center" id="spno"><p>🎤 ${NO_SPEAK_MSG}</p></div><div class="row"><button class="btn big" id="spwaive">先跳過 ➜</button></div>`;
     const st = spkState(q), n = st.tries.length, last = n ? st.tries[n - 1].heard : null;
     // 練習這組：跳過＝算答錯、等一下重排再出；裝置問題（連續 2 次網路／麥克風錯誤）→ 多一顆「這題先跳過」（這次不算進解鎖）
     return `<div class="row wrap"><button class="btn primary big" id="mic">🎤 ${n ? '再試一次' : '按我說說看'}</button><button class="btn" id="skip">${Q.drill ? '跳過（算答錯，等一下再來）' : '跳過'}</button><button class="btn" id="spwaive" ${st.dev >= 2 ? '' : 'hidden'}>這題先跳過（裝置有狀況，這次不算）</button></div>
-      <p class="center" id="heard" role="status" aria-live="polite">${n ? `我聽到的是：「<b class="en">${esc(last || '（聽不清楚）')}</b>」，再試一次！` : '按 🎤 之後，大聲說出上面的英文'}</p><p class="muted center" id="tries">${n ? `還可以試 ${SPEAK_TRIES - n} 次` : `每題可以試 ${SPEAK_TRIES} 次`}</p>`;
+      <p class="center" id="heard" role="status" aria-live="polite">${n ? `我聽到的是：「<b class="en">${esc(last || '（聽不清楚）')}</b>」，再試一次！` : '按 🎤 之後，大聲說出上面的英文'}</p><p class="muted center" id="tries">${n ? `還可以試 ${SPEAK_TRIES - n} 次` : `每題可以試 ${SPEAK_TRIES} 次`}</p>${n ? '' : `<p class="muted center" id="micallow">${MIC_ALLOW}</p>`}`;
   }
   function bindMic(q) {
-    $('#skip').onclick = () => { stopRec(); if (Q.drill && canSpeak && speakConsent()) answer(q, ''); else answer(q, '', true); };
+    const sk = $('#skip'); if (sk) sk.onclick = () => { stopRec(); if (Q.drill) answer(q, ''); else answer(q, '', true); };
     const wv = $('#spwaive'); if (wv) wv.onclick = () => { stopRec(); E.speakWaive.add(q.id); answer(q, '', true); };
-    const ok = $('#spok'); if (ok) ok.onclick = () => { setSpeakConsent(true); pQuiz(); };
     const mic = $('#mic'); if (!mic) return;
     const heard = $('#heard'), say = h => { heard.innerHTML = h; };
     const idle = () => { mic.disabled = false; mic.textContent = '🎤 ' + (spkState(q).tries.length ? '再試一次' : '按我說說看'); };
@@ -663,12 +658,9 @@
     reload() { loadAll(); if (/^#quiz/.test(location.hash)) return; const y = window.scrollY; render(); window.scrollTo(0, y); },
     render() { const y = window.scrollY; render(); window.scrollTo(0, y); }
   };
-  // 🎤 說說看的家長同意：狀態＋撤銷
+  // 🎤 說說看：說明（不需要同意；要關麥克風請用 iPad 設定）
   function speakCard() {
-    const c = speakConsent();
-    return `<section class="card" id="spcard"><h2>🎤 說說看（麥克風）</h2><p>${CONSENT_TEXT}</p>${canSpeak ? '' : `<p class="muted">${NO_SPEAK_MSG}</p>`}${c
-      ? `<p>✅ 已同意（${esc(KE.fmtTaipei(c.at, true))}）</p><div class="row wrap"><button class="btn danger" id="sprevoke">撤銷同意</button></div><p class="muted">撤銷後，下次按 🎤 會再請爸爸媽媽同意。也可以到 iPad「設定」→「Safari」→「麥克風」關掉麥克風。</p>`
-      : `<p class="muted">還沒有同意。小朋友第一次練「🎤 說說看」時，會先出現說明，請爸爸媽媽按「同意」才會開始。${canSpeak ? '也可以在這裡先同意；同意後，單字、片語、文法、句型的「練習這組」會加入說說看題。' : ''}</p>${canSpeak ? '<div class="row wrap"><button class="btn primary" id="spagree">✅ 同意使用說說看</button></div>' : ''}`}</section>`;
+    return `<section class="card" id="spcard"><h2>🎤 說說看（麥克風）</h2><p>${SPEAK_NOTE}</p><p class="muted">單字、片語、文法、句型的「練習這組」都有說說看題。${MIC_ALLOW}不想用麥克風，可以到 iPad「設定」→「Safari」→「麥克風」關掉。</p>${canSpeak ? '' : `<p class="muted">${NO_SPEAK_MSG}；練習這組的說說看題可以先跳過，不算進「學會了」。</p>`}</section>`;
   }
   function pParent() {
     const days = [];
@@ -697,8 +689,6 @@
       ${voiceCard()}
       <section class="card"><h2>備份與重設</h2><div class="row wrap"><button class="btn" id="exp">📤 匯出備份</button><label class="btn">📥 匯入備份<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn danger" id="rst">🗑️ 清除全部紀錄</button></div><p class="muted">紀錄只存在這台裝置的瀏覽器裡；換裝置前先匯出備份。</p></section>`;
     bindVoice(); bindSync(); if (window.KSParentPin) KSParentPin.bindCard(render);
-    const rv = $('#sprevoke'); if (rv) rv.onclick = () => { if (!confirm('要撤銷「🎤 說說看」的麥克風同意嗎？下次使用時會再請爸爸媽媽同意。')) return; setSpeakConsent(false); render(); };
-    const ag = $('#spagree'); if (ag) ag.onclick = () => { setSpeakConsent(true); render(); };
     sortTable($('#tt'), [{ k: 'label', t: '主題' }, { k: 'mod', t: '單元' }, { k: 'n', t: '題數' }, { k: 'ok', t: '答對' }, { k: 'acc', t: '正確率', f: pct }], rows, PS);
     sortTable($('#lt'), [{ k: 'item', t: '項目' }, { k: 'type', t: '類型' }, { k: 'at', t: '學會時間（台北）', f: x => KE.fmtTaipei(x, true) }, { k: 'score', t: '分數' }], E.learnedRows(S.learned), PL);
     $('#exp').onclick = () => {

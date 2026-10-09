@@ -287,7 +287,7 @@
       this.sets[patternItemId(p)] = composeSet(keep(choiceIds.concat(extraChoice)), keep(typedIds));
     });
 
-    // ---- 加口說的題組（裝置支援語音辨識＋家長同意時才用；見 itemSet）----
+    // ---- 練習這組的題組（2026-10-09 起一律含口說；見 drillIds／itemSet）----
     // 單字：選 → 選 → 🎤 → 填空 → 填空 → 打字（6 題）；片語：非打字題最後加 1 題 🎤；
     // 文法、句型：前 10 題非打字裡，從後面換 2 題成 🎤（不同句子），後 5 題打字不變；字根不加
     this.speakSets = {};
@@ -303,8 +303,8 @@
     D.phrases.forEach(ph => { this.speakSets[phraseItemId(ph)] = keep(['listen', 'zh2en', 'en2zh', 'fill', 'speak', 'type'].map(t => `ph:${ph.id}:${t}`)); });
     D.grammar.forEach(g => { this.speakSets[grammarItemId(g)] = swap2(this.sets[grammarItemId(g)], id => (/^g:[^:]+:\d+$/.test(id) ? id + ':speak' : null)); });
     D.patterns.forEach(p => { this.speakSets[patternItemId(p)] = swap2(this.sets[patternItemId(p)], id => { const m = /^(p:[^:]+:\d+):(choose|reorder)$/.exec(id); return m ? m[1] + ':speak' : null; }); });
-    this.speakOn = false;          // app 依「支援語音辨識＆家長同意」設定
-    this.speakWaive = new Set();   // 這次因裝置問題先跳過的口說題（不算進解鎖；重新整理就清掉）
+    this.speakOn = false;          // app 依「裝置支援語音辨識」設定：支援 → 口說題算進解鎖條件
+    this.speakWaive = new Set();   // 這次「先跳過」的口說題（不支援／裝置有狀況）：不算進解鎖、這回合不重出；重新整理就清掉
 
     function typedQ(module, topic, id, t, why, setOnly) {
       add({ id, module, topic, type: TYPED, title: t.en, setOnly: !!setOnly }, () => ({ prompt: t.zh, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: t.en, alts: t.alts || [], speakText: t.en, why }));
@@ -333,13 +333,19 @@
     },
     // 家長頁用：學會紀錄表，預設新到舊；舊紀錄沒有分數顯示「—」
     learnedRows(L) { return Object.keys(L || {}).filter(id => L[id] && L[id].at).map(id => Object.assign({ itemId: id, at: L[id].at, score: L[id].score || '—' }, this.itemInfo(id))).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)); },
-    // 項目的固定題組（qid 陣列）；找不到項目回傳 []
-    // o = {speak, waive}；沒給就用 this.speakOn／this.speakWaive。口說沒開（不支援或家長沒同意）→ 不含口說題，解鎖也不算它
-    itemSet(itemId, o) {
-      const on = o && 'speak' in o ? !!o.speak : this.speakOn, waive = (o && o.waive) || this.speakWaive;
-      let s = (on && this.speakSets[itemId]) || this.sets[itemId] || [];
+    // 「練習這組」出的題（qid 陣列）：一律含口說題（字根沒有口說）；這次先跳過的口說題（waive）不出
+    drillIds(itemId, o) {
+      const waive = (o && o.waive) || this.speakWaive;
+      let s = this.speakSets[itemId] || this.sets[itemId] || [];
       if (waive && waive.size) s = s.filter(id => !waive.has(id));
       return s.slice();
+    },
+    // 解鎖「學會了」要答對過的題（qid 陣列）；找不到項目回傳 []
+    // o = {speak, waive}；沒給就用 this.speakOn／this.speakWaive。speak＝裝置支援語音辨識：口說題是必要條件；
+    // 不支援 → 只看練習這組裡其餘的題（口說題照樣出現，但可以先跳過、不算）
+    itemSet(itemId, o) {
+      const on = o && 'speak' in o ? !!o.speak : this.speakOn;
+      return this.drillIds(itemId, o).filter(id => on || !this.byId[id] || this.byId[id].type !== 'speak');
     },
     // 進度：correct＝答對過的 qid Set；全部答對過 complete＝true 才能按「學會了」
     progress(itemId, correct, o) {
@@ -366,9 +372,9 @@
       const qs = ids.map(id => this.get(id)).filter(Boolean);
       return { itemId, ids, qs, need, total: qs.length };
     },
-    // 練習這組：只出還沒答對過的題，打字題排最後
-    // 單字這組順序固定（選 → 選 → 填空 → 填空 → 打字），不洗牌
-    drill(itemId, correct, o) { const qs = this.progress(itemId, correct, o).missing.map(id => this.get(id)).filter(Boolean); return /^word:/.test(itemId) ? qs : drillOrder(qs); },
+    // 練習這組：只出還沒答對過的題（一律含口說題），打字題排最後
+    // 單字這組順序固定（選 → 選 → 🎤 → 填空 → 填空 → 打字），不洗牌
+    drill(itemId, correct, o) { const qs = this.drillIds(itemId, o).filter(id => !correct.has(id)).map(id => this.get(id)).filter(Boolean); return /^word:/.test(itemId) ? qs : drillOrder(qs); },
     topicLabel(tkey) { const m = tkey.split(':')[0]; const t = this.topics(m).find(x => x.key === tkey); return t ? (t.group && m === 'phrases' ? `${t.group}・${t.label}` : t.label) : tkey; },
     // f: {modules, topics(tkey 陣列), types, src, lv, allowSpeak, ids, withSetOnly}
     // 只在題組出的題（setOnly：填空拼字、文法打字版、句型加練句打字）一般練習與例題庫不出；給 ids 或 withSetOnly 才列
