@@ -1,4 +1,4 @@
-r"""把正本（小朋友學英文\）複製到部署夾 _deploy\Kids-Station\（git 只在部署夾跑）。
+r"""把正本（小朋友學習站\）複製到部署夾 _deploy\Kids-Station\（git 只在部署夾跑）。
 
 不複製：game\scratch-td\ 底下除了 web\ 以外的東西（_build\ 腳本、中文檔名正本講義與 .sb3、.md 規格），__pycache__，
        mindmap\test\、mindmap\_demo\（心智圖 demo 與單元測試）、mindmap\ 底下的 .md。

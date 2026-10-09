@@ -622,6 +622,11 @@
   // ---------- 裝置同步（家長頁）----------
   function syncCard() {
     const P = window.KESync; if (!P) return '';
+    // 已登入：同步碼跟著帳號走（不顯示碼、不用手動配對）；手動同步碼只給沒登入時用
+    const A = window.KidsAuth;
+    if (A && A.isLoggedIn && A.isLoggedIn()) return `<section class="card sync-card"><h2>☁️ 裝置同步（iPad ↔ 電腦）</h2><p><b>已改用帳號自動同步</b>：同一個帳號登入的 iPad、電腦，紀錄會自動合併。</p><div class="row wrap"><button class="btn primary" id="snow">🔄 立即同步</button><a class="btn" href="account.html">帳號頁</a></div>
+      <p class="sync-status">${esc(P.statusText())}</p>
+      <p class="muted">會同步：作答紀錄、學會紀錄、錯題庫；語音速度等設定每台各自保存。登出後這台就不再同步（紀錄會留在這台）。</p></section>`;
     const code = P.code();
     return `<section class="card sync-card"><h2>☁️ 裝置同步（iPad ↔ 電腦）</h2>${code
       ? `<p>這台已開啟同步，同步碼：<b class="sync-code">${esc(code)}</b></p><div class="row wrap"><button class="btn" id="scopy">📋 複製同步碼</button><button class="btn" id="sshare">🔗 傳送同步連結</button><button class="btn primary" id="snow">🔄 立即同步</button><button class="btn danger" id="soff">取消同步</button></div>`
@@ -650,7 +655,7 @@
       if (navigator.share) navigator.share({ title: '小朋友學習站 · 同步連結', text: `在另一台裝置打開這個連結，就會跟這台同步（同步碼 ${P.code()}）`, url }).catch(err => { if (!err || err.name !== 'AbortError') copy(url); });
       else copy(url);
     };
-    if (b('snow')) b('snow').onclick = () => P.syncNow();
+    if (b('snow')) b('snow').onclick = () => (P.uploadNow ? P.uploadNow() : P.syncNow());
     if (b('soff')) b('soff').onclick = () => { if (confirm('要取消這台的同步嗎？這台的紀錄會留著，只是不再跟別台同步。')) { P.unpair(); render(); } };
   }
   // 同步把別台的紀錄合進來後：重新讀取，畫面停在原位（作答中不重畫）

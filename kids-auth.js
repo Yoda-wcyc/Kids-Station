@@ -2,13 +2,16 @@
    規則（Yoda）：免登入就可以瀏覽整個網站，但是要登入才可以開始練習和玩遊戲。
    - 只存 localStorage 的 kids_jwt（票）、kids_member（會員資料 JSON，附 exp）與 kids_quota（今天練習次數是否用完的快取）；絕不存密碼，不碰 yoda_* 任何 key。
    - 後端網址只在下面 KIDS_GAS_URL 一處設定。還是佔位字時＝後端沒上線：一律放行、不顯示登入元件（誤推上線也不會把小朋友擋住）。
-   - 前端只看票的到期時間（exp），不驗簽；真正的權限判斷在後端。 */
+   - 前端只看票的到期時間（exp），不驗簽；真正的權限判斷在後端。
+   - 票失效（2026-10-09）：任何帶 token 的呼叫回 revoked／expired／bad_credentials／not_found／no_member（會員被刪時後端 verifyJwt_ 回 revoked）
+     → 自動登出＋清掉該帳號的學習幣佇列＋跳「登入已失效，請重新登入」。頁面載入時背景 memberProfile 驗票（每 10 分鐘最多一次）。
+   - 登出一律清掉這台的同步碼設定（ke_sync；學習紀錄留在本機），兄弟姊妹換帳號登入時才不會合併到別人的帳號。 */
 (function () {
   'use strict';
   var KIDS_GAS_URL = 'https://script.google.com/macros/s/AKfycbz9XcZk7kcihMTXTgbfRSP0FGdPHv8DcBRyG0xbLmNSGdIkaGWcNaZMtJmwPtrDCwIv/exec'; // ← 唯一設定處：kids GAS 網頁應用程式網址
   var KIDS_PAY_URL = 'https://kids-member.vercel.app'; // ← 唯一設定處：kids 綠界建單（Vercel）網域，結尾不加 /
   var PLACEHOLDER = 'REPLACE_WITH_KIDS_GAS_URL';
-  var K_JWT = 'kids_jwt', K_MEMBER = 'kids_member', K_QUOTA = 'kids_quota';
+  var K_JWT = 'kids_jwt', K_MEMBER = 'kids_member', K_QUOTA = 'kids_quota', K_VCHK = 'kids_vchk';
   var DAY = 86400, RENEW_BEFORE = 30 * DAY;
 
   // 這支檔案所在的資料夾＝網站根目錄（子頁用 ../kids-auth.js 載入也算得對）
@@ -48,18 +51,48 @@
     refreshWidget();
     return ok;
   }
-  function logout() { del(K_JWT); del(K_MEMBER); del(K_QUOTA); refreshWidget(); }
+  function logout() {
+    del(K_JWT); del(K_MEMBER); del(K_QUOTA); del(K_VCHK);
+    // 帳號自動同步：登出就清掉這台的同步碼（學習紀錄 ke_log 等留在本機）；sync.js 在記憶體裡的狀態也一起清
+    del('ke_sync');
+    [window, topWin()].forEach(function (w) { try { if (w && w.KESync && typeof w.KESync.unpair === 'function') w.KESync.unpair(); } catch (e) { } });
+    refreshWidget();
+  }
+  function topWin() { try { if (window.top !== window && window.top.location.origin === location.origin) return window.top; } catch (e) { } return null; }
+  function tokenSub(t) { try { var p = String(t || '').split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); while (p.length % 4) p += '='; return String(JSON.parse(atob(p)).sub || ''); } catch (e) { return ''; } }
 
   // ---------- 呼叫後端（介面合約：POST text/plain JSON → JSON） ----------
   function err(code, body) { var e = new Error(code); e.code = code; e.body = body; return e; }
+  // 帶 token 的呼叫回這些錯誤＝這張票不能再用（會員被刪時後端回 revoked）→ 自動登出
+  // changePassword 的 bad_credentials 是「舊密碼打錯」，不算
+  var DEAD = { revoked: 1, expired: 1, bad_credentials: 1, not_found: 1, no_member: 1 };
   function api(action, data) {
     var url = gasUrl();
     if (!url) return Promise.reject(err('not_configured'));
     var body = Object.assign({}, data || {}); body.action = action;
     return fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), cache: 'no-store' })
       .then(function (r) { return r.json(); }, function () { throw err('network'); })
-      .then(function (j) { if (!j || j.ok !== true) throw err((j && j.error) || 'server_error', j); return j; },
-        function (e) { throw e && e.code ? e : err('server_error'); });
+      .then(function (j) {
+        if (!j || j.ok !== true) {
+          var code = (j && j.error) || 'server_error';
+          if (body.token && DEAD[code] === 1 && !(action === 'changePassword' && code === 'bad_credentials')) sessionDead(code, body.token);
+          throw err(code, j);
+        }
+        return j;
+      }, function (e) { throw e && e.code ? e : err('server_error'); });
+  }
+  // 票失效：登出、清掉這個帳號還沒送出的學習幣事件、跳提示（只處理「現在這張票」；已換帳號就不管）
+  function sessionDead(code, tok) {
+    try {
+      if (!tok || tok !== token()) return;
+      var mid = tokenSub(tok);
+      logout();
+      try {
+        var q = JSON.parse(get('kids_coin_queue') || '[]');
+        if (Array.isArray(q) && mid) set('kids_coin_queue', JSON.stringify(q.filter(function (e) { return !(e && String(e.mid) === mid); })));
+      } catch (e) { }
+      showExpired();
+    } catch (e) { }
   }
   var MSG = {
     bad_request: '資料好像有地方沒填好，請再檢查一次。',
@@ -173,6 +206,27 @@
     }, true);
   }
 
+  // 「登入已失效」提示框：iframe 子頁交給同源頂層畫（只畫一個）
+  var expiredShown = false;
+  function showExpired() {
+    var tw = topWin();
+    if (tw && tw.KidsAuth && tw.KidsAuth._showExpired && tw.KidsAuth !== window.KidsAuth) { try { tw.KidsAuth._showExpired(); return; } catch (e) { } }
+    if (expiredShown || !document.body) return;
+    expiredShown = true;
+    css(); closePrompt();
+    lastFocus = document.activeElement;
+    modal = document.createElement('div');
+    modal.className = 'ka-modal ka-expired'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true'); modal.setAttribute('aria-labelledby', 'ka-t');
+    modal.innerHTML = '<div class="ka-card"><div class="ka-i">🔑</div><div class="ka-t" id="ka-t">登入已失效，請重新登入</div><p class="ka-s">這台裝置已經自動登出了。學習紀錄還留在這台，重新登入就會繼續同步。</p><div class="ka-row"><a class="ka-b ka-p" data-ka="go">🔑 去登入</a><button type="button" class="ka-b" data-ka="later">好</button></div></div>';
+    var go = modal.querySelector('[data-ka="go"]'); go.href = loginUrl();
+    go.addEventListener('click', function (e) { e.preventDefault(); goTop(loginUrl()); });
+    modal.querySelector('[data-ka="later"]').addEventListener('click', closePrompt);
+    modal.addEventListener('click', function (e) { if (e.target === modal) closePrompt(); });
+    document.addEventListener('keydown', onEsc, true);
+    document.body.appendChild(modal);
+    try { go.focus(); } catch (e) { }
+  }
+
   // ---------- 頁角小元件：已登入「👋 暱稱」→ account.html；未登入「登入」 ----------
   var chip = null;
   function inFrame() { try { return window.top !== window; } catch (e) { return true; } }
@@ -210,11 +264,11 @@
     if (!configured() || inFrame()) return Promise.resolve('skip');
     var t = token(); if (!t) return Promise.resolve('none');
     var e = exp(), n = nowSec();
-    if (e && e <= n) { logout(); return Promise.resolve('expired'); }
+    if (e && e <= n) { sessionDead('expired', t); return Promise.resolve('expired'); }
     if (e && e - n > RENEW_BEFORE) return Promise.resolve('fresh');
     if (renewing) return renewing;
     renewing = api('memberRefresh', { token: t }).then(function (r) { saveSession(r); return 'renewed'; }, function (x) {
-      if (x && (x.code === 'revoked' || x.code === 'expired')) { logout(); return 'logged_out'; }
+      if (x && DEAD[x.code] === 1) { logout(); return 'logged_out'; } // api() 已經登出並提示過；這裡保險再登出一次
       return 'kept'; // 斷網或伺服器忙：票還沒過期就先照用
     }).then(function (s) { renewing = null; return s; });
     return renewing;
@@ -293,8 +347,30 @@
     isLoggedIn: function () { return configured() ? isLoggedIn() : false; },
     member: member, logout: logout, requireLogin: requireLogin, guard: guard, startActivity: startActivity,
     configured: configured, token: token, exp: exp, api: api, saveSession: saveSession, errorText: errorText, checkPassword: checkPassword, grades: GRADES, gradeText: gradeText,
-    loginUrl: loginUrl, safeNext: safeNext, base: BASE, autoRenew: autoRenew, refreshWidget: refreshWidget, payUrl: KIDS_PAY_URL
+    loginUrl: loginUrl, safeNext: safeNext, base: BASE, autoRenew: autoRenew, refreshWidget: refreshWidget, payUrl: KIDS_PAY_URL,
+    verifySession: verifySession, _showExpired: showExpired
   };
+
+  // ---------- 頁面載入時驗票：本機有票就背景問一次 memberProfile（每 10 分鐘最多一次），會員被刪會立刻被發現 ----------
+  var VCHK_MS = 10 * 60 * 1000;
+  function verifySession(force) {
+    if (!configured() || inFrame()) return Promise.resolve('skip');
+    var t = token(); if (!t || !isLoggedIn()) return Promise.resolve('none');
+    var sub = tokenSub(t), now = Date.now(), last = null;
+    try { last = JSON.parse(get(K_VCHK) || 'null'); } catch (e) { }
+    if (!force && last && last.sub === sub && now >= (+last.at || 0) && now - (+last.at || 0) < VCHK_MS) return Promise.resolve('recent');
+    set(K_VCHK, JSON.stringify({ sub: sub, at: now }));
+    return api('memberProfile', { token: t }).then(function (r) {
+      if (token() !== t) return 'changed';
+      var m = readMember() || {}; Object.assign(m, r.member || {});   // 順便更新本機會員資料（exp 不動）
+      set(K_MEMBER, JSON.stringify(m)); refreshWidget();
+      return 'ok';
+    }, function (x) {
+      if (x && DEAD[x.code] === 1) return 'logged_out';   // api() 已經登出並提示
+      del(K_VCHK);   // 斷網或伺服器忙：下次載入再驗
+      return 'kept';
+    });
+  }
 
   // ---------- 流量（後端 hit；介面見 kids-member/docs/CONSOLE.md §3） ----------
   // 每頁載入送一次 {page, path, host, ref, vid}：vid＝kids_vid 隨機 id（不含個資）、ref 只送網域。
@@ -324,6 +400,6 @@
     try { fetch(gasUrl(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body, cache: 'no-store', credentials: 'omit', keepalive: true }).catch(function () { }); } catch (e) { }
   }
 
-  function boot() { refreshWidget(); autoRenew(); try { sendHit(); } catch (e) { } }
+  function boot() { refreshWidget(); autoRenew().then(function (s) { if (s === 'fresh' || s === 'kept') verifySession(); }); try { sendHit(); } catch (e) { } }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

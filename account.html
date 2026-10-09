@@ -87,6 +87,18 @@
       <p class="muted" id="c-msg" style="margin:8px 0 0" hidden></p>
     </section>
 
+    <section class="card" id="sync">
+      <h2>☁️ 學習紀錄同步</h2>
+      <p style="margin:0 0 12px">同一個帳號登入的 iPad、電腦，紀錄會自動合併。</p>
+      <dl class="info">
+        <dt>同步狀態</dt><dd class="sync-status" id="s-status">…</dd>
+        <dt>最後同步</dt><dd id="s-last">—</dd>
+        <dt>這台的紀錄</dt><dd id="s-count">…</dd>
+      </dl>
+      <button class="btn primary big wide" type="button" id="s-now" style="margin-top:14px">☁️ 立刻上傳並同步</button>
+      <p class="muted" style="margin:10px 0 0">會同步英文的作答紀錄、學會紀錄和錯題庫；上傳舊紀錄不會補發學習幣。</p>
+    </section>
+
     <form class="card" id="f-pw" novalidate>
       <h2>🔒 改密碼</h2>
       <label class="fld"><span>現在的密碼</span><span class="pw"><input class="inp" type="password" name="old" autocomplete="current-password" required><button type="button" class="btn eye" data-eye aria-label="顯示密碼" aria-pressed="false">👀 顯示</button></span></label>
@@ -103,8 +115,10 @@
   </div>
   <p class="center muted" style="margin:18px 0 0"><a href="support.html">💬 有問題問我們</a>　·　<a href="terms.html">📄 使用條款與隱私權說明</a></p>
 </main>
-<script src="kids-auth.js?v=36e05cbded"></script>
-<script src="kids-coins.js?v=f6e02ee039"></script>
+<script src="kids-auth.js?v=42d7c72a13"></script>
+<script src="kids-coins.js?v=c1237feb27"></script>
+<script src="syncmerge.js?v=6ecfb77eec"></script>
+<script src="sync.js?v=a3157589d0"></script>
 <script>
 (function () {
   'use strict';
@@ -185,6 +199,29 @@
     if (x.code === 'expired' || x.code === 'revoked') { A.logout(); showOut(A.errorText(x.code)); }
     else say(A.errorText(x.code) + '（下面先顯示這台裝置記得的資料）', 'info');
   });
+
+  // ---------- ☁️ 學習紀錄同步卡：狀態、最後同步時間、本機紀錄數量（不顯示同步碼）----------
+  var KS = window.KESync;
+  function fmtIso(iso) {
+    if (!iso) return '還沒有同步過';
+    var d = new Date(iso); if (isNaN(d.getTime())) return '—';
+    try { return d.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }); } catch (e) { return d.toISOString().slice(0, 16).replace('T', ' '); }
+  }
+  function drawSync() {
+    if (!KS) { $('#sync').hidden = true; return; }
+    var i = KS.info(), c = KS.counts();
+    $('#s-status').textContent = KS.statusText();
+    $('#s-last').textContent = fmtIso(i.lastAt);
+    $('#s-count').textContent = '學會了 ' + c.learned + ' 項・作答 ' + c.answered + ' 筆・錯題 ' + c.mistakes + ' 題';
+  }
+  if (KS) {
+    window.addEventListener('kesync', function () { drawSync(); });
+    $('#s-now').addEventListener('click', function () {
+      var b = $('#s-now'); b.disabled = true; $('#s-status').textContent = '同步中…';
+      KS.uploadNow().then(function () { b.disabled = false; drawSync(); }, function () { b.disabled = false; drawSync(); });
+    });
+  }
+  drawSync();
 
   // ---------- 會員方案卡（ECPAY_CONTRACT §0-1、§4）：只有後端說 open=true，或這個帳號真的付過款，才畫出來；否則 #plan-slot 保持空白 ----------
   var PST = { active: '✅ 使用中', cancelled: '已取消自動扣款（用到期末）', expired: '已到期', pending: '⏳ 待開通', refunded: '已退款', inactive: '免費會員' };

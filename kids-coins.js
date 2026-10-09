@@ -211,7 +211,7 @@
       return true;
     }, function (x) {
       var code = x && x.code;
-      if (code === 'expired' || code === 'revoked') { try { A().logout(); } catch (e) { } } // 交給 KidsAuth 登出；事件留著，同一人再登入會補送
+      if (code === 'expired' || code === 'revoked') { try { A().logout(); } catch (e) { } } // KidsAuth.api 已登出、清掉這個帳號的佇列並提示（2026-10-09）；這裡保險再登出一次
       else if (code === 'rate_limited') backoffUntil = Date.now() + RATE_MS;
       else if (code === 'bad_request') writeQ(removeIds(readQ(), ids)); // 整批格式被拒：丟掉，免得一直重送
       else backoffUntil = Date.now() + RETRY_MS; // network／server_error：留在佇列，稍後或上線時再送

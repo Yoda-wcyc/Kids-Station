@@ -115,7 +115,7 @@ deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 
 ## 部署
 
-正本在 `G:\Yoda x Claude\小朋友學英文\`（Google Drive 鏡像夾，不在這裡跑 git）。
+正本在 `G:\Yoda x Claude\小朋友學習站\`（Google Drive 鏡像夾，不在這裡跑 git）。
 部署副本在 `G:\Yoda x Claude\_deploy\Kids-Station\`：
 
 1. 在正本跑 `python deploy_copy.py`：複製到部署副本（覆蓋），`game\scratch-td\` 只帶 `web\`（不帶 `_build\`、.md、中文檔名正本）。部署夾多出來的舊檔它只會列出來，要刪就在部署夾 `git rm`。部署版 `index.html` 的 .js/.css 會自動加 `?v=時間戳`，避免 iPad 用到快取的舊檔。
