@@ -1,7 +1,7 @@
 /* 自然科（五年級上）心智圖資料：單元三〈水溶液〉、單元四〈力與運動〉
  * 規則同 unit1-2.js；格式見 ../FORMAT.md。
  * - 單元四「摩擦力小時較省力」與「摩擦力大時較費力」兩格都連到「生活中摩擦力的應用」→ 用 links 畫第二條（多父節點）。
- * - verify:true＝講義原文看得清楚但字面可疑（例：「相同單位時的速度比較」疑似少「間」），等對照課本後拿掉。
+ * - verify:true＝講義原文看得清楚但字面可疑，等對照課本後拿掉（目前無；「相同單位時間的速度比較」已由 Yoda 2026-10-09 確認補上「間」、拿掉標記）。
  */
 window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
 (function (S) {
@@ -137,8 +137,8 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
             cands: [{ w: "比距離", core: true }, { w: "比時間", core: true }] }
         ] },
         { id: "n4-c2", title: "運動速度", keys: ["速度"], children: [
-          { id: "n4-c2a", rel: "推論", title: "在相同單位時比較速度", keys: ["相同單位"], verify: true,
-            cands: [{ w: "相同單位", core: true }] }
+          { id: "n4-c2a", rel: "推論", title: "相同單位時間的速度比較", keys: ["相同單位時間"],
+            cands: [{ w: "相同單位時間", core: true }] }
         ] },
         { id: "n4-c3", rel: "觀察", title: "認識動能", keys: ["動能"], children: [
           { id: "n4-c3a", rel: "推論", title: "同一個物體速度愈大，動能就愈大；能量可以互相轉換，總能量維持不變，叫做能量守恆", keys: ["動能", "守恆"],
