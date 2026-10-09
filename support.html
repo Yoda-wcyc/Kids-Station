@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff8ec">
+<meta name="color-scheme" content="light">
+<meta name="format-detection" content="telephone=no">
+<title>有問題問我們 · 小朋友學習站</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23ffd166'/%3E%3Ctext x='90' y='120' font-size='86' text-anchor='middle' font-family='Arial,sans-serif' font-weight='bold' fill='%23263445'%3EAB%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css?v=2ffff75a47">
+<style>
+.mbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:3px solid var(--line);box-shadow:0 2px 10px rgba(38,52,69,.06)}
+.mbar-in{max-width:620px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:12px}
+.mbar-in .brand{flex:1;font-size:1.1rem;font-weight:800;color:var(--ink);text-decoration:none}
+.wrapm{max-width:620px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+.hero{text-align:center;margin:6px 0 14px}.hero .big-i{font-size:3rem;line-height:1.2}.hero h1{font-size:1.45rem}
+.fld{display:block;margin:0 0 14px}.fld>span{display:block;font-weight:700;margin:0 0 6px}
+.fld small{display:block;color:var(--muted);font-size:.85rem;margin-top:4px}
+.inp{width:100%;min-height:56px;font:inherit;font-size:1.05rem;padding:8px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
+textarea.inp{min-height:160px;resize:vertical;line-height:1.6}
+.inp:focus{outline:3px solid #ffd6b8;border-color:var(--pri)}
+.msg{border-radius:14px;padding:12px 14px;margin:0 0 14px;font-weight:600}
+.msg.bad{background:var(--no-bg);color:#a3262a;border:2px solid #f5c2c3}
+.msg.good{background:var(--ok-bg);color:#1d7a48;border:2px solid #b5e8cb}
+.msg.info{background:#fff8ec;border:2px solid var(--line)}
+.msg[hidden],[hidden]{display:none!important}
+.who{background:#fff8ec;border:2px solid var(--line);border-radius:14px;padding:10px 14px;margin:0 0 14px}
+.hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden}
+.ticket{font-size:1.5rem;font-weight:800;letter-spacing:.04em;text-align:center;background:#fff;border:2px dashed var(--line);border-radius:14px;padding:12px;margin:10px 0;word-break:break-all}
+.cnt{text-align:right}
+</style>
+</head>
+<body data-kids-widget="off">
+<header class="mbar"><div class="mbar-in"><a class="brand" href="index.html">🎈 小朋友學習站</a><a class="btn" href="index.html">← 回學習站</a></div></header>
+<main class="wrapm">
+  <div class="hero"><div class="big-i">💬</div><h1>有問題問我們</h1><p class="muted">登入不了、題目怪怪的、學習幣不對，或有想法想告訴我們，都可以寫在這裡。</p></div>
+  <p class="msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+  <form class="card" id="f" novalidate>
+    <div class="who" id="who" hidden></div>
+    <label class="fld" id="em-wrap"><span>家長的 email</span><input class="inp" type="email" name="email" autocomplete="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="120"><small>我們會回信到這個信箱，請填可以收信的 email。</small></label>
+    <label class="fld"><span>問題分類</span>
+      <select class="inp" name="category">
+        <option>帳號登入</option><option>練習內容</option><option>學習幣</option><option>建議</option><option selected>其他</option>
+      </select></label>
+    <label class="fld"><span>想說的話</span><textarea class="inp" name="message" maxlength="3000" required placeholder="例如：在哪一頁、發生什麼事、用的是手機還是平板。"></textarea><small class="cnt"><span id="cnt">0</span> / 3000 字</small></label>
+    <label class="hp" aria-hidden="true">請不要填這一格<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    <button class="btn primary big wide" type="submit" id="send">送出</button>
+    <p class="muted" style="margin:10px 0 0;font-size:.88rem">請不要寫孩子的全名、生日、地址或密碼。</p>
+  </form>
+
+  <section class="card center" id="done" hidden>
+    <div class="big-i" style="font-size:3rem">📮</div>
+    <h2>收到了，謝謝！</h2>
+    <p>你的問題編號是：</p>
+    <div class="ticket" id="tid"></div>
+    <p class="muted">我們會盡快回信到 <b id="done-em"></b>。再寫信或問問題時，附上這個編號會更快找到。</p>
+    <p style="margin:14px 0 0"><a class="btn" href="index.html">← 回學習站</a> <button class="btn" type="button" id="again">再問一個問題</button></p>
+  </section>
+  <p class="center muted" style="margin:18px 0 0"><a href="terms.html">📄 使用條款與隱私權說明</a></p>
+</main>
+<script src="kids-auth.js?v=36e05cbded"></script>
+<script>
+(function () {
+  'use strict';
+  var A = window.KidsAuth, f = document.getElementById('f'), msg = document.getElementById('msg');
+  var $ = function (s) { return document.querySelector(s); };
+  function say(t, kind) { msg.textContent = t; msg.className = 'msg ' + (kind || 'bad'); msg.hidden = !t; if (t) msg.scrollIntoView({ block: 'nearest' }); }
+  var EMAIL_RE = /^[^\s<>"'&\\\/]+@[^\s<>"'&\\\/]+\.[^\s<>"'&\\\/]{2,}$/;
+  var CATS = ['帳號登入', '練習內容', '學習幣', '建議', '其他'];
+  // ?cat=帳號登入 → 預先選好分類（登入頁「忘記密碼」連結會帶）
+  try { var c = new URLSearchParams(location.search).get('cat'); if (c && CATS.indexOf(c) >= 0) f.category.value = c; } catch (e) { }
+
+  var me = A && A.isLoggedIn() ? A.member() : null;
+  if (me && me.email) {
+    var who = $('#who'); who.hidden = false;
+    who.textContent = '會用你的帳號（' + me.email + '）送出，我們會回信到這個信箱。';
+    $('#em-wrap').hidden = true;
+  }
+  f.message.addEventListener('input', function () { $('#cnt').textContent = f.message.value.length; });
+
+  var MSG = { bad_request: '資料好像有地方沒填好：請確認 email 和想說的話都有填。', rate_limited: '這個 email 這一小時已經送了很多則了，請過一小時再試。',
+    network: '連不上網路，請確認 Wi-Fi 之後再試一次。', not_configured: '客服表單還在準備中，請稍後再試。' };
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var email = me && me.email ? me.email : f.email.value.trim();
+    var text = f.message.value.trim();
+    if (!email || !EMAIL_RE.test(email)) return say('請填家長可以收信的 email。');
+    if (!text) return say('請寫下想說的話。');
+    if (text.length > 3000) return say('內容太長了，請在 3000 字以內。');
+    var body = { email: email, category: f.category.value, message: text, website: f.website.value };
+    if (me && A.token()) body.token = A.token();
+    var btn = $('#send'); btn.disabled = true; say('送出中…', 'info');
+    A.api('submitSupport', body).then(function (r) {
+      btn.disabled = false; say('');
+      $('#tid').textContent = r.ticket_id || '';
+      $('#done-em').textContent = email;
+      f.hidden = true; $('#done').hidden = false;
+      try { window.scrollTo(0, 0); } catch (x) { }
+    }, function (x) {
+      btn.disabled = false;
+      var code = x && x.code;
+      say(MSG[code] || (A.errorText ? A.errorText(code) : '發生了一點小問題，請稍後再試。'));
+    });
+  });
+  $('#again').addEventListener('click', function () { f.message.value = ''; $('#cnt').textContent = '0'; $('#done').hidden = true; f.hidden = false; say(''); });
+})();
+</script>
+</body>
+</html>

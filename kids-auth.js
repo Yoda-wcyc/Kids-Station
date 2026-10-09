@@ -296,6 +296,34 @@
     loginUrl: loginUrl, safeNext: safeNext, base: BASE, autoRenew: autoRenew, refreshWidget: refreshWidget, payUrl: KIDS_PAY_URL
   };
 
-  function boot() { refreshWidget(); autoRenew(); }
+  // ---------- 流量（後端 hit；介面見 kids-member/docs/CONSOLE.md §3） ----------
+  // 每頁載入送一次 {page, path, host, ref, vid}：vid＝kids_vid 隨機 id（不含個資）、ref 只送網域。
+  // 同一頁 30 秒內不重送；本機（localhost／127.0.0.1）、file://、iframe 子頁不送；送失敗安靜放棄，絕不影響小朋友使用。
+  var K_VID = 'kids_vid', K_HIT = 'kids_hit', HIT_GAP = 30000;
+  function visitorId() {
+    var v = get(K_VID);
+    if (!v || !/^[A-Za-z0-9_\-]{6,40}$/.test(v)) { v = 'v' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); set(K_VID, v); }
+    return v;
+  }
+  function pageName() {
+    try { var bp = new URL(BASE).pathname, p = location.pathname; var rel = p.indexOf(bp) === 0 ? p.slice(bp.length) : p; return rel || 'index.html'; }
+    catch (e) { return location.pathname || ''; }
+  }
+  function sendHit() {
+    var h = location.hostname;
+    var local = h === 'localhost' || h === '127.0.0.1' || h === '[::1]' || h === '' || location.protocol === 'file:';
+    if (local && window.__KIDS_TEST_HIT !== true) return;   // 測試程式在本機可用 window.__KIDS_TEST_HIT=true 打開
+    if (!configured() || inFrame()) return;
+    var page = pageName(), now = Date.now(), last = {};
+    try { last = JSON.parse(get(K_HIT) || '{}') || {}; } catch (e) { last = {}; }
+    if (last[page] && now - last[page] < HIT_GAP && now >= last[page]) return;
+    var keep = {}; Object.keys(last).forEach(function (k) { if (now - last[k] < HIT_GAP) keep[k] = last[k]; });
+    keep[page] = now; set(K_HIT, JSON.stringify(keep));
+    var ref = ''; try { ref = document.referrer ? new URL(document.referrer).host : ''; } catch (e) { }
+    var body = JSON.stringify({ action: 'hit', page: page, path: location.pathname, host: location.host, ref: ref, vid: visitorId() });
+    try { fetch(gasUrl(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body, cache: 'no-store', credentials: 'omit', keepalive: true }).catch(function () { }); } catch (e) { }
+  }
+
+  function boot() { refreshWidget(); autoRenew(); try { sendHit(); } catch (e) { } }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
