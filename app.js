@@ -339,7 +339,7 @@
   // ---------- 練習設定 ----------
   function pPractice() {
     const mods = Object.keys(KE.MODULES), srcs = E.sources();
-    const types = Object.keys(KE.TYPES).filter(y => canSpeak || y !== 'speak');
+    const types = Object.keys(KE.TYPES).filter(y => (canSpeak || y !== 'speak') && !KE.SET_ONLY_TYPES.includes(y)); // 只在「練習這組」出的題型不列
     const L = Object.assign({ mods: mods.slice(), offT: [], offY: [], count: 10, ratio: 0, lv: '', src: '' }, S.settings.last || {});
     app.innerHTML = top('練習設定') + `
       <section class="card"><h2>1. 選單元</h2>${mods.map(m => `<div class="mod"><label class="ck"><input type="checkbox" name="mod" value="${m}" ${L.mods.includes(m) ? 'checked' : ''}> ${KE.MODULES[m]}</label><details><summary>選主題</summary>${topicChecks(m, L)}</details></div>`).join('')}</section>
@@ -365,6 +365,10 @@
     if (q.input === 'type') body = `<div class="spell ${/\s/.test(q.answer) ? 'long' : ''}"><input id="ans" type="text" inputmode="text" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="send" placeholder="${/\s/.test(q.answer) ? '打出整句英文' : '在這裡打字'}" aria-label="英文答案"><button class="btn primary" id="ok">送出</button></div>`;
     else if (q.input === 'chips') body = `<div class="placed" id="placed"></div><div class="pool">${q.options.map((c, i) => `<button class="chip" data-i="${i}">${esc(c)}</button>`).join('')}</div><div class="row"><button class="btn" id="clr">清除</button><button class="btn primary" id="ok">確定</button></div>`;
     else if (q.input === 'mic') body = `<div class="row"><button class="btn primary big" id="mic">🎤 按我開始說</button><button class="btn" id="skip">跳過</button></div><p class="muted center" id="heard"></p>`;
+    // 填空拼字：每個空格一個字母框（打一個字自動跳下一格、空格按退格回上一格）
+    else if (q.input === 'gap') body = `<div class="gapw en" id="gapw">${q.answer.split('').map((c, i) => (q.gaps.includes(i)
+      ? `<input class="gap-in" data-p="${i}" type="text" maxlength="1" inputmode="text" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="next" aria-label="第 ${q.gaps.indexOf(i) + 1} 個空格">`
+      : c === ' ' ? '<span class="gap-sp"></span>' : `<span class="gap-ch">${esc(c)}</span>`)).join('')}</div><div class="row"><button class="btn primary big" id="ok">送出</button></div>`;
     else body = `<div class="opts ${q.options.some(o => o.length > 14) ? 'one' : ''}">${q.options.map(o => `<button class="opt" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
     app.innerHTML = (Q.gate ? top('通過小測驗才能標記學會 ✨', Q.gate.back) + `<p class="gate-note">「${esc(E.itemInfo(Q.gate.itemId).item)}」小測驗：${Q.gate.total} 題要答對 ${Q.gate.need} 題</p>`
       : Q.drill ? top('練習這組', Q.drill.back) + `<p class="drill-note">「${esc(E.itemInfo(Q.drill.itemId).item)}」${drillLine()}</p>` : top('練習中', '#practice')) + `<div class="bar"><i style="width:${Q.i / n * 100}%"></i></div><p class="count">第 ${Q.i + 1} / ${n} 題</p>
@@ -411,6 +415,23 @@
         } catch (e) { heard.textContent = '這台裝置不能錄音，按「跳過」繼續 👉'; }
       };
     }
+    if (q.input === 'gap') {
+      const boxes = $$('.gap-in');
+      const filled = () => q.answer.split('').map((c, i) => { const b = boxes.find(x => +x.dataset.p === i); return b ? (b.value.trim().slice(-1) || '_') : c; }).join('');
+      const send = () => { const empty = boxes.find(b => !b.value.trim()); if (empty) { empty.focus(); return; } answer(q, filled()); };
+      boxes.forEach((b, k) => {
+        b.oninput = () => { b.value = b.value.replace(/[^A-Za-z]/g, '').slice(-1); if (b.value && boxes[k + 1]) boxes[k + 1].focus(); };
+        b.onkeydown = e => {
+          if (e.key === 'Backspace' && !b.value && boxes[k - 1]) { e.preventDefault(); boxes[k - 1].value = ''; boxes[k - 1].focus(); }
+          else if (e.key === 'Enter') { e.preventDefault(); send(); }
+          else if (e.key === 'ArrowLeft' && boxes[k - 1]) { e.preventDefault(); boxes[k - 1].focus(); }
+          else if (e.key === 'ArrowRight' && boxes[k + 1]) { e.preventDefault(); boxes[k + 1].focus(); }
+        };
+        b.onfocus = () => { try { b.select(); } catch (e) { } };
+      });
+      $('#ok').onclick = send;
+      try { if (boxes[0]) boxes[0].focus({ preventScroll: true }); } catch (e) { }
+    }
     if (q.auto) speak(q.speakText);
   }
   function answer(q, input, skipped) {
@@ -422,7 +443,8 @@
     if (window.KidsCoins) skipped ? KidsCoins.activity('english') : KidsCoins.answer(res.ok, 'english');
     Q.answers.push({ q, ok: res.ok, skip: !!skipped, input });
     $$('.opt').forEach(b => { b.disabled = true; if (b.dataset.v === q.answer) b.classList.add('right'); else if (b.dataset.v === input) b.classList.add('wrong'); });
-    $$('#ok,#clr,#mic,#skip,.pool .chip,#ans').forEach(x => { x.disabled = true; });
+    $$('#ok,#clr,#mic,#skip,.pool .chip,#ans,.gap-in').forEach(x => { x.disabled = true; });
+    if (q.input === 'gap' && !skipped) $$('.gap-in').forEach((b, j) => b.classList.add(res.wrong && res.wrong.includes(j) ? 'bad' : 'good'));
     // 練習這組：答錯的題目排回後面（打字題永遠最後），直到答對
     const again = Q.drill && !res.ok && !skipped;
     if (again) Q.list = KE.requeue(Q.list, Q.i, E.get(q.id));
@@ -498,7 +520,7 @@
   const BF = { m: '', k: '', y: '' };
   function pBank() {
     const mods = Object.keys(KE.MODULES);
-    const types = Object.keys(KE.TYPES).filter(y => canSpeak || y !== 'speak');
+    const types = Object.keys(KE.TYPES).filter(y => (canSpeak || y !== 'speak') && !KE.SET_ONLY_TYPES.includes(y));
     app.innerHTML = top('例題庫') + `<div class="filters"><select id="bm" aria-label="單元"><option value="">全部單元</option>${mods.map(m => `<option value="${m}">${KE.MODULES[m]}</option>`).join('')}</select><select id="bk" aria-label="主題"></select><select id="by" aria-label="題型"><option value="">全部題型</option>${types.map(y => `<option value="${y}">${KE.TYPES[y]}</option>`).join('')}</select><button class="btn primary" id="bgo">🎯 練這些</button></div><p class="muted" id="bn"></p><ul class="list card" id="bl"></ul>`;
     const pick = () => E.list({ modules: BF.m ? [BF.m] : null, topics: BF.k ? [BF.k] : null, types: BF.y ? [BF.y] : null, allowSpeak: canSpeak });
     const draw = () => {

@@ -78,9 +78,10 @@ allQs.filter(q => q.module === 'words' && q.options).forEach(q => {
 ok(new Set(E.meta.map(m => m.id)).size === E.meta.length, 'unique ids');
 const counts = {};
 Object.keys(KE.TYPES).forEach(type => {
-  const pool = E.list({ types: [type], allowSpeak: true }).length;
+  // withSetOnly：只在題組出的題型（填空拼字、文法打字版）一般練習不出，這裡要一起檢查
+  const pool = E.list({ types: [type], allowSpeak: true, withSetOnly: true }).length;
   ok(pool > 0, 'pool ' + type);
-  const qs = E.buildQuiz({ types: [type], count: 30, allowSpeak: true });
+  const qs = E.buildQuiz({ types: [type], count: 30, allowSpeak: true, withSetOnly: true });
   ok(qs.length === Math.min(30, pool), `build ${type}: ${qs.length}/${pool}`);
   counts[type] = pool;
   qs.forEach(q => {
@@ -155,26 +156,57 @@ ok(E.learnedRows({ 'word:apple': {} }).length === 0, 'rows skip records without 
 // ---- 每個項目的固定題組 ----
 const typesOfIds = ids => ids.map(id => E.byId[id].type);
 const unique = a => new Set(a).size === a.length;
+// 單字題組（2026-10-09 起）：選、選、填空拼字（約 1/3）、填空拼字（約 1/2）、看中文打字；只有 1 個字母的字（a、I）沒有填空 → 3 題
 W.forEach(w => {
-  const ids = E.itemSet(KE.wordItemId(w)), t = typesOfIds(ids);
-  ok(ids.length === 5 && unique(ids) && t.join() === 'listen-choose,zh2en,en2zh,spell,zh2en-type', 'word set ' + w.w);
-  ok(ids.slice(-2).every(id => E.get(id).answer === w.w && E.get(id).input === 'type'), 'word typed answers ' + w.w);
+  const ids = E.itemSet(KE.wordItemId(w)), t = typesOfIds(ids), one = w.w.replace(/[^A-Za-z]/g, '').length < 2;
+  ok(unique(ids) && t.join() === (one ? 'listen-choose,zh2en,zh2en-type' : 'listen-choose,zh2en,word-gap,word-gap,zh2en-type'), 'word set ' + w.w + ' ' + t);
+  ok(E.get(ids[ids.length - 1]).answer === w.w && E.get(ids[ids.length - 1]).input === 'type', 'word typed answer ' + w.w);
+  ok(ids.filter(id => /:gap[12]$/.test(id)).every(id => { const q = E.get(id); return q.input === 'gap' && q.answer === w.w && q.play && E.check(q, w.w).ok && E.check(q, w.w.toUpperCase()).ok; }), 'word gap self-check ' + w.w);
 });
+ok(W.filter(w => w.w.replace(/[^A-Za-z]/g, '').length < 2).map(w => w.w).sort().join() === 'I,a', 'only a / I have no gap questions');
+ok(E.list({ types: ['word-gap', 'grammar-fill-type', 'grammar-fix-type'] }).length === 0 && E.list({ modules: ['patterns'] }).every(m => !/:x\d+:type$/.test(m.id)), 'set-only questions stay out of normal practice / bank');
+ok(E.buildQuiz({ modules: ['words'], count: 30 }).every(q => ['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type'].includes(q.type)), 'normal word rounds keep old types');
+// ---- 填空拼字：決定性、邊界、判分 ----
+const G1 = KE.wordGaps('apple'), G1b = KE.wordGaps('apple');
+ok(JSON.stringify(G1) === JSON.stringify(G1b) && JSON.stringify(E.get('w:apple:gap1').gaps) === JSON.stringify(G1.g1), 'gaps deterministic (seeded by the word)');
+ok(G1.g1.length === 2 && G1.g2.length === 3 && !G1.g1.includes(0) && G1.g1.join() !== G1.g2.join(), 'apple: 1/3 → 2, 1/2 → 3, first letter kept: ' + JSON.stringify(G1));
+const gapsOk = w => {
+  const g = KE.wordGaps(w), L = w.split('').map((c, i) => (/[A-Za-z]/.test(c) ? i : -1)).filter(i => i >= 0), n = L.length;
+  if (n < 2) return g === null;
+  const inL = a => a.every(p => L.includes(p)), k1 = n <= 3 ? 1 : Math.max(1, Math.round(n / 3)), k2 = n === 2 ? 1 : n <= 3 ? 2 : Math.max(2, Math.round(n / 2));
+  return inL(g.g1) && inL(g.g2) && !g.g1.includes(L[0]) && g.g1.length === k1 && g.g2.length === Math.min(k2, n - 1) && g.g2.length < n && g.g1.join() !== g.g2.join() && new Set(g.g1).size === g.g1.length && new Set(g.g2).size === g.g2.length;
+};
+ok(W.every(w => gapsOk(w.w)), 'gap rules hold for every word: ' + W.filter(w => !gapsOk(w.w)).map(w => w.w).join());
+ok(JSON.stringify(KE.wordGaps('go')) === '{"g1":[1],"g2":[0]}' && KE.wordGaps('cat').g1.length === 1 && KE.wordGaps('cat').g2.join() === '1,2' && KE.wordGaps('a') === null, '2–3 letter edges');
+const lg = KE.wordGaps('senior high school'); ok(lg.g1.length === 5 && lg.g2.length === 8 && ![6, 11].some(p => lg.g1.includes(p) || lg.g2.includes(p)), 'long phrase: spaces never hidden');
+const qg = E.get('w:apple:gap1'), fill = (q, f) => q.answer.split('').map((c, i) => (q.gaps.includes(i) ? f(c, i) : c)).join('');
+ok(E.check(qg, fill(qg, c => c.toUpperCase())).ok && !E.check(qg, fill(qg, (c, i) => (i === qg.gaps[0] ? 'z' : c))).ok && !E.check(qg, fill(qg, () => '_')).ok && !E.check(qg, 'appl').ok, 'gap grade: case-insensitive, every box must be right');
+ok(E.check(qg, qg.gaps.map(p => qg.answer[p])).ok && E.check(qg, fill(qg, (c, i) => (i === qg.gaps[0] ? 'z' : c))).wrong.join() === '0', 'gap grade: array input / wrong boxes');
 R.forEach(r => {
   const ids = E.itemSet(KE.rootItemId(r)), n = r.words.length, t = typesOfIds(ids);
   ok(ids.length === 1 + 2 * n && unique(ids) && t[0] === 'root-meaning' && t.slice(1, 1 + n).every(x => x === 'root-word') && t.slice(-n).every(x => x === 'root-type'), 'root set ' + r.p);
   ok(ids.slice(-n).map(id => E.get(id).answer).join() === r.words.map(x => x.w).join(), 'root typed answers ' + r.p);
   ids.slice(-n).forEach((id, i) => { const q = E.get(id); ok(q.prompt.includes('___') && q.prompt.includes(r.words[i].zh), 'root-type hint ' + id); });
 });
+// 文法／句型題組（2026-10-09 起）：10 題非打字＋5 題打字，打字題排最後
 G.forEach(gr => {
   const ids = E.itemSet(KE.grammarItemId(gr)), t = typesOfIds(ids);
-  ok(ids.length === 15 && unique(ids) && t.slice(0, 13).every(x => ['grammar-fill', 'grammar-fix'].includes(x)) && t.slice(-2).every(x => x === 'zh2en-type'), 'grammar set ' + gr.id);
-  ids.slice(-2).forEach(id => { const q = E.get(id); ok(q.prompt && q.answer && q.input === 'type' && !q.play, 'grammar typed ' + id); });
+  ok(ids.length === 15 && unique(ids) && t.slice(0, 10).every(x => ['grammar-fill', 'grammar-fix'].includes(x)) && t.slice(-5).every(x => ['zh2en-type', 'grammar-fill-type', 'grammar-fix-type'].includes(x)), 'grammar set ' + gr.id + ' ' + t);
+  ok(t.slice(-5).filter(x => x === 'zh2en-type').length === Math.min(5, gr.typed.length) && t.filter(x => x === 'grammar-fill-type').length === Math.min(5 - gr.typed.length, gr.q.filter(q => q.type === 'fill').length), 'grammar typed mix: existing typed first, then fill→type ' + gr.id);
+  ids.slice(-5).forEach(id => { const q = E.get(id); ok(q.prompt && q.answer && q.input === 'type' && !q.play && KE.isTyped(q), 'grammar typed ' + id); });
+  // 舊題號不改意思：選擇題仍是 g:<id>:<i>，打字版另起 :type；換成打字的那幾題，選擇版仍在題庫、只是不在題組
+  ids.slice(0, 10).forEach(id => ok(/^g:[^:]+:\d+$/.test(id), 'grammar choice id kept ' + id));
+  ids.filter(id => /:type$/.test(id)).forEach(id => { const base = id.replace(/:type$/, ''); ok(E.byId[base] && !ids.includes(base) && E.get(id).answer === (gr.q[+base.split(':')[2]].a || gr.q[+base.split(':')[2]].right), 'grammar fill→type answer ' + id); });
 });
 P.forEach(p => {
   const ids = E.itemSet(KE.patternItemId(p)), t = typesOfIds(ids);
-  ok(ids.length === 15 && unique(ids) && t.slice(0, 5).every(x => x === 'reorder') && t.slice(5, 10).every(x => x === 'pattern-choose') && t.slice(10, 13).every(x => x === 'reorder') && t.slice(-2).every(x => x === 'zh2en-type'), 'pattern set ' + p.id);
+  ok(ids.length === 15 && unique(ids) && t.slice(0, 5).every(x => x === 'reorder') && t.slice(5, 10).every(x => x === 'pattern-choose') && t.slice(-5).every(x => x === 'zh2en-type'), 'pattern set ' + p.id + ' ' + t);
+  ok(ids.slice(-5).map(id => E.get(id).answer).join('|') === p.typed.map(x => x.en).concat(p.extra.map(x => x.en)).slice(0, 5).join('|'), 'pattern typed = typed then extra ' + p.id);
 });
+// 不足 15 題的項目：照 2:1、打字題排最後
+ok(KE.composeSet(['a', 'b', 'c', 'd'], ['x', 'y']).join() === 'a,b,c,d,x,y' && KE.composeSet('abcdefghijkl'.split(''), ['x']).join('') === 'abcdefghijklx', 'composeSet short');
+ok(KE.composeSet('abcdefghijkl'.split(''), ['x', 'y', 'z', 'u', 'v', 'w']).join('') === 'abcdefghijxyzuv', 'composeSet 10+5');
+ok(KE.composeSet(['a', 'b', 'c', 'd', 'e', 'f'], ['x', 'y', 'z']).join() === 'a,b,c,d,e,f,x,y,z', 'composeSet keeps typed last');
 ok(allItems.every(id => E.itemSet(id).every(q => E.byId[q] && E.byId[q].type !== 'speak')), 'sets never use speak');
 P.forEach(p => E.itemSet(KE.patternItemId(p)).map(id => E.get(id)).filter(q => q.type === 'reorder').forEach(q => ok(q.options.slice().sort().join('|') === q.answer.split(/\s+/).sort().join('|') && E.check(q, q.answer).ok, 'chips rebuild ' + q.id)));
 ok(E.itemSet('word:nope').length === 0 && !E.progress('word:nope', new Set()).complete, 'unknown item');
@@ -192,10 +224,25 @@ const oldPractice = E.buildQuiz({ modules: ['patterns'], topics: ['patterns:lets
 ok(E.progress('pattern:lets', KE.correctIds(oldPractice)).done === E.itemSet('pattern:lets').filter(id => oldPractice.some(l => l.id === id)).length, 'retroactive: earlier practice answers count');
 // 打字題排序：練一組時打字題排最後；答錯重排不會插到打字題後面
 const drill = E.drill('grammar:be', new Set());
-ok(drill.length === 15 && drill.slice(-2).every(q => q.type === 'zh2en-type') && drill.slice(0, 13).every(q => !KE.isTyped(q)), 'drill: typed last (grammar)');
-const wd = E.drill('word:apple', new Set()); ok(wd.slice(-2).every(KE.isTyped) && wd.slice(0, 3).every(q => !KE.isTyped(q)), 'drill: typed last (word)');
+ok(drill.length === 15 && drill.slice(-5).every(KE.isTyped) && drill.slice(0, 10).every(q => !KE.isTyped(q)), 'drill: 10 non-typed then 5 typed (grammar)');
+const pdr = E.drill('pattern:lets', new Set()); ok(pdr.length === 15 && pdr.slice(-5).every(q => q.type === 'zh2en-type') && pdr.slice(0, 10).every(q => !KE.isTyped(q)), 'drill: 10 non-typed then 5 typed (pattern)');
+const wd = E.drill('word:apple', new Set()); ok(wd.map(q => q.type).join() === 'listen-choose,zh2en,word-gap,word-gap,zh2en-type' && wd.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,type', 'drill: word set in fixed order (word)');
+ok(E.drill('word:apple', new Set(['w:apple:zh2en'])).map(q => q.id.split(':')[2]).join() === 'listen,gap1,gap2,type', 'drill: word fixed order keeps order when some answered');
+// 答錯重排：選擇題插在填空拼字前、填空拼字插在完整打字前、打字放最後
+const wq = KE.requeue(wd, 0, wd[0]); ok(wq.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,listen,gap1,gap2,type', 'word requeue choice before gaps');
+const wg = KE.requeue(wd, 2, wd[2]); ok(wg.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,gap1,type', 'word requeue gap before final typing');
+const wt = KE.requeue(wd, 4, wd[4]); ok(wt.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,type,type', 'word requeue typing at end');
+// 舊進度：以前的 5 題（listen、zh2en、en2zh、spell、type）→ 新組合裡仍算 3 題；學會標記不受影響
+const oldW = new Set(['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(s => 'w:apple:' + s));
+ok(E.progress('word:apple', oldW).done === 3 && E.progress('word:apple', oldW).missing.join() === 'w:apple:gap1,w:apple:gap2', 'old word progress kept 3/5, gaps to redo');
 const rq = KE.requeue(drill, 0, drill[0]);
-ok(rq.length === 16 && rq.slice(-2).every(q => q.type === 'zh2en-type') && rq[13].id === drill[0].id, 'requeue non-typed before typed');
+ok(rq.length === 16 && rq.slice(-5).every(KE.isTyped) && rq[10].id === drill[0].id, 'requeue non-typed before typed');
+// 舊進度：以前答對過的 15 題（13 題選擇＋2 題中翻英打字）換新題組後，仍算的有 12 題（不歸零）；換進來的 3 題打字題要再答對
+const oldGrammar = new Set(gr0Old('be'));
+function gr0Old(id) { const g = G.find(x => x.id === id); return g.q.map((q, i) => `g:${id}:${i}`).concat(g.typed.map((t, k) => `g:${id}:t${k}`)); }
+ok(E.progress('grammar:be', oldGrammar).done === 12 && !E.progress('grammar:be', oldGrammar).complete, 'old grammar progress kept 12/15');
+const oldPat = new Set(P.find(p => p.id === 'lets').ex.flatMap((e, j) => [`p:lets:${j}:reorder`, `p:lets:${j}:choose`]).concat([0, 1, 2].map(k => `p:lets:x${k}:reorder`), [0, 1].map(k => `p:lets:t${k}`)));
+ok(E.progress('pattern:lets', oldPat).done === 12, 'old pattern progress kept 12/15');
 const rq2 = KE.requeue(rq, 14, rq[14]); ok(rq2[rq2.length - 1].id === rq[14].id, 'requeue typed at end');
 // 打字判分
 const tg = (a, alts, s) => KE.typeGrade(a, alts, s).ok;
