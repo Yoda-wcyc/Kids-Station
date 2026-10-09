@@ -109,8 +109,12 @@ function recordResult(uid, level, pct, isReview){
   u.best[level] = Math.max(u.best[level] || 0, pct);
   var pass = pct >= PASS[level];
   if(pass){ u.passedAt[level] = t; u.lastPassAt = t; u.unlocked = Math.max(u.unlocked, Math.min(level + 1, 5)); if(isReview) u.reviewStep = (u.reviewStep || 0) + 1; }
-  lsSet(PKEY, p); return pass;
+  lsSet(PKEY, p); syncTouch(true); return pass;
 }
+/* 帳號同步（sync.js；在首頁 iframe 裡借用首頁的 KESync）：一關結束馬上同步，挖空紀錄 3 秒後 */
+function syncTouch(now){ try{ var K = window.KESync; if(K) (now ? K.now : K.touch)(); }catch(e){} }
+/* 別台的紀錄合併進來（storage／kesync-data）：停在關卡首頁才重畫，正在玩的不打斷 */
+function onSynced(){ try{ if(UI.mode === 'arch' && !arch && !$('#panel').hidden) renderArchHome(); updateChrome(); }catch(e){} }
 function fmtT(t){ if(!t) return '—'; var d = new Date(t); return (d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
 
 /* ---------- 樹 ---------- */
@@ -142,7 +146,7 @@ function allDataNodes(u){ var out = []; (function w(d, depth){ if(depth) out.pus
  * 重點有兩種：卡片上的 points（社會科），以及「句子節點」——節點自己帶 cands，標題就是那一句（自然科）。
  * 句子節點在 npOf 裡排第 0 條、pid＝節點id-s；points 照原本 節點id-p<i>。 */
 function bstore(uid){ var all = lsGet(BKEY, {}); return all[pk(uid)] || {sess:0, w:{}, a:{}}; }
-function bsave(uid, st){ var all = lsGet(BKEY, {}); all[pk(uid)] = st; lsSet(BKEY, all); }
+function bsave(uid, st){ var all = lsGet(BKEY, {}); all[pk(uid)] = st; lsSet(BKEY, all); syncTouch(false); }
 function titleNp(d){ if(!d.cands) return null; if(!d._tnp) d._tnp = SB.normPoint({t:d.title, cands:d.cands}); return d._tnp; }
 function npOf(d){ if(!d._np) d._np = (d.points || []).map(SB.normPoint); return d._np; }
 function pointsOf(d){ var out = [], t = titleNp(d); if(t) out.push({pid:d.id + '-s', np:t, node:d, pi:-1}); npOf(d).forEach(function(np, pi){ out.push({pid:d.id + '-p' + pi, np:np, node:d, pi:pi}); }); return out; }
@@ -766,6 +770,8 @@ function init(){
   var m0 = UI.mode;
   if(m0 !== 'read'){ UI.mode = 'read'; if(loggedOK() && gate(m0, function(){ UI.mode = m0; saveUI(); enterMode(); })) UI.mode = m0; }
   enterMode();
+  window.addEventListener('storage', function(e){ if(e.key === PKEY || e.key === null) onSynced(); });
+  window.addEventListener('kesync-data', onSynced);
 }
 window.MM = { refresh:function(){ if(!D.units[UI.unit]) UI.unit = 0; enterMode(); }, state:function(){ return {UI:UI, view:view, arch:arch, QZ:QZ, cloze:cloze, NODES:NODES, STAGE:STAGE}; }, act:function(name, data){ var el = document.createElement('button'); Object.keys(data || {}).forEach(function(k){ el.dataset[k] = data[k]; }); ACT[name](el); }, archSeq:archSeq };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

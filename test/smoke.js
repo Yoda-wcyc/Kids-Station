@@ -354,6 +354,108 @@ const LS1 = KE.setLearned({}, 'word:apple', '2026-10-05T01:00:00Z', '3/3');
 ok(LS1['word:apple'].score === '3/3' && E.learnedRows(LS1)[0].score === '3/3', 'learned score stored');
 ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '—', 'old entry score shows —');
 
+// ---- 裝置同步 v3：各科練習紀錄（社會／自然心智圖、數學天平題目、Scratch、英文星星）----
+{
+  const C = SM.canon, same = (a, b) => C(a) === C(b);
+  const props = (a, b, c, name) => {   // 交換律、冪等、結合律
+    ok(same(SM.merge(a, b), SM.merge(b, a)), name + ': commutative');
+    const ab = SM.merge(a, b); ok(same(SM.merge(ab, a), ab) && same(SM.merge(ab, b), ab) && same(SM.merge(ab, ab), ab), name + ': idempotent');
+    if (c) ok(same(SM.merge(SM.merge(a, b), c), SM.merge(a, SM.merge(b, c))), name + ': associative');
+  };
+  // 相容：舊文件（v1 伺服器新建、v2 只有英文）讀進來不會壞，新欄位都是空的
+  const v1 = SM.normalize({ v: 1, created: '2026-10-09T00:00:00Z', log: [], learned: {}, mistakes: {} }), v2 = SM.normalize(devA);
+  ok(v1.v === 3 && SM.VERSION === 3 && same(v1.mm, {}) && same(v1.mmBlanks, {}) && same(v1.scratch, {}) && same(v1.ctr, {}) && v1.eq.items.length === 0 && same(v1.eq.del, {}), 'v1 doc → v3 with empty sections');
+  ok(v2.log.length === 3 && same(SM.normalize(undefined).mm, {}) && same(SM.normalize({ mm: 5, mmBlanks: [1], eq: 'x', scratch: null, ctr: 7 }).eq, SM.normEq(null)), 'v2 / garbage sections do not throw');
+  ok(same(SM.merge(v2, v1).log, SM.merge(devA, {}).log), 'v2 English fields unchanged by v3');
+  // 社會／自然過關（kids_mm_progress）：過關聯集＋最佳成績＋最新過關時間；複習跟著最新那次
+  const mA = { mm: { 'social:u1': { unlocked: 3, best: { 1: 100, 2: 85 }, passedAt: { 1: 1000, 2: 2000 }, lastPassAt: 2000, reviewStep: 0 }, _clockDays: 3 } };
+  const mB = { mm: { 'social:u1': { unlocked: 2, best: { 1: 90 }, passedAt: { 1: 5000 }, lastPassAt: 5000, reviewStep: 1 }, 'science:n2': { unlocked: 2, best: { 1: 100 }, passedAt: { 1: 300 }, lastPassAt: 300, reviewStep: 0 } } };
+  const mC = { mm: { 'social:u1': { unlocked: 1, best: { 1: 60 }, passedAt: {}, lastPassAt: 0, reviewStep: 0 } } };
+  const mAB = SM.merge(mA, mB).mm;
+  ok(same(mAB['social:u1'], { unlocked: 3, best: { 1: 100, 2: 85 }, passedAt: { 1: 5000, 2: 2000 }, lastPassAt: 5000, reviewStep: 1 }), 'mm: union of passed levels, best score, newest pass time, review follows newest: ' + C(mAB['social:u1']));
+  ok(mAB['science:n2'] && !('_clockDays' in mAB), 'mm: other units kept, _ keys (demo clock) not synced');
+  ok(SM.merge({ mm: { x: { unlocked: 2, lastPassAt: 7, reviewStep: 1 } } }, { mm: { x: { unlocked: 2, lastPassAt: 7, reviewStep: 2 } } }).mm.x.reviewStep === 2, 'mm: same pass time → larger reviewStep');
+  props(mA, mB, mC, 'mm');
+  // 挖空加權（kids_mm_blanks）：同一個詞取答題次數多的那份（不加總）
+  const bA = { mmBlanks: { 'social:u1': { sess: 5, w: { '臺南': { ok: 4, wrong: 1, streak: 2, last: 'ok', lastShown: 5 }, '1624': { ok: 0, wrong: 1, streak: 0, last: 'wrong', lastShown: 2 } }, a: { 'l1': { ok: 1, wrong: 0, streak: 1, last: 'ok' } } } } };
+  const bB = { mmBlanks: { 'social:u1': { sess: 2, w: { '臺南': { ok: 1, wrong: 0, streak: 1, last: 'ok', lastShown: 2 }, '荷蘭': { ok: 2, wrong: 0, streak: 2, last: 'ok', lastShown: 2 } }, a: { 'l1': { ok: 0, wrong: 3, streak: 0, last: 'wrong' } } } } };
+  const bC = { mmBlanks: { 'social:u1': { sess: 9, w: { '荷蘭': { ok: 1, wrong: 1, streak: 0, last: 'wrong', lastShown: 9 } }, a: {} } } };
+  const bAB = SM.merge(bA, bB).mmBlanks['social:u1'];
+  ok(bAB.sess === 5 && bAB.w['臺南'].ok === 4 && bAB.w['1624'].wrong === 1 && bAB.w['荷蘭'].ok === 2 && bAB.a.l1.wrong === 3, 'mmBlanks: per word the record with more answers wins, sess max');
+  ok(SM.merge(SM.merge(bAB && bA, bB), bB).mmBlanks['social:u1'].w['臺南'].ok === 4, 'mmBlanks: syncing again does not add up counts');
+  ok(SM.merge(bB, bC).mmBlanks['social:u1'].w['荷蘭'].lastShown === 9, 'mmBlanks: tie on answers → newer lastShown');
+  props(bA, bB, bC, 'mmBlanks');
+  // 數學天平題目清單（tianping-eq-list-v2）：依題目聯集、刪除墓碑、順序跟較新的那台、最多 30 題
+  const B8 = ['x+5=12', 'x−3=9', '12+x=20', 'x+8−2=15', '(x+3)−2=10', '(x−5)+4=12', 'x−(6−2)=7', 'x+(10−4)=15'].map(q => ({ q, own: false }));
+  const eA = SM.eqFromLocal(B8.concat([{ q: 'x+7=20', own: true }]), null, 100);
+  ok(eA.at === 100 && eA.items.length === 9 && eA.items.every(it => it.t === 100), 'eqFromLocal: first time → all items t=now');
+  ok(same(SM.eqFromLocal(eA.items, eA, 999), eA), 'eqFromLocal: unchanged list → unchanged (stable within a sync)');
+  const eB = SM.eqFromLocal(B8.concat([{ q: 'x+9=30', own: true }]), null, 200);
+  const eAB = SM.merge({ eq: eA }, { eq: eB }).eq;
+  ok(eAB.items.map(it => it.q).join(';') === B8.map(it => it.q).concat(['x+9=30', 'x+7=20']).join(';') && eAB.at === 200, 'eq: union by question, newer device order first: ' + eAB.items.map(it => it.q).join(';'));
+  // A 刪掉 x+9=30（A 先同步拿到合併結果）→ 墓碑傳到 B；B 舊的那份不會把它救回來
+  const eA2 = SM.eqFromLocal(eAB.items.filter(it => it.q !== 'x+9=30'), eAB, 300);
+  ok(eA2.del['x+9=30'] === 300 && eA2.at === 300, 'eqFromLocal: removed item → tombstone, at=now');
+  const eDel = SM.merge({ eq: eA2 }, { eq: eB }).eq;
+  ok(!eDel.items.some(it => it.q === 'x+9=30') && eDel.del['x+9=30'] === 300 && eDel.items.some(it => it.q === 'x+7=20'), 'eq: delete propagates, not resurrected by the old copy');
+  const eRe = SM.eqFromLocal(eB.items.filter(it => it.q !== 'x+9=30').concat([{ q: 'x+9=30', own: true }]), SM.normEq({ at: 250, items: eB.items.filter(it => it.q !== 'x+9=30'), del: { 'x+9=30': 300 } }), 400);
+  ok(SM.merge({ eq: eDel }, { eq: eRe }).eq.items.some(it => it.q === 'x+9=30'), 'eq: adding it again later wins over the tombstone');
+  const many = n => Array.from({ length: n }, (_, i) => ({ q: 'x+' + (i + 1) + '=' + (i + 50), own: true }));
+  const eBig = SM.merge({ eq: SM.eqFromLocal(many(25), null, 10) }, { eq: SM.eqFromLocal(many(40).slice(20), null, 20) }).eq;
+  ok(eBig.items.length === SM.MAX_EQ && eBig.items[0].q === 'x+21=70', 'eq: capped at 30, newer order first');
+  const eC = SM.eqFromLocal(B8.slice(2), null, 150);
+  props({ eq: eA }, { eq: eB }, { eq: eC }, 'eq');
+  props({ eq: eA2 }, { eq: eB }, { eq: eRe }, 'eq with tombstones');
+  // Scratch「我完成了」：聯集，留最早的
+  const sA = { scratch: { 'K1|lesson1': '2026-10-05T01:00:00.000Z', 'K1|lesson2': '2026-10-07T01:00:00.000Z' } }, sB = { scratch: { 'K1|lesson1': '2026-10-08T01:00:00.000Z', 'K1|lesson3': '2026-10-09T01:00:00.000Z' } }, sC = { scratch: { 'K2|lesson1': 'x' } };
+  const sAB = SM.merge(sA, sB).scratch;
+  ok(Object.keys(sAB).length === 3 && sAB['K1|lesson1'] === '2026-10-05T01:00:00.000Z', 'scratch: union, earliest done time');
+  props(sA, sB, sC, 'scratch');
+  // 英文星星／回數：每台各記自己的，總數＝加總，同步幾次都不會重複算
+  const cA = { ctr: { dA: { stars: 30, quizzes: 3 } } }, cB = { ctr: { dB: { stars: 12, quizzes: 1 }, dA: { stars: 20, quizzes: 2 } } }, cC = { ctr: { dC: { stars: 1, quizzes: 1 } } };
+  let cAB = SM.merge(cA, cB); for (let i = 0; i < 3; i++) cAB = SM.merge(SM.merge(cAB, cB), cA);
+  ok(same(SM.ctrSum(cAB.ctr), { stars: 42, quizzes: 4 }), 'ctr: sum over devices, no double count after repeated syncs: ' + C(SM.ctrSum(cAB.ctr)));
+  props(cA, cB, cC, 'ctr');
+  // 舊版裝置（只認 v2 欄位）PUT 回去的文件少了新欄位 → 新版裝置下次同步從本機補回來
+  const full = SM.merge(SM.merge(SM.merge(mA, bA), SM.merge({ eq: eA }, sA)), SM.merge(cA, devA));
+  const strip = d => { const n = SM.normalize(d); return { v: 2, cut: n.cut, log: n.log, agg: n.agg, learned: n.learned, mistakes: n.mistakes }; };
+  ok(same(SM.merge(full, strip(full)), full), 'old v2 device strips new sections → newer device merge restores them from local');
+  // 兩台輪流 syncOnce：會收斂、不會互相蓋掉、不會一直 PUT（順序不會打架）
+  (async () => {
+    const remote = { doc: { v: 1, log: [], learned: {}, mistakes: {} }, etag: 0 };
+    const io = dev => ({ get: async () => ({ doc: JSON.parse(JSON.stringify(remote.doc)), etag: remote.etag }), put: async (c, d, e) => { if (e !== remote.etag) return { conflict: true }; remote.doc = JSON.parse(JSON.stringify(d)); remote.etag++; return {}; },
+      readLocal: () => dev.local, writeLocal: d => { dev.local = d; } });
+    const A = { local: SM.merge(SM.merge(mA, bA), SM.merge({ eq: eA }, SM.merge(sA, cA))) }, B = { local: SM.merge(SM.merge(mB, bB), SM.merge({ eq: eB }, SM.merge(sB, cB))) };
+    let puts = 0; for (let i = 0; i < 4; i++) { puts += (await SM.syncOnce(io(A), 'X')).puts; puts += (await SM.syncOnce(io(B), 'X')).puts; }
+    const last = (await SM.syncOnce(io(A), 'X')).puts + (await SM.syncOnce(io(B), 'X')).puts;
+    ok(same(A.local, B.local) && same(A.local, SM.normalize(remote.doc)) && last === 0 && puts <= 2, 'syncOnce: two devices converge, no ping-pong (puts ' + puts + ')');
+    ok(A.local.mm['social:u1'].passedAt[2] === 2000 && A.local.mm['science:n2'] && A.local.eq.items.length === 10 && Object.keys(A.local.scratch).length === 3, 'syncOnce: B sees A\'s social level 2 pass, union of everything');
+  })().catch(e => { console.error(e); process.exit(1); });
+  // 文件大小：英文作答壓縮到 500KB 以內時，新欄位照留；新欄位全部塞滿也只有幾十 KB
+  const mmData = { window: {} }; vm.createContext(mmData);
+  ['social/unit1-2.js', 'social/unit3-4.js', 'science/unit1-2.js', 'science/unit3-4.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f), 'utf8'), mmData));
+  const SBk = require(path.join(root, 'mindmap', 'blanks.js')), kidsOf = d => d.lessons || d.topics || d.children || [];
+  const maxDoc = { mm: {}, mmBlanks: {}, scratch: {}, ctr: {} };
+  [['social', 'DATA_SOCIAL'], ['science', 'DATA_SCIENCE']].forEach(([s, g]) => mmData.window[g].units.forEach(u => {
+    const st = { sess: 9999, w: {}, a: {} };
+    (function walk(d) {
+      (d.points || []).map(SBk.normPoint).concat(d.cands ? [SBk.normPoint({ t: d.title, cands: d.cands })] : []).forEach(np => np.cands.forEach(c => { st.w[c.w] = { ok: 999, wrong: 999, streak: 999, last: 'wrong', lastShown: 9999 }; }));
+      if (d !== u) { st.a[d.id] = { ok: 999, wrong: 999, streak: 999, last: 'wrong', lastShown: 9999 }; if (d.rel) st.a['rel:' + d.id] = { ok: 999, wrong: 999, streak: 999, last: 'ok' }; }
+      kidsOf(d).forEach(walk);
+    })(u);
+    maxDoc.mmBlanks[s + ':' + u.id] = st;
+    maxDoc.mm[s + ':' + u.id] = { unlocked: 5, best: { 1: 100, 2: 100, 3: 100, 4: 100 }, passedAt: { 1: 1.8e12, 2: 1.8e12, 3: 1.8e12, 4: 1.8e12 }, lastPassAt: 1.8e12, reviewStep: 3 };
+  }));
+  for (let m = 0; m < 3; m++) for (let l = 1; l <= 7; l++) maxDoc.scratch['K10' + m + '|scratch-td:lesson' + l] = '2026-10-09T01:00:00.000Z';
+  for (let d = 0; d < 5; d++) maxDoc.ctr['d' + d + 'mgk2x9abc'] = { stars: 99999, quizzes: 9999 };
+  maxDoc.eq = { at: 1.8e12, items: many(30).map(it => Object.assign({ t: 1.8e12 }, it)), del: Object.fromEntries(Array.from({ length: 150 }, (_, i) => ['(x+' + i + ')−(' + i + '−2)=' + (i + 100), 1.7e12])) };
+  const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
+  ok(secBytes < 64 * 1024 && Object.keys(sec.eq.del).length === 100, 'v3 sections at maximum stay small: ' + secBytes + ' bytes');
+  const bigAll = SM.compact(Object.assign({}, maxDoc, { log: big.log.concat(big.log.map(e => Object.assign({}, e, { t: e.t + 1e7, a: e.a + '-again' }))) }));
+  ok(SM.bytes(bigAll) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq), 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(bigAll));
+  console.log('sync v3 doc size: sections max ' + secBytes + ' B; 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
+}
+
 // ---- 語速 ----
 ok(KE.clampRate(0.7) === 0.7 && KE.clampRate('1') === 1 && KE.clampRate(0.84) === 0.8, 'rate keep/round');
 ok(KE.clampRate(0.1) === 0.5 && KE.clampRate(2) === 1.3 && KE.clampRate(undefined) === 1 && KE.clampRate('x') === 1, 'rate clamp/default');

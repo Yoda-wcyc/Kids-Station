@@ -976,7 +976,22 @@ function persist(){
   var ok = saveList(S.store, S.list);
   if (!ok) S.storeOK = false;
   $('store-note').hidden = S.storeOK;
+  try { if (ok && window.KESync) window.KESync.touch(); } catch (e){}   // 帳號同步：清單有變 → 3 秒後同步
 }
+/* 帳號同步把別台的題目合併進來（storage／kesync-data）：重讀清單；正在編輯就先不動，目前這題還在就留在這題 */
+function syncReload(){
+  if (S.editing >= 0) return;
+  var r = loadList(S.store); if (!r.ok) return;
+  var same = r.list.length === S.list.length && r.list.every(function(it, k){ return it.q === S.list[k].q && !!it.own === !!S.list[k].own; });
+  if (same) return;
+  var cur = S.list[S.idx] && S.list[S.idx].q, ni = -1;
+  S.list = r.list;
+  S.list.forEach(function(it, k){ if (ni < 0 && it.q === cur) ni = k; });
+  if (ni >= 0){ S.idx = ni; refreshLists(); $('board-title').textContent = '第 ' + (ni + 1) + ' 題：' + toText(S.P.L, true) + ' = ' + S.P.R; }
+  else { refreshLists(); loadProblem(0); }
+}
+window.addEventListener('storage', function(e){ if (e.key === STORE_KEY || e.key === null) syncReload(); });
+window.addEventListener('kesync-data', syncReload);
 
 /* 題目代碼 */
 function exportCode(list){ return list.map(function(it){ return it.q; }).join('; '); }
@@ -1752,6 +1767,8 @@ try {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=c1237feb27"></script>
+<script src="../syncmerge.js?v=f5fc0a8e7d"></script>
+<script src="../sync.js?v=0f3a7f6d00"></script>
 <script>
 /* 會員閘門：看說明、翻「常見錯誤」卡片免登入；按步驟／自動播放／選題／換你算算看／自己出題／管理題目要登入 */
 if (window.KidsAuth) KidsAuth.guard('#controls button, #dots .dot, #tryme button, #tabs .tab[data-k], #editor-sec .keypad .key, #editor-sec .row button, #manage-sec button', 'math', { keys: ['ArrowLeft', 'ArrowRight'] });

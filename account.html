@@ -96,7 +96,7 @@
         <dt>這台的紀錄</dt><dd id="s-count">…</dd>
       </dl>
       <button class="btn primary big wide" type="button" id="s-now" style="margin-top:14px">☁️ 立刻上傳並同步</button>
-      <p class="muted" style="margin:10px 0 0">會同步英文的作答紀錄、學會紀錄和錯題庫；上傳舊紀錄不會補發學習幣。</p>
+      <p class="muted" style="margin:10px 0 0">會同步英文（作答、學會、錯題、星星）、社會和自然心智圖（過關、複習時間、挖空紀錄）、數學天平自己出的題目、Scratch 完成紀錄；上傳舊紀錄不會補發學習幣。</p>
     </section>
 
     <form class="card" id="f-pw" novalidate>
@@ -117,8 +117,8 @@
 </main>
 <script src="kids-auth.js?v=42d7c72a13"></script>
 <script src="kids-coins.js?v=c1237feb27"></script>
-<script src="syncmerge.js?v=6ecfb77eec"></script>
-<script src="sync.js?v=a3157589d0"></script>
+<script src="syncmerge.js?v=f5fc0a8e7d"></script>
+<script src="sync.js?v=0f3a7f6d00"></script>
 <script>
 (function () {
   'use strict';
@@ -212,7 +212,7 @@
     var i = KS.info(), c = KS.counts();
     $('#s-status').textContent = KS.statusText();
     $('#s-last').textContent = fmtIso(i.lastAt);
-    $('#s-count').textContent = '學會了 ' + c.learned + ' 項・作答 ' + c.answered + ' 筆・錯題 ' + c.mistakes + ' 題';
+    $('#s-count').textContent = '學會了 ' + c.learned + ' 項・作答 ' + c.answered + ' 筆・錯題 ' + c.mistakes + ' 題・社會過了 ' + (c.social || 0) + ' 關・自然過了 ' + (c.science || 0) + ' 關';
   }
   if (KS) {
     window.addEventListener('kesync', function () { drawSync(); });

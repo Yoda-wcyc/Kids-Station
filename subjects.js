@@ -61,5 +61,7 @@
   const last = loadS().subject;
   if ((!location.hash || location.hash === '#') && last && last !== 'english' && SUBJ.some(s => s.k === last)) history.replaceState(null, '', '#s/' + last);
   window.addEventListener('hashchange', route);
+  // 帳號同步把別台的心智圖過關紀錄合併進來：正在看單元卡（不是開著 iframe）就重畫，卡片上的「過了幾關」才會是新的
+  window.addEventListener('kesync-data', () => { if (!box.hidden && !box.querySelector('iframe')) route(); });
   route();
 })();

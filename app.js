@@ -18,7 +18,7 @@
   // ---------- 儲存 ----------
   function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
   const SM = window.KESyncMerge;
-  const SYNCED = ['ke_log', 'ke_learned', 'ke_mistakes'];
+  const SYNCED = ['ke_log', 'ke_learned', 'ke_mistakes', 'ke_progress'];
   function save(k, v) {
     try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 空間不足或私密模式 */ }
     if (SYNCED.includes(k) && window.KESync) KESync.touch(); // 有變動 → 3 秒後同步
