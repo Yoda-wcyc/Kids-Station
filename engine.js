@@ -6,15 +6,15 @@
   const ROOT_T = { prefix: '字首', suffix: '字尾', root: '字根' };
   const MODULES = { words: '單字', phrases: '片語', roots: '字根字首', grammar: '文法', patterns: '句型' };
   const PHRASE_LV = { 1: '必會', 2: '基本', 3: '進階' };
-  const TYPES = { 'listen-choose': '聽音選字', zh2en: '看中文選英文', en2zh: '看英文選中文', spell: '聽寫拼字', 'root-meaning': '字首字尾的意思', 'root-word': '用字根組單字', 'grammar-fill': '文法填空', 'grammar-fix': '挑出正確的句子', reorder: '句子重組', 'pattern-choose': '看中文選句子', 'phrase-fill': '片語填空', 'zh2en-type': '中翻英打字', 'root-type': '字根拼字（打字）', speak: '開口說說看', 'grammar-fill-type': '文法填空（打字）', 'grammar-fix-type': '改正錯句（打字）', 'word-gap': '填空拼字' };
+  const TYPES = { 'listen-choose': '聽音選字', zh2en: '看中文選英文', en2zh: '看英文選中文', spell: '聽寫拼字', 'root-meaning': '字首字尾的意思', 'root-word': '用字根組單字', 'grammar-fill': '文法填空', 'grammar-fix': '挑出正確的句子', reorder: '句子重組', 'pattern-choose': '看中文選句子', 'phrase-fill': '片語填空', 'zh2en-type': '中翻英打字', 'root-type': '字根拼字（打字）', speak: '🎤 說說看', 'grammar-fill-type': '文法填空（打字）', 'grammar-fix-type': '改正錯句（打字）', 'word-gap': '填空拼字' };
   // 只放在「練習這組」的題型（一般練習回合、例題庫不出，題型組成維持原樣）
   const SET_ONLY_TYPES = ['word-gap', 'grammar-fill-type', 'grammar-fix-type'];
-  const MOD_TYPES = { words: ['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type'], phrases: ['listen-choose', 'zh2en', 'en2zh', 'phrase-fill', 'zh2en-type'], roots: ['root-meaning', 'root-word', 'root-type'], grammar: ['grammar-fill', 'grammar-fix', 'reorder', 'zh2en-type', 'grammar-fill-type', 'grammar-fix-type', 'speak'], patterns: ['reorder', 'pattern-choose', 'zh2en-type', 'speak'] };
+  const MOD_TYPES = { words: ['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type', 'speak'], phrases: ['listen-choose', 'zh2en', 'en2zh', 'phrase-fill', 'zh2en-type', 'speak'], roots: ['root-meaning', 'root-word', 'root-type'], grammar: ['grammar-fill', 'grammar-fix', 'reorder', 'zh2en-type', 'grammar-fill-type', 'grammar-fix-type', 'speak'], patterns: ['reorder', 'pattern-choose', 'zh2en-type', 'speak'] };
   const TYPED = 'zh2en-type';
   // 鍵盤打字題（練習一組時排最後；共用同一個打字介面與判分）
   const TYPED_TYPES = ['spell', 'zh2en-type', 'root-type', 'grammar-fill-type', 'grammar-fix-type', 'word-gap'];
-  // 排序等級：選擇類 0 → 填空拼字 1 → 其他打字 2（練習這組照這個順序；答錯重排也不越級）
-  const typedRank = q => (!isTyped(q) ? 0 : q.type === 'word-gap' ? 1 : 2);
+  // 排序等級：選擇類 0 → 🎤 說說看 1 → 填空拼字 2 → 其他打字 3（練習這組照這個順序；答錯重排也不越級）
+  const typedRank = q => (q && q.type === 'speak' ? 1 : !isTyped(q) ? 0 : q.type === 'word-gap' ? 2 : 3);
   // 文法、句型的固定題組：10 題非打字＋5 題打字（打字題排最後）；總數不足 15 時照 2:1 的比例
   const SET_CHOICE = 10, SET_TYPED = 5;
   function composeSet(choiceIds, typedIds) {
@@ -76,8 +76,27 @@
     if (!ok) { const a = typeNorm(answer).split(' '), b = t ? t.split(' ') : []; diffAt = a.findIndex((w, i) => w !== b[i]); if (diffAt < 0) diffAt = a.length - 1; }
     return { ok, diffAt };
   }
-  // 練習一組時的排序：選擇類洗牌 → 填空拼字 → 其他打字題（打字類一律排最後，順序照題組）
-  function drillOrder(qs) { return shuffle(qs.filter(q => typedRank(q) === 0)).concat(qs.filter(q => typedRank(q) === 1), qs.filter(q => typedRank(q) === 2)); }
+  // 🎤 說說看的判分（瀏覽器語音辨識的 alternatives）：小寫、去標點（含撇號、連字號）、空白合併；
+  // 0–20 與整十的阿拉伯數字轉成英文字（辨識常把 two 寫成 2）。
+  // mode 'word'：任一個 alternative 等於目標，或含有目標（整個字／整組字）就對；'sentence'（片語、句子）：要整句一樣。
+  const NUM_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+  const TENS = { 30: 'thirty', 40: 'forty', 50: 'fifty', 60: 'sixty', 70: 'seventy', 80: 'eighty', 90: 'ninety', 100: 'one hundred' };
+  function speakNorm(s) {
+    return String(s == null ? '' : s).toLowerCase().replace(/[’‘`´']/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
+      .split(' ').map(t => (/^\d+$/.test(t) ? (NUM_WORDS[+t] || TENS[+t] || t) : t)).join(' ');
+  }
+  function speakGrade(answer, alts, heard, mode) {
+    const targets = [answer].concat(alts || []).map(speakNorm).filter(Boolean);
+    const list = (Array.isArray(heard) ? heard : [heard]).map(h => String(h == null ? '' : h));
+    const at = list.findIndex(h => {
+      const n = speakNorm(h);
+      if (!n) return false;
+      return targets.some(t => n === t || (mode === 'word' && (' ' + n + ' ').includes(' ' + t + ' ')));
+    });
+    return { ok: at >= 0, at, heard: at >= 0 ? list[at] : (list[0] || '') };
+  }
+  // 練習一組時的排序：選擇類洗牌 → 說說看 → 填空拼字 → 其他打字題（打字類一律排最後，順序照題組）
+  function drillOrder(qs) { return shuffle(qs.filter(q => typedRank(q) === 0)).concat([1, 2, 3].flatMap(r => qs.filter(q => typedRank(q) === r))); }
   // 答錯重排：插到「後面第一題等級比它高的」之前（選擇題在打字題前、填空拼字在完整打字題前）；最高等級的放最後
   function requeue(list, i, q) {
     const out = list.slice(), r = typedRank(q);
@@ -147,6 +166,7 @@
       const gp = wordGaps(w.w);
       if (gp) [['gap1', gp.g1, '把少掉的字母填進去'], ['gap2', gp.g2, '再難一點：把少掉的字母填進去']].forEach(([s, gaps, sub]) =>
         add(Object.assign({ id: `w:${key}:${s}`, type: 'word-gap', setOnly: true }, base), () => ({ prompt: w.zh, sub, input: 'gap', gaps: gaps.slice(), options: null, answer: w.w, alts: [], speakText: w.w, play: true, why })));
+      add(Object.assign({ id: `w:${key}:speak`, type: 'speak' }, base), () => ({ prompt: w.w, en: true, sub: w.zh, input: 'mic', play: true, options: null, answer: w.w, alts: [], speakMode: 'word', speakText: w.w, why }));
     });
 
     // ---- 片語：聽音選、看中文選、看英文選、例句填空、中翻英打字 ----
@@ -166,6 +186,7 @@
         answer: ans, speakText: ph.ex, why: `${ph.p}（${ph.zh}）：${ph.exZh}`
       }));
       add(Object.assign({ id: `ph:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: ph.zh, sub: '打出這個英文片語', input: 'type', options: null, answer: ph.p, alts: ph.form ? [ph.form] : [], speakText: ph.p, why }));
+      add(Object.assign({ id: `ph:${key}:speak`, type: 'speak' }, base), () => ({ prompt: ph.p, en: true, sub: ph.zh, input: 'mic', play: true, options: null, answer: ph.p, alts: ph.form ? [ph.form] : [], speakMode: 'sentence', speakText: ph.p, why }));
     });
 
     // ---- 字根字首 ----
@@ -196,7 +217,7 @@
     // ---- 句子題：文法例句與句型例句共用 ----
     const sentenceQs = (module, topic, idBase, e, why) => {
       add({ id: `${idBase}:reorder`, module, topic, type: 'reorder', title: e.en }, () => ({ prompt: e.zh, sub: '把字卡排成正確的英文句子', input: 'chips', options: chips(e.en), answer: e.en, speakText: e.en, why }));
-      add({ id: `${idBase}:speak`, module, topic, type: 'speak', title: e.en }, () => ({ prompt: e.en, en: true, sub: e.zh, input: 'mic', play: true, options: null, answer: e.en, speakText: e.en, why }));
+      add({ id: `${idBase}:speak`, module, topic, type: 'speak', title: e.en }, () => ({ prompt: e.en, en: true, sub: e.zh, input: 'mic', play: true, options: null, answer: e.en, alts: [], speakMode: 'sentence', speakText: e.en, why }));
     };
 
     // ---- 文法 ----
@@ -207,12 +228,18 @@
           add({ id, module: 'grammar', topic: g.id, type: 'grammar-fill', title: fillBlank(q.s, q.a) }, () => ({ prompt: q.s, options: shuffle(q.opts), answer: q.a, speakText: fillBlank(q.s, q.a), why: q.why }));
           // 打字版：打出空格裡的字（題組最後 5 題用；id 另起，選擇版的進度不受影響）
           add({ id: id + ':type', module: 'grammar', topic: g.id, type: 'grammar-fill-type', title: fillBlank(q.s, q.a), setOnly: true }, () => ({ prompt: q.s, sub: '打出空格裡的字', input: 'type', options: null, answer: q.a, alts: [], speakText: fillBlank(q.s, q.a), why: q.why }));
+          grammarSpeak(id, fillBlank(q.s, q.a), q.why);
         } else {
           add({ id, module: 'grammar', topic: g.id, type: 'grammar-fix', title: q.right }, () => ({ prompt: '哪一句是對的？', options: shuffle([q.wrong, q.right]), answer: q.right, speakText: q.right, why: q.why }));
           // 打字版：顯示錯句，打出正確的句子（填空題不夠時才進題組）
           add({ id: id + ':type', module: 'grammar', topic: g.id, type: 'grammar-fix-type', title: q.right, setOnly: true }, () => ({ prompt: q.wrong, sub: '這句有錯，打出正確的句子', input: 'type', options: null, answer: q.right, alts: [], speakText: q.right, why: q.why }));
+          grammarSpeak(id, q.right, q.why);
         }
       });
+      // 🎤 說說看（只在題組出）：說出正確的完整句子（填空題＝填好的句子、改錯題＝正確的句子），整句比對
+      function grammarSpeak(id, sentence, why) {
+        add({ id: id + ':speak', module: 'grammar', topic: g.id, type: 'speak', title: sentence, setOnly: true }, () => ({ prompt: sentence, en: true, sub: '大聲說出這個完整的句子', input: 'mic', play: true, options: null, answer: sentence, alts: [], speakMode: 'sentence', speakText: sentence, why }));
+      }
       g.ex.forEach((e, j) => sentenceQs('grammar', g.id, `g:${g.id}:ex${j}`, e, `文法：${g.title}`));
       (g.typed || []).forEach((t, k) => typedQ('grammar', g.id, `g:${g.id}:t${k}`, t, `文法：${g.title}`));
     });
@@ -260,6 +287,25 @@
       this.sets[patternItemId(p)] = composeSet(keep(choiceIds.concat(extraChoice)), keep(typedIds));
     });
 
+    // ---- 加口說的題組（裝置支援語音辨識＋家長同意時才用；見 itemSet）----
+    // 單字：選 → 選 → 🎤 → 填空 → 填空 → 打字（6 題）；片語：非打字題最後加 1 題 🎤；
+    // 文法、句型：前 10 題非打字裡，從後面換 2 題成 🎤（不同句子），後 5 題打字不變；字根不加
+    this.speakSets = {};
+    const swap2 = (set, toSpeak) => {
+      const out = set.slice(); let n = 0;
+      for (let k = out.length - 1; k >= 0 && n < 2; k--) {
+        const m = this.byId[out[k]]; if (!m || isTyped(m)) continue;
+        const sid = toSpeak(out[k]); if (sid && this.byId[sid] && !out.includes(sid)) { out[k] = sid; n++; }
+      }
+      return out;
+    };
+    D.words.forEach(w => { const k = wordKey(w); this.speakSets[wordItemId(w)] = keep([`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:speak`, `w:${k}:gap1`, `w:${k}:gap2`, `w:${k}:type`]); });
+    D.phrases.forEach(ph => { this.speakSets[phraseItemId(ph)] = keep(['listen', 'zh2en', 'en2zh', 'fill', 'speak', 'type'].map(t => `ph:${ph.id}:${t}`)); });
+    D.grammar.forEach(g => { this.speakSets[grammarItemId(g)] = swap2(this.sets[grammarItemId(g)], id => (/^g:[^:]+:\d+$/.test(id) ? id + ':speak' : null)); });
+    D.patterns.forEach(p => { this.speakSets[patternItemId(p)] = swap2(this.sets[patternItemId(p)], id => { const m = /^(p:[^:]+:\d+):(choose|reorder)$/.exec(id); return m ? m[1] + ':speak' : null; }); });
+    this.speakOn = false;          // app 依「支援語音辨識＆家長同意」設定
+    this.speakWaive = new Set();   // 這次因裝置問題先跳過的口說題（不算進解鎖；重新整理就清掉）
+
     function typedQ(module, topic, id, t, why, setOnly) {
       add({ id, module, topic, type: TYPED, title: t.en, setOnly: !!setOnly }, () => ({ prompt: t.zh, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: t.en, alts: t.alts || [], speakText: t.en, why }));
     }
@@ -288,16 +334,22 @@
     // 家長頁用：學會紀錄表，預設新到舊；舊紀錄沒有分數顯示「—」
     learnedRows(L) { return Object.keys(L || {}).filter(id => L[id] && L[id].at).map(id => Object.assign({ itemId: id, at: L[id].at, score: L[id].score || '—' }, this.itemInfo(id))).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)); },
     // 項目的固定題組（qid 陣列）；找不到項目回傳 []
-    itemSet(itemId) { return (this.sets[itemId] || []).slice(); },
+    // o = {speak, waive}；沒給就用 this.speakOn／this.speakWaive。口說沒開（不支援或家長沒同意）→ 不含口說題，解鎖也不算它
+    itemSet(itemId, o) {
+      const on = o && 'speak' in o ? !!o.speak : this.speakOn, waive = (o && o.waive) || this.speakWaive;
+      let s = (on && this.speakSets[itemId]) || this.sets[itemId] || [];
+      if (waive && waive.size) s = s.filter(id => !waive.has(id));
+      return s.slice();
+    },
     // 進度：correct＝答對過的 qid Set；全部答對過 complete＝true 才能按「學會了」
-    progress(itemId, correct) {
-      const ids = this.sets[itemId] || [], missing = ids.filter(id => !correct.has(id));
+    progress(itemId, correct, o) {
+      const ids = this.itemSet(itemId, o), missing = ids.filter(id => !correct.has(id));
       return { total: ids.length, done: ids.length - missing.length, missing, complete: ids.length > 0 && !missing.length };
     },
     // 「學會了」的小測驗（不含開口說；從 981d094 移植）：回傳 {itemId, ids, qs, need, total}；找不到項目回傳 null
     // 題組還沒全部答對過（鎖住）時傳 correct 會回傳 null，不能開小測驗
-    gate(itemId, correct) {
-      if (correct && !this.progress(itemId, correct).complete) return null;
+    gate(itemId, correct, o) {
+      if (correct && !this.progress(itemId, correct, o).complete) return null;
       const D = this.D, pick = (a, n) => shuffle(a).slice(0, n);
       let ids = null, need;
       const w = D.words.find(x => wordItemId(x) === itemId);
@@ -316,7 +368,7 @@
     },
     // 練習這組：只出還沒答對過的題，打字題排最後
     // 單字這組順序固定（選 → 選 → 填空 → 填空 → 打字），不洗牌
-    drill(itemId, correct) { const qs = this.progress(itemId, correct).missing.map(id => this.get(id)).filter(Boolean); return /^word:/.test(itemId) ? qs : drillOrder(qs); },
+    drill(itemId, correct, o) { const qs = this.progress(itemId, correct, o).missing.map(id => this.get(id)).filter(Boolean); return /^word:/.test(itemId) ? qs : drillOrder(qs); },
     topicLabel(tkey) { const m = tkey.split(':')[0]; const t = this.topics(m).find(x => x.key === tkey); return t ? (t.group && m === 'phrases' ? `${t.group}・${t.label}` : t.label) : tkey; },
     // f: {modules, topics(tkey 陣列), types, src, lv, allowSpeak, ids, withSetOnly}
     // 只在題組出的題（setOnly：填空拼字、文法打字版、句型加練句打字）一般練習與例題庫不出；給 ids 或 withSetOnly 才列
@@ -346,14 +398,8 @@
       return shuffle(chosen).map(m => m.make());
     },
     check(q, input) {
-      if (q.type === 'speak') {
-        const a = tokens(q.answer), have = {};
-        tokens(input).forEach(x => { have[x] = (have[x] || 0) + 1; });
-        let hit = 0;
-        a.forEach(x => { if (have[x]) { hit++; have[x]--; } });
-        const score = a.length ? hit / a.length : 0;
-        return { ok: score >= 0.7, score };
-      }
+      // 🎤 說說看：input 可以是辨識結果的 alternatives 陣列或一個字串；單字題含有目標字就算，片語／句子要整句一樣
+      if (q.type === 'speak') return speakGrade(q.answer, q.alts, input, q.speakMode || (/\s/.test(q.answer) ? 'sentence' : 'word'));
       if (q.type === 'word-gap') return gapGrade(q.answer, q.gaps, input);
       if (isTyped(q)) return typeGrade(q.answer, q.alts, input);
       if (q.type === 'reorder') return { ok: norm(input) === norm(q.answer) };
@@ -361,7 +407,7 @@
     }
   };
 
-  const KE = { Engine, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -11,7 +11,7 @@
   var TPE_MS = 8 * 3600 * 1000;            // 台北時間 = UTC+8（1979 年後沒有日光節約）
   var WEEK_MS = 7 * 86400 * 1000;
   var BATCH_MAX = 50, QUEUE_MAX = 500;
-  var MODES = ['practice', 'words', 'roots', 'grammar', 'patterns', 'mistakes', 'bank', 'redo', 'drill'];
+  var MODES = ['practice', 'words', 'roots', 'grammar', 'patterns', 'mistakes', 'bank', 'redo', 'drill', 'speak'];
   var TEST_PREFIX = { test_word: 'word', test_phrase: 'phrase', test_root: 'root', test_grammar: 'grammar', test_pattern: 'pattern' };
   var SUBJECTS = ['english', 'math', 'ai'];
   var TICK_RE = /^tick:(\d{4}-\d{2}-\d{2}):(\d{4})$/;

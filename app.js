@@ -78,6 +78,30 @@
   // iOS 要使用者手勢才能出聲：第一次點擊時先唸一個空字串解鎖
   document.addEventListener('click', () => { if (unlocked || !synth) return; unlocked = true; try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; synth.speak(u); } catch (e) { } });
 
+  // ---------- 🎤 說說看（瀏覽器內建語音辨識；本站不錄音、不保存、不上傳，只比對轉好的文字）----------
+  const SPEAK_CONSENT = 'kids_speak_consent'; // 家長同意紀錄 {at}（只存在這台裝置；家長頁可撤銷）
+  const NO_SPEAK_MSG = '這台裝置的瀏覽器不支援說說看，請用 iPad 的 Safari';
+  const CONSENT_TEXT = '按麥克風後，聲音會交給 iPad 內建（Apple）的語音辨識轉成文字；本站不錄音、不保存、不上傳。';
+  const SPEAK_TRIES = 3, SPEAK_SILENCE_MS = 8000;
+  function speakConsent() { const c = load(SPEAK_CONSENT, null); return c && c.at ? c : null; }
+  function setSpeakConsent(on) { try { if (on) localStorage.setItem(SPEAK_CONSENT, JSON.stringify({ at: new Date().toISOString() })); else localStorage.removeItem(SPEAK_CONSENT); } catch (e) { } syncSpeak(); }
+  // 「練習這組」要不要放口說題：裝置支援語音辨識＋家長同意才放（不然不出、也不算進「學會了」的解鎖條件，不會卡關）
+  function syncSpeak() { E.speakOn = canSpeak && !!speakConsent(); }
+  syncSpeak();
+  const DEVICE_ERRS = ['network', 'audio-capture', 'not-allowed', 'service-not-allowed', 'language-not-supported'];
+  let REC = null; // 正在聽的辨識器（換頁、跳過、作答時停掉）
+  function stopRec() { const r = REC; REC = null; if (r) { try { r.onresult = r.onerror = r.onend = null; r.abort(); } catch (e) { } } }
+  const SPEAK_ERR = {
+    'not-allowed': '🎤 麥克風被關掉了。請爸爸媽媽幫忙：打開 iPad 的「設定」→「Safari」→「麥克風」→ 選「允許」，再回到這一頁重新整理。',
+    'service-not-allowed': '🎤 iPad 的語音辨識沒有打開。請爸爸媽媽幫忙：「設定」→「一般」→「鍵盤」→ 打開「啟用聽寫」；也看看「設定」→「Safari」→「麥克風」是不是「允許」。',
+    'no-speech': '👂 我沒有聽到聲音耶！靠近 iPad 一點，按 🎤 再大聲說一次。',
+    network: '📶 網路好像不太順，說說看要連上網路才能用。看看 Wi-Fi 有沒有連上，再按 🎤 試一次。',
+    'audio-capture': '🎤 找不到麥克風。看看是不是有別的 App 正在用麥克風，關掉後再按 🎤 試一次。',
+    aborted: '剛剛停掉了，再按一次 🎤 就好。',
+    'language-not-supported': '這台裝置不能辨識英文，可以按「跳過」繼續。'
+  };
+  const speakErr = code => SPEAK_ERR[code] || '出了一點小狀況，再按一次 🎤 試試看；不行的話可以按「跳過」。';
+
   // ---------- 紀錄與錯題 ----------
   function record(q, ok, input) {
     const e = { t: Date.now(), id: q.id, m: q.module, k: q.tkey, y: q.type, ok: ok ? 1 : 0, a: String(input == null ? '' : input).slice(0, 120) };
@@ -112,7 +136,7 @@
   function go(h) { if (location.hash !== h) location.hash = h; render(); }
   window.addEventListener('hashchange', () => { if (location.hash !== rendered) render(); });
   function render() {
-    const h = location.hash || '#home'; rendered = h; redraw = null;
+    const h = location.hash || '#home'; rendered = h; redraw = null; stopRec();
     if (/^#s\//.test(h)) return; // 其他科目由 subjects.js 負責
     const [p, sub] = h.slice(1).split('/');
     const pages = { home: pHome, learn: pLearn, practice: pPractice, quiz: pQuiz, result: pResult, mistakes: pMistakes, bank: pBank, parent: pParent };
@@ -267,7 +291,7 @@
       <select id="flv" aria-label="等級"><option value="">全部等級</option><option value="1">等級 1</option><option value="2">等級 2</option><option value="3">等級 3</option></select>
       <select id="ftag" aria-label="主題"><option value="">全部主題</option>${tags.map(t => `<option value="${esc(t)}">${esc(KE.TAGS[t] || t)}</option>`).join('')}</select>
       ${srcs.length > 1 ? `<select id="fsrc" aria-label="來源"><option value="">全部來源</option>${srcs.map(s => `<option value="${esc(s)}">${esc(srcLabel(s))}</option>`).join('')}</select>` : ''}
-      <button class="btn primary" id="pw">🎯 練這些字</button></div>${lfBar('words')}<p class="muted" id="wn"></p><div class="cards" id="wl"></div><div class="pager" id="wp"></div>`;
+      <button class="btn primary" id="pw">🎯 練這些字</button><button class="btn" id="ps" ${canSpeak ? '' : 'disabled'} title="${canSpeak ? '用說的練這些字' : NO_SPEAK_MSG}">🎤 說說看</button></div>${canSpeak ? '' : `<p class="muted" id="psno">🎤 ${NO_SPEAK_MSG}</p>`}${lfBar('words')}<p class="muted" id="wn"></p><div class="cards" id="wl"></div><div class="pager" id="wp"></div>`;
     const qOk = w => { const q = LF.q.trim().toLowerCase(); return !q || w.w.toLowerCase().includes(q) || w.zh.includes(LF.q.trim()); };
     const pick = () => D.words.filter(w => (!LF.lv || String(w.lv) === LF.lv) && (!LF.tag || (w.tags || []).includes(LF.tag)) && (!LF.src || (w.src || 'moe') === LF.src) && qOk(w) && lfPass('words', KE.wordItemId(w)));
     const draw = () => {
@@ -282,6 +306,7 @@
     ['lv', 'tag', 'src'].forEach(k => { const el = $('#f' + k); if (el) { el.value = LF[k]; el.onchange = () => { LF[k] = el.value; LF.page = 0; draw(); }; } });
     const fq = $('#fq'); let qt = null; fq.value = LF.q; fq.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { if (!fq.isConnected) return; /* 0.2 秒內已切頁：舊搜尋框不在畫面上，略過 */ LF.q = fq.value; LF.page = 0; draw(); }, 200); };
     $('#pw').onclick = () => { const ids = pick().flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)); startQuiz({ ids, count: 10, mode: 'words' }); };
+    $('#ps').onclick = () => { if (!canSpeak) return; startQuiz({ ids: pick().map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true }); };
     bindLf('words', '單字', D.words.map(KE.wordItemId), draw);
   }
   function pRoots() {
@@ -339,32 +364,99 @@
   // ---------- 練習設定 ----------
   function pPractice() {
     const mods = Object.keys(KE.MODULES), srcs = E.sources();
-    const types = Object.keys(KE.TYPES).filter(y => (canSpeak || y !== 'speak') && !KE.SET_ONLY_TYPES.includes(y)); // 只在「練習這組」出的題型不列
-    const L = Object.assign({ mods: mods.slice(), offT: [], offY: [], count: 10, ratio: 0, lv: '', src: '' }, S.settings.last || {});
+    // 🎤 說說看要自己勾（預設不勾：要用麥克風、第一次要家長同意）；不支援的裝置顯示停用
+    const types = Object.keys(KE.TYPES).filter(y => y !== 'speak' && !KE.SET_ONLY_TYPES.includes(y)); // 只在「練習這組」出的題型不列
+    const L = Object.assign({ mods: mods.slice(), offT: [], offY: [], count: 10, ratio: 0, lv: '', src: '', speak: false }, S.settings.last || {});
     app.innerHTML = top('練習設定') + `
       <section class="card"><h2>1. 選單元</h2>${mods.map(m => `<div class="mod"><label class="ck"><input type="checkbox" name="mod" value="${m}" ${L.mods.includes(m) ? 'checked' : ''}> ${KE.MODULES[m]}</label><details><summary>選主題</summary>${topicChecks(m, L)}</details></div>`).join('')}</section>
-      <section class="card"><h2>2. 選題型</h2><div class="wrap">${types.map(y => `<label class="ck"><input type="checkbox" name="typ" value="${y}" ${L.offY.includes(y) ? '' : 'checked'}> ${KE.TYPES[y]}</label>`).join('')}</div>${canSpeak ? '' : '<p class="muted">這台裝置不支援語音辨識，所以沒有「開口說說看」題。</p>'}</section>
+      <section class="card"><h2>2. 選題型</h2><div class="wrap">${types.map(y => `<label class="ck"><input type="checkbox" name="typ" value="${y}" ${L.offY.includes(y) ? '' : 'checked'}> ${KE.TYPES[y]}</label>`).join('')}<label class="ck${canSpeak ? '' : ' off'}"><input type="checkbox" name="typ" value="speak" ${canSpeak && L.speak ? 'checked' : ''} ${canSpeak ? '' : 'disabled'}> ${KE.TYPES.speak}</label></div><p class="muted" id="spnote">${canSpeak ? '🎤 說說看：可以只選它，也可以跟其他題型一起練（單字、片語、文法、句型都有）。要用麥克風，第一次會請爸爸媽媽同意。' : '🎤 ' + NO_SPEAK_MSG}</p></section>
       <section class="card"><h2>3. 單字範圍</h2>${radios('lv', [['', '全部等級'], ['1', '等級 1'], ['2', '等級 2'], ['3', '等級 3']], L.lv)}${srcs.length > 1 ? radios('src', [['', '全部來源']].concat(srcs.map(s => [s, srcLabel(s)])), L.src) : ''}</section>
       <section class="card"><h2>4. 題數和錯題</h2>${radios('count', [['10', '10 題'], ['20', '20 題'], ['30', '30 題']], L.count)}${radios('ratio', [['0', '不加錯題'], ['0.3', '加 30% 錯題'], ['1', '只練錯題']], L.ratio)}<p class="muted">錯題庫目前有 ${mistakeIds().length} 題</p></section>
       ${voiceCard()}<button class="btn primary big wide" id="start">開始 🚀</button>`;
     bindVoice();
     $('#start').onclick = () => {
       const allT = $$('input[name="top"]').map(x => x.value), onT = vals('top'), onY = vals('typ');
-      const last = { mods: vals('mod'), offT: allT.filter(t => !onT.includes(t)), offY: types.filter(y => !onY.includes(y)), count: +val('count') || 10, ratio: +val('ratio') || 0, lv: val('lv'), src: val('src') };
+      const spk = canSpeak && onY.includes('speak');
+      const last = { mods: vals('mod'), offT: allT.filter(t => !onT.includes(t)), offY: types.filter(y => !onY.includes(y)), count: +val('count') || 10, ratio: +val('ratio') || 0, lv: val('lv'), src: val('src'), speak: spk };
       S.settings.last = last; saveSettings();
       if (!last.mods.length || !onY.length) { alert('請至少選一個單元和一個題型喔！'); return; }
-      startQuiz({ modules: last.mods, topics: onT, types: onY, count: last.count, mistakeRatio: last.ratio, mistakes: mistakeIds(), lv: last.lv, src: last.src, allowSpeak: canSpeak, mode: 'practice' });
+      startQuiz({ modules: last.mods, topics: onT, types: onY, count: last.count, mistakeRatio: last.ratio, mistakes: mistakeIds(), lv: last.lv, src: last.src, allowSpeak: spk, mode: spk && onY.length === 1 ? 'speak' : 'practice' });
     };
+  }
+
+  // ---------- 🎤 說說看：作答畫面 ----------
+  // 每題最多試 3 次（只有聽到東西才算一次；沒聲音、網路等錯誤不算）；說對 → answer() 記答對；第 3 次還沒對 → 記答錯；隨時可以跳過
+  function spkState(q) { if (!Q.spk || Q.spk.i !== Q.i || Q.spk.id !== q.id) Q.spk = { i: Q.i, id: q.id, tries: [] }; return Q.spk; }
+  function micBody(q) {
+    if (!canSpeak) return `<div class="card center"><p>🎤 ${NO_SPEAK_MSG}</p></div><div class="row"><button class="btn big" id="skip">跳過 ➜</button></div>`;
+    if (!speakConsent()) return `<section class="card" id="spconsent"><h2>👨‍👩‍👧 給爸爸媽媽：說說看要用麥克風</h2><p>${CONSENT_TEXT}</p>
+      <p class="muted">畫面上只拿轉好的文字來比對答案。第一次按 🎤 時，iPad 會問可不可以用麥克風，請按「允許」。同意後，可以隨時到「家長」頁撤銷。</p>
+      <div class="row wrap"><button class="btn primary big" id="spok">✅ 爸爸媽媽同意，開始</button><button class="btn" id="skip">先不要，跳過這題</button></div></section>`;
+    const st = spkState(q), n = st.tries.length, last = n ? st.tries[n - 1].heard : null;
+    // 練習這組：跳過＝算答錯、等一下重排再出；裝置問題（連續 2 次網路／麥克風錯誤）→ 多一顆「這題先跳過」（這次不算進解鎖）
+    return `<div class="row wrap"><button class="btn primary big" id="mic">🎤 ${n ? '再試一次' : '按我說說看'}</button><button class="btn" id="skip">${Q.drill ? '跳過（算答錯，等一下再來）' : '跳過'}</button><button class="btn" id="spwaive" ${st.dev >= 2 ? '' : 'hidden'}>這題先跳過（裝置有狀況，這次不算）</button></div>
+      <p class="center" id="heard" role="status" aria-live="polite">${n ? `我聽到的是：「<b class="en">${esc(last || '（聽不清楚）')}</b>」，再試一次！` : '按 🎤 之後，大聲說出上面的英文'}</p><p class="muted center" id="tries">${n ? `還可以試 ${SPEAK_TRIES - n} 次` : `每題可以試 ${SPEAK_TRIES} 次`}</p>`;
+  }
+  function bindMic(q) {
+    $('#skip').onclick = () => { stopRec(); if (Q.drill && canSpeak && speakConsent()) answer(q, ''); else answer(q, '', true); };
+    const wv = $('#spwaive'); if (wv) wv.onclick = () => { stopRec(); E.speakWaive.add(q.id); answer(q, '', true); };
+    const ok = $('#spok'); if (ok) ok.onclick = () => { setSpeakConsent(true); pQuiz(); };
+    const mic = $('#mic'); if (!mic) return;
+    const heard = $('#heard'), say = h => { heard.innerHTML = h; };
+    const idle = () => { mic.disabled = false; mic.textContent = '🎤 ' + (spkState(q).tries.length ? '再試一次' : '按我說說看'); };
+    mic.onclick = () => {
+      if (Q.answered || REC) return;
+      const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let r, got = false, err = '', timer = null;
+      const done = () => { clearTimeout(timer); if (REC === r) REC = null; if (mic.isConnected) idle(); };
+      try { r = new R(); } catch (e) { say(esc(speakErr(''))); return; }
+      r.lang = 'en-US'; r.interimResults = false; r.maxAlternatives = 5; r.continuous = false;
+      // 8 秒沒聲音就自己停；有聲音就再給 8 秒（說完辨識會自己結束）
+      const arm = () => { clearTimeout(timer); timer = setTimeout(() => { if (REC === r) { try { r.stop(); } catch (e) { } } }, SPEAK_SILENCE_MS); };
+      r.onsoundstart = arm; r.onspeechstart = arm;
+      r.onresult = e => {
+        if (REC !== r) return;
+        got = true; done();
+        const res = e.results && e.results[0], alts = res ? Array.from(res).map(a => ({ t: String((a && a.transcript) || '').trim(), c: a && typeof a.confidence === 'number' ? a.confidence : null })) : [];
+        heardIt(q, alts, say);
+      };
+      r.onerror = e => { err = (e && e.error) || 'unknown'; };
+      r.onend = () => {
+        if (REC !== r) return; done();
+        if (got) return;
+        const st = spkState(q), code = err || 'no-speech';
+        st.dev = DEVICE_ERRS.includes(code) ? (st.dev || 0) + 1 : 0;
+        say(esc(speakErr(code)) + (st.dev >= 2 ? '<br>一直不行的話，可以按「這題先跳過」。' : ''));
+        const w = $('#spwaive'); if (w && st.dev >= 2) w.hidden = false;
+      };
+      try {
+        if (synth) synth.cancel();
+        REC = r; mic.disabled = true; mic.textContent = '👂 聽你說…'; say('聽你說… 說完會自己停');
+        if (window.KidsCoins) KidsCoins.activity('english'); // 按麥克風算互動（不是作答）
+        r.start(); arm();
+      } catch (e) { done(); say(esc(speakErr(e && e.name === 'NotAllowedError' ? 'not-allowed' : ''))); }
+    };
+  }
+  function heardIt(q, alts, say) {
+    const st = spkState(q), res = E.check(q, alts.map(a => a.t));
+    st.dev = 0; // 有聽到東西＝裝置正常
+    st.tries.push({ heard: res.heard, alts });
+    if (res.ok) return answer(q, res.heard);
+    if (st.tries.length >= SPEAK_TRIES) return answer(q, res.heard); // 第 3 次還沒說對 → 記答錯
+    say(`我聽到的是：「<b class="en">${esc(res.heard || '（聽不清楚）')}</b>」，再試一次！`);
+    const t = $('#tries'); if (t) t.textContent = `還可以試 ${SPEAK_TRIES - st.tries.length} 次`;
+    const m = $('#mic'); if (m) m.textContent = '🎤 再試一次';
   }
 
   // ---------- 作答 ----------
   function pQuiz() {
+    stopRec();
     if (!Q) { app.innerHTML = top('練習') + `<div class="card center"><p>還沒有開始練習喔！</p><button class="btn primary big" data-go="#practice">去選題目</button></div>`; return; }
     const q = Q.list[Q.i], n = Q.list.length;
     let body;
     if (q.input === 'type') body = `<div class="spell ${/\s/.test(q.answer) ? 'long' : ''}"><input id="ans" type="text" inputmode="text" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="send" placeholder="${/\s/.test(q.answer) ? '打出整句英文' : '在這裡打字'}" aria-label="英文答案"><button class="btn primary" id="ok">送出</button></div>`;
     else if (q.input === 'chips') body = `<div class="placed" id="placed"></div><div class="pool">${q.options.map((c, i) => `<button class="chip" data-i="${i}">${esc(c)}</button>`).join('')}</div><div class="row"><button class="btn" id="clr">清除</button><button class="btn primary" id="ok">確定</button></div>`;
-    else if (q.input === 'mic') body = `<div class="row"><button class="btn primary big" id="mic">🎤 按我開始說</button><button class="btn" id="skip">跳過</button></div><p class="muted center" id="heard"></p>`;
+    else if (q.input === 'mic') body = micBody(q);
     // 填空拼字：每個空格一個字母框（打一個字自動跳下一格、空格按退格回上一格）
     else if (q.input === 'gap') body = `<div class="gapw en" id="gapw">${q.answer.split('').map((c, i) => (q.gaps.includes(i)
       ? `<input class="gap-in" data-p="${i}" type="text" maxlength="1" inputmode="text" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="next" aria-label="第 ${q.gaps.indexOf(i) + 1} 個空格">`
@@ -394,27 +486,7 @@
       $('#ok').onclick = () => { if (placed.length) answer(q, placed.map(i => q.options[i]).join(' ')); };
       draw();
     }
-    if (q.input === 'mic') {
-      const heard = $('#heard');
-      $('#skip').onclick = () => answer(q, '', true);
-      $('#mic').onclick = () => {
-        try {
-          const r = new SR(); r.lang = S.settings.accent; r.interimResults = false; r.maxAlternatives = 3;
-          heard.textContent = '我在聽… 🎧';
-          r.onresult = e => {
-            const alts = Array.from(e.results[0]).map(a => a.transcript);
-            let best = alts[0] || '', bs = -1;
-            alts.forEach(t => { const s = E.check(q, t).score; if (s > bs) { bs = s; best = t; } });
-            heard.textContent = '我聽到：' + best;
-            answer(q, best);
-          };
-          r.onerror = () => { heard.textContent = '麥克風沒辦法用，按「跳過」繼續 👉'; };
-          r.onend = () => { if (!Q.answered && heard.textContent.indexOf('我在聽') === 0) heard.textContent = '沒聽清楚，再按一次 🎤，或按「跳過」'; };
-          if (synth) synth.cancel();
-          r.start();
-        } catch (e) { heard.textContent = '這台裝置不能錄音，按「跳過」繼續 👉'; }
-      };
-    }
+    if (q.input === 'mic') bindMic(q);
     if (q.input === 'gap') {
       const boxes = $$('.gap-in');
       const filled = () => q.answer.split('').map((c, i) => { const b = boxes.find(x => +x.dataset.p === i); return b ? (b.value.trim().slice(-1) || '_') : c; }).join('');
@@ -436,9 +508,10 @@
   }
   function answer(q, input, skipped) {
     if (Q.answered) return;
-    Q.answered = true;
+    Q.answered = true; stopRec();
     const res = skipped ? { ok: false } : E.check(q, input);
-    if (!skipped) record(q, res.ok, input);
+    // 說說看：紀錄（會跟著裝置同步）不留辨識出來的原文，只記題目答案（答對）或空白（答錯）
+    if (!skipped) record(q, res.ok, q.input === 'mic' ? (res.ok ? q.answer : '') : input);
     // 學習幣（kids-coins.js）：每答一題記進「這一分鐘」；跳過不算作答
     if (window.KidsCoins) skipped ? KidsCoins.activity('english') : KidsCoins.answer(res.ok, 'english');
     Q.answers.push({ q, ok: res.ok, skip: !!skipped, input });
@@ -451,11 +524,12 @@
     const last = Q.i === Q.list.length - 1;
     // 打字題答錯：正確答案標出第一個不一樣的字
     const shown = res.diffAt >= 0 ? q.answer.split(/\s+/).map((w, k) => (k === res.diffAt ? `<mark>${esc(w)}</mark>` : esc(w))).join(' ') : esc(q.answer);
-    $('#fb').innerHTML = `<div class="fb ${skipped ? 'skip' : res.ok ? 'ok' : 'no'}"><div class="fbh">${skipped ? '⏭️ 先跳過' : res.ok ? '✓ 答對了！太棒了' : '✗ 差一點，再加油！'}</div>
+    $('#fb').innerHTML = `<div class="fb ${skipped ? 'skip' : res.ok ? 'ok' : 'no'}"><div class="fbh">${skipped ? '⏭️ 先跳過' : res.ok ? (q.input === 'mic' ? '✓ 說對了！太棒了' : '✓ 答對了！太棒了') : '✗ 差一點，再加油！'}</div>
       ${again ? '<div class="again">🔁 再一次！這題等一下會再出現</div>' : ''}
       ${!res.ok ? `<div>正確答案：<b class="say" data-say="${esc(q.speakText || q.answer)}">${shown}</b> 🔊</div>` : ''}
       ${q.input === 'type' && res.ok ? `<button class="btn sm" data-say-btn>🔊 聽英文</button>` : ''}
-      ${!res.ok && !skipped && q.input && input ? `<div class="muted">你的答案：${esc(input)}</div>` : ''}
+      ${!res.ok && !skipped && q.input && input ? `<div class="muted">${q.input === 'mic' ? '我聽到的是' : '你的答案'}：${esc(input)}</div>` : ''}
+      ${q.input === 'mic' && !skipped && !res.ok ? `<div class="muted">${Q.spk && Q.spk.id === q.id && Q.spk.tries.length >= SPEAK_TRIES ? `試了 ${SPEAK_TRIES} 次，下次再挑戰！` : '跳過算答錯，下次再挑戰！'}</div>` : ''}
       ${res.score != null ? `<div class="muted">唸對了 ${Math.round(res.score * 100)}% 的字（70% 就過關）</div>` : ''}
       ${q.why ? `<div class="why">💡 ${esc(q.why)}</div>` : ''}
       <button class="btn primary big wide" id="next">${last ? '看結果 🎉' : '下一題 ➜'}</button></div>`;
@@ -589,6 +663,13 @@
     reload() { loadAll(); if (/^#quiz/.test(location.hash)) return; const y = window.scrollY; render(); window.scrollTo(0, y); },
     render() { const y = window.scrollY; render(); window.scrollTo(0, y); }
   };
+  // 🎤 說說看的家長同意：狀態＋撤銷
+  function speakCard() {
+    const c = speakConsent();
+    return `<section class="card" id="spcard"><h2>🎤 說說看（麥克風）</h2><p>${CONSENT_TEXT}</p>${canSpeak ? '' : `<p class="muted">${NO_SPEAK_MSG}</p>`}${c
+      ? `<p>✅ 已同意（${esc(KE.fmtTaipei(c.at, true))}）</p><div class="row wrap"><button class="btn danger" id="sprevoke">撤銷同意</button></div><p class="muted">撤銷後，下次按 🎤 會再請爸爸媽媽同意。也可以到 iPad「設定」→「Safari」→「麥克風」關掉麥克風。</p>`
+      : `<p class="muted">還沒有同意。小朋友第一次練「🎤 說說看」時，會先出現說明，請爸爸媽媽按「同意」才會開始。${canSpeak ? '也可以在這裡先同意；同意後，單字、片語、文法、句型的「練習這組」會加入說說看題。' : ''}</p>${canSpeak ? '<div class="row wrap"><button class="btn primary" id="spagree">✅ 同意使用說說看</button></div>' : ''}`}</section>`;
+  }
   function pParent() {
     const days = [];
     for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(ymd(d)); }
@@ -612,9 +693,12 @@
       <section class="card"><h2>學會紀錄（${E.learnedRows(S.learned).length} 項，點標題排序）</h2><div class="tblwrap"><table class="tbl" id="lt"></table></div></section>
       ${syncCard()}
       ${window.KSParentPin ? KSParentPin.cardHtml() : ''}
+      ${speakCard()}
       ${voiceCard()}
       <section class="card"><h2>備份與重設</h2><div class="row wrap"><button class="btn" id="exp">📤 匯出備份</button><label class="btn">📥 匯入備份<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn danger" id="rst">🗑️ 清除全部紀錄</button></div><p class="muted">紀錄只存在這台裝置的瀏覽器裡；換裝置前先匯出備份。</p></section>`;
     bindVoice(); bindSync(); if (window.KSParentPin) KSParentPin.bindCard(render);
+    const rv = $('#sprevoke'); if (rv) rv.onclick = () => { if (!confirm('要撤銷「🎤 說說看」的麥克風同意嗎？下次使用時會再請爸爸媽媽同意。')) return; setSpeakConsent(false); render(); };
+    const ag = $('#spagree'); if (ag) ag.onclick = () => { setSpeakConsent(true); render(); };
     sortTable($('#tt'), [{ k: 'label', t: '主題' }, { k: 'mod', t: '單元' }, { k: 'n', t: '題數' }, { k: 'ok', t: '答對' }, { k: 'acc', t: '正確率', f: pct }], rows, PS);
     sortTable($('#lt'), [{ k: 'item', t: '項目' }, { k: 'type', t: '類型' }, { k: 'at', t: '學會時間（台北）', f: x => KE.fmtTaipei(x, true) }, { k: 'score', t: '分數' }], E.learnedRows(S.learned), PL);
     $('#exp').onclick = () => {

@@ -100,6 +100,15 @@ Object.keys(KE.TYPES).forEach(type => {
 const sp = E.get('w:apple:spell'); ok(E.check(sp, '  APPLE ').ok && !E.check(sp, 'aple').ok, 'spell case/trim');
 const sk = E.list({ types: ['speak'], allowSpeak: true })[0].make();
 ok(!E.check(sk, 'hello').ok, 'speak mismatch');
+// 🎤 說說看：單字題＝任一 alternative 等於目標或含有目標（獨立的字）；片語／句子＝整句一樣（忽略大小寫、標點）
+const swd = E.get('w:apple:speak'), sph = E.get('ph:get-up:speak'), sst = E.list({ modules: ['patterns'], types: ['speak'], allowSpeak: true })[0].make();
+ok(swd && swd.input === 'mic' && swd.speakMode === 'word' && sph.speakMode === 'sentence' && sst.speakMode === 'sentence', 'speak questions for words/phrases/patterns');
+ok(E.check(swd, ['Apple.']).ok && E.check(swd, ['and', 'an apple please']).ok && E.check(swd, ['pineapple', 'apples', 'Apple']).at === 2, 'speak word: equal / contains as a word / any alternative');
+ok(!E.check(swd, ['pineapple', 'apples', 'happy all']).ok && E.check(swd, ['pineapple']).heard === 'pineapple', 'speak word: not part of another word; heard = first alternative');
+ok(E.check(sst, [sst.answer.toUpperCase().replace(/[.!?]$/, '') + '!']).ok && !E.check(sst, ['Well ' + sst.answer]).ok && !E.check(sst, [sst.answer.split(' ').slice(0, -1).join(' ')]).ok, 'speak sentence: whole sentence only, case/punct ignored');
+ok(KE.speakNorm("I'm  2 cats, OK?") === 'im two cats ok' && KE.speakNorm('Let’s go!') === KE.speakNorm("let's go"), 'speak normalize: apostrophes, digits → words');
+ok(E.check(sph, ['Get up']).ok && !E.check(sph, ['get']).ok && !E.check(swd, []).ok && !E.check(swd, ['']).ok, 'speak phrase / empty');
+ok(E.list({ types: ['speak'], allowSpeak: true }).filter(m => m.module === 'words').length === W.length && E.list({ types: ['speak'], allowSpeak: true }).filter(m => m.module === 'phrases').length === PH.length, 'every word and phrase has a speak question');
 ok(E.list({ types: ['speak'] }).length === 0, 'speak hidden without allowSpeak');
 // 錯題混入
 const mids = E.list({ modules: ['words'] }).slice(0, 5).map(m => m.id);
@@ -207,7 +216,32 @@ P.forEach(p => {
 ok(KE.composeSet(['a', 'b', 'c', 'd'], ['x', 'y']).join() === 'a,b,c,d,x,y' && KE.composeSet('abcdefghijkl'.split(''), ['x']).join('') === 'abcdefghijklx', 'composeSet short');
 ok(KE.composeSet('abcdefghijkl'.split(''), ['x', 'y', 'z', 'u', 'v', 'w']).join('') === 'abcdefghijxyzuv', 'composeSet 10+5');
 ok(KE.composeSet(['a', 'b', 'c', 'd', 'e', 'f'], ['x', 'y', 'z']).join() === 'a,b,c,d,e,f,x,y,z', 'composeSet keeps typed last');
-ok(allItems.every(id => E.itemSet(id).every(q => E.byId[q] && E.byId[q].type !== 'speak')), 'sets never use speak');
+ok(allItems.every(id => E.itemSet(id).every(q => E.byId[q] && E.byId[q].type !== 'speak')), 'sets have no speak when speak is off (default: unsupported or no parent consent)');
+// ---- 🎤 口說題進題組（支援語音辨識＋家長同意時）----
+const SON = { speak: true }, tOf = (id, o) => E.itemSet(id, o).map(q => E.byId[q].type);
+W.forEach(w => { const one = w.w.replace(/[^A-Za-z]/g, '').length < 2, id = KE.wordItemId(w);
+  ok(tOf(id, SON).join() === (one ? 'listen-choose,zh2en,speak,zh2en-type' : 'listen-choose,zh2en,speak,word-gap,word-gap,zh2en-type'), 'word speak set ' + w.w);
+  ok(E.drill(id, new Set(), SON).map(q => q.type).join() === tOf(id, SON).join(), 'word speak drill fixed order ' + w.w); });
+PH.forEach(p => { const id = KE.phraseItemId(p);
+  ok(tOf(id, SON).join() === 'listen-choose,zh2en,en2zh,phrase-fill,speak,zh2en-type', 'phrase speak set ' + p.id);
+  const d = E.drill(id, new Set(), SON).map(q => q.type); ok(d[4] === 'speak' && d[5] === 'zh2en-type', 'phrase drill: speak last of non-typed ' + p.id); });
+G.forEach(gr => { const id = KE.grammarItemId(gr), s = E.itemSet(id, SON), t = tOf(id, SON);
+  ok(s.length === 15 && t.slice(0, 10).filter(x => x === 'speak').length === 2 && t.slice(0, 10).every(x => !KE.TYPED_TYPES.includes(x)) && t.slice(-5).join() === tOf(id).slice(-5).join(), 'grammar speak set 10(+2 speak)+5 ' + gr.id);
+  s.filter(q => E.byId[q].type === 'speak').forEach(q => { const k = +q.split(':')[2], gq = gr.q[k], sen = gq.type === 'fill' ? KE.fillBlank(gq.s, gq.a) : gq.right, x = E.get(q);
+    ok(x.prompt === sen && !x.prompt.includes('___') && x.input === 'mic' && x.play && E.check(x, [sen.toLowerCase().replace(/[.!?,]/g, '')]).ok && !E.check(x, ['well ' + sen]).ok, 'grammar speak says the full correct sentence ' + q); });
+  const d = E.drill(id, new Set(), SON).map(q => q.type); ok(d.slice(8, 10).join() === 'speak,speak' && d.slice(10).every(x => KE.TYPED_TYPES.includes(x)), 'grammar drill: speak after choices, typed last ' + gr.id); });
+P.forEach(p => { const id = KE.patternItemId(p), s = E.itemSet(id, SON), t = tOf(id, SON), sp2 = s.filter(q => E.byId[q].type === 'speak');
+  ok(s.length === 15 && sp2.length === 2 && new Set(sp2.map(q => E.get(q).answer)).size === 2 && t.slice(0, 10).every(x => !KE.TYPED_TYPES.includes(x)) && t.slice(-5).every(x => x === 'zh2en-type'), 'pattern speak set (2 different sentences) ' + p.id); });
+R.forEach(r => ok(E.itemSet(KE.rootItemId(r), SON).join() === E.itemSet(KE.rootItemId(r)).join(), 'roots unchanged with speak ' + r.p));
+// 解鎖：口說沒開 → 不算口說題；開了 → 口說要答對過；舊進度（沒口說時全對）只差口說題；裝置問題先跳過（waive）→ 這次不算
+const baseAll = new Set(E.itemSet('word:apple'));
+ok(E.progress('word:apple', baseAll).complete && !E.progress('word:apple', baseAll, SON).complete && E.progress('word:apple', baseAll, SON).missing.join() === 'w:apple:speak', 'unlock: speak required only when on');
+ok(E.progress('word:apple', baseAll, { speak: true, waive: new Set(['w:apple:speak']) }).complete && E.gate('word:apple', baseAll, { speak: true, waive: new Set(['w:apple:speak']) }), 'unlock: waived speak (device trouble) not counted this time');
+const gAll = new Set(E.itemSet('grammar:be')); ok(E.progress('grammar:be', gAll, SON).missing.every(q => /:speak$/.test(q)) && E.progress('grammar:be', gAll, SON).missing.length === 2, 'unlock: grammar old progress → only the 2 speak missing');
+E.speakOn = true; ok(E.itemSet('word:apple').length === 6 && E.gate('word:apple', baseAll) === null, 'speakOn default applies to itemSet / gate'); E.speakOn = false;
+ok(E.itemSet('word:apple').length === 5 && E.gate('word:apple', baseAll) !== null, 'speakOn off again');
+ok(E.list({ modules: ['grammar'], types: ['speak'], allowSpeak: true }).every(m => /:ex\d+:speak$/.test(m.id)), 'grammar set-only speak stays out of normal practice');
+ok(KE.typedRank({ type: 'reorder' }) === 0 && KE.typedRank({ type: 'speak' }) === 1 && KE.typedRank({ type: 'word-gap' }) === 2 && KE.typedRank({ type: 'zh2en-type' }) === 3, 'rank: choice < speak < gap < typing');
 P.forEach(p => E.itemSet(KE.patternItemId(p)).map(id => E.get(id)).filter(q => q.type === 'reorder').forEach(q => ok(q.options.slice().sort().join('|') === q.answer.split(/\s+/).sort().join('|') && E.check(q, q.answer).ok, 'chips rebuild ' + q.id)));
 ok(E.itemSet('word:nope').length === 0 && !E.progress('word:nope', new Set()).complete, 'unknown item');
 // 解鎖：9/10 鎖住、全部答對過才解鎖；先錯後對算數；從作答紀錄追溯
