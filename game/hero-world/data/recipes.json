@@ -1483,6 +1483,18 @@
         "count": 1
       },
       "needs": null
+    },
+    {
+      "id": "shadow_bricks",
+      "name_zh": "暗影石磚",
+      "in": {
+        "shadow_stone": 4
+      },
+      "out": {
+        "id": "shadow_bricks",
+        "count": 4
+      },
+      "needs": null
     }
   ],
   "smelt": [

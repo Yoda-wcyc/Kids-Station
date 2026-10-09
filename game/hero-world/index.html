@@ -10,7 +10,7 @@
 <meta name="format-detection" content="telephone=no">
 <title>勇者島 · 方塊世界</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23EFEBDD'/%3E%3Cpolygon points='32,8 56,20 32,32 8,20' fill='%233E6B3A'/%3E%3Cpolygon points='8,20 32,32 32,58 8,46' fill='%238A6A48'/%3E%3Cpolygon points='56,20 32,32 32,58 56,46' fill='%2363492F'/%3E%3Ccircle cx='50' cy='12' r='5' fill='%23E0352B'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/hw.css?v=99294b7bab">
+<link rel="stylesheet" href="assets/hw.css?v=1d3c517ae3">
 </head>
 <body>
 <canvas id="c" aria-label="方塊世界"></canvas>
@@ -28,6 +28,7 @@
     <button id="b-ach" class="hb-btn">成就</button>
     <button id="b-set" class="hb-btn" aria-label="設定">設定</button>
   </div>
+  <div id="bossbar" hidden><b id="bossname"></b><div class="bar"><i id="bosshp"></i></div></div>
   <canvas id="minimap" width="128" height="128" aria-hidden="true"></canvas>
   <div id="cross" aria-hidden="true"></div>
   <div id="selname" aria-live="polite"></div>
@@ -59,6 +60,6 @@
 <div id="err" hidden></div>
 <script src="../../parent-pin.js"></script>
 <script src="../hero-island/audio.js"></script>
-<script src="assets/hw.js?v=99294b7bab"></script>
+<script src="assets/hw.js?v=1d3c517ae3"></script>
 </body>
 </html>

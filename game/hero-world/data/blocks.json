@@ -154,7 +154,14 @@
     {"n":150,"id":"rail_se","name_zh":"鐵軌（彎）","colors":{"top":"#8C8A84"},"pattern":"rail","shape":"carpet","solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"rail","buy":null,"rail":"se","hidden":true},
     {"n":151,"id":"rail_sw","name_zh":"鐵軌（彎）","colors":{"top":"#8C8A84"},"pattern":"rail","shape":"carpet","solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"rail","buy":null,"rail":"sw","hidden":true},
     {"n":152,"id":"powered_rail","name_zh":"動力鐵軌","colors":{"top":"#D9A63A"},"pattern":"rail","shape":"carpet","solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"self","buy":null,"accent":"#E0352B","place":"rail","rail":"ns","powered":true},
-    {"n":153,"id":"powered_rail_ew","name_zh":"動力鐵軌","colors":{"top":"#D9A63A"},"pattern":"rail","shape":"carpet","solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","buy":null,"accent":"#E0352B","rail":"ew","powered":true,"hidden":true}
+    {"n":153,"id":"powered_rail_ew","name_zh":"動力鐵軌","colors":{"top":"#D9A63A"},"pattern":"rail","shape":"carpet","solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","buy":null,"accent":"#E0352B","rail":"ew","powered":true,"hidden":true},
+    {"n":154,"id":"shadow_stone","name_zh":"暗影石","colors":{"top":"#2B3A30"},"pattern":"stone","hardness":1.5,"tool":"pickaxe","tier":1,"drops":"self","buy":null},
+    {"n":155,"id":"shadow_moss","name_zh":"暗影苔","colors":{"top":"#1F4A2E","side":"#2B3A30","bottom":"#2B3A30"},"pattern":"grass","hardness":0.8,"tool":"shovel","tier":0,"drops":"shadow_stone","buy":null},
+    {"n":156,"id":"shadow_vein","name_zh":"紅紋暗影石","colors":{"top":"#2B3A30"},"pattern":"ore","hardness":1.5,"tool":"pickaxe","tier":1,"drops":"self","buy":null,"accent":"#E0352B","emissive":true,"light":9},
+    {"n":157,"id":"dark_crystal_ore","name_zh":"暗晶礦","colors":{"top":"#8C8A84"},"pattern":"ore","hardness":3,"tool":"pickaxe","tier":3,"drops":"dark_crystal","buy":null,"accent":"#7A5BB0"},
+    {"n":158,"id":"dark_crystal","name_zh":"暗晶","colors":{"top":"#2A2238"},"pattern":"chiseled","hardness":4,"tool":"pickaxe","tier":3,"drops":"self","buy":null,"accent":"#7A5BB0"},
+    {"n":159,"id":"shadow_portal","name_zh":"暗影傳送門","colors":{"top":"#3A1F4A"},"pattern":"portal","hardness":-1,"tool":null,"tier":0,"drops":null,"buy":null,"accent":"#E0352B","solid":false,"transparent":true,"emissive":true,"light":11,"hidden":true,"interact":"shadow_portal"},
+    {"n":160,"id":"shadow_bricks","name_zh":"暗影石磚","colors":{"top":"#2B3A30"},"pattern":"stonebricks","hardness":1.5,"tool":"pickaxe","tier":1,"drops":"self","buy":null}
   ],
   "items": [
     {"id":"stick","name_zh":"木棍","icon":"stick","color":"#8C6640","maxStack":64,"buy":null},
@@ -213,7 +220,8 @@
     {"id":"saddle","name_zh":"馬鞍","icon":"saddle","color":"#8C5A3A","maxStack":1,"buy":{"price":25,"qty":1}},
     {"id":"fishing_rod","name_zh":"釣竿","icon":"rod","color":"#8C6640","maxStack":1,"buy":null,"tool":{"type":"rod","tier":0,"durability":48}},
     {"id":"raw_fish","name_zh":"生魚","icon":"fish","color":"#8FA7AE","maxStack":64,"buy":null,"food":2},
-    {"id":"cooked_fish","name_zh":"烤魚","icon":"fish","color":"#C9904F","maxStack":64,"buy":null,"food":6}
+    {"id":"cooked_fish","name_zh":"烤魚","icon":"fish","color":"#C9904F","maxStack":64,"buy":null,"food":6},
+    {"id":"shadow_flint","name_zh":"暗影火種","icon":"gem","color":"#E0352B","maxStack":16,"buy":{"price":40,"qty":1}}
   ],
   "blueprints": [
     {"id":"bp_iron","name_zh":"鐵工具藍圖","price":30,"desc":"解鎖：鐵鎬、鐵斧、鐵鏟、鐵劍、鐵鋤頭、鐵盔甲"},

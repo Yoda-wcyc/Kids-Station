@@ -142,3 +142,19 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 .ach-item small { display: block; }
 .panel.map canvas.bigmap { display: block; max-width: 100%; border: 3px solid #26302A; border-radius: 4px; image-rendering: pixelated; margin: 6px 0; background: #D9D3C0; }
 .set.inline { display: inline-flex; gap: 6px; align-items: center; margin-left: 8px; }
+
+/* M6：魔龍血條、片尾 */
+#bossbar { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); width: min(440px, 64vw); text-align: center; z-index: 6; pointer-events: none; }
+#bossbar[hidden] { display: none; }
+#bossbar b { display: inline-block; background: #26302A; color: #F2E6C4; padding: 3px 12px; border-radius: 4px; font-size: 14px; }
+#bossbar .bar { height: 14px; margin-top: 4px; background: rgba(38,48,42,.5); border: 2px solid #26302A; border-radius: 4px; overflow: hidden; }
+#bossbar .bar i { display: block; width: 100%; height: 100%; background: #E0352B; transition: width .3s; }
+.ending { position: fixed; inset: 0; background: #22302F; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; z-index: 30; }
+.ending .paper { position: absolute; }
+.ending .sun { width: 150px; height: 150px; border-radius: 50%; background: #F2C46B; top: 7%; right: 10%; box-shadow: 6px 6px 0 rgba(0,0,0,.25); }
+.ending .hill { left: -10%; right: -10%; bottom: -6%; height: 38%; background: #3E6B3A; clip-path: polygon(0 40%, 18% 18%, 34% 36%, 52% 10%, 70% 34%, 86% 16%, 100% 30%, 100% 100%, 0 100%); }
+.ending .hill.b { background: #2F5A34; height: 26%; clip-path: polygon(0 30%, 22% 52%, 40% 20%, 60% 46%, 80% 22%, 100% 44%, 100% 100%, 0 100%); }
+.ending .credits { position: relative; z-index: 2; margin-top: 5vh; width: min(560px, 86vw); padding: 26px 30px; background: #EFEBDD; color: #26302A; text-align: center; transform: rotate(-1deg); box-shadow: 8px 8px 0 rgba(0,0,0,.3); animation: hw-rise 1.2s ease-out; max-height: 86vh; overflow: auto; }
+.ending h1 { font-size: 40px; margin: 0 0 12px; color: #E0352B; letter-spacing: 4px; }
+.ending p { margin: 6px 0; font-size: 18px; min-height: 8px; }
+@keyframes hw-rise { from { transform: translateY(40px) rotate(-1deg); opacity: 0; } to { transform: rotate(-1deg); opacity: 1; } }
