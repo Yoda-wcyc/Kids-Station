@@ -144,7 +144,7 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 .set.inline { display: inline-flex; gap: 6px; align-items: center; margin-left: 8px; }
 
 /* M6：魔龍血條、片尾 */
-#bossbar { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); width: min(440px, 64vw); text-align: center; z-index: 6; pointer-events: none; }
+#bossbar { position: fixed; bottom: 128px; left: 50%; transform: translateX(-50%); width: min(440px, 64vw); text-align: center; z-index: 6; pointer-events: none; }
 #bossbar[hidden] { display: none; }
 #bossbar b { display: inline-block; background: #26302A; color: #F2E6C4; padding: 3px 12px; border-radius: 4px; font-size: 14px; }
 #bossbar .bar { height: 14px; margin-top: 4px; background: rgba(38,48,42,.5); border: 2px solid #26302A; border-radius: 4px; overflow: hidden; }
