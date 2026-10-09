@@ -265,7 +265,7 @@
   // ---------- 首頁 ----------
   function pHome() {
     const st = stats(), mc = mistakeIds().length;
-    app.innerHTML = top('小朋友學英文 🎈', false) + `
+    app.innerHTML = top('小朋友學習站 🎈', false) + `
       <div class="stats"><div class="stat"><span>🔥</span><b>${st.streak}</b><small>連續天數</small></div><div class="stat"><span>✏️</span><b>${st.today}</b><small>今天做的題目</small></div><div class="stat"><span>⭐</span><b>${S.progress.stars}</b><small>星星</small></div></div>
       <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}</div>
       <p class="muted center">小提示：看到英文，點一下就會唸給你聽 👂</p>${shareRow()}`;

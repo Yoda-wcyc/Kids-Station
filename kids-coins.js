@@ -13,7 +13,8 @@
   var BATCH_MAX = 50, QUEUE_MAX = 500;
   var MODES = ['practice', 'words', 'roots', 'grammar', 'patterns', 'mistakes', 'bank', 'redo', 'drill', 'speak'];
   var TEST_PREFIX = { test_word: 'word', test_phrase: 'phrase', test_root: 'root', test_grammar: 'grammar', test_pattern: 'pattern' };
-  var SUBJECTS = ['english', 'math', 'ai'];
+  var SUBJECTS = ['english', 'math', 'ai', 'social', 'science'];   // social／science＝心智圖（2026-10-09）
+  var MM_RE = /^(social|science):(arch|cloze|quiz)$/;             // 心智圖一輪：背架構／考考自己／練習題
   var TICK_RE = /^tick:(\d{4}-\d{2}-\d{2}):(\d{4})$/;
 
   function pad(n, w) { n = String(n); while (n.length < w) n = '0' + n; return n; }
@@ -29,7 +30,7 @@
   function itemOk(type, item) {
     if (typeof item !== 'string' || !item || item.length > 200) return false;
     switch (type) {
-      case 'practice_round': return item.indexOf('english:') === 0 && MODES.indexOf(item.slice(8)) >= 0;
+      case 'practice_round': return (item.indexOf('english:') === 0 && MODES.indexOf(item.slice(8)) >= 0) || MM_RE.test(item);
       case 'math_level': return /^balance:b[1-8]$/.test(item) || /^balance:own:.+$/.test(item);
       case 'ai_page_done': return /^ai:(hallucinate|ask-well|secrets)$/.test(item);
       case 'scratch_lesson_done': return /^scratch-td:L[1-7]$/.test(item);
@@ -107,7 +108,7 @@
     });
     return s;
   }
-  // 這一分鐘作答最多的科（同票照 english → math → ai）
+  // 這一分鐘作答最多的科（同票照 english → math → ai → social → science）
   function bucketItem(counts) {
     var best = 'english', n = -1;
     SUBJECTS.forEach(function (k) { var c = (counts && counts[k]) || 0; if (c > n) { n = c; best = k; } });

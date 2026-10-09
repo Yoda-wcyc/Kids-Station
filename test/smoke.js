@@ -382,9 +382,34 @@ const nonEmpty = rel => { const p = path.join(root, rel); return fs.existsSync(p
 ['ai/hallucinate.html', 'ai/ask-well.html', 'ai/secrets.html', 'game/scratch-td/web/index.html', 'game/scratch-td/web/start.sb3']
   .concat([1, 2, 3, 4, 5, 6, 7].flatMap(i => [`game/scratch-td/web/lesson${i}.html`, `game/scratch-td/web/lesson${i}-done.sb3`]))
   .forEach(rel => ok(nonEmpty(rel), rel + ' exists and is non-empty'));
+// 寫死 src 的活動卡（數學 1、AI 3、Scratch 1）維持 5 張；社會、自然的單元卡由 MM_UNITS 產生（src 是樣板字串，不算在這 5 張裡），下面另外檢查
 const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 ok(srcs.length === 5, 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s), 'activity src exists: ' + s));
+
+// ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----
+ok(sj.includes('src: `mindmap/${k}.html?u=${id}`'), 'mindmap unit card src template');
+['mindmap/social.html', 'mindmap/science.html', 'mindmap/mindmap.js', 'mindmap/mindmap.css', 'mindmap/blanks.js',
+  'mindmap/data/social/unit1-2.js', 'mindmap/data/social/unit3-4.js', 'mindmap/data/science/unit1-2.js', 'mindmap/data/science/unit3-4.js']
+  .forEach(rel => ok(nonEmpty(rel), rel + ' exists and is non-empty'));
+const mmUnits = {};
+['social', 'science'].forEach(k => { const m = new RegExp(k + ': \\[(.*?)\\]\\]', 's').exec(sj); mmUnits[k] = m ? [...m[1].matchAll(/\['([a-z0-9-]+)', '[^']+'/g)].map(x => x[1]) : []; });
+ok(mmUnits.social.join() === 'u1,u2,u3,u4' && mmUnits.science.join() === 'n1,n2,n3,n4', 'mindmap unit cards: ' + JSON.stringify(mmUnits));
+['social', 'science'].forEach(k => {
+  const h = fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8');
+  ok(h.includes(`data-subj="${k}"`) && h.includes('../kids-auth.js') && h.includes('../kids-coins.js') && h.includes('mindmap.js'), `mindmap/${k}.html loads auth/coins/engine`);
+  [...h.matchAll(/src="([^"]+)"/g)].map(m => m[1]).forEach(s => ok(nonEmpty(path.join('mindmap', s)), `mindmap/${k}.html script exists: ${s}`));
+  const dataSrc = [...h.matchAll(/src="(data\/[^"]+)"/g)].map(m => fs.readFileSync(path.join(root, 'mindmap', m[1]), 'utf8')).join('\n');
+  mmUnits[k].forEach(id => ok(dataSrc.includes(`id: "${id}", no:`), `mindmap/${k}.html has unit ${id}`));
+});
+const mmJs = fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8');
+['requireLogin', 'startActivity(SUBJ', "KidsCoins.answer(!!ok, SUBJ)", "type:'practice_round', item:SUBJ + ':' + mode", 'kids_mm_progress', 'kids_social_progress'].forEach(t => ok(mmJs.includes(t), 'mindmap.js has ' + t));
+ok(!fs.existsSync(path.join(root, 'social')) || fs.readdirSync(path.join(root, 'social'), { recursive: true }).every(f => fs.statSync(path.join(root, 'social', f)).isDirectory()), 'old social/ folder has no files (moved to mindmap/)');
+// 部署排除：demo、測試、.md 不上線
+{
+  const dc = fs.readFileSync(path.join(root, 'deploy_copy.py'), 'utf8');
+  ok(/parts\[0\] == "mindmap"/.test(dc) && dc.includes('"_demo"') && dc.includes('"test"'), 'deploy_copy skips mindmap/test, mindmap/_demo, .md');
+}
 // 講義互連與下載鈕：連到的檔案都在 web/，不再指向退場的 kids-ai
 const WEB = 'https://yoda-wcyc.github.io/Kids-Station/game/scratch-td/web/';
 fs.readdirSync(path.join(root, 'game/scratch-td/web')).filter(f => f.endsWith('.html')).forEach(f => {

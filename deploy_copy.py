@@ -1,6 +1,7 @@
 r"""把正本（小朋友學英文\）複製到部署夾 _deploy\Kids-Station\（git 只在部署夾跑）。
 
-不複製：game\scratch-td\ 底下除了 web\ 以外的東西（_build\ 腳本、中文檔名正本講義與 .sb3、.md 規格），__pycache__。
+不複製：game\scratch-td\ 底下除了 web\ 以外的東西（_build\ 腳本、中文檔名正本講義與 .sb3、.md 規格），__pycache__，
+       mindmap\test\、mindmap\_demo\（心智圖 demo 與單元測試）、mindmap\ 底下的 .md。
 不刪除：部署夾裡多出來的檔案只列出來，要刪請到部署夾 git rm。
 防快取：部署夾裡每一個 .html 的同站 .js/.css 引用都加 ?v=<該檔內容雜湊>（見 bust_all）。
 """
@@ -15,6 +16,9 @@ def skip(rel):
     if "__pycache__" in parts or ".git" in parts:
         return True
     if parts[:2] == ["game", "scratch-td"] and (len(parts) < 3 or parts[2] != "web"):
+        return True
+    # 心智圖（社會、自然）：只部署頁面、引擎、資料；測試、demo、格式說明（.md）只留本機
+    if parts[0] == "mindmap" and (len(parts) > 1 and parts[1] in ("test", "_demo") or rel.lower().endswith(".md")):
         return True
     return False
 

@@ -9,8 +9,10 @@
 ├─ 國語   #s/chinese   準備中
 ├─ 數學   #s/math      活動卡片
 │    └─ 天平解方程式  #s/math/balance → iframe 開 math/balance.html
-├─ 社會   #s/social    準備中
-├─ 自然   #s/science   準備中
+├─ 社會   #s/social    心智圖，每單元一張卡（單元一～四）
+│    └─ #s/social/u1 … → iframe 開 mindmap/social.html?u=u1
+├─ 自然   #s/science   心智圖，每單元一張卡（太陽與光、植物世界、水溶液、力與運動）
+│    └─ #s/science/n1 … → iframe 開 mindmap/science.html?u=n1
 ├─ 英文   #home 等原本路由（app.js，預設科目）
 ├─ AI     #s/ai        活動卡片
 │    ├─ AI 會唬爛     #s/ai/hallucinate → ai/hallucinate.html
@@ -21,12 +23,14 @@
 ```
 
 活動卡片定義在 `subjects.js` 的 `ACTS`（新增活動＝加一筆 `{id,title,desc,icon,src}`）。點卡片後頁面用 iframe 開在科目列下方，上面有「← 回某科」。
+社會、自然的單元卡由 `subjects.js` 的 `MM_UNITS` 產生（id、標題要跟 `mindmap/data` 一致）；心智圖的資料格式與抽題規則見 `mindmap/data/FORMAT.md`。
 
 ### 正本位置（2026-10-05 起，小朋友學AI 系列已退場，以下就是正本，直接改）
 
 | 內容 | 正本 | 網站上的檔案 |
 |---|---|---|
 | 天平解方程式 | `math\balance.html` | 同一支 |
+| 社會／自然心智圖 | `mindmap\`：`social.html`、`science.html`、`mindmap.js`／`.css`（兩科共用引擎）、`blanks.js`、`data\social\`、`data\science\`；`test\`、`_demo\`、`.md` 只留本機 | 同一批（不含 test、_demo、.md） |
 | AI 三頁 | `ai\hallucinate.html`、`ai\ask-well.html`、`ai\secrets.html` | 同一支 |
 | Scratch 塔防 | `game\scratch-td\`：`_build\`（產生器與驗證）、`積木腳本規格.md`、中文檔名講義與 .sb3 | `game\scratch-td\web\`（ASCII 檔名，由 `_build\gen_handout.py` 產生，不要手改） |
 
@@ -52,6 +56,7 @@ data/patterns.js  句型 12 個 window.DATA_PATTERNS
 test/smoke.js     node test/smoke.js（檢查資料格式、每種題型各出 30 題、各科活動檔案都在）
 subjects.js/.css  科目列與活動卡片、iframe
 math/ ai/ game/   其他科目的活動頁（見上方「正本位置」）
+mindmap/          社會、自然心智圖（node mindmap/test/blanks.test.js、node mindmap/test/data.test.js）
 deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 ```
 
