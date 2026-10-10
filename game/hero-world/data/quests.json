@@ -1,0 +1,47 @@
+{
+  "_doc": "冒險手冊。tutorial：新手教學（每一步從開始那一刻算 stat 增加 need 才算完成；touch／desk 是手機平板／電腦的操作說明）。main：主線（stat 累積到 need 就完成，照順序）。daily：每日支線池，每天依日期挑 3 個（從當天第一次看到起算）。hint：方向箭頭指向 stele 石碑｜portal 出生點旁的傳送門｜village 最近的村莊｜lair 魔龍平台（暗影界）。stat 名稱同 life.json，另外有 look（轉頭弧度）、walk（走了幾格）、open:<畫面>、bought、mined、ride、village、portal_lit。",
+  "tutorial": [
+    { "id": "look", "text": "轉頭看看四周", "touch": "右手在畫面上拖曳＝轉頭", "desk": "先點一下畫面，再移動滑鼠＝轉頭", "stat": "look", "need": 2 },
+    { "id": "walk", "text": "走走看", "touch": "左手按住畫面左下拖曳＝走路", "desk": "W A S D 走路，空白鍵跳", "stat": "walk", "need": 6 },
+    { "id": "wood", "text": "打一棵樹，拿到木頭", "touch": "按住樹幹不要放，等它裂開", "desk": "對著樹幹按住滑鼠左鍵", "stat": "mine:wood", "need": 1 },
+    { "id": "inv", "text": "打開背包", "touch": "點右上角「背包」", "desk": "按 E（或點右上角「背包」）", "stat": "open:inv", "need": 1 },
+    { "id": "planks", "text": "把木頭做成木板", "touch": "背包右邊「合成」→ 木板 →「製作」", "desk": "背包右邊「合成」→ 木板 →「製作」", "stat": "craft:planks", "need": 1 },
+    { "id": "table", "text": "做一個工作台，放在地上", "touch": "合成「工作台」，選到快捷列再點地面放下", "desk": "合成「工作台」，選到快捷列再按右鍵放下", "stat": "craft:crafting_table", "need": 1 },
+    { "id": "pickaxe", "text": "做一把木鎬", "touch": "站在工作台旁邊，先做木棍，再做木鎬", "desk": "站在工作台旁邊，先做木棍，再做木鎬", "stat": "craft:wood_pickaxe", "need": 1 },
+    { "id": "stone", "text": "用木鎬挖石頭", "touch": "拿著木鎬按住石頭", "desk": "拿著木鎬按住左鍵挖石頭", "stat": "mine:stone", "need": 1 },
+    { "id": "stele", "text": "去練習石碑答英文題，賺金幣", "touch": "點一下有紅色記號的石碑", "desk": "對石碑按右鍵", "stat": "open:quiz", "need": 1, "hint": "stele" },
+    { "id": "buy", "text": "到商店買一樣東西（床 6 金幣）", "touch": "點右上角「商店」", "desk": "點右上角「商店」", "stat": "bought", "need": 1 },
+    { "id": "torch", "text": "放一支火把，晚上才不會暗", "touch": "火把＝煤炭＋木棍；選火把再點地面", "desk": "火把＝煤炭＋木棍；選火把按右鍵放", "stat": "place:torch", "need": 1 },
+    { "id": "bed", "text": "放一張床，點它設定重生點", "touch": "放下床後，空手點一下床", "desk": "放下床後，空手對床按右鍵", "stat": "bed", "need": 1 }
+  ],
+  "main": [
+    { "id": "m_stone", "title": "第 1 章・石器小勇者", "text": "做一把石鎬", "stat": "craft:stone_pickaxe", "need": 1, "coins": 3 },
+    { "id": "m_furnace", "title": "第 2 章・生火", "text": "做一個熔爐", "stat": "craft:furnace", "need": 1, "coins": 3 },
+    { "id": "m_iron", "title": "第 3 章・找鐵礦", "text": "在地底挖到鐵礦", "stat": "mine:iron_ore", "need": 1, "coins": 3 },
+    { "id": "m_ingot", "title": "第 4 章・燒鐵錠", "text": "用熔爐燒出 3 個東西", "stat": "smelted", "need": 3, "coins": 3 },
+    { "id": "m_bp", "title": "第 5 章・鐵工具藍圖", "text": "在商店買「鐵工具藍圖」", "stat": "buy:bp_iron", "need": 1, "coins": 5 },
+    { "id": "m_ironpick", "title": "第 6 章・鐵鎬", "text": "做一把鐵鎬", "stat": "craft:iron_pickaxe", "need": 1, "coins": 3 },
+    { "id": "m_village", "title": "第 7 章・找到村莊", "text": "走到一個村莊（草原或沙漠）", "stat": "village", "need": 1, "coins": 5, "hint": "village" },
+    { "id": "m_quest", "title": "第 8 章・英文委託", "text": "完成一個村民的英文委託", "stat": "quests", "need": 1, "coins": 5, "hint": "village" },
+    { "id": "m_forest", "title": "第 9 章・單字森林", "text": "穿過傳送門，打倒森林巨木王", "stat": "boss:forest", "need": 1, "coins": 5, "hint": "portal" },
+    { "id": "m_cave", "title": "第 10 章・字根洞窟", "text": "打倒字根石像王（商店買洞窟傳送門）", "stat": "boss:cave", "need": 1, "coins": 5 },
+    { "id": "m_castle", "title": "第 11 章・文法城堡", "text": "打倒時態騎士王", "stat": "boss:castle", "need": 1, "coins": 5 },
+    { "id": "m_harbor", "title": "第 12 章・句型港口", "text": "打倒句型海怪", "stat": "boss:harbor", "need": 1, "coins": 5 },
+    { "id": "m_volcano", "title": "第 13 章・片語火山", "text": "打倒片語火龍", "stat": "boss:volcano", "need": 1, "coins": 5 },
+    { "id": "m_dark", "title": "第 14 章・暗晶", "text": "在很深的地底挖 10 個暗晶礦（要鐵鎬）", "stat": "mine:dark_crystal_ore", "need": 10, "coins": 5 },
+    { "id": "m_portal", "title": "第 15 章・暗影傳送門", "text": "用 10 個暗晶排框，點上暗影火種", "stat": "portal_lit", "need": 1, "coins": 5 },
+    { "id": "m_shadow", "title": "第 16 章・暗影界", "text": "走進暗影傳送門", "stat": "shadow", "need": 1, "coins": 5 },
+    { "id": "m_dragon", "title": "最終章・錯題魔龍", "text": "在魔龍平台打倒錯題魔龍", "stat": "dragon", "need": 1, "coins": 10, "hint": "lair" }
+  ],
+  "daily": [
+    { "id": "d_mine", "text": "挖 20 個方塊", "stat": "mined", "need": 20, "coins": 3 },
+    { "id": "d_build", "text": "放 30 個方塊", "stat": "placed", "need": 30, "coins": 3 },
+    { "id": "d_stele", "text": "在石碑答 10 題", "stat": "stele_answers", "need": 10, "coins": 4 },
+    { "id": "d_quiz", "text": "打敗 2 隻錯題怪", "stat": "quiz_wins", "need": 2, "coins": 4 },
+    { "id": "d_fish", "text": "釣魚 3 次", "stat": "fish", "need": 3, "coins": 3 },
+    { "id": "d_farm", "text": "收成 3 次小麥", "stat": "harvested", "need": 3, "coins": 3 },
+    { "id": "d_smelt", "text": "用熔爐燒 5 個東西", "stat": "smelted", "need": 5, "coins": 3 },
+    { "id": "d_task", "text": "完成 1 個英文委託", "stat": "quests", "need": 1, "coins": 4 },
+    { "id": "d_ride", "text": "騎馬、坐船或坐礦車一次", "stat": "ride", "need": 1, "coins": 2 }
+  ]
+}

@@ -158,3 +158,17 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 .ending h1 { font-size: 40px; margin: 0 0 12px; color: #E0352B; letter-spacing: 4px; }
 .ending p { margin: 6px 0; font-size: 18px; min-height: 8px; }
 @keyframes hw-rise { from { transform: translateY(40px) rotate(-1deg); opacity: 0; } to { transform: rotate(-1deg); opacity: 1; } }
+
+/* 冒險手冊：目標列、新手教學卡、任務清單 */
+#objective { background: rgba(239,235,221,.92); color: #26302A; padding: 5px 10px; border-radius: 6px; font-size: 14px; display: flex; align-items: center; gap: 8px; max-width: 320px; box-shadow: 2px 2px 0 rgba(21,23,20,.2); }
+#objective[hidden], #tutorial[hidden], #objarrow[hidden] { display: none; }
+#objective small { color: #5E6660; }
+#objarrow { width: 16px; height: 16px; flex: 0 0 16px; background: #E0352B; clip-path: polygon(50% 0, 100% 100%, 50% 72%, 0 100%); }
+#tutorial { background: #26302A; color: #F2E6C4; padding: 10px 12px; border-radius: 6px; max-width: 320px; font-size: 15px; display: flex; flex-direction: column; gap: 4px; transform: rotate(-.6deg); box-shadow: 3px 3px 0 rgba(21,23,20,.25); pointer-events: auto; }
+#tutorial small { color: #D9D3C0; font-size: 13px; }
+#tutorial .link { align-self: flex-end; background: none; border: 0; color: #F2C46B; text-decoration: underline; font-size: 13px; padding: 6px; cursor: pointer; }
+.quest-list { display: flex; flex-direction: column; gap: 6px; max-height: 46vh; overflow: auto; }
+.quest-item { padding: 6px 10px; border-radius: 4px; background: rgba(38,48,42,.06); opacity: .55; }
+.quest-item.done { opacity: .8; }
+.quest-item.cur { opacity: 1; background: rgba(224,53,43,.12); border-left: 4px solid #E0352B; }
+.quest-item small { display: block; }

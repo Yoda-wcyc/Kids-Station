@@ -10,20 +10,21 @@
 <meta name="format-detection" content="telephone=no">
 <title>勇者島 · 方塊世界</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23EFEBDD'/%3E%3Cpolygon points='32,8 56,20 32,32 8,20' fill='%233E6B3A'/%3E%3Cpolygon points='8,20 32,32 32,58 8,46' fill='%238A6A48'/%3E%3Cpolygon points='56,20 32,32 32,58 56,46' fill='%2363492F'/%3E%3Ccircle cx='50' cy='12' r='5' fill='%23E0352B'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/hw.css?v=e77c56f483">
+<link rel="stylesheet" href="assets/hw.css?v=e1d79734ba">
 </head>
 <body>
 <canvas id="c" aria-label="方塊世界"></canvas>
 <div id="grain" aria-hidden="true"></div>
 <div id="hurt" aria-hidden="true"></div>
 <div id="ui">
-  <div id="hud-l"><div class="pill" id="coinpill"><span class="coin"></span><b id="coins">0</b><span class="lbl">金幣</span></div><div class="pill mode-badge" id="modebadge" hidden>創造模式</div><div id="hearts" aria-label="血量"></div><div id="armorhud" class="armor-hud"></div><div id="dbg" hidden></div></div>
+  <div id="hud-l"><div class="pill" id="coinpill"><span class="coin"></span><b id="coins">0</b><span class="lbl">金幣</span></div><div class="pill mode-badge" id="modebadge" hidden>創造模式</div><div id="hearts" aria-label="血量"></div><div id="armorhud" class="armor-hud"></div><div id="objective" hidden><i id="objarrow" hidden></i><span id="objtext"></span></div><div id="tutorial" hidden></div><div id="dbg" hidden></div></div>
   <div id="hud-r">
     <button id="b-ride" class="hb-btn" hidden>下來</button>
     <button id="b-snd" class="hb-btn" aria-label="聲音開關">🔊</button>
     <button id="b-inv" class="hb-btn">背包</button>
     <button id="b-shop" class="hb-btn">商店</button>
     <button id="b-view" class="hb-btn">視角</button>
+    <button id="b-quest" class="hb-btn">手冊</button>
     <button id="b-map" class="hb-btn">地圖</button>
     <button id="b-ach" class="hb-btn">成就</button>
     <button id="b-set" class="hb-btn" aria-label="設定">設定</button>
@@ -51,7 +52,7 @@
     <p class="muted">挖方塊、蓋房子；去「練習石碑」答英文題賺金幣，到商店買稀有方塊。</p>
     <div class="help">
       <div class="h-touch"><b>iPad</b>：左手拖曳＝走路；右手拖曳＝轉頭；<b>按住方塊</b>＝挖；<b>點一下</b>＝放方塊／跟石碑互動；右下按鈕：跳、飛、放置。</div>
-      <div class="h-desk"><b>電腦</b>：WASD 走、滑鼠看、左鍵挖、右鍵放／互動、空白鍵跳、F 飛、V 視角、E 背包、1–9 換方塊、Shift 跑步／下船、下車、下馬、M 地圖、K 成就。</div>
+      <div class="h-desk"><b>電腦</b>：WASD 走、滑鼠看、左鍵挖、右鍵放／互動、空白鍵跳、F 飛、V 視角、E 背包、1–9 換方塊、Shift 跑步／下船、下車、下馬、J 冒險手冊、M 地圖、K 成就。</div>
     </div>
     <button id="go" class="btn big">開始</button>
     <p><a class="home-link" href="../../#s/game">← 回小朋友學習站</a></p>
@@ -60,6 +61,6 @@
 <div id="err" hidden></div>
 <script src="../../parent-pin.js"></script>
 <script src="../hero-island/audio.js"></script>
-<script src="assets/hw.js?v=e77c56f483"></script>
+<script src="assets/hw.js?v=e1d79734ba"></script>
 </body>
 </html>
