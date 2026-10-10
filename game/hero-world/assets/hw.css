@@ -178,3 +178,11 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 .pill.learn .lbar { display: inline-block; width: 54px; height: 8px; border-radius: 4px; background: rgba(38,48,42,.18); overflow: hidden; }
 .pill.learn .lbar i { display: block; height: 100%; width: 0; background: #3E6B3A; transition: width .3s; }
 .pill.learn.done .lbar i { background: #D9A63A; }
+
+/* 設定：按鈕大小、左手模式；休息提醒 */
+#hud-r, #tbtns, #hotbar { zoom: var(--bs, 1); }
+body.lefty #tbtns { right: auto; left: max(18px, env(safe-area-inset-left)); }
+#restcard { position: absolute; left: 50%; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 110px); transform: translateX(-50%) rotate(-.8deg); background: #EFEBDD; color: #26302A; border: 3px solid #26302A; border-radius: 8px; padding: 14px 18px; display: flex; flex-direction: column; gap: 6px; align-items: center; max-width: min(420px, 86vw); text-align: center; box-shadow: 5px 5px 0 rgba(21,23,20,.25); pointer-events: auto; z-index: 8; }
+#restcard[hidden] { display: none; }
+#restcard b { font-size: 20px; color: #3E6B3A; }
+.set select { font: inherit; padding: 4px 8px; border-radius: 6px; }
