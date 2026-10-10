@@ -10,14 +10,14 @@
 <meta name="format-detection" content="telephone=no">
 <title>勇者島 · 方塊世界</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23EFEBDD'/%3E%3Cpolygon points='32,8 56,20 32,32 8,20' fill='%233E6B3A'/%3E%3Cpolygon points='8,20 32,32 32,58 8,46' fill='%238A6A48'/%3E%3Cpolygon points='56,20 32,32 32,58 56,46' fill='%2363492F'/%3E%3Ccircle cx='50' cy='12' r='5' fill='%23E0352B'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/hw.css?v=e1d79734ba">
+<link rel="stylesheet" href="assets/hw.css?v=114c560fe6">
 </head>
 <body>
 <canvas id="c" aria-label="方塊世界"></canvas>
 <div id="grain" aria-hidden="true"></div>
 <div id="hurt" aria-hidden="true"></div>
 <div id="ui">
-  <div id="hud-l"><div class="pill" id="coinpill"><span class="coin"></span><b id="coins">0</b><span class="lbl">金幣</span></div><div class="pill mode-badge" id="modebadge" hidden>創造模式</div><div id="hearts" aria-label="血量"></div><div id="armorhud" class="armor-hud"></div><div id="objective" hidden><i id="objarrow" hidden></i><span id="objtext"></span></div><div id="tutorial" hidden></div><div id="dbg" hidden></div></div>
+  <div id="hud-l"><div class="pill" id="coinpill"><span class="coin"></span><b id="coins">0</b><span class="lbl">金幣</span></div><div class="pill mode-badge" id="modebadge" hidden>創造模式</div><div class="pill learn" id="learnpill" title="今天答了幾題（學習站和方塊世界一起算）"><span class="lbl">今日學習</span><b id="learncnt">0/20</b><span class="lbar"><i id="learnbar"></i></span></div><div id="hearts" aria-label="血量"></div><div id="armorhud" class="armor-hud"></div><div id="objective" hidden><i id="objarrow" hidden></i><span id="objtext"></span></div><div id="tutorial" hidden></div><div id="dbg" hidden></div></div>
   <div id="hud-r">
     <button id="b-ride" class="hb-btn" hidden>下來</button>
     <button id="b-snd" class="hb-btn" aria-label="聲音開關">🔊</button>
@@ -61,6 +61,6 @@
 <div id="err" hidden></div>
 <script src="../../parent-pin.js"></script>
 <script src="../hero-island/audio.js"></script>
-<script src="assets/hw.js?v=e1d79734ba"></script>
+<script src="assets/hw.js?v=114c560fe6"></script>
 </body>
 </html>

@@ -172,3 +172,9 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 .quest-item.done { opacity: .8; }
 .quest-item.cur { opacity: 1; background: rgba(224,53,43,.12); border-left: 4px solid #E0352B; }
 .quest-item small { display: block; }
+
+/* 今日學習 */
+.pill.learn { gap: 6px; }
+.pill.learn .lbar { display: inline-block; width: 54px; height: 8px; border-radius: 4px; background: rgba(38,48,42,.18); overflow: hidden; }
+.pill.learn .lbar i { display: block; height: 100%; width: 0; background: #3E6B3A; transition: width .3s; }
+.pill.learn.done .lbar i { background: #D9A63A; }
