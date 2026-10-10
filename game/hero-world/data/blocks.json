@@ -169,7 +169,9 @@
     {"n":165,"id":"powered_rail_asc_n","name_zh":"動力鐵軌（坡）","colors":{"top":"#D9A63A"},"pattern":"rail","tileOf":"powered_rail","shape":"ramp","facing":0,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","rail":"asc_n","powered":true,"hidden":true,"buy":null},
     {"n":166,"id":"powered_rail_asc_e","name_zh":"動力鐵軌（坡）","colors":{"top":"#D9A63A"},"pattern":"rail","tileOf":"powered_rail_ew","shape":"ramp","facing":1,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","rail":"asc_e","powered":true,"hidden":true,"buy":null},
     {"n":167,"id":"powered_rail_asc_s","name_zh":"動力鐵軌（坡）","colors":{"top":"#D9A63A"},"pattern":"rail","tileOf":"powered_rail","shape":"ramp","facing":2,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","rail":"asc_s","powered":true,"hidden":true,"buy":null},
-    {"n":168,"id":"powered_rail_asc_w","name_zh":"動力鐵軌（坡）","colors":{"top":"#D9A63A"},"pattern":"rail","tileOf":"powered_rail_ew","shape":"ramp","facing":3,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","rail":"asc_w","powered":true,"hidden":true,"buy":null}
+    {"n":168,"id":"powered_rail_asc_w","name_zh":"動力鐵軌（坡）","colors":{"top":"#D9A63A"},"pattern":"rail","tileOf":"powered_rail_ew","shape":"ramp","facing":3,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","rail":"asc_w","powered":true,"hidden":true,"buy":null},
+    {"n":169,"id":"loot_chest","name_zh":"寶箱","colors":{"top":"#B88B55","side":"#A97E4E","bottom":"#8C6640"},"accent":"#D9A63A","pattern":"chest","hardness":1.2,"tool":"axe","tier":0,"drops":"chest","interact":"chest","hidden":true,"buy":null},
+    {"n":170,"id":"riddle_door","name_zh":"英文圖書館的門","colors":{"top":"#3A1F4A","side":"#3A1F4A"},"accent":"#F2C46B","pattern":"door","hardness":-1,"drops":null,"interact":"riddle","hidden":true,"buy":null}
   ],
   "items": [
     {"id":"stick","name_zh":"木棍","icon":"stick","color":"#8C6640","maxStack":64,"buy":null},

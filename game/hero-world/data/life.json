@@ -264,6 +264,30 @@
       "stat": "dragon",
       "need": 1,
       "coins": 0
+    },
+    {
+      "id": "explorer",
+      "name_zh": "尋寶小勇者",
+      "desc_zh": "打開一個遺跡寶箱",
+      "stat": "loot",
+      "need": 1,
+      "coins": 3
+    },
+    {
+      "id": "treasure_hunter",
+      "name_zh": "寶藏獵人",
+      "desc_zh": "打開 4 個遺跡寶箱",
+      "stat": "loot",
+      "need": 4,
+      "coins": 8
+    },
+    {
+      "id": "library",
+      "name_zh": "英文圖書館",
+      "desc_zh": "答對謎題，打開英文圖書館的門",
+      "stat": "library",
+      "need": 1,
+      "coins": 5
     }
   ],
   "appleChance": 0.1
