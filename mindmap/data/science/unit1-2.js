@@ -3,6 +3,8 @@
  * - 短節點照原文（孩子要背的架構）；長的結論句改寫成自己的話，保留關鍵詞與事實。
  * - rel：父節點連到這個節點的連線上的關係詞（照圖；圖上沒有字的連線就不寫 rel）。只當提示顯示、不挖空；「要」「可」不寫（Yoda 2026-10-11 刪）。
  * - 句子節點直接在節點上標 cands（標題就是那一句重點）；core＝最該背的詞。
+ * - 不考詞（Yoda 2026-10-11）：節點標題／候選詞是泛用標籤（應用、方法、種類…）就只顯示、不挖空、不計分（規則在 blanks.js isNoQuiz）。
+ *   本檔命中：n2-c2「應用」（背架構只當提示）。「結果」在「開花→結果→結種子」是結出果實，有實際知識 → 標 real:true 照考。
  * - 格式見 ../FORMAT.md；測試：node mindmap/test/data.test.js
  */
 window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
@@ -114,7 +116,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
       { id: "n2-b", title: "植物的繁殖", keys: ["繁殖"], children: [
         { id: "n2-b1", rel: "包含", title: "花", keys: ["花"], children: [
           { id: "n2-b1a", rel: "功能", title: "開花→結果→結種子→繁殖", keys: ["開花", "結果", "種子"],
-            cands: [{ w: "結果", core: true }, { w: "結種子", core: true }, { w: "開花" }] }
+            cands: [{ w: "結果", core: true, real: true }, { w: "結種子", core: true }, { w: "開花" }] }
         ] },
         { id: "n2-b2", rel: "包含", title: "繁殖", keys: ["繁殖"], children: [
           { id: "n2-b2a", title: "種子繁殖", keys: ["種子"], children: [

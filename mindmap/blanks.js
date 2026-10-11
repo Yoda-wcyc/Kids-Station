@@ -5,6 +5,9 @@
  * - archNodes(unit)：背架構要考的節點（第 1 層以下的節點；連線上的關係詞 rel 不在裡面，只當提示顯示）
  * - drawArch(items, store, rand, ratio)：背架構第 2／3 關，隨機挖約 60% 的節點（rel 一律不挖）
  * - RELS：合法關係詞清單（只畫在連線上當提示；不挖空、不當 cands、不當練習題答案）
+ * - GENERIC／isNoQuiz(w)：不考詞＝關係詞＋泛用標籤（應用、方法、種類…，單看這個詞學不到知識）。
+ *   節點標題或候選詞（去掉標點與空白後）等於不考詞 → 只顯示、不挖空、不計分（Yoda 2026-10-11）。
+ *   候選詞標 real:true 可豁免（例：「開花→結果→結種子」的「結果」＝結出果實，是實際知識）
  * - recordAnswer / commitSession：寫回以「詞」為單位的答題紀錄（localStorage kids_mm_blanks，由 mindmap.js 存取）
  * 抽題規則見 mindmap/data/FORMAT.md。全域名稱沿用 SocialBlanks（兩科共用）。
  */
@@ -28,15 +31,23 @@
   var RELS = ['觀察', '推論', '使用', '發現', '驗證', '了解', '應用', '包含', '功能', '例如', '利用', '操作', '影響', '位置表示', '升落情形', '操作實驗'];
   function isRel(w) { return RELS.indexOf(w) >= 0; }
 
+  /* 泛用標籤：單看這個詞學不到任何知識。有實際內容的詞（中性、花、繁殖、經濟植物、折射、冬至…）不要放進來 */
+  var GENERIC = ['應用', '方法', '種類', '特性', '現象', '原因', '結果', '影響', '例子', '其他',
+    '特色', '用途', '作用', '類型', '分類', '說明', '介紹', '比較', '變化', '過程', '步驟', '優點', '缺點', '重點', '內容', '名稱', '關係', '條件', '意義'];
+  function normW(w) { return String(w == null ? '' : w).replace(/[\s　、，,。．.·・\-－—~～（）()「」『』:：;；!！?？"'“”‘’\/【】\[\]→]/g, ''); }
+  function isNoQuiz(w) { var n = normW(w); return !!n && (RELS.indexOf(n) >= 0 || GENERIC.indexOf(n) >= 0 || n === '要' || n === '可'); }
+  /* 候選詞能不能挖空：不考詞不挖，除非資料標 real:true */
+  function candOk(c) { return !isNoQuiz(c.w) || !!c.real; }
+
   function kidsOf(d) { return d.lessons || d.topics || d.children || []; }
 
-  /* 背架構節點：依序列出第 1 層以下每個節點 { d, depth, i（在父節點中的序號）, li（第幾個第 1 層）, parent }。
-   * rel 不在裡面（關係詞只畫在連線上當提示，不是作答格） */
+  /* 背架構節點：依序列出第 1 層以下每個節點 { d, depth, i（在父節點中的序號）, li（第幾個第 1 層）, parent, nq }。
+   * rel 不在裡面（關係詞只畫在連線上當提示，不是作答格）；nq＝標題是不考詞（例「應用」）→ 只顯示當提示、不挖空、不計分 */
   function archNodes(u) {
     var out = [];
     kidsOf(u).forEach(function (L, li) {
       (function w(d, depth, i, parent) {
-        out.push({ d: d, depth: depth, i: i, li: li, parent: parent });
+        out.push({ d: d, depth: depth, i: i, li: li, parent: parent, nq: isNoQuiz(d.title) });
         kidsOf(d).forEach(function (c, ci) { w(c, depth + 1, ci, d); });
       })(L, 1, li, u);
     });
@@ -77,7 +88,9 @@
         from = i + 1;
       }
       if (i >= 0) used.push([i, i + c.w.length]);
-      cands.push({ w: c.w, core: !!c.core, i: i, alts: c.alts || null });
+      var o = { w: c.w, core: !!c.core, i: i, alts: c.alts || null };
+      if (c.real) o.real = true;
+      cands.push(o);
     });
     cands.sort(function (a, b) { return a.i - b.i; });
     return { text: text, cands: cands };
@@ -125,7 +138,7 @@
     var all = [];
     points.forEach(function (P, pi) {
       P.np.cands.forEach(function (c, ci) {
-        if (c.i < 0 || isRel(c.w)) return;   // 關係詞不挖空（資料端 data.test 也擋）
+        if (c.i < 0 || !candOk(c)) return;   // 關係詞、泛用詞不挖空（資料端 data.test 也擋）
         all.push({ pi: pi, ci: ci, c: c, weight: weight(W[c.w], c.core, sess) });
       });
     });
@@ -162,10 +175,10 @@
   }
 
   /* 背架構：items＝[{id}]（課、主題、子節點），store.a 以 id 記錄；回傳要挖空的 id 陣列（保持原順序）
-   * 關係詞（id 以 rel: 開頭或 kind:'rel'）一律不挖，也不算進分母 */
+   * 關係詞（id 以 rel: 開頭或 kind:'rel'）、不考詞節點（nq:true 或 title 是不考詞）一律不挖，也不算進分母 */
   function drawArch(items, store, rand, ratio) {
     var A = (store && store.a) || {};
-    items = items.filter(function (it) { return it.kind !== 'rel' && String(it.id).indexOf('rel:') !== 0; });
+    items = items.filter(function (it) { return it.kind !== 'rel' && String(it.id).indexOf('rel:') !== 0 && !it.nq && !(it.title != null && isNoQuiz(it.title)); });
     if (!items.length) return [];
     var k = Math.max(1, Math.round(items.length * (ratio == null ? 0.6 : ratio)));
     var pool = items.map(function (it) { return { id: it.id, weight: weight(A[it.id], false, 0) }; });
@@ -191,6 +204,6 @@
     return st;
   }
 
-  return { RELS: RELS, isRel: isRel, archNodes: archNodes, rng: rng, shuffle: shuffle, normPoint: normPoint, segments: segments, weight: weight, wsample: wsample,
+  return { RELS: RELS, GENERIC: GENERIC, isRel: isRel, isNoQuiz: isNoQuiz, candOk: candOk, normW: normW, archNodes: archNodes, rng: rng, shuffle: shuffle, normPoint: normPoint, segments: segments, weight: weight, wsample: wsample,
     drawCloze: drawCloze, drawArch: drawArch, commitSession: commitSession, recordAnswer: recordAnswer };
 });

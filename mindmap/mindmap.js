@@ -441,12 +441,13 @@ function checkClozeDone(){
 
 /* ---------- 背架構 ---------- */
 function archSeq(){
-  /* 連線上的關係詞（rel：包含、例如、功能…）只當提示顯示，不是作答格（Yoda 2026-10-11）；節點清單由 SB.archNodes 產生 */
+  /* 連線上的關係詞（rel：包含、例如、功能…）只當提示顯示，不是作答格（Yoda 2026-10-11）；節點清單由 SB.archNodes 產生
+   * nq＝標題是不考詞（應用、方法…泛用標籤）：四關都只當提示露出、不挖空、不計分 */
   var u = unit(), Ls = kidsData(u);
   return SB.archNodes(u).map(function(x){
     var d = x.d, li = x.li;
-    if(x.depth === 1) return {id:d.id, kind:'lesson', title:d.title, keys:d.keys || [d.title], prompt:lessonLabel(d, li) + (CFG.lesson ? '的標題是？' : '是？'), li:li};
-    return {id:d.id, kind:x.depth === 2 ? 'topic' : 'sub', title:d.title, keys:d.keys || [d.title], prompt:x.depth === 2 ? (lessonLabel(Ls[li], li) + '・第' + NUM[x.i + 1] + '個' + CFG.l4Kid + '是？') : ('「' + x.parent.title + '」下面第' + NUM[x.i + 1] + '個是？'), li:li};
+    if(x.depth === 1) return {id:d.id, kind:'lesson', nq:x.nq, title:d.title, keys:d.keys || [d.title], prompt:lessonLabel(d, li) + (CFG.lesson ? '的標題是？' : '是？'), li:li};
+    return {id:d.id, kind:x.depth === 2 ? 'topic' : 'sub', nq:x.nq, title:d.title, keys:d.keys || [d.title], prompt:x.depth === 2 ? (lessonLabel(Ls[li], li) + '・第' + NUM[x.i + 1] + '個' + CFG.l4Kid + '是？') : ('「' + x.parent.title + '」下面第' + NUM[x.i + 1] + '個是？'), li:li};
   });
 }
 function curItem(){ return arch && arch.seq ? arch.seq[arch.idx] : null; }
@@ -454,12 +455,13 @@ function itemOk(it, v){ return matchKeys(v, it.keys); }
 function startArch(level, review){
   var p = prog(), u = uprog(p, unit().id);
   if(!review && level > u.unlocked){ toast('先通過第 ' + (level - 1) + ' 關才能玩喔'); return; }
-  var full = archSeq();
-  arch = {level:level, review:!!review, all:full, seq:full, idx:0, filled:{}, used:{}, correct:0, miss:{}, sel:null, lock:false, reported:false};
+  var full = archSeq(), quizable = full.filter(function(s){ return !s.nq; });
+  arch = {level:level, review:!!review, all:full, seq:quizable, idx:0, filled:{}, used:{}, correct:0, miss:{}, sel:null, lock:false, reported:false};
+  full.forEach(function(s){ if(s.nq) arch.filled[s.id] = {title:s.title, st:'hint'}; });   // 不考詞節點直接露出
   if(level === 2 || level === 3){   // 隨機挖約 60%，其餘露出當提示（答錯過的節點較常被挖）
-    var hid = new Set(SB.drawArch(full, bstore(unit().id), R, 0.6));
-    arch.seq = full.filter(function(s){ return hid.has(s.id); });
-    full.forEach(function(s){ if(!hid.has(s.id)) arch.filled[s.id] = {title:s.title, st:'hint'}; });
+    var hid = new Set(SB.drawArch(quizable, bstore(unit().id), R, 0.6));
+    arch.seq = quizable.filter(function(s){ return hid.has(s.id); });
+    quizable.forEach(function(s){ if(!hid.has(s.id)) arch.filled[s.id] = {title:s.title, st:'hint'}; });
   }
   if(level === 1) arch.cards = shuffle(arch.seq.map(function(s){ return s.id; }));
   if(level === 2) makeOpts();
@@ -469,12 +471,12 @@ function startArch(level, review){
 }
 function makeOpts(){
   var it = curItem(); if(!it) return;
-  var pool = arch.all.filter(function(s){ return s.kind === it.kind && s.title !== it.title; }).map(function(s){ return s.title; });
+  var pool = arch.all.filter(function(s){ return !s.nq && s.kind === it.kind && s.title !== it.title; }).map(function(s){ return s.title; });
   // 已經露出（提示或答過）的標題放後面，干擾項才不會一眼就能刪掉
   var shown = {}; Object.keys(arch.filled).forEach(function(id){ shown[arch.filled[id].title] = 1; });
   pool = Array.from(new Set(pool));
   pool = shuffle(pool.filter(function(t){ return !shown[t]; })).concat(shuffle(pool.filter(function(t){ return shown[t]; })));
-  if(pool.length < 3) pool = pool.concat(shuffle(arch.all.filter(function(s){ return s.kind !== it.kind; }).map(function(s){ return s.title; })));
+  if(pool.length < 3) pool = pool.concat(shuffle(arch.all.filter(function(s){ return !s.nq && s.kind !== it.kind; }).map(function(s){ return s.title; })));
   arch.opts = shuffle([it.title].concat(pool.slice(0, 3)));
 }
 var LVNAME = {1:'排排看', 2:'選選看', 3:'默寫', 4:'全默寫'};
@@ -555,7 +557,7 @@ function showArchResult(ok, total){
 function renderArchHome(){
   arch = null;
   var u = unit(), p = prog(), up = p[pk(u.id)] || {unlocked:1, best:{}, passedAt:{}}, due = reviewDue(u.id);
-  var icons = {1:'🧩', 2:'🔘', 3:'✍️', 4:'🧠'}, desc = {1:'空白的架構圖，把打散的標題卡片放回去。', 2:'一格一格選出正確的標題（3～4 選 1）。', 3:'一格一格自己寫出標題。', 4:CFG.lesson ? '只給單元名稱和課數，整張架構全部寫出來。' : '只給單元名稱和大分支的數量，兩層主分支全部寫出來（關係詞不考）。'};
+  var icons = {1:'🧩', 2:'🔘', 3:'✍️', 4:'🧠'}, desc = {1:'空白的架構圖，把打散的標題卡片放回去。', 2:'一格一格選出正確的標題（3～4 選 1）。', 3:'一格一格自己寫出標題。', 4:CFG.lesson ? '只給單元名稱和課數，整張架構全部寫出來。' : '只給單元名稱和大分支的數量，兩層主分支全部寫出來（關係詞和「應用」這類泛用詞不考）。'};
   var html = '<div class="mm-wrap">';
   html += '<h2>🧠 背架構</h2><div class="home-units"' + (D.units.length < 2 ? ' hidden' : '') + '>' + D.units.map(function(x, i){ var dd = reviewDue(x.id), pu = p[pk(x.id)]; var passed = pu ? Object.keys(pu.passedAt || {}).length : 0;
     return '<button class="hu' + (i === UI.unit ? ' on' : '') + '" data-act="unit" data-v="' + i + '"><small>' + esc(unitLabel(x)) + '　過了 ' + passed + '/4 關</small><b>' + esc(x.title) + '</b>' + (dd ? '<br><span class="due2">⏰ 該複習架構囉</span>' : '') + '</button>'; }).join('') + '</div>';
@@ -579,31 +581,36 @@ function renderArchHome(){
 function renderL4(){
   var u = unit(), Ls = kidsData(u);
   var html = '<div class="mm-wrap"><div class="tr-head"><span class="t">第 4 關・全默寫' + (arch.review ? '（複習）' : '') + '</span><button class="mm-b sm" data-act="archHome">⬅ 回關卡</button></div>' +
-    '<div class="l4u">' + esc(unitLabel(u)) + '：' + esc(u.title) + '<br><span class="muted">' + (CFG.lesson ? '這個單元有 <b>' + Ls.length + '</b> 課。依序寫出每一課的標題、有幾個主題、主題名稱。' : '這個單元有 <b>' + Ls.length + '</b> 個大分支。依序寫出每個大分支、它下面有幾個小分支、小分支的名稱（關係詞不考）。') + '</span></div>';
+    '<div class="l4u">' + esc(unitLabel(u)) + '：' + esc(u.title) + '<br><span class="muted">' + (CFG.lesson ? '這個單元有 <b>' + Ls.length + '</b> 課。依序寫出每一課的標題、有幾個主題、主題名稱。' : '這個單元有 <b>' + Ls.length + '</b> 個大分支。依序寫出每個大分支、它下面有幾個小分支、小分支的名稱（關係詞和「應用」這類泛用詞不考）。') + '</span></div>';
   Ls.forEach(function(L, i){
-    var a = arch.l4[i], c = LCOL[i % LCOL.length];
+    var a = arch.l4[i], c = LCOL[i % LCOL.length], given = kidsData(L).filter(l4nq).map(function(T){ return T.title; });
     html += '<div class="l4l" style="border-color:' + c.bd + '"><label>' + esc(lessonLabel(L, i)) + esc(CFG.l4Title) + '</label>' +
-      '<input class="l4in" data-l="' + i + '" data-f="title" value="' + esc(a.title) + '" autocomplete="off" placeholder="' + esc(CFG.l4Ph) + '">' +
-      '<div class="l4n">' + (CFG.lesson ? '這課有幾個主題？' : '下面有幾個小分支？') + '<button class="mm-b sm" data-act="l4n" data-l="' + i + '" data-v="-1" aria-label="少一個">－</button><b>' + a.n + '</b><button class="mm-b sm" data-act="l4n" data-l="' + i + '" data-v="1" aria-label="多一個">＋</button></div>' +
+      (l4nq(L) ? '<div class="muted"><b>' + esc(L.title) + '</b>（不考，已給）</div>' : '<input class="l4in" data-l="' + i + '" data-f="title" value="' + esc(a.title) + '" autocomplete="off" placeholder="' + esc(CFG.l4Ph) + '">') +
+      (given.length ? '<div class="muted">已給（不考）：' + given.map(esc).join('、') + '</div>' : '') +
+      '<div class="l4n">' + (CFG.lesson ? '這課有幾個主題？' : '下面有幾個小分支？') + (given.length ? '（已給的不算）' : '') + '<button class="mm-b sm" data-act="l4n" data-l="' + i + '" data-v="-1" aria-label="少一個">－</button><b>' + a.n + '</b><button class="mm-b sm" data-act="l4n" data-l="' + i + '" data-v="1" aria-label="多一個">＋</button></div>' +
       '<div class="l4t">' + Array.from({length:a.n}, function(_, j){ return a.topics[j] || ''; }).map(function(t, j){ return '<input class="l4in" data-l="' + i + '" data-f="t" data-j="' + j + '" value="' + esc(t) + '" autocomplete="off" placeholder="' + CFG.l4Kid + ' ' + (j + 1) + '">'; }).join('') + '</div></div>';
   });
   html += '<button class="mm-b big on" style="width:100%;min-height:60px" data-act="l4submit">📮 交卷，看看對不對</button></div>';
   $('#panel').innerHTML = html;
 }
+/* 第 4 關：標題是不考詞的節點（例「應用」）已給、不計分；小分支數也不算它（Yoda 2026-10-11） */
+function l4nq(d){ return SB.isNoQuiz(d.title); }
 function l4input(e){ var t = e.target; if(!t.classList.contains('l4in') || !arch || arch.level !== 4) return; var a = arch.l4[+t.dataset.l]; if(t.dataset.f === 'title') a.title = t.value; else a.topics[+t.dataset.j] = t.value; }
 function l4grade(){
   var u = unit(), Ls = kidsData(u), ok = 0, total = 0, rows = '';
   Ls.forEach(function(L, i){
-    var a = arch.l4[i], Ts = kidsData(L), mine = Array.from({length:a.n}, function(_, j){ return a.topics[j] || ''; });
-    var lok = matchKeys(a.title, L.keys || [L.title]); total++; if(lok) ok++;
-    rows += '<tr class="lh ' + (lok ? 'ok' : 'no') + '"><td><span class="ind">' + esc(lessonLabel(L, i)) + '</span>' + (esc(a.title) || '（空白）') + '</td><td><span class="ind">' + esc(lessonLabel(L, i)) + '</span>' + esc(L.title) + '</td></tr>';
+    var a = arch.l4[i], Ts = kidsData(L).filter(function(T){ return !l4nq(T); }), mine = Array.from({length:a.n}, function(_, j){ return a.topics[j] || ''; });
+    if(l4nq(L)) rows += '<tr class="lh"><td><span class="ind">' + esc(lessonLabel(L, i)) + '</span>（不考，已給）</td><td><span class="ind">' + esc(lessonLabel(L, i)) + '</span>' + esc(L.title) + '</td></tr>';
+    else { var lok = matchKeys(a.title, L.keys || [L.title]); total++; if(lok) ok++;
+      rows += '<tr class="lh ' + (lok ? 'ok' : 'no') + '"><td><span class="ind">' + esc(lessonLabel(L, i)) + '</span>' + (esc(a.title) || '（空白）') + '</td><td><span class="ind">' + esc(lessonLabel(L, i)) + '</span>' + esc(L.title) + '</td></tr>'; }
     var nok = a.n === Ts.length; total++; if(nok) ok++;
     rows += '<tr class="' + (nok ? 'ok' : 'no') + '"><td>' + CFG.l4Kid + '數：' + a.n + '</td><td>' + CFG.l4Kid + '數：' + Ts.length + '</td></tr>';
     var used = {}, match = Ts.map(function(T){ var j = -1; mine.forEach(function(v, k){ if(j < 0 && !used[k] && matchKeys(v, T.keys || [T.title])) j = k; }); if(j >= 0){ used[j] = 1; ok++; } total++; return j; });
     var rest = mine.map(function(v, k){ return used[k] ? null : v; }).filter(function(v){ return v != null; });
     Ts.forEach(function(T, t){ var j = match[t], yours = j >= 0 ? mine[j] : (rest.length ? rest.shift() : '');
       rows += '<tr class="tp ' + (j >= 0 ? 'ok' : 'no') + '"><td>' + (j >= 0 ? '✓ ' : '✗ ') + (esc(yours) || '（沒寫）') + '</td><td>' + esc(T.title) + '</td></tr>'; });
-    rest.forEach(function(v){ if(norm(v)) rows += '<tr class="tp no"><td>✗ ' + esc(v) + '（多寫的）</td><td>—</td></tr>'; });
+    kidsData(L).filter(l4nq).forEach(function(T){ rows += '<tr class="tp"><td>（不考，已給）</td><td>' + esc(T.title) + '</td></tr>'; });
+    rest.forEach(function(v){ if(norm(v) && !SB.isNoQuiz(v)) rows += '<tr class="tp no"><td>✗ ' + esc(v) + '（多寫的）</td><td>—</td></tr>'; });
   });
   var pct = Math.round(ok / total * 100);
   coinAnswer(pct >= PASS[4]);
