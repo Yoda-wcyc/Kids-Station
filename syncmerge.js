@@ -1,4 +1,8 @@
 /* syncmerge.js — 裝置同步的合併規則（純函式，不碰 DOM／網路以外的東西；瀏覽器與 Node 共用）
+   文件格式 v4（2026-10-11 起；v3 欄位完全不變，只多一個 mk 欄位，舊文件少了它就當空的）：
+    mk:{'<科>':{題目id:{c,w,t,u,p}|{d:1,w,t,u}}}   ← kids_mistakes（社會／自然／數學／AI 錯題庫；科＝social、science、math、ai）
+   - mk：每科依題目 id 聯集；同一題 u（更新時間）最新的勝——畢業（移出錯題庫）用 d:1 墓碑，別台舊的那份不會把它救回來；
+     答錯次數 w 取兩邊較大；墓碑每科最多留 300 筆（最新的）。英文錯題（mistakes）照舊。
    文件格式 v3（2026-10-09 起；v2 欄位完全不變，只多下面五個欄位，舊文件少了它們就當空的）：
    {v:3, cut, log:[{r,t,id,m,k,y,ok,a}], agg:{qid:{fc,n,k}}, learned:{id:{at,score}|{removedAt}}, mistakes:{qid:{c,w,t,u,d?}},
     mm:{'<科>:<單元>':{unlocked,best:{關:%},passedAt:{關:ms},lastPassAt,reviewStep}},      ← kids_mm_progress（社會／自然心智圖）
@@ -19,7 +23,7 @@
    - ctr：每台裝置各記自己的星星／回數（各欄取大），本機總數＝全部裝置加總，所以兩台不會互相蓋掉也不會重複算。 */
 (function (root) {
   'use strict';
-  const MAX_BYTES = 500 * 1024, VERSION = 3, MAX_EQ = 30, MAX_EQ_DEL = 100;
+  const MAX_BYTES = 500 * 1024, VERSION = 4, MAX_EQ = 30, MAX_EQ_DEL = 100;
 
   function h53(str) {
     let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
@@ -130,7 +134,37 @@
   const mergeCtr = (a, b) => ({ stars: Math.max(a.stars, b.stars), quizzes: Math.max(a.quizzes, b.quizzes) });
   const ctrSum = c => { const s = { stars: 0, quizzes: 0 }; Object.keys(obj(c)).forEach(d => { s.stars += int0(c[d] && c[d].stars); s.quizzes += int0(c[d] && c[d].quizzes); }); return s; };
 
-  // 整理成 v3：補 r、去重、排序；t ≤ cut 的舊紀錄只保留「答對過」到 agg；新欄位缺了就是空的（讀舊文件不會壞）
+  // ---- mk：各科錯題庫（kids_mistakes；格式見 kids-mistakes.js 檔頭；這裡的整理規則要跟 kids-mistakes.js _core 一致，smoke 會對）----
+  const MK_SUBJ = ['social', 'science', 'math', 'ai'], MK_GRAD = 3, MK_DEL = 300, MK_ID = 200, MK_P = 4000;
+  const nat = x => { x = +x; return isFinite(x) && x > 0 ? Math.floor(x) : 0; };
+  function normMkP(p) { if (!p || typeof p !== 'object' || Array.isArray(p)) return {}; try { const s = JSON.stringify(p); return s.length <= MK_P ? JSON.parse(s) : {}; } catch (e) { return {}; } }
+  function normMkEntry(e) {
+    if (!e || typeof e !== 'object' || Array.isArray(e)) return null;
+    const t = nat(e.t), u = Math.max(nat(e.u), t);
+    if (e.d) return { d: 1, w: nat(e.w), t, u };
+    return { c: Math.min(nat(e.c), MK_GRAD - 1), w: Math.max(1, nat(e.w)), t, u, p: normMkP(e.p) };
+  }
+  function normMkBook(b) {
+    const o = {}, x = obj(b), dead = [];
+    Object.keys(x).sort().forEach(k => { if (!k || k.length > MK_ID || k.charAt(0) === '_') return; const e = normMkEntry(x[k]); if (!e) return; o[k] = e; if (e.d) dead.push(k); });
+    if (dead.length > MK_DEL) dead.sort((a, c) => (o[c].u - o[a].u) || (a < c ? -1 : 1)).slice(MK_DEL).forEach(k => { delete o[k]; });
+    return o;
+  }
+  function normMk(x) { const o = {}, d = obj(x); MK_SUBJ.forEach(s => { const b = normMkBook(d[s]); if (Object.keys(b).length) o[s] = b; }); return o; }
+  // 同一題：u 新的勝（墓碑＝已畢業也是，別台舊的那份不會把它救回來）；一樣新比內容（不含 w）；答錯次數 w 取較大
+  const noW = e => { const o = Object.assign({}, e); delete o.w; return canon(o); };
+  function pickMk(a, b) {
+    if (!a) return b; if (!b) return a;
+    const x = a.u !== b.u ? (a.u > b.u ? a : b) : (noW(a) >= noW(b) ? a : b), w = Math.max(a.w, b.w);
+    return x.w === w ? x : Object.assign({}, x, { w });
+  }
+  function mergeMk(a, b) {
+    a = normMk(a); b = normMk(b); const o = {};
+    MK_SUBJ.forEach(s => { if (!a[s] && !b[s]) return; const x = a[s] || {}, y = b[s] || {}, m = {}; Object.keys(Object.assign({}, x, y)).sort().forEach(k => { m[k] = pickMk(x[k], y[k]); }); o[s] = m; });
+    return normMk(o);
+  }
+
+  // 整理成 v4：補 r、去重、排序；t ≤ cut 的舊紀錄只保留「答對過」到 agg；新欄位缺了就是空的（讀舊文件不會壞）
   function normalize(doc) {
     const d = obj(doc), cut = +d.cut || 0, agg = mergeAgg(obj(d.agg), {}), seen = new Map();
     (Array.isArray(d.log) ? d.log : []).forEach(e0 => {
@@ -140,14 +174,14 @@
       const p = seen.get(e.r); if (!p || canon(e) > canon(p)) seen.set(e.r, e);
     });
     return { v: VERSION, cut, log: [...seen.values()].sort(cmpLog), agg, learned: mergeMap(obj(d.learned), {}, evL), mistakes: mergeMap(obj(d.mistakes), {}, evM),
-      mm: section(d.mm, normProg), mmBlanks: section(d.mmBlanks, normBl), eq: normEq(d.eq), scratch: normScr(d.scratch), ctr: normCtr(d.ctr) };
+      mm: section(d.mm, normProg), mmBlanks: section(d.mmBlanks, normBl), eq: normEq(d.eq), scratch: normScr(d.scratch), ctr: normCtr(d.ctr), mk: normMk(d.mk) };
   }
   function merge(a, b) {
     a = normalize(a); b = normalize(b);
     const cut = Math.max(a.cut, b.cut);
     return normalize({ cut, log: a.log.concat(b.log), agg: mergeAgg(a.agg, b.agg), learned: mergeMap(a.learned, b.learned, evL), mistakes: mergeMap(a.mistakes, b.mistakes, evM),
       mm: mergeSection(a.mm, b.mm, mergeProg), mmBlanks: mergeSection(a.mmBlanks, b.mmBlanks, mergeBl), eq: mergeEq(a.eq, b.eq),
-      scratch: mergeSection(a.scratch, b.scratch, earliest), ctr: mergeSection(a.ctr, b.ctr, mergeCtr) });
+      scratch: mergeSection(a.scratch, b.scratch, earliest), ctr: mergeSection(a.ctr, b.ctr, mergeCtr), mk: mergeMk(a.mk, b.mk) });
   }
   // 太大就把最舊的 1/4 壓進 agg（保留每題第一次答對的時間），重複到夠小
   function compact(doc, maxBytes) {
@@ -185,7 +219,7 @@
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function normCode(s) { const c = String(s || '').toUpperCase().replace(/[\s-]/g, ''); return c.length === 8 && [...c].every(ch => ALPHA.includes(ch)) ? c.slice(0, 4) + '-' + c.slice(4) : null; }
 
-  const SM = { MAX_BYTES, VERSION, MAX_EQ, rid, canon, bytes, normalize, merge, compact, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum };
+  const SM = { MAX_BYTES, VERSION, MAX_EQ, MK_DEL, rid, canon, bytes, normalize, merge, compact, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk };
   if (typeof module !== 'undefined' && module.exports) module.exports = SM;
   root.KESyncMerge = SM;
 })(typeof window !== 'undefined' ? window : globalThis);

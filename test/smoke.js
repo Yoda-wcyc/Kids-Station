@@ -375,7 +375,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   };
   // 相容：舊文件（v1 伺服器新建、v2 只有英文）讀進來不會壞，新欄位都是空的
   const v1 = SM.normalize({ v: 1, created: '2026-10-09T00:00:00Z', log: [], learned: {}, mistakes: {} }), v2 = SM.normalize(devA);
-  ok(v1.v === 3 && SM.VERSION === 3 && same(v1.mm, {}) && same(v1.mmBlanks, {}) && same(v1.scratch, {}) && same(v1.ctr, {}) && v1.eq.items.length === 0 && same(v1.eq.del, {}), 'v1 doc → v3 with empty sections');
+  ok(v1.v === 4 && SM.VERSION === 4 && same(v1.mk, {}) && same(v1.mm, {}) && same(v1.mmBlanks, {}) && same(v1.scratch, {}) && same(v1.ctr, {}) && v1.eq.items.length === 0 && same(v1.eq.del, {}), 'v1 doc → v3 with empty sections');
   ok(v2.log.length === 3 && same(SM.normalize(undefined).mm, {}) && same(SM.normalize({ mm: 5, mmBlanks: [1], eq: 'x', scratch: null, ctr: 7 }).eq, SM.normEq(null)), 'v2 / garbage sections do not throw');
   ok(same(SM.merge(v2, v1).log, SM.merge(devA, {}).log), 'v2 English fields unchanged by v3');
   // 社會／自然過關（kids_mm_progress）：過關聯集＋最佳成績＋最新過關時間；複習跟著最新那次
@@ -465,6 +465,72 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   const bigAll = SM.compact(Object.assign({}, maxDoc, { log: big.log.concat(big.log.map(e => Object.assign({}, e, { t: e.t + 1e7, a: e.a + '-again' }))) }));
   ok(SM.bytes(bigAll) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq), 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(bigAll));
   console.log('sync v3 doc size: sections max ' + secBytes + ' B; 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
+}
+
+// ---- 📕 錯題庫（kids-mistakes.js；社會／自然／數學／AI）＋ 同步 v4 的 mk 欄位 ----
+{
+  const KMc = require(path.join(root, 'kids-mistakes.js'))._core, C = SM.canon, same = (a, b) => C(a) === C(b);
+  const props = (a, b, c, name) => {   // 交換律、冪等、結合律
+    ok(same(SM.merge(a, b), SM.merge(b, a)), name + ': commutative');
+    const ab = SM.merge(a, b); ok(same(SM.merge(ab, a), ab) && same(SM.merge(ab, b), ab) && same(SM.merge(ab, ab), ab), name + ': idempotent');
+    ok(same(SM.merge(SM.merge(a, b), c), SM.merge(a, SM.merge(b, c))), name + ': associative');
+  };
+  // 收錄與移出規則（比照英文 app.js record()）：答錯收進、c 歸零、w+1；在錯題庫裡連對 3 次畢業留墓碑；畢業後再錯重新收進、w 接著加
+  const b = {};
+  ok(KMc.mark(b, 'u1|w|u1-l1-c-p0|臺南', true, null, 100) === null && !b['u1|w|u1-l1-c-p0|臺南'], 'mk: correct answer not in the book → nothing recorded');
+  ok(KMc.mark(b, 'u1|w|x|臺南', false, { u: 'u1', k: 'w', s: '荷蘭人在臺南建城', a: '臺南' }, 1000) === 'added' && same(b['u1|w|x|臺南'], { c: 0, w: 1, t: 1000, u: 1000, p: { u: 'u1', k: 'w', s: '荷蘭人在臺南建城', a: '臺南' } }), 'mk: wrong → added c=0 w=1');
+  ok(KMc.mark(b, 'u1|w|x|臺南', true, null, 1100) === 'counted' && KMc.mark(b, 'u1|w|x|臺南', false, null, 1200) === 'added' && b['u1|w|x|臺南'].c === 0 && b['u1|w|x|臺南'].w === 2 && b['u1|w|x|臺南'].p.a === '臺南', 'mk: wrong again resets the streak (c=0), w=2, keeps p');
+  ok(['counted', 'counted', 'graduated'].every((r, i) => KMc.mark(b, 'u1|w|x|臺南', true, null, 1300 + i) === r) && same(b['u1|w|x|臺南'], { d: 1, w: 2, t: 1200, u: 1302 }), 'mk: 3 correct in a row → graduated tombstone {d:1}: ' + C(b['u1|w|x|臺南']));
+  ok(KMc.mark(b, 'u1|w|x|臺南', true, null, 1400) === null && KMc.liveList(b).length === 0, 'mk: graduated item no longer listed; correct answers ignored');
+  ok(KMc.mark(b, 'u1|w|x|臺南', false, { u: 'u1', k: 'w', s: 's', a: '臺南' }, 1500) === 'added' && b['u1|w|x|臺南'].w === 3 && !b['u1|w|x|臺南'].d, 'mk: wrong after graduating → back in the book, w keeps counting');
+  KMc.mark(b, 'n2|a|n2-a1', false, { u: 'n2', k: 'a', s: '單元二 › 第一個大分支 › ___', a: '花' }, 1600);
+  ok(KMc.liveList(b).map(e => e.id).join(';') === 'n2|a|n2-a1;u1|w|x|臺南' && KMc.liveList(b, 'u1').length === 1 && KMc.liveList(b, 'n2')[0].p.a === '花', 'mk: liveList newest first, unit filter by p.u');
+  ok(KMc.mark(b, 'n2|a|n2-a1', true, null, 10) === 'counted' && b['n2|a|n2-a1'].u === 1601, 'mk: clock behind → u still moves forward (later event wins locally)');
+  // 同步合併：聯集；畢業墓碑不被別台舊的救回；同一題答錯次數取較大
+  const live = (w, t, c) => ({ c: c || 0, w, t, u: t, p: { u: 'u1', k: 'q', s: 'Q', a: 'A' } });
+  const A = { mk: { social: { q1: live(2, 100), q2: { d: 1, w: 3, t: 50, u: 300 } }, math: { 'eq:x+5=12': { c: 1, w: 1, t: 10, u: 20, p: { q: 'x+5=12' } } } } };
+  const B = { mk: { social: { q1: live(5, 90), q2: live(1, 200), q3: live(1, 400) }, ai: { 'ask-well|1': live(1, 5) } } };
+  const Cc = { mk: { social: { q3: { d: 1, w: 1, t: 400, u: 500 } }, science: { 'n1|w|p|太陽': live(1, 7) } } };
+  const AB = SM.merge(A, B).mk;
+  ok(Object.keys(AB).join() === 'social,science,math,ai'.split(',').filter(s => AB[s]).join() && AB.social.q1.w === 5 && AB.social.q1.t === 100 && AB.social.q3 && AB.math['eq:x+5=12'] && AB.ai['ask-well|1'], 'mk merge: union across subjects, newer entry wins, w = max: ' + C(AB.social.q1));
+  ok(AB.social.q2.d === 1 && AB.social.q2.w === 3, 'mk merge: graduated tombstone (newer) beats the old live copy → not resurrected');
+  ok(SM.merge(SM.merge(A, B), Cc).mk.social.q3.d === 1, 'mk merge: graduated on another device propagates');
+  ok(same(SM.merge({ mk: { social: { q: live(1, 900) } } }, { mk: { social: { q: { d: 1, w: 4, t: 1, u: 800 } } } }).mk.social.q, Object.assign(live(1, 900), { w: 4 })), 'mk merge: wrong again after graduating (newer) wins, w = max(1,4)');
+  props(A, B, Cc, 'mk');
+  // 跟 kids-mistakes.js 的整理規則一致（本機存的 = 同步文件裡的）
+  const garbage = { social: { ok: live(1, 5), _x: live(1, 5), '': live(1, 5), bad: 7, neg: { c: -3, w: 0, t: 'x' } }, chinese: { a: live(1, 1) }, math: [] };
+  ok(same(SM.normMk(garbage), KMc.normAll(garbage)) && same(SM.mergeMk(A.mk, B.mk), KMc.mergeAll(A.mk, B.mk)) && !SM.normMk(garbage).chinese && SM.normMk(garbage).social.neg.w === 1, 'mk: syncmerge normMk/mergeMk === kids-mistakes _core: ' + C(SM.normMk(garbage)));
+  // 墓碑每科最多 300 筆（留最新的）；新舊版相容：v3 文件沒有 mk → 空；舊版裝置 PUT 回去少了 mk → 新版從本機補回
+  const tomb = {}; for (let i = 0; i < 400; i++) tomb['q' + i] = { d: 1, w: 1, t: i, u: i };
+  const tn = SM.normMk({ ai: tomb }).ai;
+  ok(Object.keys(tn).length === SM.MK_DEL && tn.q399 && !tn.q99 && tn.q100, 'mk: tombstones capped at 300 newest');
+  ok(same(SM.normalize({ v: 3, log: [], mm: {} }).mk, {}), 'mk: v3 doc → empty mk');
+  const full4 = SM.merge(A, devA), strip3 = d => { const n = SM.normalize(d), o = Object.assign({}, n, { v: 3 }); delete o.mk; return o; };
+  ok(same(SM.merge(full4, strip3(full4)), full4), 'mk: old v3 device strips mk → newer device restores from local');
+  // 兩台輪流 syncOnce：錯題一致（含墓碑）
+  (async () => {
+    const remote = { doc: { v: 1, log: [], learned: {}, mistakes: {} }, etag: 0 };
+    const io = dev => ({ get: async () => ({ doc: JSON.parse(JSON.stringify(remote.doc)), etag: remote.etag }), put: async (c, d, e) => { if (e !== remote.etag) return { conflict: true }; remote.doc = JSON.parse(JSON.stringify(d)); remote.etag++; return {}; },
+      readLocal: () => dev.local, writeLocal: d => { dev.local = d; } });
+    const X = { local: SM.normalize(A) }, Y = { local: SM.normalize(B) };
+    for (let i = 0; i < 3; i++) { await SM.syncOnce(io(X), 'K'); await SM.syncOnce(io(Y), 'K'); }
+    ok(same(X.local.mk, Y.local.mk) && X.local.mk.social.q2.d === 1 && X.local.mk.social.q1.w === 5 && Object.keys(X.local.mk).length === 3, 'mk syncOnce: two devices converge, tombstone kept, w max');
+  })().catch(e => { console.error(e); process.exit(1); });
+  // 文件大小：四科都塞滿（每科 300 題＋300 墓碑、p 是長句）也遠小於 1MB
+  const big4 = {}; KMc.SUBJ.forEach(s => { const bk = {}; for (let i = 0; i < 300; i++) { bk[s + 'L' + i] = { c: 2, w: 9, t: 1.8e12, u: 1.8e12, p: { u: 'u1', k: 'w', pid: 'u1-l1-t1-p3', ci: 2, a: '荷蘭東印度公司', s: '十七世紀荷蘭東印度公司為了和中國、日本貿易，在臺灣南部建立據點並修築熱蘭遮城' } }; bk[s + 'D' + i] = { d: 1, w: 9, t: 1.8e12, u: 1.8e12 }; } big4[s] = bk; });
+  const mkBytes = SM.bytes(SM.normMk(big4));
+  ok(mkBytes < 450 * 1024, 'mk at maximum stays well under the 1MB server limit: ' + mkBytes + ' B');
+  // 頁面：每科頁有 📕 錯題庫卡、各頁載入 kids-mistakes.js、練錯題送 practice_round <科>:mistakes
+  const sjm = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
+  ok(/MK_SUBJ = \['social', 'science', 'math', 'ai'\]/.test(sjm) && sjm.includes("icon: '📕'") && sjm.includes('mistakes-go') && sjm.includes('math/balance.html?mistakes=1') && sjm.includes('?mistakes=1'), 'subjects.js: 錯題庫 tiles + routes');
+  [['index.html', 'kids-mistakes.js'], ['mindmap/social.html', '../kids-mistakes.js'], ['mindmap/science.html', '../kids-mistakes.js'], ['math/balance.html', '../kids-mistakes.js'], ['ai/ask-well.html', '../kids-mistakes.js'], ['ai/hallucinate.html', '../kids-mistakes.js'], ['ai/secrets.html', '../kids-mistakes.js']]
+    .forEach(([f, s]) => ok(fs.readFileSync(path.join(root, f), 'utf8').includes('<script src="' + s + '"></script>'), f + ' loads kids-mistakes.js'));
+  const idxh = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  ok(idxh.indexOf('kids-mistakes.js') < idxh.indexOf('subjects.js'), 'index: kids-mistakes.js before subjects.js');
+  const balh = fs.readFileSync(path.join(root, 'math', 'balance.html'), 'utf8');
+  ok(balh.indexOf('kids-mistakes.js') < balh.indexOf('var MK = '), 'balance: kids-mistakes.js loads before the page script');
+  ok(balh.includes("item:'math:mistakes'") && fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("item: 'ai:mistakes'") && fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8').includes("coinRound(QZ.mk ? 'mistakes' : 'quiz'"), 'practice_round <科>:mistakes sent by each practice');
+  ok(!/['"]ke_mistakes['"]/.test(fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8')) && fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("KEY = 'kids_mistakes'"), 'kids_ prefix key; English ke_mistakes untouched');
 }
 
 // ---- 語速 ----

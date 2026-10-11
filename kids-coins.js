@@ -14,7 +14,7 @@
   var MODES = ['practice', 'words', 'roots', 'grammar', 'patterns', 'mistakes', 'bank', 'redo', 'drill', 'speak'];
   var TEST_PREFIX = { test_word: 'word', test_phrase: 'phrase', test_root: 'root', test_grammar: 'grammar', test_pattern: 'pattern' };
   var SUBJECTS = ['english', 'math', 'ai', 'social', 'science'];   // social／science＝心智圖（2026-10-09）
-  var MM_RE = /^(social|science):(arch|cloze|quiz)$/;             // 心智圖一輪：背架構／考考自己／練習題
+  var MM_RE = /^((social|science):(arch|cloze|quiz|mistakes)|(math|ai):mistakes)$/;   // 心智圖一輪：背架構／考考自己／練習題；各科 📕 只練錯題一輪（2026-10-11）
   var TICK_RE = /^tick:(\d{4}-\d{2}-\d{2}):(\d{4})$/;
 
   function pad(n, w) { n = String(n); while (n.length < w) n = '0' + n; return n; }

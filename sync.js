@@ -7,6 +7,7 @@
    - 合併一律用 syncmerge.js（聯集、不互蓋）；不碰學習幣（上傳舊紀錄不補發）。登出時 kids-auth.js 清掉 ke_sync。
    同步範圍（2026-10-09 擴充，文件 v3）：英文 ke_log／ke_agg／ke_learned／ke_mistakes／ke_progress（星星、回數）、
    社會／自然 kids_mm_progress／kids_mm_blanks、數學天平 tianping-eq-list-v2、Scratch kids_scratch_done。
+   2026-10-11（文件 v4）：加各科錯題庫 kids_mistakes（社會、自然、數學、AI；kids-mistakes.js）。
    不同步：登入（kids_jwt、kids_member、kids_quota、kids_vchk）、學習幣（kids_coin_*）、設定（ke_settings、kids_mm_ui、ks_parent_pin）、
    流量（kids_vid、kids_hit）、遊戲存檔（hi_*、hw_*）、推算出來的 ke_correct（從 log＋agg 重算）。
    心智圖／天平是 iframe 開在首頁裡：同網域的子框直接借用首頁的 KESync（同一個分頁只跑一份同步）；寫回本機後發 'kesync-data' 事件。 */
@@ -48,7 +49,7 @@
   const has = k => { try { return localStorage.getItem(k) != null; } catch (e) { return false; } };
   // 內容一樣就不寫（避免別的分頁／子框收到沒意義的 storage 事件）
   const svIf = (k, v) => { try { const s = JSON.stringify(v); if (localStorage.getItem(k) !== s) localStorage.setItem(k, s); } catch (e) { } };
-  const K_MM = 'kids_mm_progress', K_MMB = 'kids_mm_blanks', K_EQ = 'tianping-eq-list-v2', K_EQS = 'ke_sync_eq', K_SCR = 'kids_scratch_done', K_PROG = 'ke_progress', K_CTR = 'ke_sync_ctr';
+  const K_MM = 'kids_mm_progress', K_MMB = 'kids_mm_blanks', K_EQ = 'tianping-eq-list-v2', K_EQS = 'ke_sync_eq', K_SCR = 'kids_scratch_done', K_PROG = 'ke_progress', K_CTR = 'ke_sync_ctr', K_MK = 'kids_mistakes';
   const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
   // 英文星星／回數：每台裝置一個 id，ke_sync_ctr＝{dev, ctr:上次同步後全部裝置的數字}；這台自己的＝本機總數－別台的
   function ctrMeta() { let m = ld(K_CTR, null); if (!isObj(m) || typeof m.dev !== 'string' || !m.dev) { m = { dev: 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), ctr: {} }; sv(K_CTR, m); } if (!isObj(m.ctr)) m.ctr = {}; return m; }
@@ -67,7 +68,7 @@
   const readLocal = () => {
     const a = ld('ke_agg', {}) || {};
     return { log: ld('ke_log', []), cut: a.cut || 0, agg: a.agg || {}, learned: ld('ke_learned', {}), mistakes: ld('ke_mistakes', {}),
-      mm: ld(K_MM, {}), mmBlanks: ld(K_MMB, {}), eq: localEq(), scratch: ld(K_SCR, {}), ctr: localCtr() };
+      mm: ld(K_MM, {}), mmBlanks: ld(K_MMB, {}), eq: localEq(), scratch: ld(K_SCR, {}), ctr: localCtr(), mk: ld(K_MK, {}) };
   };
   function writeLocal(d) {
     sv('ke_log', d.log); sv('ke_agg', { cut: d.cut, agg: d.agg }); sv('ke_learned', d.learned); sv('ke_mistakes', d.mistakes);
@@ -83,6 +84,8 @@
       if (!(cur && Array.isArray(cur.items) && JSON.stringify(cur.items.map(it => ({ q: it && it.q, own: !!(it && it.own) }))) === JSON.stringify(want))) svIf(K_EQ, { v: 2, items: want });
     }
     if (Object.keys(d.scratch || {}).length) { const s = ld(K_SCR, {}); svIf(K_SCR, Object.assign(isObj(s) ? s : {}, d.scratch)); }
+    // 錯題庫（社會／自然／數學／AI）：合併結果已含本機全部（聯集＋墓碑），整份換掉；本機沒有、合併後也是空的就不建
+    if (Object.keys(d.mk || {}).length || has(K_MK)) svIf(K_MK, d.mk || {});
     // 星星／回數：本機總數＝全部裝置加總
     const m = ctrMeta(); m.ctr = d.ctr || {}; sv(K_CTR, m);
     const tot = SM.ctrSum(m.ctr), P0 = ld(K_PROG, null), P = isObj(P0) ? P0 : {};

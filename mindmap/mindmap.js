@@ -696,7 +696,14 @@ function prepQ(q){ var o = {q:q, done:false, right:false};
   return o; }
 function renderQuiz(){
   var P = $('#panel'), u = unit();
-  if(!QZ.items.length){ P.innerHTML = '<div class="mm-wrap"><p>這個單元還沒有練習題。</p></div>'; return; }
+  if(!QZ.items.length){ P.innerHTML = QZ.mk ? '<div class="mm-wrap"><p class="mk-empty">目前沒有錯題 🎉</p><p><a class="mm-b on" target="_top" href="' + mkBack() + '">📕 回錯題庫</a></p></div>' : '<div class="mm-wrap"><p>這個單元還沒有練習題。</p></div>'; return; }
+  if(QZ.i >= QZ.items.length && QZ.mk){
+    var mn = QZ.items.length;
+    P.innerHTML = '<div class="mm-wrap"><div class="card result center" id="mkResult"><div class="party">' + (QZ.ok === mn ? '🏆' : '💪') + '</div><div class="score">' + QZ.ok + ' / ' + mn + '</div>' +
+      (QZ.grad ? '<p>🎓 有 ' + QZ.grad + ' 題錯題畢業了！</p>' : '<p>同一題連續答對 3 次就會畢業喔！</p>') +
+      '<div class="share-row"><button class="mm-b on" data-act="mkAgain">🔁 再練一次</button><a class="mm-b" target="_top" href="' + mkBack() + '">📕 回錯題庫</a></div></div></div>';
+    return;
+  }
   if(QZ.i >= QZ.items.length){
     var n = QZ.items.length, pct = Math.round(QZ.ok / n * 100);
     P.innerHTML = '<div class="mm-wrap"><div class="card result center"><div class="party">' + (pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : '💪') + '</div><div class="score">' + QZ.ok + ' / ' + n + '</div><p>答對率 ' + pct + '%</p>' +
@@ -704,7 +711,10 @@ function renderQuiz(){
     return;
   }
   var it = QZ.items[QZ.i], q = it.q, body = '';
-  if(q.type === 'mc'){
+  if(q.type === 'fill'){
+    body = it.done ? '' : '<div class="l3row"><input id="mkIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="空格裡是什麼？" enterkeyhint="done"></div>' +
+      '<div class="share-row"><button class="mm-b on" data-act="qfill">✅ 確定</button><button class="mm-b" data-act="qfillSkip">👀 不會</button></div>';
+  } else if(q.type === 'mc'){
     body = '<div class="opts">' + it.ord.map(function(oi){ var cls = ''; if(it.done){ if(oi === q.a) cls = ' right'; else if(oi === it.pick) cls = ' wrong'; } return '<button class="opt' + cls + '" data-act="qmc" data-v="' + oi + '"' + (it.done ? ' disabled' : '') + '>' + esc(q.opts[oi]) + '</button>'; }).join('') + '</div>';
   } else if(q.type === 'tf'){
     body = '<div class="opts">' + [true, false].map(function(v){ var cls = ''; if(it.done){ if(v === q.a) cls = ' right'; else if(v === it.pick) cls = ' wrong'; } return '<button class="opt' + cls + '" data-act="qtf" data-v="' + v + '"' + (it.done ? ' disabled' : '') + '>' + (v ? '⭕ 對' : '❌ 錯') + '</button>'; }).join('') + '</div>';
@@ -725,13 +735,59 @@ function renderQuiz(){
     fb = '<div class="fb ' + (it.right ? 'ok' : 'no') + '"><div class="fbh">' + (it.right ? '答對了！🎉' : '再看一次 👀') + '</div><div class="why">' + esc(q.why || '') + extra + '</div></div>' +
       '<button class="mm-b big on" style="width:100%;margin-top:12px" data-act="qNext">' + (QZ.i + 1 < QZ.items.length ? '下一題 ▶' : '看結果 🏁') + '</button>';
   }
-  P.innerHTML = '<div class="mm-wrap"><div class="qz-head"><span>📝 練習題・' + esc(unitLabel(u)) + '</span><span>第 ' + (QZ.i + 1) + ' / ' + QZ.items.length + ' 題　答對 ' + QZ.ok + '</span></div>' +
+  var mu = QZ.mk ? ALL_UNITS.filter(function(x){ return x.id === it.mu; })[0] : null;
+  var headL = QZ.mk ? '📕 錯題練習' + (mu ? '・' + esc(unitLabel(mu)) : '') : '📝 練習題・' + esc(unitLabel(u));
+  if(QZ.mk && it.done && !it.right && q.type === 'fill' && it.input) fb = fb.replace('<div class="why">', '<div class="why">你寫「' + esc(it.input) + '」。');
+  P.innerHTML = '<div class="mm-wrap"><div class="qz-head"><span>' + headL + '</span><span>第 ' + (QZ.i + 1) + ' / ' + QZ.items.length + ' 題　答對 ' + QZ.ok + '</span></div>' +
     '<div class="bar"><i style="width:' + Math.round(QZ.i / QZ.items.length * 100) + '%"></i></div>' +
-    '<div class="card qcard" style="margin-top:12px;text-align:left"><span class="qtype">' + QTYPE[q.type] + '</span><div class="qz-q">' + esc(q.q) + '</div>' + body + '</div>' + fb + '</div>';
+    '<div class="card qcard" style="margin-top:12px;text-align:left"><span class="qtype">' + (q.tl || QTYPE[q.type]) + '</span><div class="qz-q">' + (q.type === 'fill' ? mkFillHTML(it) : esc(q.q)) + '</div>' + body + '</div>' + fb + '</div>';
+  var mi = $('#mkIn'); if(mi){ try{ mi.focus(); }catch(e){} mi.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); ACT.qfill(); } }); }
 }
-function quizDone(right){ var it = QZ.items[QZ.i]; it.done = true; it.right = right; if(right) QZ.ok++; coinAnswer(right); mkQuiz(it.q, right);
-  if(QZ.items.every(function(x){ return x.done; }) && !QZ.reported){ QZ.reported = true; coinRound('quiz', QZ.ok, QZ.items.length); }
+function quizDone(right){ var it = QZ.items[QZ.i]; it.done = true; it.right = right; if(right) QZ.ok++; coinAnswer(right);
+  if(QZ.mk){ try{ if(KMx().record(SUBJ, it.mk, right) === 'graduated') QZ.grad++; }catch(e){} }
+  else mkQuiz(it.q, right);
+  if(QZ.items.every(function(x){ return x.done; }) && !QZ.reported){ QZ.reported = true; coinRound(QZ.mk ? 'mistakes' : 'quiz', QZ.ok, QZ.items.length); }
   renderQuiz(); }
+
+/* ---------- 📕 只練錯題（?mistakes=1；首頁錯題庫按「只練錯題」開這頁）----------
+   把錯題庫裡的三種題混成一輪：考考自己的挖空詞（fill：那句重點挖掉那個詞，自己寫）、背架構的節點（選擇題：上層位置＋選標題，
+   干擾項不放同一上層的兄弟）、練習題（原題）。每題作答照錯題庫規則記（答錯歸零、連對 3 次畢業）；一輪結束送 practice_round '<科>:mistakes'。 */
+function findPid(u, pid){ var hit = null; (function w(d){ if(hit) return; if(pid === d.id + '-s' || (pid.indexOf(d.id + '-p') === 0 && /^\d+$/.test(pid.slice(d.id.length + 2)))) hit = d; kidsData(d).forEach(w); })(u); return hit; }
+function mkQ(e){
+  var p = e.p || {}, K = KMx(), u = ALL_UNITS.filter(function(x){ return x.id === p.u; })[0]; if(!u || !K) return null;
+  if(p.k === 'q'){ var h = e.id.split('|q|')[1]; return (u.quiz || []).filter(function(q){ return K.hash(q.q) === h; })[0] || null; }
+  if(p.k === 'a'){
+    var nid = e.id.split('|a|')[1], seq = archSeq(u), it = seq.filter(function(s){ return s.id === nid; })[0]; if(!it || it.nq) return null;
+    var sib = {}; seq.forEach(function(s){ if(s.par === it.par) sib[s.title] = 1; });   // 同一上層的兄弟也是對的 → 不當干擾項
+    var pool = shuffle(Array.from(new Set(seq.filter(function(s){ return !s.nq && s.kind === it.kind && !sib[s.title]; }).map(function(s){ return s.title; }))));
+    if(pool.length < 3) pool = pool.concat(shuffle(Array.from(new Set(seq.filter(function(s){ return !s.nq && s.kind !== it.kind && !sib[s.title]; }).map(function(s){ return s.title; })))));
+    var ap = archPath(u, nid);
+    return {type:'mc', tl:'背架構', q:ap ? ap.path : it.title, opts:[it.title].concat(pool.slice(0, 3)), a:0, why:'正確答案：' + it.title};
+  }
+  if(p.k === 'w'){
+    var d = p.pid ? findPid(u, p.pid) : null, np = null, ci = -1;
+    if(d){ var pi = /-s$/.test(p.pid) ? -1 : +p.pid.split('-p').pop(); np = npByPid(d, pi); }
+    if(np){ ci = np.cands[p.ci] && np.cands[p.ci].w === p.a ? p.ci : np.cands.map(function(c){ return c.w; }).indexOf(p.a); }
+    if(!np || ci < 0 || np.cands[ci].i < 0){ if(!p.s || !p.a || p.s.indexOf(p.a) < 0) return null; np = SB.normPoint({t:p.s, cands:[{w:p.a}]}); ci = 0; }
+    var c = np.cands[ci];
+    return {type:'fill', tl:'考考自己', q:'', np:np, ci:ci, w:c.w, alts:c.alts, why:'正確答案：' + c.w};
+  }
+  return null;
+}
+function startMk(){
+  var K = KMx(), L = K ? K.list(SUBJ).filter(function(e){ return !ONLY || e.p.u === ONLY; }) : [], items = [];
+  L.forEach(function(e){ if(items.length >= ((K && K.ROUND) || 30)) return; var q = mkQ(e); if(!q) return; var o = prepQ(q); o.mk = e.id; o.mu = e.p.u; o.input = ''; items.push(o); });
+  QZ = {i:0, ok:0, grad:0, items:shuffle(items), mk:true}; showPanel(); renderQuiz();
+}
+function mkFillHTML(it){
+  var q = it.q;
+  return SB.segments(q.np, new Set([q.ci])).map(function(s){
+    if(s.t != null) return esc(s.t);
+    if(!s.hidden) return esc(s.c.w);
+    return it.done ? '<b class="kw">' + esc(s.c.w) + '</b>' : '<span class="tgt">＿＿＿</span>';
+  }).join('');
+}
+function mkBack(){ return '../index.html#s/' + SUBJ + '/mistakes' + (ONLY ? '-' + ONLY : ''); }
 
 /* ---------- 共用 UI ---------- */
 var toastT;
@@ -750,6 +806,7 @@ function updateChrome(){
   var showTools = mapOn && (UI.mode === 'read' || UI.mode === 'cloze');
   document.querySelectorAll('#tools [data-act]').forEach(function(b){ b.hidden = !showTools || (b.id === 'btnShuffle' && UI.mode !== 'cloze'); });
   if(!mapOn){ $('#trayTop').hidden = true; $('#trayBot').hidden = true; }
+  if(MKMODE){ $('#units').hidden = true; $('#modes').hidden = true; $('#layoutSeg').style.visibility = 'hidden'; }
 }
 function enterMode(){
   closePop(); closeModal(); arch = null;
@@ -800,8 +857,13 @@ var ACT = {
   qoCheck:function(){ var it = QZ.items[QZ.i]; quizDone(it.placed.every(function(v, i){ return v === i; })); },
   qmL:function(el){ var it = QZ.items[QZ.i], l = +el.dataset.v; it.sel = it.sel === l ? null : l; if(it.map[l] != null && it.sel === l) delete it.map[l]; renderQuiz(); },
   qmR:function(el){ var it = QZ.items[QZ.i], r = +el.dataset.v; if(it.sel == null){ toast('先點左邊的一個'); return; } Object.keys(it.map).forEach(function(l){ if(it.map[l] === r) delete it.map[l]; }); it.map[it.sel] = r; it.sel = null; renderQuiz(); },
-  qmCheck:function(){ var it = QZ.items[QZ.i]; quizDone(it.q.pairs.every(function(_, l){ return it.map[l] === l; })); }
+  qmCheck:function(){ var it = QZ.items[QZ.i]; quizDone(it.q.pairs.every(function(_, l){ return it.map[l] === l; })); },
+  qfill:function(){ var it = QZ.items[QZ.i], inp = $('#mkIn'); if(!it || it.done || !inp) return; if(!inp.value.trim()){ toast('先寫寫看喔！'); return; } it.input = inp.value; quizDone(matchAns(inp.value, it.q.w, it.q.alts)); },
+  qfillSkip:function(){ var it = QZ.items[QZ.i]; if(!it || it.done) return; quizDone(false); },
+  mkAgain:function(){ if(!loggedOK()){ gateMk(); return; } startMk(); }
 };
+/* 練錯題要登入（首頁錯題庫按「只練錯題」時已經問過登入與練習額度；直接開這頁沒登入就跳登入提示） */
+function gateMk(){ var A = window.KidsAuth; try{ if(A && !A.requireLogin('練錯題')) return false; }catch(e){} return true; }
 
 /* ---------- 啟動 ---------- */
 function buildDOM(){
@@ -834,6 +896,13 @@ function init(){
   var lastW = window.innerWidth;
   window.addEventListener('resize', function(){ if(Math.abs(window.innerWidth - lastW) < 2) return; lastW = window.innerWidth; if(!$('#mapwrap').hidden){ fit(false, AUTO_MIN); } });
   if(!D.units.length){ $('#panel').hidden = false; $('#mapwrap').hidden = true; $('#panel').textContent = '找不到資料檔。'; return; }
+  if(MKMODE){   // 📕 只練錯題：不顯示單元列／模式列，只出錯題
+    var hm = $('.mm-home'); hm.href = mkBack(); hm.textContent = '← 回錯題庫'; hm.target = '_top';
+    $('.mm-top h1').textContent = '📕 ' + CFG.name + '錯題練習' + (ONLY && D.units[0] ? '・' + unitLabel(D.units[0]) : '');
+    document.title = CFG.name + '錯題練習｜小朋友學習站';
+    if(gateMk()) startMk(); else { showPanel(); $('#panel').innerHTML = '<div class="mm-wrap"><p>要先登入，才可以練錯題喔！</p><button class="mm-b on" data-act="mkAgain">🔑 登入後開始</button></div>'; }
+    return;
+  }
   // 上次停在背架構／考考自己／練習題：沒登入就回到看重點；有登入照常進入（也算開始一輪）
   var m0 = UI.mode;
   if(m0 !== 'read'){ UI.mode = 'read'; if(loggedOK() && gate(m0, function(){ UI.mode = m0; saveUI(); enterMode(); })) UI.mode = m0; }

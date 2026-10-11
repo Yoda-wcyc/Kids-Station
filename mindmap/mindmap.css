@@ -161,3 +161,7 @@ body{overflow:hidden;overscroll-behavior:none;font-size:19px}
 .mm-auth{margin-left:8px;display:inline-flex;align-items:center}
 .mm-top h1 small{font-size:.8rem;color:var(--muted);font-weight:700;margin-left:6px}
 .in-frame .mm-home{display:none}
+
+/* 📕 錯題練習（?mistakes=1）：挖空那一格 */
+.qz-q .tgt{display:inline-block;min-width:3em;border-bottom:3px solid var(--pri);color:var(--pri);font-weight:800;text-align:center}
+.mk-empty{font-size:1.2rem;text-align:center;margin:24px 0}

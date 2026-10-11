@@ -31,6 +31,12 @@
   Object.keys(MM_UNITS).forEach(k => {
     ACTS[k] = MM_UNITS[k].map(([id, t], i) => ({ id, title: `單元${NUMS[i]}　${t}`, desc: () => mmDesc(k, id), icon: '🗺️', src: `mindmap/${k}.html?u=${id}` }));
   });
+  // 📕 錯題庫（kids-mistakes.js）：有題目的科目各一張卡 → #s/<科>/mistakes（清單免登入）；「只練錯題」→ #s/<科>/mistakes-go[-<單元>]
+  //   社會／自然 → iframe mindmap/<科>.html?mistakes=1[&u=單元]；數學 → iframe math/balance.html?mistakes=1；AI → 在這頁重答（KidsMistakes.aiPlay）
+  const MK_SUBJ = ['social', 'science', 'math', 'ai'];
+  const KM = () => window.KidsMistakes;
+  const mkDesc = k => { let n = 0; try { n = KM() ? KM().count(k) : 0; } catch (e) { } return n ? `有 ${n} 題等你復仇` : '目前沒有錯題 🎉'; };
+  MK_SUBJ.forEach(k => { if (ACTS[k]) ACTS[k].push({ id: 'mistakes', title: '錯題庫', desc: () => mkDesc(k), icon: '📕', href: `#s/${k}/mistakes` }); });
   const COLORS = ['c2', 'c4', 'c1', 'c5', 'c3'];
   const bar = document.getElementById('subjects'), box = document.getElementById('subject'), app = document.getElementById('app');
   if (!bar || !box || !app) return;
@@ -52,6 +58,19 @@
     saveSubj(k);
     if (k === 'english') { box.hidden = true; box.innerHTML = ''; app.hidden = false; return; }
     app.hidden = true; box.hidden = false;
+    const mk = MK_SUBJ.includes(k) && KM() && /^mistakes(-go)?(?:-([a-z0-9]+))?$/.exec(sub);
+    if (mk) {
+      const unit = mk[2] && (MM_UNITS[k] || []).some(x => x[0] === mk[2]) ? mk[2] : '', back = `#s/${k}/mistakes${unit ? '-' + unit : ''}`;
+      if (!mk[1] || k === 'ai') {
+        document.documentElement.classList.remove('frame-mode');
+        if (mk[1]) KM().aiPlay(box); else KM().page(box, { k, n: s.n, units: MM_UNITS[k], unit });
+      } else {
+        document.documentElement.classList.add('frame-mode');
+        const src = k === 'math' ? 'math/balance.html?mistakes=1' : `mindmap/${k}.html?mistakes=1${unit ? '&u=' + unit : ''}`;
+        box.innerHTML = `<div class="frame-top"><a class="btn" href="${back}">← 回錯題庫</a><b>📕 ${s.n}錯題練習</b></div><div class="frame-wrap"><iframe src="${src}" title="${s.n}錯題練習" allow="clipboard-write; web-share"></iframe></div>`;
+      }
+      window.scrollTo(0, 0); setH(); return;
+    }
     if (a) box.innerHTML = `<div class="frame-top"><a class="btn" href="#s/${k}">← 回${s.n}</a><b>${a.icon} ${a.title}</b></div><div class="frame-wrap"><iframe src="${a.src}" title="${a.title}" allow="clipboard-write; web-share"></iframe></div>`;
     else if (acts) box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header><div class="tiles">${acts.map((x, i) => `<a class="tile ${COLORS[i % COLORS.length]}" href="${x.href || `#s/${k}/${x.id}`}"><span class="ti">${x.icon}</span><b>${x.title}</b><small>${typeof x.desc === 'function' ? x.desc() : x.desc}</small></a>`).join('')}</div>`;
     else box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header><div class="card center soon"><div class="soon-i">${s.i}</div><h2>${s.n}準備中，敬請期待！</h2><p class="muted">先去其他科目玩玩看吧 😊</p></div>`;
@@ -62,6 +81,7 @@
   if ((!location.hash || location.hash === '#') && last && last !== 'english' && SUBJ.some(s => s.k === last)) history.replaceState(null, '', '#s/' + last);
   window.addEventListener('hashchange', route);
   // 帳號同步把別台的心智圖過關紀錄合併進來：正在看單元卡（不是開著 iframe）就重畫，卡片上的「過了幾關」才會是新的
-  window.addEventListener('kesync-data', () => { if (!box.hidden && !box.querySelector('iframe')) route(); });
+  // （AI 錯題正在重答時不重畫，免得打斷）
+  window.addEventListener('kesync-data', () => { if (!box.hidden && !box.querySelector('iframe') && !/\/mistakes-go/.test(location.hash)) route(); });
   route();
 })();

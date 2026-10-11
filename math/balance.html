@@ -277,6 +277,11 @@ h1{font-family:var(--font-hand);font-size:clamp(2.2rem,1.6rem + 2.4vw,3.2rem);li
 .try-msg{margin:8px 0 0;min-height:1.6em;font-size:1.1rem;font-weight:700;color:var(--ink)}
 .try-msg.bad{color:var(--red)}
 .try-ok{margin:0;font-size:1.25rem;font-weight:700}
+/* 📕 錯題練習（?mistakes=1）的進度列 */
+.mk-bar{margin:6px 0 12px;padding:12px 14px;border:3px solid var(--const);border-radius:14px;background:#FFF6EC;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.mk-bar[hidden],.wrap>[hidden]{display:none!important}
+.mk-h{margin:0;flex:1 1 260px;font-size:1.05rem;font-weight:700;line-height:1.6}
+.mk-bar a.btn{text-decoration:none}
 .dot.locked{opacity:.45}
 .dot.ok{border-color:var(--ink)}
 @media (max-width:520px){.try-pad{grid-template-columns:repeat(4,minmax(0,1fr))}}
@@ -567,6 +572,7 @@ footer .share-row{margin:14px 0 0}
   </footer>
 </main>
 
+<script src="../kids-mistakes.js?v=9418fc85a9"></script>
 <script>
 (function(){
 'use strict';
@@ -937,7 +943,13 @@ function verifyStages(L, s){
 /* ================= 狀態 ================= */
 var BUILTIN = ['x+5=12', 'x−3=9', '12+x=20', 'x+8−2=15', '(x+3)−2=10', '(x−5)+4=12', 'x−(6−2)=7', 'x+(10−4)=15'];
 function builtinList(){ return BUILTIN.map(function(q){ return { q:q, own:false }; }); }
-var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, storeOK:true, store:null, solved:{}, coinSent:{}, quotaAsked:{} };
+var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, storeOK:true, store:null, solved:{}, coinSent:{}, quotaAsked:{}, wrongOnce:{}, mkDone:{}, mkGrad:0, mkSent:false };
+/* 📕 錯題庫（../kids-mistakes.js）：「換你算算看」第一次按確定就算錯的題 → 收進數學錯題庫（id＝'eq:'＋方程式）；
+   在錯題庫裡的題，一次就算對＝答對一次，連對 3 次畢業（規則同英文）。
+   ?mistakes=1（首頁錯題庫按「只練錯題」）：題目清單換成錯題、不存回題目清單、不顯示出題／管理；每題重做「換你算」，
+   全部做完送 practice_round 'math:mistakes'（correct＝一次就算對的題數）。 */
+var MK = /[?&]mistakes=1/.test(location.search);
+function mkRec(q, ok){ try { return window.KidsMistakes ? KidsMistakes.record('math', 'eq:' + q, ok, { q:q }) : null; } catch (e){ return null; } }
 var timers = [], anims = [];
 function later(fn, ms){ var id = setTimeout(fn, ms); timers.push(id); return id; }
 function clearAll(){
@@ -973,6 +985,7 @@ function probeStore(store){
   try { store.setItem(STORE_KEY + '-probe', '1'); store.removeItem(STORE_KEY + '-probe'); return true; } catch (e){ return false; }
 }
 function persist(){
+  if (MK) return;   /* 錯題練習：清單是錯題，不存回題目清單 */
   var ok = saveList(S.store, S.list);
   if (!ok) S.storeOK = false;
   $('store-note').hidden = S.storeOK;
@@ -980,7 +993,7 @@ function persist(){
 }
 /* 帳號同步把別台的題目合併進來（storage／kesync-data）：重讀清單；正在編輯就先不動，目前這題還在就留在這題 */
 function syncReload(){
-  if (S.editing >= 0) return;
+  if (S.editing >= 0 || MK) return;
   var r = loadList(S.store); if (!r.ok) return;
   var same = r.list.length === S.list.length && r.list.every(function(it, k){ return it.q === S.list[k].q && !!it.own === !!S.list[k].own; });
   if (same) return;
@@ -1374,7 +1387,7 @@ function trySubmit(){
   if (window.KidsAuth && !KidsAuth.requireLogin('math')) return;
   var inp = $('try-in'); if (!inp || isSolved()) return;
   /* 練習額度：每一題第一次按「確定」才算開始一次（同一次載入同一題只問一次） */
-  if (!S.quotaAsked[S.P.q]){
+  if (!MK && !S.quotaAsked[S.P.q]){   /* 錯題練習：首頁按「只練錯題」時已經問過練習額度 */
     if (window.KidsAuth && KidsAuth.startActivity && !KidsAuth.startActivity('math', trySubmit)) return;
     S.quotaAsked[S.P.q] = true;
   }
@@ -1382,6 +1395,7 @@ function trySubmit(){
   if (!/^[0-9]+$/.test(raw)){ tryMsg('先在格子裡寫一個數字喔！', false); return; }
   var ok = Number(raw) === S.P.sol;
   if (window.KidsCoins) KidsCoins.answer(ok, 'math');   /* 作答一題：計入有效學習分鐘 */
+  if (!ok && !S.wrongOnce[S.P.q]){ S.wrongOnce[S.P.q] = true; mkRec(S.P.q, false); }   /* 錯題庫：這一題第一次算錯就收進去（之後再錯不重複記） */
   if (!ok){
     var st = S.P.steps[revealAt(S.P) - 1], c = st.right.chunk;
     tryMsg('差一點！再算一次看看。' + (c ? '提示：' + st.right.base + ' ' + c.sym + ' ' + c.n + ' 等於多少？' : '提示：看作業簿最後一行。'), true);
@@ -1389,7 +1403,9 @@ function trySubmit(){
     return;
   }
   S.solved[S.P.q] = true;
-  coinLevel();
+  if (!S.wrongOnce[S.P.q] && mkRec(S.P.q, true) === 'graduated') S.mkGrad++;   /* 一次就算對：錯題庫裡的題答對一次 */
+  if (MK){ S.mkDone[S.P.q] = !S.wrongOnce[S.P.q]; mkBar(); }
+  else coinLevel();   /* 錯題練習不送過關幣，改在全部做完送 practice_round */
   renderControls(); renderTry(false);
   showBalance(S.P.steps[S.i], null);   /* 答對了：把蓋起來的天平和字幕打開 */
   var g = revealAt(S.P);
@@ -1414,7 +1430,7 @@ function renderTabs(){
     h += '<button type="button" class="tab" id="tab-' + k + '" data-k="' + k + '" aria-pressed="' + (k === S.idx ? 'true' : 'false') + '">' +
          '<span class="tab-k">第 ' + (k + 1) + ' 題．' + category(it, P) + '</span><span class="tab-eq">' + eqHTML(P) + '</span></button>';
   });
-  h += '<button type="button" class="tab tab-add" id="btn-goto-editor">＋ 自己出題</button>';
+  if (!MK) h += '<button type="button" class="tab tab-add" id="btn-goto-editor">＋ 自己出題</button>';
   $('tabs').innerHTML = h;
 }
 function renderManage(){
@@ -1451,6 +1467,24 @@ function loadProblem(k){
   $('board-title').textContent = '第 ' + (S.idx + 1) + ' 題：' + toText(S.P.L, true) + ' = ' + S.P.R;
   renderDots();
   goTo(0, false);
+  if (MK) mkBar();
+}
+/* 錯題練習的進度列：第幾題、做完幾題；這題算對了 → 「下一題」；全部做完 → 送 practice_round、顯示結果 */
+function mkBar(){
+  var bar = $('mk-bar'); if (!bar) return;
+  var n = S.list.length, done = S.list.filter(function(it){ return it.q in S.mkDone; }).length;
+  if (n && done >= n){
+    var ok = S.list.filter(function(it){ return S.mkDone[it.q]; }).length;
+    if (!S.mkSent){ S.mkSent = true; if (window.KidsCoins) KidsCoins.report({ type:'practice_round', item:'math:mistakes', correct:ok, total:n }); }
+    bar.innerHTML = '<p class="mk-h">🏁 錯題練完了！一次就算對 <b>' + ok + ' / ' + n + '</b> 題。' + (S.mkGrad ? '🎓 有 ' + S.mkGrad + ' 題錯題畢業了！' : '同一題連續算對 3 次就會畢業喔！') + '</p>' +
+      '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>';
+    return;
+  }
+  var nextK = -1; S.list.forEach(function(it, k){ if (nextK < 0 && k !== S.idx && !(it.q in S.mkDone)) nextK = k; });
+  var curDone = S.P && (S.P.q in S.mkDone);
+  bar.innerHTML = '<p class="mk-h">📕 錯題練習：第 ' + (S.idx + 1) + ' / ' + n + ' 題（做完 ' + done + ' 題）。每一題都在「換你算算看」自己算出 <var>x</var>。</p>' +
+    (curDone && nextK >= 0 ? '<button type="button" class="btn primary" id="mk-next" data-k="' + nextK + '">下一題 ▶</button>' : '');
+  var nb = $('mk-next'); if (nb) nb.onclick = function(){ loadProblem(+nb.getAttribute('data-k')); };
 }
 function setMsg(id, text, bad){ var m = $(id); m.textContent = text; m.classList.toggle('bad', !!bad); }
 
@@ -1753,8 +1787,24 @@ var loaded = loadList(S.store);
 S.list = loaded.list;
 S.storeOK = loaded.ok && probeStore(S.store);
 $('store-note').hidden = S.storeOK;
+if (MK){
+  /* 錯題練習：清單換成錯題庫裡的方程式（最多 30 題、最近答錯的先），出題／管理區收起來 */
+  var mkl = [];
+  try { (window.KidsMistakes ? KidsMistakes.list('math') : []).forEach(function(e){ var a = analyze((e.p && e.p.q) || ''); if (a.ok && mkl.length < 30 && !mkl.some(function(o){ return o.q === a.q; })) mkl.push({ q:a.q, own:true }); }); } catch (e){}
+  var mkb = document.createElement('div'); mkb.id = 'mk-bar'; mkb.className = 'mk-bar'; mkb.setAttribute('role', 'status');
+  $('tabs').parentNode.insertBefore(mkb, $('tabs'));
+  $('editor-sec').hidden = true; $('manage-sec').hidden = true; $('store-note').hidden = true;
+  document.querySelector('header h1').textContent = '📕 數學錯題練習';
+  if (!mkl.length){
+    Array.prototype.forEach.call(document.querySelector('main.wrap').children, function(el){ if (el.tagName !== 'HEADER' && el !== mkb) el.hidden = true; });
+    mkb.innerHTML = '<p class="mk-h" id="mk-empty">目前沒有錯題 🎉</p><a class="btn primary" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>';
+  }
+  S.list = mkl;
+}
+if (S.list.length){
 refreshLists();
 loadProblem(0);
+}
 checkInput();
 try {
   var res = selfCheck();
@@ -1766,9 +1816,9 @@ try {
 })();
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
-<script src="../kids-coins.js?v=c1237feb27"></script>
-<script src="../syncmerge.js?v=f5fc0a8e7d"></script>
-<script src="../sync.js?v=0f3a7f6d00"></script>
+<script src="../kids-coins.js?v=86a127bc19"></script>
+<script src="../syncmerge.js?v=d6f26ac66d"></script>
+<script src="../sync.js?v=8e78a66bba"></script>
 <script>
 /* 會員閘門：看說明、翻「常見錯誤」卡片免登入；按步驟／自動播放／選題／換你算算看／自己出題／管理題目要登入 */
 if (window.KidsAuth) KidsAuth.guard('#controls button, #dots .dot, #tryme button, #tabs .tab[data-k], #editor-sec .keypad .key, #editor-sec .row button, #manage-sec button', 'math', { keys: ['ArrowLeft', 'ArrowRight'] });
