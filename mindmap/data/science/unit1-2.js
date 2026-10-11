@@ -1,7 +1,7 @@
 /* 自然科（五年級上）心智圖資料：單元一〈太陽與光〉、單元二〈植物世界〉
  * 來源：講義「單元重點概念圖」（只有連線關係詞，沒有挖空版）。
  * - 短節點照原文（孩子要背的架構）；長的結論句改寫成自己的話，保留關鍵詞與事實。
- * - rel：父節點連到這個節點的連線上的關係詞（照圖；圖上沒有字的連線就不寫 rel）。
+ * - rel：父節點連到這個節點的連線上的關係詞（照圖；圖上沒有字的連線就不寫 rel）。只當提示顯示、不挖空；「要」「可」不寫（Yoda 2026-10-11 刪）。
  * - 句子節點直接在節點上標 cands（標題就是那一句重點）；core＝最該背的詞。
  * - 格式見 ../FORMAT.md；測試：node mindmap/test/data.test.js
  */
@@ -117,10 +117,10 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
             cands: [{ w: "結果", core: true }, { w: "結種子", core: true }, { w: "開花" }] }
         ] },
         { id: "n2-b2", rel: "包含", title: "繁殖", keys: ["繁殖"], children: [
-          { id: "n2-b2a", rel: "可", title: "種子繁殖", keys: ["種子"], children: [
-            { id: "n2-b2a1", rel: "要", title: "授粉", keys: ["授粉"], cands: [{ w: "授粉", core: true }] }
+          { id: "n2-b2a", title: "種子繁殖", keys: ["種子"], children: [
+            { id: "n2-b2a1", title: "授粉", keys: ["授粉"], cands: [{ w: "授粉", core: true }] }
           ] },
-          { id: "n2-b2b", rel: "可", title: "用根、莖、葉繁殖", keys: ["根", "莖", "葉"],
+          { id: "n2-b2b", title: "用根、莖、葉繁殖", keys: ["根", "莖", "葉"],
             cands: [{ w: "根、莖、葉", core: true }] }
         ] },
         { id: "n2-b3", rel: "包含", title: "果實種子傳播", keys: ["傳播"], children: [
@@ -130,7 +130,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
       ] },
       { id: "n2-c", title: "植物與人類生活", keys: ["人類", "生活"], children: [
         { id: "n2-c1", rel: "利用", title: "經濟植物", keys: ["經濟植物"], children: [
-          { id: "n2-c1a", rel: "要", title: "保持好的品質，還要做品種改良", keys: ["品質", "品種改良"],
+          { id: "n2-c1a", title: "保持好的品質，還要做品種改良", keys: ["品質", "品種改良"],
             cands: [{ w: "品種改良", core: true }, { w: "品質" }] }
         ] },
         { id: "n2-c2", rel: "利用", title: "應用", keys: ["應用"], children: [

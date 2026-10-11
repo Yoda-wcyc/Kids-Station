@@ -75,7 +75,6 @@ body{overflow:hidden;overscroll-behavior:none;font-size:19px}
 .ac-pool{display:flex;flex-wrap:wrap;gap:8px}
 .ac{min-height:48px;padding:6px 14px;border:2px solid #9fd0f5;background:#e8f4ff;border-radius:14px;font:inherit;font-size:.98rem;font-weight:700;color:#1d5d99;box-shadow:0 3px 0 #9fd0f5;cursor:pointer;touch-action:manipulation;text-align:left}
 .ac.sel{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 3px 0 #d96a22}
-.ac.rel{border-radius:99px;background:#fff7e6;border-color:#f1c27d;color:#9a5b00;box-shadow:0 3px 0 #f1c27d}
 .l2opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .l2opts .opt{min-height:58px;font-size:1.02rem}
 .l3row{display:flex;gap:8px;flex-wrap:wrap}

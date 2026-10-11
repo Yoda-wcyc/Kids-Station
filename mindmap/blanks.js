@@ -2,7 +2,9 @@
  * - rng(seed)：可重現的亂數（mulberry32）
  * - normPoint(p)：重點 → {text, cands:[{w, core, i, alts}]}（i＝在 text 中的位置，-1＝找不到）
  * - drawCloze(points, store, rand, opts)：每條重點抽 1～2 個候選詞挖空，整份約 35～50%
- * - drawArch(items, store, rand, ratio)：背架構第 2／3 關，隨機挖約 60% 的節點（含 rel）
+ * - archNodes(unit)：背架構要考的節點（第 1 層以下的節點；連線上的關係詞 rel 不在裡面，只當提示顯示）
+ * - drawArch(items, store, rand, ratio)：背架構第 2／3 關，隨機挖約 60% 的節點（rel 一律不挖）
+ * - RELS：合法關係詞清單（只畫在連線上當提示；不挖空、不當 cands、不當練習題答案）
  * - recordAnswer / commitSession：寫回以「詞」為單位的答題紀錄（localStorage kids_mm_blanks，由 mindmap.js 存取）
  * 抽題規則見 mindmap/data/FORMAT.md。全域名稱沿用 SocialBlanks（兩科共用）。
  */
@@ -20,6 +22,25 @@
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
+  }
+
+  /* 合法關係詞（自然科概念圖連線上的字）。Yoda 2026-10-11：關係詞一律不挖空；「要」「可」整個刪除，不在清單內 */
+  var RELS = ['觀察', '推論', '使用', '發現', '驗證', '了解', '應用', '包含', '功能', '例如', '利用', '操作', '影響', '位置表示', '升落情形', '操作實驗'];
+  function isRel(w) { return RELS.indexOf(w) >= 0; }
+
+  function kidsOf(d) { return d.lessons || d.topics || d.children || []; }
+
+  /* 背架構節點：依序列出第 1 層以下每個節點 { d, depth, i（在父節點中的序號）, li（第幾個第 1 層）, parent }。
+   * rel 不在裡面（關係詞只畫在連線上當提示，不是作答格） */
+  function archNodes(u) {
+    var out = [];
+    kidsOf(u).forEach(function (L, li) {
+      (function w(d, depth, i, parent) {
+        out.push({ d: d, depth: depth, i: i, li: li, parent: parent });
+        kidsOf(d).forEach(function (c, ci) { w(c, depth + 1, ci, d); });
+      })(L, 1, li, u);
+    });
+    return out;
   }
 
   function shuffle(arr, rand) {
@@ -104,7 +125,7 @@
     var all = [];
     points.forEach(function (P, pi) {
       P.np.cands.forEach(function (c, ci) {
-        if (c.i < 0) return;
+        if (c.i < 0 || isRel(c.w)) return;   // 關係詞不挖空（資料端 data.test 也擋）
         all.push({ pi: pi, ci: ci, c: c, weight: weight(W[c.w], c.core, sess) });
       });
     });
@@ -140,9 +161,12 @@
     return { sess: sess, picks: picks, words: words, total: all.length };
   }
 
-  /* 背架構：items＝[{id}]（課、主題、rel…），store.a 以 id 記錄；回傳要挖空的 id 陣列（保持原順序） */
+  /* 背架構：items＝[{id}]（課、主題、子節點），store.a 以 id 記錄；回傳要挖空的 id 陣列（保持原順序）
+   * 關係詞（id 以 rel: 開頭或 kind:'rel'）一律不挖，也不算進分母 */
   function drawArch(items, store, rand, ratio) {
     var A = (store && store.a) || {};
+    items = items.filter(function (it) { return it.kind !== 'rel' && String(it.id).indexOf('rel:') !== 0; });
+    if (!items.length) return [];
     var k = Math.max(1, Math.round(items.length * (ratio == null ? 0.6 : ratio)));
     var pool = items.map(function (it) { return { id: it.id, weight: weight(A[it.id], false, 0) }; });
     var pick = {};
@@ -167,6 +191,6 @@
     return st;
   }
 
-  return { rng: rng, shuffle: shuffle, normPoint: normPoint, segments: segments, weight: weight, wsample: wsample,
+  return { RELS: RELS, isRel: isRel, archNodes: archNodes, rng: rng, shuffle: shuffle, normPoint: normPoint, segments: segments, weight: weight, wsample: wsample,
     drawCloze: drawCloze, drawArch: drawArch, commitSession: commitSession, recordAnswer: recordAnswer };
 });

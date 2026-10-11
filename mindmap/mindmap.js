@@ -30,7 +30,6 @@ var LCOL = [
   {bg:'#b8e986',ln:'#4f9e22',bd:'#8fd05a'},
   {bg:'#d5b8ff',ln:'#8350d6',bd:'#b391f0'}];
 var PAIRC = ['#ff8a3d','#2b8fd6','#2fb36d','#8350d6','#e05656','#c08a00'];
-var DEFAULT_RELS = ['觀察','推論','使用','發現','驗證','了解','應用','包含','功能','例如','利用','操作','可','要','影響','操作實驗'];
 var SMIN = 0.2, SMAX = 2.6, DAY = 86400000;
 function $(s){ return document.querySelector(s); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -224,7 +223,7 @@ function nodeView(n){
 function isSent(d){ return String(d.title || '').length > 12; }
 function slotView(id, type, lab, c){
   var f = arch.filled[id], it = curItem(), cur = arch.level >= 2 && it && it.id === id;
-  var style = /^lesson/.test(type) ? 'background:' + c.bg : type === 'rl' ? '' : 'border-color:' + c.bd;
+  var style = /^lesson/.test(type) ? 'background:' + c.bg : 'border-color:' + c.bd;
   var body = f ? ('<span class="ft">' + esc(f.title) + '</span>' + (f.st === 'bad' ? '<span class="fx">訂正</span>' : f.st === 'hint' ? '<span class="fh">提示</span>' : '<span class="fk">✓</span>'))
                : '<span class="st">' + (cur ? '✍️' : '？') + '</span>';
   return {cls:type + ' slot' + (f ? ' f-' + f.st : '') + (cur ? ' cur' : ''), style:style, html:(lab ? '<span class="lab">' + esc(lab) + '</span>' : '') + body};
@@ -247,7 +246,7 @@ function render(anchorId){
   links.forEach(function(x){ if(x.L.rel) rels.push({id:'rel:link' + x.i, text:x.L.rel, link:x}); });
   rels.forEach(function(r){
     var c = LCOL[((r.k || r.link.b).li) % LCOL.length];
-    var v = archMap() ? slotView(r.id, 'rl', '', c) : {cls:'rl', html:esc(r.text)};
+    var v = {cls:'rl', html:esc(r.text)};   // 關係詞在每個模式都直接顯示（背架構也不挖空）
     r.el = mkEl(r.id, 'rl', v); r.w = r.el.offsetWidth; r.h = r.el.offsetHeight;
   });
   list.forEach(function(n){ n.w = n.el.offsetWidth; n.h = n.el.offsetHeight; });
@@ -442,23 +441,16 @@ function checkClozeDone(){
 
 /* ---------- 背架構 ---------- */
 function archSeq(){
-  var u = unit(), seq = [];
-  kidsData(u).forEach(function(L, li){
-    if(L.rel) seq.push({id:'rel:' + L.id, kind:'rel', title:L.rel, prompt:'「' + u.title + '」連到' + lessonLabel(L, li) + '的關係詞？'});
-    seq.push({id:L.id, kind:'lesson', title:L.title, keys:L.keys || [L.title], prompt:lessonLabel(L, li) + (CFG.lesson ? '的標題是？' : '是？'), li:li});
-    (function w(d, depth, path){
-      kidsData(d).forEach(function(c, i){
-        if(c.rel) seq.push({id:'rel:' + c.id, kind:'rel', title:c.rel, prompt:'「' + d.title + '」連到下一格的關係詞？', li:li});
-        seq.push({id:c.id, kind:depth === 2 ? 'topic' : 'sub', title:c.title, keys:c.keys || [c.title], prompt:depth === 2 ? (lessonLabel(L, li) + '・第' + NUM[i + 1] + '個' + CFG.l4Kid + '是？') : ('「' + d.title + '」下面第' + NUM[i + 1] + '個是？'), li:li});
-        w(c, depth + 1);
-      });
-    })(L, 2);
+  /* 連線上的關係詞（rel：包含、例如、功能…）只當提示顯示，不是作答格（Yoda 2026-10-11）；節點清單由 SB.archNodes 產生 */
+  var u = unit(), Ls = kidsData(u);
+  return SB.archNodes(u).map(function(x){
+    var d = x.d, li = x.li;
+    if(x.depth === 1) return {id:d.id, kind:'lesson', title:d.title, keys:d.keys || [d.title], prompt:lessonLabel(d, li) + (CFG.lesson ? '的標題是？' : '是？'), li:li};
+    return {id:d.id, kind:x.depth === 2 ? 'topic' : 'sub', title:d.title, keys:d.keys || [d.title], prompt:x.depth === 2 ? (lessonLabel(Ls[li], li) + '・第' + NUM[x.i + 1] + '個' + CFG.l4Kid + '是？') : ('「' + x.parent.title + '」下面第' + NUM[x.i + 1] + '個是？'), li:li};
   });
-  (u.links || []).forEach(function(L, i){ if(L.rel) seq.push({id:'rel:link' + i, kind:'rel', title:L.rel, prompt:'虛線箭頭上的關係詞？'}); });
-  return seq;
 }
 function curItem(){ return arch && arch.seq ? arch.seq[arch.idx] : null; }
-function itemOk(it, v){ return it.kind === 'rel' ? matchAns(v, it.title) : matchKeys(v, it.keys); }
+function itemOk(it, v){ return matchKeys(v, it.keys); }
 function startArch(level, review){
   var p = prog(), u = uprog(p, unit().id);
   if(!review && level > u.unlocked){ toast('先通過第 ' + (level - 1) + ' 關才能玩喔'); return; }
@@ -478,12 +470,11 @@ function startArch(level, review){
 function makeOpts(){
   var it = curItem(); if(!it) return;
   var pool = arch.all.filter(function(s){ return s.kind === it.kind && s.title !== it.title; }).map(function(s){ return s.title; });
-  if(it.kind === 'rel') pool = pool.concat(DEFAULT_RELS.filter(function(r){ return r !== it.title; }));
   // 已經露出（提示或答過）的標題放後面，干擾項才不會一眼就能刪掉
   var shown = {}; Object.keys(arch.filled).forEach(function(id){ shown[arch.filled[id].title] = 1; });
   pool = Array.from(new Set(pool));
   pool = shuffle(pool.filter(function(t){ return !shown[t]; })).concat(shuffle(pool.filter(function(t){ return shown[t]; })));
-  if(pool.length < 3) pool = pool.concat(shuffle(arch.all.filter(function(s){ return s.kind !== 'rel' && s.kind !== it.kind; }).map(function(s){ return s.title; })));
+  if(pool.length < 3) pool = pool.concat(shuffle(arch.all.filter(function(s){ return s.kind !== it.kind; }).map(function(s){ return s.title; })));
   arch.opts = shuffle([it.title].concat(pool.slice(0, 3)));
 }
 var LVNAME = {1:'排排看', 2:'選選看', 3:'默寫', 4:'全默寫'};
@@ -499,7 +490,7 @@ function renderTray(){
     var byId = {}; arch.seq.forEach(function(s){ byId[s.id] = s; });
     bot.innerHTML = trayHead('已放好 ' + (total - left.length) + ' / ' + total) +
       '<div class="tr-q">先點一張卡片，再點上面對的空格。放錯會彈回來！</div>' +
-      '<div class="ac-pool">' + left.map(function(id){ var s = byId[id]; return '<button class="ac' + (s.kind === 'rel' ? ' rel' : '') + (arch.sel === id ? ' sel' : '') + '" data-act="pickCard" data-v="' + esc(id) + '">' + esc(s.title) + '</button>'; }).join('') + '</div>';
+      '<div class="ac-pool">' + left.map(function(id){ var s = byId[id]; return '<button class="ac' + (arch.sel === id ? ' sel' : '') + '" data-act="pickCard" data-v="' + esc(id) + '">' + esc(s.title) + '</button>'; }).join('') + '</div>';
     bot.hidden = false;
   } else if(lv === 2){
     var it = curItem();
