@@ -217,7 +217,7 @@
     // ---- 句子題：文法例句與句型例句共用 ----
     const sentenceQs = (module, topic, idBase, e, why) => {
       add({ id: `${idBase}:reorder`, module, topic, type: 'reorder', title: e.en }, () => ({ prompt: e.zh, sub: '把字卡排成正確的英文句子', input: 'chips', options: chips(e.en), answer: e.en, speakText: e.en, why }));
-      add({ id: `${idBase}:speak`, module, topic, type: 'speak', title: e.en }, () => ({ prompt: e.en, en: true, sub: e.zh, input: 'mic', play: true, options: null, answer: e.en, alts: [], speakMode: 'sentence', speakText: e.en, why }));
+      add({ id: `${idBase}:speak`, module, topic, type: 'speak', title: e.en }, () => ({ prompt: e.en, en: true, sub: e.zh, input: 'mic', play: true, options: null, answer: e.en, alts: e.alts || [], speakMode: 'sentence', speakText: e.en, why })); // 例句有 alts（如 How many … are there / 無 there 版）才多收，其他句照舊整句比對
     };
 
     // ---- 文法 ----

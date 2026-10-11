@@ -108,6 +108,17 @@ ok(!E.check(swd, ['pineapple', 'apples', 'happy all']).ok && E.check(swd, ['pine
 ok(E.check(sst, [sst.answer.toUpperCase().replace(/[.!?]$/, '') + '!']).ok && !E.check(sst, ['Well ' + sst.answer]).ok && !E.check(sst, [sst.answer.split(' ').slice(0, -1).join(' ')]).ok, 'speak sentence: whole sentence only, case/punct ignored');
 ok(KE.speakNorm("I'm  2 cats, OK?") === 'im two cats ok' && KE.speakNorm('Let’s go!') === KE.speakNorm("let's go"), 'speak normalize: apostrophes, digits → words');
 ok(E.check(sph, ['Get up']).ok && !E.check(sph, ['get']).ok && !E.check(swd, []).ok && !E.check(swd, ['']).ok, 'speak phrase / empty');
+// How many … are there …?（照國小課本）：主答案有 there；打字／口說也收沒 there 的版本；重組題字卡含 there、只認新句
+{
+  const hm = P.find(p => p.id === 'how-many'), all = hm.ex.concat(hm.extra, hm.typed).map(e => e.en);
+  ok(!all.some(s => /^How many \w+ (are|is) (in|on|at|under)\b/.test(s)), 'how-many: no existence sentence without there');
+  const ty = E.get('p:how-many:t1'), sx = E.get('p:how-many:1:speak'), ro = E.get('p:how-many:1:reorder'), xt = E.get('p:how-many:x1:type'), sk0 = E.get('p:how-many:0:speak');
+  ok(ty.answer === 'How many people are there in your family?' && E.check(ty, 'how many people are there in your family').ok && E.check(ty, 'How many people are in your family?').ok && !E.check(ty, 'How many people in your family?').ok, 'how-many typed: with / without there');
+  ok(E.check(xt, 'How many students are there in your class?').ok && E.check(xt, 'How many students are in your class').ok, 'how-many extra typed: with / without there');
+  ok(E.check(sx, ['how many people are there in your family']).ok && E.check(sx, ['how many people are in your family']).ok && !E.check(sx, ['how many people']).ok, 'how-many speak: alts accepted');
+  ok(sk0.alts.length === 0 && E.get('g:be:ex0:speak').alts.length === 0, 'speak without alts unchanged');
+  ok(ro.answer === 'How many people are there in your family?' && ro.options.some(c => /^there$/i.test(c)) && E.check(ro, ro.answer).ok && !E.check(ro, 'How many people are in your family?').ok, 'how-many reorder: chips include there');
+}
 ok(E.list({ types: ['speak'], allowSpeak: true }).filter(m => m.module === 'words').length === W.length && E.list({ types: ['speak'], allowSpeak: true }).filter(m => m.module === 'phrases').length === PH.length, 'every word and phrase has a speak question');
 ok(E.list({ types: ['speak'] }).length === 0, 'speak hidden without allowSpeak');
 // 錯題混入
