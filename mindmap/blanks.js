@@ -204,6 +204,61 @@
     return st;
   }
 
+  /* ---------- 背架構判分：放在正確的上層底下就算對，同一上層的兄弟順序不計（Yoda 2026-10-11） ----------
+   * archBoard(nodes)：nodes＝[{id, parent, title}]（全部節點，parent＝上層 id；第 1 層的 parent＝單元 id），依原本順序。
+   *   order(p)        目前畫面上 p 底下的子節點順序（兄弟互換後會變；子格跟著節點走＝子孫不動）
+   *   place(card, slot)  第 1 關：卡片放進空格。card 就是 slot、或兩個是兄弟（同一上層）→ 對；兄弟時兩者互換位置（各自的子格跟著走）。
+   *                      同名（例：兩個「中性」）也算對、不互換。回 {ok, target：該標成已填的節點, swapped}
+   *   answer(slot, open, test)  第 2／3 關：在 slot 這格作答；open＝還沒填的作答格 id 清單；test(id)＝這個節點的答案對不對。
+   *                      先看 slot 自己，再看同一上層、還沒填的兄弟；對到兄弟就互換位置。回 對到的節點 id 或 null（已填過的兄弟不能重複得分）
+   *   cands(slot, open)  同一上層、還沒填的兄弟（含 slot 自己、排第一）
+   *   fill(id)／filled[id]  標成已填（提示格、不考詞節點一開始就填）
+   */
+  function archBoard(nodes) {
+    var B = { par: {}, title: {}, kids: {}, ord: {}, filled: {} };
+    (nodes || []).forEach(function (n) { B.par[n.id] = n.parent; B.title[n.id] = n.title; (B.kids[n.parent] = B.kids[n.parent] || []).push(n.id); });
+    B.order = function (p) { return (B.ord[p] || B.kids[p] || []).slice(); };
+    B.swap = function (a, b) {
+      if (a === b || B.par[a] !== B.par[b]) return false;
+      var p = B.par[a], o = B.order(p), i = o.indexOf(a), j = o.indexOf(b); if (i < 0 || j < 0) return false;
+      o[i] = b; o[j] = a; B.ord[p] = o; return true;
+    };
+    B.fill = function (id) { B.filled[id] = 1; };
+    B.place = function (card, slot) {
+      if (B.filled[slot] || !(card in B.par) || !(slot in B.par)) return { ok: false };
+      if (card === slot) { B.fill(card); return { ok: true, target: card }; }
+      if (B.par[card] === B.par[slot] && !B.filled[card]) { B.swap(card, slot); B.fill(card); return { ok: true, target: card, swapped: true }; }
+      if (B.title[card] != null && B.title[card] === B.title[slot]) { B.fill(slot); return { ok: true, target: slot }; }
+      return { ok: false };
+    };
+    B.cands = function (slot, open) {
+      var set = {}; (open || []).forEach(function (id) { set[id] = 1; });
+      var out = B.filled[slot] ? [] : [slot];
+      B.order(B.par[slot]).forEach(function (id) { if (id !== slot && set[id] && !B.filled[id]) out.push(id); });
+      return out;
+    };
+    B.answer = function (slot, open, test) {
+      var c = B.cands(slot, open), hit = null;
+      for (var i = 0; i < c.length; i++) if (test(c[i])) { hit = c[i]; break; }
+      if (hit == null) return null;
+      if (hit !== slot) B.swap(slot, hit);
+      B.fill(hit);
+      return hit;
+    };
+    return B;
+  }
+
+  /* 第 4 關：課（大分支）的順序不計 → 把小朋友寫的每一塊配到最像的那一課。
+   * pairBlocks(nBlocks, nGroups, score)：score(b, g) ≥ 0（越大越像）；依分數由高到低貪婪配對，沒配到的再照順序補。回 [每塊配到的 g] */
+  function pairBlocks(nB, nG, score) {
+    var all = [], out = [], usedG = {}, b, g;
+    for (b = 0; b < nB; b++) { out.push(-1); for (g = 0; g < nG; g++) all.push({ b: b, g: g, s: score(b, g) }); }
+    all.sort(function (x, y) { return (y.s - x.s) || (Math.abs(x.b - x.g) - Math.abs(y.b - y.g)) || (x.b - y.b) || (x.g - y.g); });
+    all.forEach(function (x) { if (x.s > 0 && out[x.b] < 0 && !usedG[x.g]) { out[x.b] = x.g; usedG[x.g] = 1; } });
+    for (b = 0; b < nB; b++) if (out[b] < 0) { for (g = 0; g < nG; g++) if (!usedG[g]) { out[b] = g; usedG[g] = 1; break; } }
+    return out;
+  }
+
   return { RELS: RELS, GENERIC: GENERIC, isRel: isRel, isNoQuiz: isNoQuiz, candOk: candOk, normW: normW, archNodes: archNodes, rng: rng, shuffle: shuffle, normPoint: normPoint, segments: segments, weight: weight, wsample: wsample,
-    drawCloze: drawCloze, drawArch: drawArch, commitSession: commitSession, recordAnswer: recordAnswer };
+    drawCloze: drawCloze, drawArch: drawArch, commitSession: commitSession, recordAnswer: recordAnswer, archBoard: archBoard, pairBlocks: pairBlocks };
 });
