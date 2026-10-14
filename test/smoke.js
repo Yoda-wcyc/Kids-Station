@@ -523,13 +523,17 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 頁面：每科頁有 📕 錯題庫卡、各頁載入 kids-mistakes.js、練錯題送 practice_round <科>:mistakes
   const sjm = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
   ok(/MK_SUBJ = \['social', 'science', 'math', 'ai'\]/.test(sjm) && sjm.includes("icon: '📕'") && sjm.includes('mistakes-go') && sjm.includes('math/balance.html?mistakes=1') && sjm.includes('?mistakes=1'), 'subjects.js: 錯題庫 tiles + routes');
-  [['index.html', 'kids-mistakes.js'], ['mindmap/social.html', '../kids-mistakes.js'], ['mindmap/science.html', '../kids-mistakes.js'], ['math/balance.html', '../kids-mistakes.js'], ['ai/ask-well.html', '../kids-mistakes.js'], ['ai/hallucinate.html', '../kids-mistakes.js'], ['ai/secrets.html', '../kids-mistakes.js']]
-    .forEach(([f, s]) => ok(fs.readFileSync(path.join(root, f), 'utf8').includes('<script src="' + s + '"></script>'), f + ' loads kids-mistakes.js'));
+  [['index.html', 'kids-mistakes.js'], ['mindmap/social.html', '../kids-mistakes.js'], ['mindmap/science.html', '../kids-mistakes.js'], ['math/balance.html', '../kids-mistakes.js'], ['math/short-division.html', '../kids-mistakes.js'], ['ai/ask-well.html', '../kids-mistakes.js'], ['ai/hallucinate.html', '../kids-mistakes.js'], ['ai/secrets.html', '../kids-mistakes.js']]
+    .forEach(([f, s]) => ok(new RegExp('<script src="' + s.replace(/[.]/g, '\\.') + '(\\?v=[0-9a-f]+)?"></script>').test(fs.readFileSync(path.join(root, f), 'utf8')), f + ' loads kids-mistakes.js'));   // 部署夾有 ?v=<雜湊>（deploy_copy 防快取）
   const idxh = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   ok(idxh.indexOf('kids-mistakes.js') < idxh.indexOf('subjects.js'), 'index: kids-mistakes.js before subjects.js');
   const balh = fs.readFileSync(path.join(root, 'math', 'balance.html'), 'utf8');
   ok(balh.indexOf('kids-mistakes.js') < balh.indexOf('var MK = '), 'balance: kids-mistakes.js loads before the page script');
   ok(balh.includes("item:'math:mistakes'") && fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("item: 'ai:mistakes'") && fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8').includes("coinRound(QZ.mk ? 'mistakes' : 'quiz'"), 'practice_round <科>:mistakes sent by each practice');
+  // 短除法（2026-10-14）：換你算送 practice_round math:gcd、錯題 type 'gcd'、只練錯題路由；前端白名單收 math:gcd
+  const sdh = fs.readFileSync(path.join(root, 'math', 'short-division.html'), 'utf8');
+  ok(sdh.includes("item: T.mk ? 'math:mistakes' : 'math:gcd'") && sdh.includes("type: 'gcd'") && sdh.includes("KidsAuth.startActivity('math'") && sdh.includes('requireLogin') && sdh.includes("KidsCoins.answer(!!ok, 'math')") && /<script src="short-division\.js(\?v=[0-9a-f]+)?"><\/script>/.test(sdh), 'short-division: coins / auth / mistakes wiring');
+  ok(sjm.includes('math/short-division.html?mistakes=1') && fs.readFileSync(path.join(root, 'kids-coins.js'), 'utf8').includes('|math:gcd)$/'), 'short-division mistakes route + math:gcd whitelisted in kids-coins');
   ok(!/['"]ke_mistakes['"]/.test(fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8')) && fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("KEY = 'kids_mistakes'"), 'kids_ prefix key; English ke_mistakes untouched');
 }
 
@@ -561,9 +565,9 @@ const nonEmpty = rel => { const p = path.join(root, rel); return fs.existsSync(p
 ['ai/hallucinate.html', 'ai/ask-well.html', 'ai/secrets.html', 'game/scratch-td/web/index.html', 'game/scratch-td/web/start.sb3']
   .concat([1, 2, 3, 4, 5, 6, 7].flatMap(i => [`game/scratch-td/web/lesson${i}.html`, `game/scratch-td/web/lesson${i}-done.sb3`]))
   .forEach(rel => ok(nonEmpty(rel), rel + ' exists and is non-empty'));
-// 寫死 src 的活動卡（數學 1、AI 3、Scratch 1）維持 5 張；社會、自然的單元卡由 MM_UNITS 產生（src 是樣板字串，不算在這 5 張裡），下面另外檢查
+// 寫死 src 的活動卡（數學 2〔天平、短除法 2026-10-14〕、AI 3、Scratch 1）共 6 張；社會、自然的單元卡由 MM_UNITS 產生（src 是樣板字串，不算在這 5 張裡），下面另外檢查
 const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
-ok(srcs.length === 5, 'activity cards: ' + srcs.length);
+ok(srcs.length === 6, 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----
@@ -577,8 +581,8 @@ ok(mmUnits.social.join() === 'u1,u2,u3,u4' && mmUnits.science.join() === 'n1,n2,
 ['social', 'science'].forEach(k => {
   const h = fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8');
   ok(h.includes(`data-subj="${k}"`) && h.includes('../kids-auth.js') && h.includes('../kids-coins.js') && h.includes('mindmap.js'), `mindmap/${k}.html loads auth/coins/engine`);
-  [...h.matchAll(/src="([^"]+)"/g)].map(m => m[1]).forEach(s => ok(nonEmpty(path.join('mindmap', s)), `mindmap/${k}.html script exists: ${s}`));
-  const dataSrc = [...h.matchAll(/src="(data\/[^"]+)"/g)].map(m => fs.readFileSync(path.join(root, 'mindmap', m[1]), 'utf8')).join('\n');
+  [...h.matchAll(/src="([^"]+)"/g)].map(m => m[1].replace(/\?v=[0-9a-f]+$/, '')).forEach(s => ok(nonEmpty(path.join('mindmap', s)), `mindmap/${k}.html script exists: ${s}`));
+  const dataSrc = [...h.matchAll(/src="(data\/[^"?]+)(\?v=[0-9a-f]+)?"/g)].map(m => fs.readFileSync(path.join(root, 'mindmap', m[1]), 'utf8')).join('\n');
   mmUnits[k].forEach(id => ok(dataSrc.includes(`id: "${id}", no:`), `mindmap/${k}.html has unit ${id}`));
 });
 const mmJs = fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8');

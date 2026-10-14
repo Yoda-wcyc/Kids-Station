@@ -572,7 +572,7 @@ footer .share-row{margin:14px 0 0}
   </footer>
 </main>
 
-<script src="../kids-mistakes.js?v=9418fc85a9"></script>
+<script src="../kids-mistakes.js?v=2d5aadb38a"></script>
 <script>
 (function(){
 'use strict';
@@ -949,6 +949,8 @@ var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, sto
    ?mistakes=1（首頁錯題庫按「只練錯題」）：題目清單換成錯題、不存回題目清單、不顯示出題／管理；每題重做「換你算」，
    全部做完送 practice_round 'math:mistakes'（correct＝一次就算對的題數）。 */
 var MK = /[?&]mistakes=1/.test(location.search);
+/* 短除法錯題（p.type 'gcd'）在 short-division.html?mistakes=1 練；這裡做完還有的話給一顆「接著練」 */
+function gcdMore(){ var n = 0; try { n = (window.KidsMistakes ? KidsMistakes.list('math') : []).filter(function(e){ return e.p && e.p.type === 'gcd'; }).length; } catch (e){} return n ? '<a class="btn" id="mk-gcd" href="short-division.html?mistakes=1">接著練短除法錯題（' + n + ' 題）▶</a>' : ''; }
 function mkRec(q, ok){ try { return window.KidsMistakes ? KidsMistakes.record('math', 'eq:' + q, ok, { q:q }) : null; } catch (e){ return null; } }
 var timers = [], anims = [];
 function later(fn, ms){ var id = setTimeout(fn, ms); timers.push(id); return id; }
@@ -1477,7 +1479,7 @@ function mkBar(){
     var ok = S.list.filter(function(it){ return S.mkDone[it.q]; }).length;
     if (!S.mkSent){ S.mkSent = true; if (window.KidsCoins) KidsCoins.report({ type:'practice_round', item:'math:mistakes', correct:ok, total:n }); }
     bar.innerHTML = '<p class="mk-h">🏁 錯題練完了！一次就算對 <b>' + ok + ' / ' + n + '</b> 題。' + (S.mkGrad ? '🎓 有 ' + S.mkGrad + ' 題錯題畢業了！' : '同一題連續算對 3 次就會畢業喔！') + '</p>' +
-      '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>';
+      '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + gcdMore();
     return;
   }
   var nextK = -1; S.list.forEach(function(it, k){ if (nextK < 0 && k !== S.idx && !(it.q in S.mkDone)) nextK = k; });
@@ -1797,7 +1799,7 @@ if (MK){
   document.querySelector('header h1').textContent = '📕 數學錯題練習';
   if (!mkl.length){
     Array.prototype.forEach.call(document.querySelector('main.wrap').children, function(el){ if (el.tagName !== 'HEADER' && el !== mkb) el.hidden = true; });
-    mkb.innerHTML = '<p class="mk-h" id="mk-empty">目前沒有錯題 🎉</p><a class="btn primary" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>';
+    mkb.innerHTML = '<p class="mk-h" id="mk-empty">目前沒有錯題 🎉</p><a class="btn primary" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + gcdMore();
   }
   S.list = mkl;
 }
@@ -1816,7 +1818,7 @@ try {
 })();
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
-<script src="../kids-coins.js?v=86a127bc19"></script>
+<script src="../kids-coins.js?v=2b069b842f"></script>
 <script src="../syncmerge.js?v=d6f26ac66d"></script>
 <script src="../sync.js?v=8e78a66bba"></script>
 <script>

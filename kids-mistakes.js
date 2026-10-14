@@ -8,7 +8,7 @@
      c＝在錯題庫裡連續答對幾次、w＝累計答錯次數、t＝最近一次答錯、u＝最後更新、p＝顯示／重練用的資料（各科不同，見下）
      社會／自然 id＝'<單元>|w|<重點pid>|<詞>'（考考自己）、'<單元>|a|<節點id>'（背架構）、'<單元>|q|<題目雜湊>'（練習題）
        p＝{u:單元, k:'w'|'a'|'q', s:那句重點／上層位置／題目, a:正確答案, pid?, ci?}
-     數學 id＝'eq:<方程式>'，p＝{q:方程式}
+     數學 id＝'eq:<方程式>'，p＝{q:方程式}（天平）；'gcd:<數字>[:gcd|lcm]'，p＝{type:'gcd', nums:[數字], mode:'both'|'gcd'|'lcm', q:顯示文字}（短除法）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
    同步（syncmerge v4 的 mk 欄位）：各科依題目 id 聯集；同一題 u 較新的勝（墓碑也是），答錯次數 w 取較大；墓碑每科最多留 300 筆（最新的）。
    _core 是純函式（不碰 DOM），Node 可以直接 require 來測；畫面（錯題清單、AI 重答）由首頁 subjects.js 呼叫 page()／aiPlay()。 */
@@ -110,7 +110,7 @@
   // ================= 瀏覽器：畫面（首頁 #s/<科>/mistakes） =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var KLABEL = { w: '考考自己', a: '背架構', q: '練習題' };
-  function badgeOf(subj, p) { if (subj === 'math') return '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
+  function badgeOf(subj, p) { if (subj === 'math') return p.type === 'gcd' ? '短除法' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
   function textOf(subj, p) {
     if (subj === 'math') return p.q || '';
     if (subj === 'ai') return (p.q || '') + (p.opts && p.opts[p.c] != null ? '　→ ' + p.opts[p.c] : '');

@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>短除法：最大公因數・最小公倍數</title>
+<link rel="stylesheet" href="../style.css?v=2ffff75a47">
+<style>
+:root{--g:#2477c9;--g-bg:#d6ecff;--l:#d2601a;--l-bg:#ffe1c4;--bfs:clamp(30px,4.2vw + 12px,46px)}
+body{background:var(--bg)}
+.sd{max-width:1000px;margin:0 auto;padding:12px 16px calc(48px + env(safe-area-inset-bottom))}
+.sd-head h1{font-size:clamp(1.35rem,1rem + 1.4vw,1.8rem);margin:4px 0 2px}
+.sd-head p{margin:0 0 10px}
+.sd-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.sd-bar .lab{font-weight:700;color:var(--muted);font-size:.95rem;margin-right:2px}
+.btn[aria-pressed="true"],.btn[aria-selected="true"]{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 3px 0 #d96a22}
+.btn.sm{min-height:44px;padding:6px 14px;font-size:.95rem}
+.sd-tabs{display:flex;gap:10px;margin:10px 0 14px}
+.sd-tabs .btn{flex:1 1 0;min-height:56px;font-size:1.15rem}
+[hidden]{display:none!important}
+.sd-in-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.num-in{width:5.2em;min-height:56px;font:inherit;font-size:1.5rem;font-weight:700;text-align:center;border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-variant-numeric:tabular-nums}
+.num-in:focus{outline:none;border-color:var(--pri)}
+.sd-err{color:var(--no);font-weight:700;margin:8px 0 0}
+.sd-err:empty{display:none}
+@media (max-width:600px){.sd-head{padding-right:84px}}
+.sd-rule{font-size:1rem;line-height:1.6}
+.sd-rule p{margin:4px 0}
+.sd-rule .on{background:#fff2dd;border-radius:10px;padding:4px 8px}
+.sd-stage{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.sd-stage{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}}
+.sd-boardcard{display:flex;flex-direction:column;align-items:center;overflow-x:auto;min-height:200px;justify-content:center}
+/* 短除法版式：左欄除數（右邊直線）、右邊被除數（下面橫線），最後一列＝停下來的商 */
+.sd-grid{display:inline-grid;font-size:var(--bfs);line-height:1.2;font-variant-numeric:tabular-nums lining-nums;font-weight:600;margin:6px auto}
+.sd-c{padding:.1em .42em;text-align:center;min-width:1.7em;min-height:1.4em;display:flex;align-items:center;justify-content:center}
+.sd-dv{justify-content:flex-end;color:var(--l);font-weight:800;min-width:1.4em;padding-right:.3em}
+.sd-dv.br{border-right:3px solid var(--ink)}
+.sd-n.br{border-bottom:3px solid var(--ink)}
+.sd-n.cp{color:var(--muted)}
+.sd-n.cp::after{content:"↓";font-size:.4em;margin-left:.1em;align-self:flex-start;color:var(--muted)}
+.sd-c.hg{background:var(--g-bg);color:var(--g)}
+.sd-c.hl{background:var(--l-bg)}
+.sd-c.new{animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sd-c.new{animation:none}}
+.sd-stamp{display:inline-block;margin:8px 0 2px;font-weight:800;font-size:1.2rem;color:var(--no);border:3px double var(--no);border-radius:12px;padding:2px 14px;transform:rotate(-4deg)}
+.sd-in{width:2.9em;min-height:44px;font:inherit;font-size:1em;font-weight:700;text-align:center;border:3px dashed var(--pri);border-radius:10px;background:#fffaf2;color:var(--ink);padding:0;font-variant-numeric:tabular-nums}
+.sd-in.wide{width:3.8em}
+.sd-in:focus{outline:none;border-style:solid;background:#fff}
+.sd-in.bad{border-color:var(--no);background:var(--no-bg)}
+.sd-say{font-size:clamp(1.15rem,1rem + .5vw,1.35rem);line-height:1.6;margin:0 0 8px;font-weight:600}
+.sd-say b{background:linear-gradient(transparent 58%,#ffe36e 58%)}
+.sd-note{margin:6px 0;color:var(--ok);font-weight:700}
+.sd-f{margin:6px 0;font-size:clamp(1.1rem,1rem + .5vw,1.3rem);font-weight:700;padding:6px 10px;border-radius:12px}
+.sd-f.g{background:var(--g-bg);color:var(--g)}
+.sd-f.l{background:var(--l-bg);color:#8a3b0b}
+.sd-f.c{background:var(--ok-bg);color:#1b7a47}
+.sd-ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}
+.sd-ctl .info{margin-left:auto;color:var(--muted);font-size:.95rem}
+.sd-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.sd-chips .btn{min-width:56px;font-size:1.15rem}
+.sd-prog{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-weight:700;margin:4px 0 10px}
+.sd-ask{font-size:clamp(1.15rem,1rem + .6vw,1.4rem);font-weight:800;margin:0 0 4px;text-align:center}
+.sd-act p{margin:0 0 8px;font-size:1.1rem;line-height:1.55}
+.sd-act .row{margin:8px 0 0;flex-wrap:wrap}
+.sd-msg{min-height:1.6em;margin:10px 0 0;font-size:1.15rem;font-weight:700}
+.sd-msg.bad{color:var(--no)}
+.sd-msg.good{color:var(--ok)}
+.sd-ans{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:1.3rem;font-weight:700}
+.sd-end .big{font-size:3rem;margin:0}
+.sd-end .score{font-size:2rem;font-weight:800}
+.sd-end .row{justify-content:center;flex-wrap:wrap}
+.sd-mk{border:3px solid var(--pri);background:#fff6ec}
+</style>
+</head>
+<body>
+<main class="sd">
+  <header class="sd-head">
+    <h1 id="title">🧮 短除法：最大公因數・最小公倍數</h1>
+    <p class="muted" id="lede">用短除法一步一步找出最大公因數和最小公倍數。先看步驟，再換你算！</p>
+  </header>
+
+  <div class="sd-bar" id="lv" role="group" aria-label="難度">
+    <span class="lab">難度</span>
+    <button type="button" class="btn sm" data-lv="l20" aria-pressed="true">20 以內</button>
+    <button type="button" class="btn sm" data-lv="l100" aria-pressed="false">100 以內</button>
+    <button type="button" class="btn sm" data-lv="l3d" aria-pressed="false">三位數</button>
+    <button type="button" class="btn sm" data-lv="tri" aria-pressed="false">三個數（六年級）</button>
+  </div>
+
+  <div class="sd-tabs" role="tablist" id="tabs">
+    <button type="button" class="btn" role="tab" id="tab-see" aria-selected="true" aria-controls="see">📖 看步驟</button>
+    <button type="button" class="btn" role="tab" id="tab-try" aria-selected="false" aria-controls="try">✏️ 換你算</button>
+  </div>
+
+  <!-- ================= 📖 看步驟（免登入） ================= -->
+  <section id="see" role="tabpanel" aria-labelledby="tab-see">
+    <div class="card">
+      <div class="sd-in-row">
+        <input class="num-in" id="n0" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" aria-label="第一個數" value="12">
+        <input class="num-in" id="n1" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" aria-label="第二個數" value="18">
+        <input class="num-in" id="n2" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" aria-label="第三個數" value="30" hidden>
+        <button type="button" class="btn primary" id="see-go">開始畫 ▶</button>
+        <button type="button" class="btn" id="see-rand">🎲 隨機出題</button>
+      </div>
+      <div class="sd-bar" id="see-mode" role="group" aria-label="三個數要找什麼" hidden>
+        <button type="button" class="btn sm" data-m="gcd" aria-pressed="true">找最大公因數</button>
+        <button type="button" class="btn sm" data-m="lcm" aria-pressed="false">找最小公倍數</button>
+      </div>
+      <p class="sd-err" id="see-err" role="alert"></p>
+    </div>
+    <div class="card sd-rule" id="see-rule"></div>
+    <div class="sd-stage">
+      <div class="card sd-boardcard"><div id="see-board"></div><div id="see-stamp"></div></div>
+      <div class="card">
+        <p class="sd-say" id="see-say" aria-live="polite"></p>
+        <div id="see-alt"></div>
+        <div id="see-result"></div>
+      </div>
+    </div>
+    <div class="sd-ctl">
+      <button type="button" class="btn" id="see-prev">◀ 上一步</button>
+      <button type="button" class="btn primary" id="see-next">下一步 ▶</button>
+      <button type="button" class="btn" id="see-play">▶ 自動播放</button>
+      <span class="info" id="see-info"></span>
+    </div>
+  </section>
+
+  <!-- ================= ✏️ 換你算（要登入） ================= -->
+  <section id="try" role="tabpanel" aria-labelledby="tab-try" hidden>
+    <div class="card center" id="try-start"></div>
+    <div id="try-q" hidden>
+      <div class="sd-prog" id="try-prog"></div>
+      <div class="card sd-boardcard">
+        <p class="sd-ask" id="try-ask"></p>
+        <div id="try-board"></div>
+      </div>
+      <div class="card sd-act" id="try-act"></div>
+      <p class="sd-msg" id="try-msg" role="status" aria-live="polite"></p>
+    </div>
+    <div class="card center sd-end" id="try-end" hidden></div>
+  </section>
+</main>
+
+<script src="../kids-mistakes.js?v=2d5aadb38a"></script>
+<script src="short-division.js?v=17afc65cb7"></script>
+<script>
+(function () {
+'use strict';
+/* 短除法頁面。演算法（純函式）在 short-division.js（window.SD）。
+   📖 看步驟：免登入；✏️ 換你算：KidsAuth.requireLogin＋startActivity('math')，每一步 KidsCoins.answer(ok,'math')，
+   一輪 5 題送 practice_round 'math:gcd'（correct＝一次就全對的題數）。有答錯的題收進數學錯題庫（id 'gcd:<數字>[:模式]'，p.type='gcd'）。
+   ?mistakes=1（首頁數學錯題庫「只練錯題」）：只重做 type 'gcd' 的錯題，做完送 practice_round 'math:mistakes'。 */
+var $ = function (id) { return document.getElementById(id); };
+var MK = /[?&]mistakes=1/.test(location.search);
+var LV_N = { l20: 2, l100: 2, l3d: 2, tri: 3 };
+var LV_NAME = { l20: '20 以內', l100: '100 以內', l3d: '三位數', tri: '三個數' };
+var ROUND = 5;
+var S = { lv: 'l20', tab: 'see', see: { nums: [12, 18], mode: 'both', pick: {}, P: null, P0: null, steps: [], i: 0, timer: null, alt: false, note: '' } };
+var T = null;   // 換你算這一輪
+window.SDPage = { S: S, T: function () { return T; } };   // 測試用
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function times(xs) { return xs.join('×'); }
+function andJoin(xs) { return xs.length <= 2 ? xs.join(' 和 ') : xs.slice(0, -1).join('、') + ' 和 ' + xs[xs.length - 1]; }
+function nameOf(m) { return m === 'gcd' ? '最大公因數' : m === 'lcm' ? '最小公倍數' : '最大公因數和最小公倍數'; }
+function last(a) { return a[a.length - 1]; }
+function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'math'); } catch (e) { } }
+function coinAct() { try { if (window.KidsCoins) KidsCoins.activity('math'); } catch (e) { } }
+function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
+function reduced() { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+
+/* ---------- 短除法版式（CSS grid）----------
+   rows：[{d:除數 html（''＝沒有）, br:畫短除號, dc:除數格 class, cells:[{h:html, c:class}]}] */
+function boardHTML(n, rows, label) {
+  var h = '<div class="sd-grid" style="grid-template-columns:auto repeat(' + n + ',auto)" role="group" aria-label="' + esc(label || '短除法') + '">';
+  rows.forEach(function (r) {
+    h += '<div class="sd-c sd-dv' + (r.br ? ' br' : '') + (r.dc ? ' ' + r.dc : '') + '">' + (r.d == null ? '' : r.d) + '</div>';
+    r.cells.forEach(function (c) { h += '<div class="sd-c sd-n' + (r.br ? ' br' : '') + (c.c ? ' ' + c.c : '') + '">' + c.h + '</div>'; });
+  });
+  return h + '</div>';
+}
+/* 版面資料：rowsShown 列、前 divsShown 列有除數；hl＝'g'（左欄）｜'l'（L 形）；newDiv／newRow＝剛出現的格子 */
+function boardRows(P, rowsShown, divsShown, hl, newDiv, newRow) {
+  var out = [];
+  for (var r = 0; r < rowsShown; r++) {
+    var hasD = r < divsShown, isLast = r === rowsShown - 1;
+    var dc = (hl === 'g' && hasD) ? 'hg' : (hl === 'l' && (hasD || isLast)) ? 'hl' : '';
+    if (hasD && newDiv === r) dc += ' new';
+    out.push({ d: hasD ? P.divs[r] : '', br: hasD, dc: dc, cells: P.rows[r].map(function (x, j) {
+      var c = (r > 0 && P.copied[r - 1][j]) ? 'cp' : '';
+      if (hl === 'l' && isLast) c += ' hl';
+      if (newRow === r) c += ' new';
+      return { h: x, c: c };
+    }) });
+  }
+  return out;
+}
+
+/* ================= 📖 看步驟 ================= */
+function ruleHTML(mode, n) {
+  if (n === 2) return '<p><b>兩個數的短除法：</b>找一個兩個數都能整除的數（公因數）寫在左邊，商寫在下面；一直除到剩下的兩個數<b>互質</b>（除了 1 沒有其他公因數）就停。</p>' +
+    '<p>🔵 最大公因數＝左邊所有除數相乘　🟠 最小公倍數＝左邊所有除數 × 最底下一列（L 形）</p>';
+  return '<p class="' + (mode === 'gcd' ? 'on' : '') + '">🔵 <b>找最大公因數：</b>要<b>三個數都能整除</b>才能除；三個數沒有共同的公因數就停（就算其中兩個數還有公因數也不用管）。答案＝左邊所有除數相乘。</p>' +
+    '<p class="' + (mode === 'lcm' ? 'on' : '') + '">🟠 <b>找最小公倍數：</b>只要<b>其中兩個數</b>有公因數就繼續除，<b>除不盡的那個數照抄</b>到下一列；<b>每兩個數都互質</b>才停。答案＝左邊所有除數 × 最底下一列（L 形）。</p>';
+}
+function seeBuild() {
+  var s = S.see;
+  s.P = SD.plan(s.nums, s.mode, s.pick);
+  s.P0 = SD.plan(s.nums, s.mode);
+  var st = [{ k: 'start' }];
+  s.P.divs.forEach(function (d, i) { st.push({ k: 'div', i: i }, { k: 'quot', i: i }); });
+  st.push({ k: 'stop' });
+  if (s.P.mode !== 'lcm') st.push({ k: 'gcd' });
+  if (s.P.mode !== 'gcd') st.push({ k: 'lcm' });
+  if (s.P.mode === 'both') st.push({ k: 'check' });
+  s.steps = st;
+  if (s.i >= st.length) s.i = st.length - 1;
+}
+function divSay(P, i) {
+  var row = P.rows[i], d = P.divs[i], m = P.mode, prime = SD.isPrime(d), yes = row.filter(function (x) { return x % d === 0; }), no = row.filter(function (x) { return x % d !== 0; });
+  var def = S.see.P0.divs[i] === d && !S.see.pick[i];
+  var t = (m === 'lcm' ? andJoin(yes) + ' 能被 <b>' + d + '</b> 整除' : (row.length === 3 ? '三個數 ' : '') + andJoin(row) + ' 都能被 <b>' + d + '</b> 整除') + '，把 ' + d + ' 寫在左邊。';
+  if (def && prime) t += '（' + d + ' 是' + (m === 'lcm' && no.length ? '能整除兩個數的' : '它們共同的') + '最小質因數）';
+  else if (!prime) t += '（' + d + ' 不是質數也可以，只要是公因數就行）';
+  if (no.length) t += '<br>' + andJoin(no) + ' 不能被 ' + d + ' 整除，等一下照抄。';
+  return t;
+}
+function quotSay(P, i) {
+  var row = P.rows[i], d = P.divs[i], parts = [], cp = [];
+  row.forEach(function (x) { if (x % d === 0) parts.push(x + '÷' + d + '＝' + (x / d)); else cp.push(x); });
+  return parts.join('、') + (cp.length ? '；' + cp.join('、') + ' 除不盡，照抄下來' : '') + '。商寫在下面。';
+}
+function stopSay(P) {
+  var L = P.last, n = L.length;
+  if (!P.divs.length) {
+    if (P.mode === 'gcd') return andJoin(L) + ' 一開始就沒有三個數共同的公因數 → 不用除，停！';
+    return andJoin(L) + ' 一開始就' + (P.mode === 'lcm' ? '每兩個數都' : '') + '互質了 → 不用除，停！';
+  }
+  if (P.mode === 'both') return andJoin(L) + ' 除了 1 沒有其他公因數 → <b>互質了，停！</b>';
+  if (P.mode === 'lcm') return andJoin(L) + ' 每兩個數都互質了 → <b>停！</b>';
+  var f = SD.stillFactor(L, 'lcm');
+  return andJoin(L) + ' 三個數沒有共同的公因數了 → <b>停！</b>' + (f ? '（' + andJoin(f.xs) + ' 還有公因數 ' + f.d + '，但找最大公因數只看三個數共同的，不用管）' : '');
+}
+function resultHTML(P, upto) {
+  var h = '', D = P.divs, L = P.last;
+  if (P.mode !== 'lcm' && upto >= 1) h += '<p class="sd-f g" id="res-gcd">最大公因數 ＝ ' + (D.length ? times(D) + ' ＝ ' : '（沒有除數）') + P.gcd + '</p>';
+  if (P.mode !== 'gcd' && upto >= 2) h += '<p class="sd-f l" id="res-lcm">最小公倍數 ＝ ' + times(D.concat(L)) + ' ＝ ' + P.lcm + '</p>';
+  if (P.mode === 'both' && upto >= 3) h += '<p class="sd-f c" id="res-check">檢查：最大公因數 × 最小公倍數 ＝ ' + P.gcd + '×' + P.lcm + ' ＝ ' + (P.gcd * P.lcm) + '；兩數相乘 ' + P.nums[0] + '×' + P.nums[1] + ' ＝ ' + (P.nums[0] * P.nums[1]) + ' ✓ 一樣！</p>';
+  var P0 = S.see.P0;
+  if (upto >= 1 && Object.keys(S.see.pick).length && P0.divs.join() !== D.join())
+    h += '<p class="sd-note">你換了別的公因數（' + times(D) + '），跟用最小質數一步一步除（' + times(P0.divs) + '）的答案一樣 ✓</p>';
+  return h;
+}
+function seeRender() {
+  var s = S.see, P = s.P, st = s.steps[s.i], n = P.nums.length, rowsShown, divsShown, hl = '', newDiv = -1, newRow = -1, say = '', upto = 0;
+  if (st.k === 'start') {
+    rowsShown = 1; divsShown = 0;
+    say = '把 ' + andJoin(P.nums) + ' 寫進短除號裡。' + (P.mode === 'lcm' ? '找最小公倍數：先找<b>其中兩個數</b>都能整除的數。' : '先找' + (n === 3 ? '<b>三個數</b>' : '它們') + '都能整除的數（公因數）。');
+  } else if (st.k === 'div') { rowsShown = st.i + 1; divsShown = st.i + 1; newDiv = st.i; say = divSay(P, st.i); }
+  else if (st.k === 'quot') { rowsShown = st.i + 2; divsShown = st.i + 1; newRow = st.i + 1; say = quotSay(P, st.i); }
+  else {
+    rowsShown = P.rows.length; divsShown = P.divs.length;
+    if (st.k === 'stop') say = stopSay(P);
+    else if (st.k === 'gcd') { hl = 'g'; upto = 1; say = '🔵 最大公因數＝<b>左邊所有的除數相乘</b>' + (P.divs.length ? '：' + times(P.divs) + '＝' + P.gcd : '。沒有除數，最大公因數就是 1') + '。'; }
+    else if (st.k === 'lcm') { hl = 'l'; upto = 2; say = '🟠 最小公倍數＝<b>左邊的除數 × 最底下一列</b>（L 形）：' + times(P.divs.concat(P.last)) + '＝' + P.lcm + '。'; }
+    else { upto = 3; say = '✅ 小檢查：兩個數的最大公因數 × 最小公倍數，剛好等於兩個數相乘。'; }
+  }
+  if (s.note && st.k === 'div') say = '<span class="sd-note">' + s.note + '</span><br>' + say;
+  $('see-board').innerHTML = boardHTML(n, boardRows(P, rowsShown, divsShown, hl, newDiv, newRow), '短除法 ' + P.nums.join('、'));
+  $('see-stamp').innerHTML = (st.k === 'stop' || st.k === 'gcd' || st.k === 'lcm' || st.k === 'check') ? '<span class="sd-stamp" id="see-stop">' + (P.mode === 'gcd' ? '沒有共同公因數，停！' : '互質了，停！') + '</span>' : '';
+  $('see-say').innerHTML = say;
+  $('see-result').innerHTML = resultHTML(P, st.k === 'gcd' ? 1 : st.k === 'lcm' ? (P.mode === 'lcm' ? 2 : 2) : st.k === 'check' ? 3 : 0);
+  // 我想用別的公因數（只在「寫除數」那一步）
+  var alt = '';
+  if (st.k === 'div') {
+    var opts = SD.validDivisors(P.rows[st.i], P.mode, 12);
+    if (opts.length > 1) {
+      alt = '<button type="button" class="btn sm" id="see-alt-btn" aria-expanded="' + s.alt + '">🔁 我想用別的公因數</button>';
+      if (s.alt) alt += '<div class="sd-chips" role="group" aria-label="可以用的公因數">' + opts.map(function (d) {
+        return '<button type="button" class="btn sm" data-d="' + d + '" aria-pressed="' + (d === P.divs[st.i]) + '">' + d + '</button>'; }).join('') + '</div>' +
+        '<p class="muted">任何公因數都可以，最後答案一樣；用最小的質數一步一步除，最不容易漏掉。' + (P.mode === 'lcm' ? '<br>三個數找最小公倍數時，除不盡要照抄的數不能跟除數還有公因數（例如 8 和 6 有公因數 2），所以有些數不能選，用質數最保險。' : '') + '</p>';
+    }
+  }
+  $('see-alt').innerHTML = alt;
+  $('see-prev').disabled = s.i === 0;
+  $('see-next').disabled = s.i >= s.steps.length - 1;
+  $('see-info').textContent = '第 ' + (s.i + 1) + ' / ' + s.steps.length + ' 步';
+  $('see-play').textContent = s.timer ? '⏸ 停止' : '▶ 自動播放';
+}
+function seeStop() { if (S.see.timer) { clearInterval(S.see.timer); S.see.timer = null; } }
+function seeGo(i) { var s = S.see; s.i = Math.max(0, Math.min(s.steps.length - 1, i)); if (S.see.steps[s.i].k !== 'div') s.note = ''; seeRender(); }
+function seeLoad(nums, mode) {
+  var s = S.see; seeStop();
+  s.nums = nums; s.mode = SD.modeOf(nums, mode); s.pick = {}; s.i = 0; s.alt = false; s.note = '';
+  ['n0', 'n1', 'n2'].forEach(function (id, j) { $(id).value = nums[j] != null ? nums[j] : ''; $(id).hidden = j >= nums.length; });
+  $('see-mode').hidden = nums.length !== 3;
+  Array.prototype.forEach.call($('see-mode').querySelectorAll('[data-m]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === s.mode)); });
+  $('see-rule').innerHTML = ruleHTML(s.mode, nums.length);
+  $('see-err').textContent = '';
+  seeBuild(); seeRender();
+}
+function seeFromInputs() {
+  var n = LV_N[S.lv], raw = ['n0', 'n1', 'n2'].slice(0, n).map(function (id) { return $(id).value; }).join(' ');
+  var nums = SD.parseNums(raw, n);
+  if (!nums) { $('see-err').textContent = '請在每一格寫 1～9999 的整數喔！'; return; }
+  seeLoad(nums, S.see.mode);
+}
+$('see-go').onclick = function () { coinAct(); seeFromInputs(); };
+$('see-rand').onclick = function () { coinAct(); seeLoad(SD.generate(S.lv, { mode: S.see.mode }), S.see.mode); };
+['n0', 'n1', 'n2'].forEach(function (id) { $(id).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); seeFromInputs(); } }); });
+$('see-mode').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-m]'); if (!b) return;
+  S.see.mode = b.getAttribute('data-m');
+  var n = LV_N[S.lv], nums = SD.parseNums(['n0', 'n1', 'n2'].slice(0, n).map(function (id) { return $(id).value; }).join(' '), n) || S.see.nums;
+  seeLoad(nums, S.see.mode);
+});
+$('see-next').onclick = function () { coinAct(); seeStop(); seeGo(S.see.i + 1); };
+$('see-prev').onclick = function () { coinAct(); seeStop(); seeGo(S.see.i - 1); };
+$('see-play').onclick = function () {
+  coinAct();
+  if (S.see.timer) { seeStop(); seeRender(); return; }
+  if (S.see.i >= S.see.steps.length - 1) S.see.i = 0;
+  S.see.timer = setInterval(function () {
+    if (S.see.i >= S.see.steps.length - 1) { seeStop(); seeRender(); return; }
+    seeGo(S.see.i + 1);
+  }, reduced() ? 3200 : 2200);
+  seeRender();
+};
+$('see-alt').addEventListener('click', function (e) {
+  var s = S.see, st = s.steps[s.i];
+  if (e.target.id === 'see-alt-btn') { s.alt = !s.alt; seeRender(); return; }
+  var b = e.target.closest('[data-d]'); if (!b || st.k !== 'div') return;
+  var d = +b.getAttribute('data-d'), pk = {};
+  Object.keys(s.pick).forEach(function (k) { if (+k < st.i) pk[k] = s.pick[k]; });
+  pk[st.i] = d; s.pick = pk;
+  seeStop(); seeBuild();
+  s.note = d === s.P0.divs[st.i] && st.i === 0 ? '用 ' + d + ' 除（最小的共同質因數）。' : '換成 ' + d + ' 也可以！任何公因數都行，最後答案一樣。';
+  seeRender();
+});
+
+/* ================= ✏️ 換你算 ================= */
+function qText(nums, mode) { return nums.join('、') + ' 的' + (mode === 'both' ? '最大公因數・最小公倍數' : nameOf(mode)); }   // 錯題庫清單前面已有「短除法」標籤
+function mkId(Q) { return 'gcd:' + Q.nums.join(',') + (Q.nums.length === 3 ? ':' + Q.mode : ''); }
+function mkRec(Q, ok) {
+  try { return window.KidsMistakes ? KidsMistakes.record('math', mkId(Q), ok, { type: 'gcd', nums: Q.nums.slice(), mode: Q.mode, q: qText(Q.nums, Q.mode) }) : null; } catch (e) { return null; }
+}
+function msg(t, kind) { var m = $('try-msg'); m.innerHTML = t || ''; m.className = 'sd-msg' + (kind ? ' ' + kind : ''); }
+function startHTML() {
+  var tri = S.lv === 'tri';
+  return '<h2>✏️ 換你算（' + LV_NAME[S.lv] + '）</h2><p>一輪 ' + ROUND + ' 題。每一步都自己寫：<br>① 寫一個公因數 → ② 寫商 → 重複，直到按「互質了，停！」→ ' +
+    (tri ? '③ 寫答案' : '③ 最大公因數 → ④ 最小公倍數') + '</p>' +
+    (tri ? '<p class="muted">三個數要分開練：選一種開始。</p><div class="row" style="justify-content:center"><button type="button" class="btn primary big" data-go="gcd" id="try-go-gcd">🔵 找最大公因數 ▶</button><button type="button" class="btn primary big" data-go="lcm" id="try-go-lcm">🟠 找最小公倍數 ▶</button></div>'
+      : '<button type="button" class="btn primary big" data-go="both" id="try-go">開始這一輪 ▶</button>');
+}
+function tryHome() { T = null; $('try-start').hidden = false; $('try-q').hidden = true; $('try-end').hidden = true; $('try-start').innerHTML = startHTML(); }
+function tryStart(mode) {
+  if (!authOK()) return;
+  if (window.KidsAuth && KidsAuth.startActivity && !KidsAuth.startActivity('math', function () { tryStart(mode); })) return;
+  var items = [], seen = {}, guard = 0;
+  while (items.length < ROUND && guard++ < 200) {
+    var nums = SD.generate(S.lv, { mode: mode }), key = nums.join(',');
+    if (seen[key]) continue; seen[key] = 1;
+    items.push({ nums: nums, mode: SD.modeOf(nums, mode) });
+  }
+  T = { items: items, idx: 0, ok: 0, grad: 0, sent: false, mk: false, lv: S.lv };
+  tryQ();
+}
+function tryQ() {
+  var it = T.items[T.idx];
+  T.Q = { nums: it.nums, mode: it.mode, P: SD.plan(it.nums, it.mode), rows: [it.nums.slice()], divs: [], copied: [], phase: 'div', d: 0, wrong: false, recorded: false };
+  $('try-start').hidden = true; $('try-end').hidden = true; $('try-q').hidden = false;
+  msg('');
+  tryRender(true);
+}
+function tryRender(focus) {
+  var Q = T.Q, n = Q.nums.length, rows = [], R = Q.rows, ph = Q.phase;
+  var hl = ph === 'gcd' ? 'g' : (ph === 'lcm' || ph === 'done') && Q.mode !== 'gcd' ? 'l' : ph === 'done' ? 'g' : '';
+  for (var r = 0; r < R.length; r++) {
+    var hasD = r < Q.divs.length, isLast = r === R.length - 1, d = '', br = hasD, dc = '';
+    if (hasD) d = Q.divs[r];
+    else if (isLast && ph === 'div') { d = '<input class="sd-in' + (Math.max.apply(null, R[r]) > 99 ? ' wide' : '') + '" id="in-d" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" aria-label="公因數">'; br = true; }
+    else if (isLast && ph === 'quot') { d = Q.d; br = true; }
+    if (hl === 'g' && hasD) dc = 'hg'; else if (hl === 'l' && (hasD || isLast)) dc = 'hl';
+    rows.push({ d: d, br: br, dc: dc, cells: R[r].map(function (x, j) {
+      var c = (r > 0 && Q.copied[r - 1][j]) ? 'cp' : '';
+      if (hl === 'l' && isLast) c += ' hl';
+      return { h: x, c: c };
+    }) });
+  }
+  if (ph === 'quot') rows.push({ d: '', br: false, cells: last(R).map(function (x, j) {
+    return { h: '<input class="sd-in' + (String(x).length > 2 ? ' wide' : '') + '" id="in-q' + j + '" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="' + (String(x).length + 1) + '" aria-label="' + x + ' 的商">', c: '' };
+  }) });
+  $('try-board').innerHTML = boardHTML(n, rows, '你的短除法');
+  $('try-ask').textContent = '求 ' + Q.nums.join('、') + ' 的' + nameOf(Q.mode);
+  $('try-prog').innerHTML = (T.mk ? '📕 錯題練習　' : '') + '<span>第 ' + (T.idx + 1) + ' / ' + T.items.length + ' 題</span><span class="muted">一次全對 ' + T.ok + ' 題</span>' + (T.mk ? '' : '<span class="muted">' + LV_NAME[T.lv] + '</span>');
+  var a = '', row = last(R);
+  if (ph === 'div') a = '<p><b>① 寫一個公因數</b>在左邊的格子（大於 1，' + (Q.mode === 'lcm' ? '至少<b>兩個數</b>' : n === 3 ? '<b>三個數</b>都' : '兩個數都') + '能整除）。' +
+      (Q.mode === 'gcd' ? '如果三個數已經沒有共同的公因數，' : Q.mode === 'lcm' ? '如果每兩個數都互質了，' : '如果已經找不到公因數，') + '按「互質了，停！」</p>' +
+      '<div class="row"><button type="button" class="btn primary big" id="try-ok-d">確定</button><button type="button" class="btn big" id="try-stop">' + (Q.mode === 'gcd' ? '沒有共同公因數，停！' : '互質了，停！') + '</button></div>';
+  else if (ph === 'quot') a = '<p><b>② 寫商：</b>把每個數除以 ' + Q.d + '，商寫在下面的格子。' + (Q.mode === 'lcm' ? '<b>除不盡的照抄</b>下來。' : '') + '</p><div class="row"><button type="button" class="btn primary big" id="try-ok-q">確定</button></div>';
+  else if (ph === 'gcd' || ph === 'lcm') a = '<p><b>' + (ph === 'gcd' ? (Q.mode === 'both' ? '③' : '③') + ' 🔵 最大公因數' : (Q.mode === 'both' ? '④' : '③') + ' 🟠 最小公倍數') + '</b>是多少？' + '</p>' +
+      '<div class="sd-ans"><label for="in-a">' + nameOf(ph) + ' ＝</label><input class="num-in" id="in-a" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="7"><button type="button" class="btn primary big" id="try-ok-a" data-k="' + ph + '">確定</button></div>';
+  else {
+    var P = Q.P, more = T.idx + 1 < T.items.length;
+    a = '<p>' + (Q.wrong ? '💪 完成了！這題有答錯的地方，已經收進 📕 錯題庫。' : '🎉 一次就全對！') + '</p>' +
+      (Q.mode !== 'lcm' ? '<p class="sd-f g">最大公因數 ＝ ' + (Q.divs.length ? times(Q.divs) + ' ＝ ' : '') + P.gcd + '</p>' : '') +
+      (Q.mode !== 'gcd' ? '<p class="sd-f l">最小公倍數 ＝ ' + times(Q.divs.concat(row)) + ' ＝ ' + P.lcm + '</p>' : '') +
+      (Q.mode === 'both' ? '<p class="sd-f c">檢查：' + P.gcd + '×' + P.lcm + ' ＝ ' + (P.gcd * P.lcm) + ' ＝ ' + Q.nums[0] + '×' + Q.nums[1] + ' ✓</p>' : '') +
+      '<div class="row"><button type="button" class="btn primary big" id="try-next">' + (more ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
+  }
+  $('try-act').innerHTML = a;
+  if (focus) { var f = $('in-d') || $('in-q0') || $('in-a'); if (f) try { f.focus({ preventScroll: true }); } catch (e) { } }
+}
+function readInt(id) { var el = $(id); if (!el) return null; var v = String(el.value).replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).trim(); return /^[0-9]+$/.test(v) ? Number(v) : null; }
+function wrong() { var Q = T.Q; Q.wrong = true; if (!Q.recorded) { Q.recorded = true; mkRec(Q, false); } }
+function selectIn(id) { var el = $(id); if (el) { el.classList.add('bad'); try { el.select(); } catch (e) { } } }
+function subDiv() {
+  if (!authOK()) return;
+  var Q = T.Q, v = readInt('in-d'), row = last(Q.rows);
+  if (v == null) { msg('先在左邊的格子寫一個公因數喔！'); return; }
+  var c = SD.checkDivisor(row, v, Q.mode);
+  coinAnswer(c.ok);
+  if (!c.ok) {
+    wrong();
+    var t = c.why === 'num' ? (v === 0 ? '0 不能當除數喔！' : '1 不算喔，公因數要比 1 大。')
+      : c.why === 'done' ? (Q.mode === 'gcd' ? '三個數已經沒有共同的公因數，可以停了！按「沒有共同公因數，停！」' : '已經互質，可以停了！按「互質了，停！」')
+      : c.why === 'notAll' ? c.x + ' 不能被 ' + v + ' 整除喔'
+      : c.why === 'fewer' ? '至少要有兩個數能被 ' + v + ' 整除喔（' + row.filter(function (x) { return x % v === 0; }).length + ' 個可以）'
+      : c.x + ' 不能被 ' + v + ' 整除、要照抄，可是 ' + c.x + ' 和 ' + v + ' 還有公因數 ' + c.g + '，這樣答案會變大。換一個質數試試（2、3、5、7…）';
+    msg(t, 'bad'); selectIn('in-d'); return;
+  }
+  Q.d = v; Q.phase = 'quot';
+  msg('✓ ' + v + (SD.isPrime(v) ? ' 可以！' : ' 也可以！任何公因數都行。'), 'good');
+  tryRender(true);
+}
+function subStop() {
+  if (!authOK()) return;
+  var Q = T.Q, row = last(Q.rows), done = SD.isDone(row, Q.mode);
+  coinAnswer(done);
+  if (!done) {
+    wrong();
+    var f = SD.stillFactor(row, Q.mode);
+    msg(Q.mode === 'gcd' ? '三個數都還有公因數 ' + f.d + ' 喔' : andJoin(f.xs) + ' 還有公因數 ' + f.d + ' 喔', 'bad');
+    return;
+  }
+  Q.phase = Q.mode === 'lcm' ? 'lcm' : 'gcd';
+  msg('✓ ' + (Q.mode === 'gcd' ? '三個數沒有共同的公因數，停！' : Q.mode === 'lcm' ? '每兩個數都互質，停！' : '互質了，停！'), 'good');
+  tryRender(true);
+}
+function subQuot() {
+  if (!authOK()) return;
+  var Q = T.Q, row = last(Q.rows), d = Q.d, vals = row.map(function (x, j) { return readInt('in-q' + j); });
+  if (vals.some(function (v) { return v == null; })) { msg('每一格都要寫喔！'); return; }
+  var exp = SD.divideRow(row, d), bad = -1;
+  vals.forEach(function (v, j) { var el = $('in-q' + j); if (el) el.classList.toggle('bad', v !== exp[j]); if (bad < 0 && v !== exp[j]) bad = j; });
+  coinAnswer(bad < 0);
+  if (bad >= 0) {
+    wrong();
+    var x = row[bad];
+    msg(x % d === 0 ? '再檢查一下 ' + x + '÷' + d : x + ' 不能被 ' + d + ' 整除，照抄 ' + x + ' 下來', 'bad');
+    selectIn('in-q' + bad); return;
+  }
+  Q.divs.push(d); Q.copied.push(row.map(function (x) { return x % d !== 0; })); Q.rows.push(exp); Q.phase = 'div'; Q.d = 0;
+  msg('✓ 商都對了！再看看還能不能除。', 'good');
+  tryRender(true);
+}
+function subAns(kind) {
+  if (!authOK()) return;
+  var Q = T.Q, v = readInt('in-a'), row = last(Q.rows), D = SD.prod(Q.divs);
+  if (v == null) { msg('先寫一個數字喔！'); return; }
+  var exp = kind === 'gcd' ? D : D * SD.prod(row), ok = v === exp;
+  coinAnswer(ok);
+  if (!ok) {
+    wrong();
+    msg(kind === 'gcd' ? (Q.divs.length ? '最大公因數＝左邊所有的除數相乘：' + times(Q.divs) + ' ＝ ?' : '沒有除數的時候，最大公因數是 1 喔')
+      : '最小公倍數＝左邊的除數 × 最底下一列：' + times(Q.divs.concat(row)) + ' ＝ ?', 'bad');
+    selectIn('in-a'); return;
+  }
+  if (kind === 'gcd' && Q.mode === 'both') { Q.phase = 'lcm'; msg('✓ 最大公因數是 ' + v + '！', 'good'); tryRender(true); return; }
+  Q.phase = 'done';
+  if (!Q.wrong) { T.ok++; if (mkRec(Q, true) === 'graduated') T.grad++; }
+  msg('');
+  tryRender(false);
+}
+function tryEnd() {
+  var n = T.items.length;
+  if (!T.sent) { T.sent = true; try { if (window.KidsCoins) KidsCoins.report({ type: 'practice_round', item: T.mk ? 'math:mistakes' : 'math:gcd', correct: T.ok, total: n }); } catch (e) { } }
+  var eqLeft = 0; try { eqLeft = KidsMistakes.list('math').filter(function (e) { return !e.p || e.p.type !== 'gcd'; }).length; } catch (e) { }
+  $('try-q').hidden = true; $('try-end').hidden = false;
+  $('try-end').innerHTML = '<p class="big">' + (T.ok === n ? '🏆' : '💪') + '</p><p class="score" id="try-score">' + T.ok + ' / ' + n + '</p><p>一次就全對 ' + T.ok + ' 題' +
+    (T.grad ? '，🎓 有 ' + T.grad + ' 題錯題畢業了！' : (T.ok < n ? '；答錯的題在 📕 錯題庫等你復仇。' : '！')) + '</p><div class="row">' +
+    (T.mk ? '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + (eqLeft ? '<a class="btn" href="balance.html?mistakes=1">接著練天平錯題 ▶</a>' : '')
+      : '<button type="button" class="btn primary big" id="try-again">再來一輪 ▶</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a>') + '</div>';
+}
+$('try').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  var go = b.getAttribute('data-go');
+  if (go) { tryStart(go); return; }
+  if (b.id === 'try-ok-d') subDiv();
+  else if (b.id === 'try-stop') subStop();
+  else if (b.id === 'try-ok-q') subQuot();
+  else if (b.id === 'try-ok-a') subAns(b.getAttribute('data-k'));
+  else if (b.id === 'try-next') { T.idx++; if (T.idx >= T.items.length) tryEnd(); else { tryQ(); window.scrollTo(0, 0); } }
+  else if (b.id === 'try-again') tryHome();
+});
+$('try').addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' || !T || !T.Q) return;
+  var id = e.target.id || ''; if (!/^in-/.test(id)) return;
+  e.preventDefault();
+  if (id === 'in-d') subDiv(); else if (id === 'in-a') subAns(T.Q.phase); else if (/^in-q/.test(id)) {
+    var nx = $('in-q' + (+id.slice(4) + 1)); if (nx && !String(nx.value).trim()) nx.focus(); else subQuot();
+  }
+});
+$('try').addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('bad')) e.target.classList.remove('bad'); });
+
+/* ================= 分頁、難度 ================= */
+function setTab(k) {
+  if (k === 'try' && !authOK()) return;   // 換你算要登入（看步驟免登入）
+  S.tab = k; seeStop();
+  $('tab-see').setAttribute('aria-selected', String(k === 'see'));
+  $('tab-try').setAttribute('aria-selected', String(k === 'try'));
+  $('see').hidden = k !== 'see'; $('try').hidden = k !== 'try';
+  if (k === 'try' && !T) tryHome();
+  if (k === 'see') seeRender();
+}
+$('tab-see').onclick = function () { setTab('see'); };
+$('tab-try').onclick = function () { setTab('try'); };
+$('lv').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-lv]'); if (!b) return;
+  var lv = b.getAttribute('data-lv'); if (lv === S.lv) return;
+  S.lv = lv;
+  Array.prototype.forEach.call($('lv').querySelectorAll('[data-lv]'), function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+  var mode = lv === 'tri' ? (S.see.mode === 'lcm' ? 'lcm' : 'gcd') : 'both';
+  seeLoad(lv === 'tri' && S.see.nums.length !== 3 ? [12, 18, 30] : SD.generate(lv, { mode: mode }), mode);
+  if (T && !T.mk) T = null;
+  if (S.tab === 'try') tryHome();
+});
+
+/* ================= 啟動 ================= */
+seeLoad([12, 18], 'both');
+if (MK) {
+  /* 錯題練習：只做 type 'gcd' 的數學錯題（最多 30 題、最近答錯的先） */
+  var items = [];
+  try {
+    KidsMistakes.list('math').forEach(function (e) {
+      var p = e.p || {}, xs = p.nums;
+      if (p.type !== 'gcd' || !Array.isArray(xs) || (xs.length !== 2 && xs.length !== 3) || items.length >= 30) return;
+      if (!xs.every(function (x) { return typeof x === 'number' && Math.floor(x) === x && x >= 1 && x <= 9999; })) return;
+      items.push({ nums: xs.slice(), mode: SD.modeOf(xs, p.mode) });
+    });
+  } catch (e) { }
+  document.title = '短除法錯題練習';
+  $('title').textContent = '📕 短除法錯題練習';
+  $('lede').textContent = '答錯過的短除法題目，再做一次。同一題連續全對 3 次就會畢業 🎓';
+  $('lv').hidden = true; $('tabs').hidden = true; $('see').hidden = true; $('try').hidden = false; S.tab = 'try';
+  T = { items: items, idx: 0, ok: 0, grad: 0, sent: false, mk: true, lv: S.lv };
+  if (items.length) { $('try').className = ''; tryQ(); }
+  else {
+    $('try-q').hidden = true;
+    $('try-start').className = 'card center sd-mk';
+    $('try-start').innerHTML = '<p id="mk-empty">目前沒有短除法錯題 🎉</p><a class="btn primary" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>';
+  }
+}
+})();
+</script>
+<script src="../kids-auth.js?v=42d7c72a13"></script>
+<script src="../kids-coins.js?v=2b069b842f"></script>
+<script src="../syncmerge.js?v=d6f26ac66d"></script>
+<script src="../sync.js?v=8e78a66bba"></script>
+</body>
+</html>
