@@ -30,7 +30,7 @@
 | 內容 | 正本 | 網站上的檔案 |
 |---|---|---|
 | 天平解方程式 | `math\balance.html` | 同一支 |
-| 短除法：最大公因數・最小公倍數 | `math\short-division.html`（畫面）＋`math\short-division.js`（純函式，`node test/short-division.test.js`；瀏覽器實測 kids-member `tests\short-division-browser.js`） | 同一批 |
+| 短除法：最大公因數・最小公倍數 | `math\short-division.html`（畫面：📖 看步驟／✏️ 換你算／📝 應用題）＋`math\short-division.js`（純函式，`node test/short-division.test.js`）＋`math\gcd-word.js`（應用題 13 個模板，`node test/gcd-word.test.js`）；瀏覽器實測 kids-member `tests\short-division-browser.js`、`tests\gcd-word-browser.js` | 同一批 |
 | 社會／自然心智圖 | `mindmap\`：`social.html`、`science.html`、`mindmap.js`／`.css`（兩科共用引擎）、`blanks.js`、`data\social\`、`data\science\`；`test\`、`_demo\`、`.md` 只留本機 | 同一批（不含 test、_demo、.md） |
 | AI 三頁 | `ai\hallucinate.html`、`ai\ask-well.html`、`ai\secrets.html` | 同一支 |
 | Scratch 塔防 | `game\scratch-td\`：`_build\`（產生器與驗證）、`積木腳本規格.md`、中文檔名講義與 .sb3 | `game\scratch-td\web\`（ASCII 檔名，由 `_build\gen_handout.py` 產生，不要手改） |

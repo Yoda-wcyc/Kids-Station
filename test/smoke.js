@@ -533,7 +533,16 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 短除法（2026-10-14）：換你算送 practice_round math:gcd、錯題 type 'gcd'、只練錯題路由；前端白名單收 math:gcd
   const sdh = fs.readFileSync(path.join(root, 'math', 'short-division.html'), 'utf8');
   ok(sdh.includes("item: T.mk ? 'math:mistakes' : 'math:gcd'") && sdh.includes("type: 'gcd'") && sdh.includes("KidsAuth.startActivity('math'") && sdh.includes('requireLogin') && sdh.includes("KidsCoins.answer(!!ok, 'math')") && /<script src="short-division\.js(\?v=[0-9a-f]+)?"><\/script>/.test(sdh), 'short-division: coins / auth / mistakes wiring');
-  ok(sjm.includes('math/short-division.html?mistakes=1') && fs.readFileSync(path.join(root, 'kids-coins.js'), 'utf8').includes('|math:gcd)$/'), 'short-division mistakes route + math:gcd whitelisted in kids-coins');
+  ok(sjm.includes('math/short-division.html?mistakes=1') && fs.readFileSync(path.join(root, 'kids-coins.js'), 'utf8').includes('|math:gcd|math:gcdword)$/'), 'short-division mistakes route + math:gcd／math:gcdword whitelisted in kids-coins');
+  // 短除法應用題（2026-10-14）：分頁、送 practice_round math:gcdword、錯題 type 'gcdword'、錯題庫路由 ?mistakes=word、前端白名單；模板正確性見 test/gcd-word.test.js
+  ok(sdh.includes('id="tab-word"') && sdh.includes("item: W.mk ? 'math:mistakes' : 'math:gcdword'") && sdh.includes("type: 'gcdword'") && sdh.includes('我會了，直接填答案') && /<script src="gcd-word\.js(\?v=[0-9a-f]+)?"><\/script>/.test(sdh) && sdh.indexOf('short-division.js') < sdh.indexOf('gcd-word.js'), 'short-division: 應用題 tab wiring (gcd-word.js after short-division.js)');
+  ok(sjm.includes('math/short-division.html?mistakes=word') && fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("p.type === 'gcdword' ? '應用題'") && balh.includes("e.p.type === 'gcdword'"), '應用題 mistakes: route + badge + balance「接著練」counts gcdword');
+  {
+    const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
+    ok(CK.validEvent(ev('math:gcdword')) && CK.validEvent(ev('math:gcd')) && !CK.validEvent(ev('math:gcdword:x')) && !CK.validEvent(ev('math:word')), 'kids-coins: math:gcdword valid, look-alikes not');
+    const GWm = require(path.join(root, 'math', 'gcd-word.js'));
+    ok(GWm.T.length === 13 && GWm.T.every(t => { const p = GWm.make(t.id, 'basic'); return p && p.keys.length >= 2 && GWm.build(p.tid, p.v).id === p.id; }), 'gcd-word: 13 templates build + rebuild');
+  }
   ok(!/['"]ke_mistakes['"]/.test(fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8')) && fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("KEY = 'kids_mistakes'"), 'kids_ prefix key; English ke_mistakes untouched');
 }
 
