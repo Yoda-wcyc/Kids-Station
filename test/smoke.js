@@ -3,8 +3,8 @@
 const vm = require('vm'), fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
 const ctx = { window: {} }; vm.createContext(ctx);
-['words', 'words-2', 'words-3', 'words-4', 'words-5', 'phrases', 'roots', 'grammar', 'patterns'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
-const W = ctx.window.DATA_WORDS, PH = ctx.window.DATA_PHRASES, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS;
+['words', 'words-2', 'words-3', 'words-4', 'words-5', 'phrases', 'roots', 'grammar', 'patterns', 'textbook'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
+const W = ctx.window.DATA_WORDS, PH = ctx.window.DATA_PHRASES, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS, TBK = ctx.window.DATA_TEXTBOOK;
 const KE = require(path.join(root, 'engine.js'));
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 
@@ -22,7 +22,7 @@ W.forEach(w => {
   ok(/^\/.+\/$/.test(w.ipa), 'ipa ' + w.w);
   ok([1, 2, 3, 4].includes(w.lv), 'lv ' + w.w);
   ok(KE.POS[w.pos], 'pos ' + w.w + ' ' + w.pos);
-  ok(['moe1200', 'moe800', 'extra'].includes(w.src), 'src ' + w.w + ' ' + w.src);
+  ok(['moe1200', 'moe800', 'extra', 'textbook'].includes(w.src), 'src ' + w.w + ' ' + w.src); // textbook＝課本補充字（2026-10-18 social studies）
   ok(Array.isArray(w.tags) && w.tags.length && w.tags.every(t => KE.TAGS[t]), 'tags ' + w.w);
   ok(w.ex.toLowerCase().includes((w.form || w.w).toLowerCase()), `example contains word/form: ${w.w} → ${w.ex}`);
   const key = KE.wordKey(w); ok(!seenW.has(key), 'duplicate word key ' + key); seenW.add(key);
@@ -45,7 +45,7 @@ R.forEach(r => {
   ok(r.words.length >= 2 && r.words.length <= 4, 'root words ' + r.p);
   r.words.forEach(w => ok(w.zh && w.parts.join('') === w.w, 'parts ' + w.w));
 });
-ok(G.length === 16, 'grammar topics');
+ok(G.length === 17, 'grammar topics'); // 2026-10-18 +do-does-on（翰林五 Unit 2）
 G.forEach(g => {
   ok(g.id && g.title && g.rules.length && g.ex.length >= 2, 'grammar ' + g.id);
   ok(G.indexOf(g) < 12 ? g.q.length === 13 : g.q.length >= 15, 'grammar q count ' + g.id); // 原 12 個主題 13 題；10-18 新增主題至少 15 題
@@ -56,9 +56,9 @@ G.forEach(g => {
     else { ok(q.type === 'fix' && q.wrong && q.right && q.wrong !== q.right, 'fix ' + q.right); }
   });
 });
-ok(P.length === 90 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 90 with 5 examples each');
-ok(new Set(P.map(p => p.id)).size === 90, 'pattern ids unique');
-ok(P.filter(p => p.lv === 1).length === 37 && P.filter(p => p.lv === 2).length === 31 && P.filter(p => p.lv === 3).length === 22, 'pattern levels 37/31/22');
+ok(P.length === 92 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 92 with 5 examples each'); // 2026-10-18 +2（翰林五 Unit 2）
+ok(new Set(P.map(p => p.id)).size === 92, 'pattern ids unique');
+ok(P.filter(p => p.lv === 1).length === 39 && P.filter(p => p.lv === 2).length === 31 && P.filter(p => p.lv === 3).length === 22, 'pattern levels 39/31/22');
 ['there-is', 'want-to', 'like-ing', 'time-to', 'how-many', 'can-you', 'lets', 'have-to', 'it-is-to', 'what-do', 'i-think', 'dont'].forEach(id => ok(P.find(p => p.id === id && p.lv === 2), 'original pattern kept as 基本: ' + id));
 P.forEach(p => { const all = p.ex.concat(p.extra).map(e => e.en); ok(new Set(all).size === all.length, 'no duplicate sentences in ' + p.id); });
 P.forEach(p => p.typed.concat(p.extra).forEach(t => (t.alts || []).forEach(a => ok(a !== t.en && /^[A-Z]/.test(a), 'alt ok ' + a))));
@@ -83,7 +83,7 @@ PH.forEach(p => {
   if (p.form) ok(p.form !== p.p, 'form differs from base ' + p.id);
 });
 const tBuild0 = process.hrtime.bigint();
-const E = new KE.Engine({ words: W, phrases: PH, roots: R, grammar: G, patterns: P });
+const E = new KE.Engine({ words: W, phrases: PH, roots: R, grammar: G, patterns: P, textbook: TBK });
 const tBuild1 = process.hrtime.bigint();
 const allQs = E.meta.map(m => m.make()); // 整個例題庫每一題都產生一次（含干擾選項）
 const tBuild2 = process.hrtime.bigint();
@@ -204,11 +204,30 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
       if (q.hint) ok(E.get(id).sub.includes(q.hint), 'hint shown in typed sub: ' + id);
     });
   });
-  ok(nTyped === 48, 'typed fills in grammar sets: ' + nTyped);
+  ok(nTyped === 51, 'typed fills in grammar sets: ' + nTyped);
   const cm = E.get('g:modal:11:type'); ok(cm.prompt === '___ I use your pen?' && E.check(cm, 'Can').ok && E.check(cm, 'May').ok && E.check(cm, 'could').ok && !E.check(cm, 'Do').ok, 'Can / May / Could all correct (typed)');
   ok(E.check(E.get('g:modal:11:speak'), ['May I use your pen']).ok && E.get('g:modal:11').options.filter(o => ['Can', 'May', 'Could'].includes(o)).length === 1, 'Can/May: speak accepts May; choice version has one correct option');
   ok(E.get('g:plural:11:type').sub === '打出空格裡的字（提示：toy）' && E.get('g:pronoun:8:type').sub.includes('我們') && E.get('g:modal:10:type').sub.includes('必須'), 'hints: Many ___ are in the box (toy) / ___ are playing (我們) / ___ be quiet (必須)');
   ok(E.get('g:plural:11:speak').answer === 'Many toys are in the box.' && E.get('g:plural:11').title === 'Many toys are in the box.', 'hint does not leak into sentence / speak');
+}
+
+// ---- 📘 課本單元（2026-10-18 翰林五年級 Unit 2）----
+{
+  const U = 'hanlin-5-u2', u = E.tbUnit(U), it = E.tbItems(U);
+  ok(u && u.title === '翰林 五年級 Unit 2' && TBK.length >= 1 && new Set(TBK.map(x => x.id)).size === TBK.length, 'textbook unit exists');
+  const wk = it.words.map(KE.wordKey).sort().join();
+  ok(wk === 'art,chinese,class,english,follow,math,monday,music,park,pe,science,social-studies,thursday,tuesday,wednesday', 'unit words (tb tags): ' + wk);
+  ok(it.phrases.map(p => p.id).join() === 'in-a-hurry' && it.patterns.map(p => p.id).join() === 'do-you-have-class,does-he-have-class' && it.grammar.map(g => g.id).join() === 'do-does-on', 'unit phrase / patterns / grammar');
+  // 分組裡的每個字都有 tb 標記，有 tb 標記的字都在分組裡（不重複新增：一個字只有一筆）
+  const gw = u.groups.flatMap(g => g.words || []), gp = u.groups.flatMap(g => g.phrases || []);
+  ok(gw.slice().sort().join() === wk && gp.join() === 'in-a-hurry' && u.groups.length === 3, 'unit groups == tb-tagged items');
+  ['art', 'Chinese', 'English', 'math', 'music', 'PE', 'science', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'class', 'park', 'follow'].forEach(w => ok(W.filter(x => x.w === w).length === 1 && W.find(x => x.w === w).src === 'moe1200', 'textbook word not duplicated, kept moe1200: ' + w));
+  const ss = W.find(x => x.w === 'social studies'); ok(ss && ss.src === 'textbook' && ss.lv === 2 && E.itemSet('word:social-studies').length === 5, 'social studies added as textbook word');
+  ok(u.patterns.join() === it.patterns.map(p => p.id).join() && u.grammar.join() === it.grammar.map(g => g.id).join(), 'unit def patterns/grammar match tb tags');
+  it.patterns.forEach(p => ok(E.sets[KE.patternItemId(p)].length === 15 && p.ex.concat(p.extra, p.typed).every(e => !/\b(an?|the) (art|Chinese|English|math|music|PE|science|social studies) class\b/.test(e.en)) && p.ex.concat(p.extra, p.typed).every(e => !/\b(monday|tuesday|wednesday|thursday)\b/.test(e.en)), 'pattern 15 + no article before class + days capitalised: ' + p.id));
+  ok(E.sets['grammar:do-does-on'].length === 15 && E.get('g:do-does-on:13:type').sub.includes('Do 或 Does') && E.check(E.get('g:do-does-on:13:type'), 'does').ok, 'grammar do-does-on set 15 + hints');
+  (u.dialog.choose || []).forEach(c => ok(c.options.includes(c.answer) && new Set(c.options).size === 4, 'dialog choose ' + c.id));
+  ok(['learn', 'practice', 'test'].every(k => fs.readFileSync(path.join(root, 'app.js'), 'utf8').includes(`['${k}',`)) && /<script src="data\/textbook\.js(\?v=[0-9a-f]+)?"><\/script>/.test(fs.readFileSync(path.join(root, 'index.html'), 'utf8')), 'app tabs + index loads textbook.js');
 }
 
 // ---- 學會紀錄 ----

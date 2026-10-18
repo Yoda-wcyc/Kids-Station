@@ -279,7 +279,7 @@ window.DATA_WORDS = (window.DATA_WORDS || []).concat([
 {w:"past",ipa:"/pæst/",pos:"n",zh:"過去",lv:3,tags:["time"],ex:"In the past, there were no cellphones.",exZh:"過去沒有手機。",src:"moe1200"},
 {w:"paste",ipa:"/peɪst/",pos:"v",zh:"貼上",lv:3,tags:["verb"],ex:"Copy and paste the words.",exZh:"把字複製再貼上。",src:"moe1200"},
 {w:"pay",ipa:"/peɪ/",pos:"v",zh:"付錢",lv:2,tags:["verb"],ex:"I pay for the ice cream.",exZh:"我付冰淇淋的錢。",src:"moe1200"},
-{w:"PE",ipa:"/ˌpi ˈi/",pos:"n",zh:"體育課",lv:1,tags:["school", "sport"],ex:"We have PE on Tuesday.",exZh:"我們星期二有體育課。",src:"moe1200"},
+{w:"PE",ipa:"/ˌpi ˈi/",pos:"n",zh:"體育課",lv:1,tags:["school", "sport"],ex:"We have PE on Tuesday.",exZh:"我們星期二有體育課。",src:"moe1200",tb:["hanlin-5-u2"]},
 {w:"peach",ipa:"/pitʃ/",pos:"n",zh:"桃子",lv:2,tags:["food"],ex:"The peach is soft and sweet.",exZh:"這顆桃子又軟又甜。",src:"moe1200"},
 {w:"pear",ipa:"/pɛr/",pos:"n",zh:"梨子",lv:2,tags:["food"],ex:"I want a pear.",exZh:"我想要一顆梨子。",src:"moe1200"},
 {w:"people",ipa:"/ˈpipəl/",pos:"n",zh:"人們",lv:1,tags:["people"],ex:"Many people are in the park.",exZh:"公園裡有很多人。",src:"moe1200"},

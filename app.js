@@ -1,7 +1,7 @@
 /* app.js — 畫面、路由、儲存、語音 */
 (function () {
   'use strict';
-  const D = { words: window.DATA_WORDS || [], phrases: window.DATA_PHRASES || [], roots: window.DATA_ROOTS || [], grammar: window.DATA_GRAMMAR || [], patterns: window.DATA_PATTERNS || [] };
+  const D = { words: window.DATA_WORDS || [], phrases: window.DATA_PHRASES || [], roots: window.DATA_ROOTS || [], grammar: window.DATA_GRAMMAR || [], patterns: window.DATA_PATTERNS || [], textbook: window.DATA_TEXTBOOK || [] };
   const E = new KE.Engine(D);
   const app = document.getElementById('app');
   const $ = (s, r) => (r || document).querySelector(s);
@@ -136,9 +136,9 @@
   function render() {
     const h = location.hash || '#home'; rendered = h; redraw = null; stopRec();
     if (/^#s\//.test(h)) return; // 其他科目由 subjects.js 負責
-    const [p, sub] = h.slice(1).split('/');
-    const pages = { home: pHome, learn: pLearn, practice: pPractice, quiz: pQuiz, result: pResult, mistakes: pMistakes, bank: pBank, parent: pParent };
-    (pages[p] || pHome)(sub);
+    const [p, sub, sub2] = h.slice(1).split('/');
+    const pages = { home: pHome, learn: pLearn, practice: pPractice, quiz: pQuiz, result: pResult, mistakes: pMistakes, bank: pBank, parent: pParent, tb: pTb };
+    (pages[p] || pHome)(sub, sub2);
     window.scrollTo(0, 0);
   }
   document.addEventListener('click', e => {
@@ -168,7 +168,7 @@
   // 語速控制：學習頁、作答、結果、錯題庫的標題列都有一顆膠囊，點開調整
   const fmtRate = r => KE.clampRate(r).toFixed(1) + '×';
   const speedCtl = () => `<div class="speed-ctl"><label class="speed-row">🐢<input type="range" class="speed-range" min="0.5" max="1.3" step="0.1" value="${KE.clampRate(S.settings.rate)}" aria-label="語音速度">🐇<b class="speed-val">${fmtRate(S.settings.rate)}</b></label><div class="speed-quick">${[['慢', 0.6], ['中', 0.8], ['正常', 1]].map(([t, v]) => `<button type="button" class="btn sm" data-rate="${v}">${t} ${v.toFixed(1)}</button>`).join('')}</div></div>`;
-  const speedPill = () => /^#(learn|quiz|result|mistakes)/.test(rendered) ? `<div class="speed"><button type="button" class="btn sm speed-pill" data-speed-toggle aria-label="調整語音速度">🐢 <b class="speed-val">${fmtRate(S.settings.rate)}</b></button><div class="speed-pop" hidden>${speedCtl()}</div></div>` : '';
+  const speedPill = () => /^#(learn|quiz|result|mistakes|tb\/)/.test(rendered) ? `<div class="speed"><button type="button" class="btn sm speed-pill" data-speed-toggle aria-label="調整語音速度">🐢 <b class="speed-val">${fmtRate(S.settings.rate)}</b></button><div class="speed-pop" hidden>${speedCtl()}</div></div>` : '';
   function setRate(r, preview) {
     S.settings.rate = KE.clampRate(r); saveSettings();
     $$('.speed-val').forEach(x => { x.textContent = fmtRate(S.settings.rate); });
@@ -267,7 +267,7 @@
     const st = stats(), mc = mistakeIds().length;
     app.innerHTML = top('小朋友學習站 🎈', false) + `
       <div class="stats"><div class="stat"><span>🔥</span><b>${st.streak}</b><small>連續天數</small></div><div class="stat"><span>✏️</span><b>${st.today}</b><small>今天做的題目</small></div><div class="stat"><span>⭐</span><b>${S.progress.stars}</b><small>星星</small></div></div>
-      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}</div>
+      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? D.textbook.map(u => u.title).slice(-1)[0] : '準備中', 'c2')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}</div>
       <p class="muted center">小提示：看到英文，點一下就會唸給你聽 👂</p>${shareRow()}`;
   }
 
@@ -357,6 +357,66 @@
     };
     $$('input[name="plv"]').forEach(el => el.onchange = () => { PLV.lv = el.value; draw(); });
     bindLf('patterns', '句型', D.patterns.map(KE.patternItemId), draw); // 進度一律算全部句型
+  }
+
+  // ---------- 📘 課本進度（2026-10-18）：#tb → 單元卡；#tb/<單元>/<learn|practice|test> ----------
+  // 單字、句型、文法沿用原本資料（tb 標記）；教學免登入，練習／考試要登入
+  const TB_TABS = [['learn', '📖 教學'], ['practice', '✏️ 練習'], ['test', '📝 考試']];
+  const sayBtn = (t, label) => `<button type="button" class="btn icon tbsnd say" data-say="${esc(t)}" aria-label="${esc(label || '唸：' + t)}">🔊</button>`;
+  // 整段對話照順序唸（不打斷彼此）
+  function speakAll(texts) {
+    if (!synth || !texts.length) return;
+    try {
+      unlocked = true; synth.cancel();
+      const v = pickVoice();
+      texts.forEach(t => { const u = new SpeechSynthesisUtterance(t); if (v) u.voice = v; u.lang = v ? v.lang : S.settings.accent; u.rate = KE.clampRate(S.settings.rate); synth.speak(u); });
+    } catch (e) { }
+  }
+  function pTb(sub, tab) {
+    const u = sub && E.tbUnit(sub);
+    if (!u) {
+      app.innerHTML = top('📘 課本進度') + `<p class="muted">跟著學校的課本走：每一課都有 📖 教學、✏️ 練習、📝 考試。</p><div class="tiles">${D.textbook.map(x => tile('#tb/' + x.id + '/learn', '📘', x.title, x.theme, 'c2')).join('') || '<p class="muted">準備中</p>'}</div>`;
+      return;
+    }
+    if (!TB_TABS.some(t => t[0] === tab)) tab = 'learn';
+    app.innerHTML = top(esc(u.title), '#tb') + `<p class="tb-theme"><span class="en say">${esc(u.theme)}</span> <small>${esc(u.themeZh || '')}</small></p>
+      <nav class="tb-tabs" role="tablist">${TB_TABS.map(([k, t]) => `<button type="button" role="tab" class="tb-tab${k === tab ? ' on' : ''}" aria-selected="${k === tab}" data-go="#tb/${esc(u.id)}/${k}">${t}</button>`).join('')}</nav><div id="tbbody"></div>`;
+    const body = $('#tbbody');
+    if (tab === 'learn') return tbLearn(u, body);
+    if (tab === 'practice') return tbPractice(u, body);
+    return tbTest(u, body);
+  }
+  function tbLearn(u, body) {
+    const it = E.tbItems(u.id), wBy = new Map(it.words.map(w => [KE.wordKey(w), w])), phBy = new Map(it.phrases.map(p => [p.id, p]));
+    const card = (en, ipa, zh) => `<div class="card tbw"><div class="tbw-h"><span class="w en say">${esc(en)}</span>${sayBtn(en)}</div><div class="ipa">${esc(ipa || '')}</div><div class="zh">${esc(zh)}</div></div>`;
+    const words = u.groups.map(g => `<h3 class="tb-h3">${g.icon} ${esc(g.title)}</h3><div class="tb-words">${(g.words || []).map(k => { const w = wBy.get(k); return w ? card(w.w, w.ipa, (u.tz || {})[k] || w.zh) : ''; }).join('')}${(g.phrases || []).map(k => { const p = phBy.get(k); return p ? card(p.p, (u.ipa || {})[k], (u.tz || {})[k] || p.zh) : ''; }).join('')}</div>`).join('');
+    const days = u.days || [];
+    const sEn = t => `<span class="en say">${esc(t)}</span>`;
+    const g0 = it.grammar[0];
+    const grammar = `<div class="tb-on"><div class="tb-on-row">${days.map(d => `<span class="tb-pair say" data-say="on ${esc(d.en)}"><b class="tb-chip on">on</b><b class="tb-chip day en">${esc(d.en)}</b></span>`).join('')}</div>
+        <p class="tb-x"><span class="bad"><s class="en">in Monday</s> ✗</span><span class="bad"><s class="en">at Monday</s> ✗</span><span class="good"><b class="en">on Monday</b> ✓</span><span class="good"><b class="en">Monday</b>（第一個字母大寫）✓</span></p></div>
+      <div class="tblwrap"><table class="tbl tb-dd"><thead><tr><th>人稱</th><th>問句</th><th>肯定簡答</th><th>否定簡答</th><th>否定句</th></tr></thead><tbody>
+        <tr><td><b>I／you</b><br><small>（還有 we、they）</small></td><td><b class="hl">Do</b> ${sEn('you have art class?')}</td><td>${sEn('Yes, I do.')}</td><td>${sEn("No, I don't.")}</td><td>${sEn("I don't have art class.")}</td></tr>
+        <tr><td><b>he／she</b><br><small>（一個人）</small></td><td><b class="hl">Does</b> ${sEn('he have art class?')}</td><td>${sEn('Yes, he does.')}</td><td>${sEn("No, he doesn't.")}</td><td>${sEn("She doesn't have art class.")}</td></tr>
+      </tbody></table></div>
+      <p class="tb-has"><span class="en">Does she <s>has</s> <b class="hl">have</b> PE class?</span><br><small>用了 Do／Does／don't／doesn't，後面的動詞一律還原成原形 <b class="en">have</b>（不能用 has）</small></p>
+      ${g0 ? `<details class="card gram"><summary><b>文法重點（${esc(g0.title)}）</b></summary><ul class="rules">${g0.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ul></details>` : ''}`;
+    const pats = it.patterns.map(p => `<span class="tb-pat en say">${esc(p.pattern)}</span>`).join('');
+    const qa = (u.qa || []).map(x => `<div class="tb-qa"><div class="tb-q">${sayBtn(x.q)}<div><div class="en say">${esc(x.q)}</div><small>${esc(x.qz)}</small></div></div><div class="tb-arrow">➜</div><div class="tb-a">${sayBtn(x.a)}<div><div class="en say">${esc(x.a)}</div><small>${esc(x.az)}</small></div></div></div>`).join('');
+    const dl = u.dialog;
+    const dialog = dl ? `<div class="tb-dialog">${dl.lines.map(l => `<div class="tb-line ${l.side === 'r' ? 'r' : 'l'}"><span class="tb-who">${l.side === 'r' ? '👦' : '👧'} ${esc(l.who)}</span><div class="tb-bubble"><span class="en say">${esc(l.en)}</span>${sayBtn(l.en)}<small>${esc(l.zh)}</small></div></div>`).join('')}</div><button type="button" class="btn" id="tbplay">▶ 播放整段對話</button>` : '';
+    body.innerHTML = `<section class="card"><h2>🔤 單字卡（點英文或 🔊 會唸）</h2>${words}</section>
+      <section class="card"><h2>📐 文法圖解</h2>${grammar}</section>
+      <section class="card"><h2>💬 句型：問句 ➜ 簡答</h2><div class="tb-pats">${pats}</div>${qa}</section>
+      ${dl ? `<section class="card"><h2>🎭 情境對話：${esc(dl.title)}</h2>${dialog}</section>` : ''}
+      <div class="row wrap"><button class="btn primary big" data-go="#tb/${esc(u.id)}/practice">去練習 ✏️</button><button class="btn big" data-go="#tb/${esc(u.id)}/test">去考試 📝</button></div>`;
+    const pb = $('#tbplay'); if (pb) pb.onclick = () => speakAll(dl.lines.map(l => l.en));
+  }
+  function tbPractice(u, body) {
+    body.innerHTML = `<div class="card center"><p>✏️ 練習馬上就來！先到 📖 教學看單字和句型吧。</p></div>`;
+  }
+  function tbTest(u, body) {
+    body.innerHTML = `<div class="card center"><p>📝 考試馬上就來！</p></div>`;
   }
 
   // ---------- 練習設定 ----------

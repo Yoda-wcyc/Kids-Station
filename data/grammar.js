@@ -298,5 +298,25 @@ window.DATA_GRAMMAR = [
  {"type":"fix","wrong":"He never eat fish.","right":"He never eats fish.","why":"He 是第三人稱單數，eat 要加 s。"},
  {"type":"fix","wrong":"How often you go to the park?","right":"How often do you go to the park?","why":"How often 問句要有 do / does。"},
  {"type":"fix","wrong":"My brother late is often for school.","right":"My brother is often late for school.","why":"often 放在 be 動詞 is 後面，形容詞 late 再接在後面。"}],
- typed:[{"zh":"我總是七點起床。","en":"I always get up at seven.","alts":["I always get up at seven o'clock.","I always wake up at seven.","I always wake up at seven o'clock."]},{"zh":"你多久打掃一次房間？","en":"How often do you clean your room?"}]}
+ typed:[{"zh":"我總是七點起床。","en":"I always get up at seven.","alts":["I always get up at seven o'clock.","I always wake up at seven.","I always wake up at seven o'clock."]},{"zh":"你多久打掃一次房間？","en":"How often do you clean your room?"}]},
+{id:"do-does-on",title:"Do／Does 問句＋on 星期幾",tb:["hanlin-5-u2"],
+ rules:["星期幾前面一律用 on：on Monday、on Tuesday（不用 in、at）。","星期幾第一個字母一定大寫：Monday、Tuesday、Wednesday、Thursday。","I、you（還有 we、they）：問句用 Do，否定用 don't。","he、she（一個人）：問句用 Does，否定用 doesn't。","用了 Do、Does、don't、doesn't，後面的動詞要還原成原形 have（不能用 has）。","簡答：Yes, I do. / No, I don't.；Yes, he does. / No, she doesn't."],
+ ex:[{en:"Do you have math class on Monday?",zh:"你星期一有數學課嗎？"},{en:"Does she have science class on Thursday?",zh:"她星期四有自然課嗎？"},{en:"He doesn't have art class on Tuesday.",zh:"他星期二沒有美術課。"}],
+ q:[
+ {type:"fill",s:"___ you have math class on Monday?",a:"Do",opts:["Do","Does","Is","Are"],why:"主詞是 you，問句用 Do。"},
+ {type:"fill",s:"___ she have science class on Thursday?",a:"Does",opts:["Do","Does","Is","Has"],why:"主詞是 she（一個人），問句用 Does。"},
+ {type:"fill",s:"We have art class ___ Tuesday.",a:"on",opts:["on","in","at","to"],why:"星期幾前面用 on：on Tuesday。"},
+ {type:"fill",s:"Do you have music class on Wednesday? No, I ___.",a:"don't",opts:["don't","doesn't","am not","do"],why:"Do you …? 的否定簡答：No, I don't."},
+ {type:"fill",s:"Does he have PE class on Monday? Yes, he ___.",a:"does",opts:["do","does","has","is"],why:"Does he …? 的肯定簡答：Yes, he does."},
+ {type:"fix",wrong:"Does she has English class on Monday?",right:"Does she have English class on Monday?",why:"用了 Does，後面的動詞要用原形 have，不能用 has。"},
+ {type:"fix",wrong:"Do he have math class on Tuesday?",right:"Does he have math class on Tuesday?",why:"he 是一個人，問句要用 Does。"},
+ {type:"fix",wrong:"We have music class in Wednesday.",right:"We have music class on Wednesday.",why:"星期幾前面用 on，不用 in。"},
+ {type:"fill",s:"Does he have art class on Thursday? No, he ___.",a:"doesn't",opts:["don't","doesn't","isn't","not"],why:"Does he …? 的否定簡答：No, he doesn't."},
+ {type:"fix",wrong:"I have PE class on monday.",right:"I have PE class on Monday.",why:"星期幾第一個字母一定要大寫：Monday。"},
+ {type:"fix",wrong:"She don't have science class on Wednesday.",right:"She doesn't have science class on Wednesday.",why:"She 是一個人，否定要用 doesn't，不是 don't。"},
+ {type:"fill",s:"I ___ have social studies class on Monday.",a:"don't",opts:["don't","doesn't","isn't","am not"],why:"主詞是 I，否定用 don't，後面接原形 have。"},
+ {type:"fill",s:"Does he ___ art class on Tuesday?",a:"have",hint:"have 或 has",opts:["have","has","having","haves"],why:"用了 Does，後面的動詞要還原成原形 have。"},
+ {type:"fill",s:"___ he have music class on Wednesday?",a:"Does",hint:"Do 或 Does",opts:["Do","Does","Is","Are"],why:"he 是一個人，問句用 Does。"},
+ {type:"fill",s:"Does she have PE class ___ Thursday?",a:"on",hint:"星期幾前面的介系詞",opts:["on","in","at","of"],why:"星期幾前面用 on：on Thursday。"}],
+ typed:[{"zh":"你星期一有數學課嗎？","en":"Do you have math class on Monday?","alts":["Do you have math on Monday?"]},{"zh":"他星期三沒有音樂課。","en":"He doesn't have music class on Wednesday.","alts":["He does not have music class on Wednesday.","He doesn't have music on Wednesday.","He does not have music on Wednesday."]}]}
 ];

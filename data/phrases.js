@@ -239,7 +239,7 @@
     P('for dinner', '當晚餐', '介系詞片語', 'We have noodles for dinner.', '我們晚餐吃麵。'),
     P('at the end of', '在…的盡頭；在…的最後', '介系詞片語', 'The bank is at the end of the street.', '銀行在這條街的盡頭。'),
     P('in line', '排隊', '介系詞片語', 'Please wait in line.', '請排隊等候。'),
-    P('in a hurry', '匆忙地', '介系詞片語', 'He left in a hurry.', '他匆匆忙忙地離開了。'),
+    P('in a hurry', '匆忙地；趕時間', '介系詞片語', 'He left in a hurry.', '他匆匆忙忙地離開了。'),
     P('around the corner', '就在轉角', '介系詞片語', 'The bakery is around the corner.', '麵包店就在轉角。'),
     P('at the top of', '在…的頂端', '介系詞片語', 'There is a big tree at the top of the hill.', '山丘頂上有一棵大樹。'),
     P('on the second floor', '在二樓', '介系詞片語', 'My classroom is on the second floor.', '我的教室在二樓。'),
@@ -373,4 +373,7 @@
     L1.map(x => Object.assign({ id: slug(x.p), lv: 1 }, x)),
     L2.map(x => Object.assign({ id: slug(x.p), lv: 2 }, x)),
     L3.map(x => Object.assign({ id: slug(x.p), lv: 3 }, x)));
+  // 課本單元標記（2026-10-18）：這個片語是哪一課的課本字（id 不變、學會紀錄照舊）
+  const TB = { 'in-a-hurry': ['hanlin-5-u2'] };
+  window.DATA_PHRASES.forEach(p => { if (TB[p.id]) p.tb = TB[p.id].slice(); });
 })();

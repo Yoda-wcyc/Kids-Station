@@ -6,13 +6,16 @@
   const ROOT_T = { prefix: '字首', suffix: '字尾', root: '字根' };
   const MODULES = { words: '單字', phrases: '片語', roots: '字根字首', grammar: '文法', patterns: '句型' };
   const PHRASE_LV = { 1: '必會', 2: '基本', 3: '進階' };
-  const TYPES = { 'listen-choose': '聽音選字', zh2en: '看中文選英文', en2zh: '看英文選中文', spell: '聽寫拼字', 'root-meaning': '字首字尾的意思', 'root-word': '用字根組單字', 'grammar-fill': '文法填空', 'grammar-fix': '挑出正確的句子', reorder: '句子重組', 'pattern-choose': '看中文選句子', 'phrase-fill': '片語填空', 'zh2en-type': '中翻英打字', 'root-type': '字根拼字（打字）', speak: '🎤 說說看', 'grammar-fill-type': '文法填空（打字）', 'grammar-fix-type': '改正錯句（打字）', 'word-gap': '填空拼字' };
-  // 只放在「練習這組」的題型（一般練習回合、例題庫不出，題型組成維持原樣）
-  const SET_ONLY_TYPES = ['word-gap', 'grammar-fill-type', 'grammar-fix-type'];
+  const TYPES = { 'listen-choose': '聽音選字', zh2en: '看中文選英文', en2zh: '看英文選中文', spell: '聽寫拼字', 'root-meaning': '字首字尾的意思', 'root-word': '用字根組單字', 'grammar-fill': '文法填空', 'grammar-fix': '挑出正確的句子', reorder: '句子重組', 'pattern-choose': '看中文選句子', 'phrase-fill': '片語填空', 'zh2en-type': '中翻英打字', 'root-type': '字根拼字（打字）', speak: '🎤 說說看', 'grammar-fill-type': '文法填空（打字）', 'grammar-fix-type': '改正錯句（打字）', 'word-gap': '填空拼字',
+    // 課本單元專屬題（2026-10-18，只在 📘 課本進度的練習／考試出）
+    'tb-fill': '選出正確的字', 'tb-fill-type': '填空（打字）', 'tb-ask-type': '看提示造問句（打字）', 'tb-answer': '選出正確的回答', 'tb-answer-type': '打出簡答', 'tb-listen': '聽力：選出意思' };
+  const TB_TYPES = ['tb-fill', 'tb-fill-type', 'tb-ask-type', 'tb-answer', 'tb-answer-type', 'tb-listen'];
+  // 只放在「練習這組」的題型（一般練習回合、例題庫不出，題型組成維持原樣）；課本專屬題也不進一般練習
+  const SET_ONLY_TYPES = ['word-gap', 'grammar-fill-type', 'grammar-fix-type'].concat(TB_TYPES);
   const MOD_TYPES = { words: ['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type', 'speak'], phrases: ['listen-choose', 'zh2en', 'en2zh', 'phrase-fill', 'zh2en-type', 'speak'], roots: ['root-meaning', 'root-word', 'root-type'], grammar: ['grammar-fill', 'grammar-fix', 'reorder', 'zh2en-type', 'grammar-fill-type', 'grammar-fix-type', 'speak'], patterns: ['reorder', 'pattern-choose', 'zh2en-type', 'speak'] };
   const TYPED = 'zh2en-type';
   // 鍵盤打字題（練習一組時排最後；共用同一個打字介面與判分）
-  const TYPED_TYPES = ['spell', 'zh2en-type', 'root-type', 'grammar-fill-type', 'grammar-fix-type', 'word-gap'];
+  const TYPED_TYPES = ['spell', 'zh2en-type', 'root-type', 'grammar-fill-type', 'grammar-fix-type', 'word-gap', 'tb-fill-type', 'tb-ask-type', 'tb-answer-type'];
   // 排序等級：選擇類 0 → 🎤 說說看 1 → 填空拼字 2 → 其他打字 3（練習這組照這個順序；答錯重排也不越級）
   const typedRank = q => (q && q.type === 'speak' ? 1 : !isTyped(q) ? 0 : q.type === 'word-gap' ? 2 : 3);
   // 文法、句型的固定題組：10 題非打字＋5 題打字（打字題排最後）；總數不足 15 時照 2:1 的比例
@@ -27,7 +30,7 @@
     return choiceIds.slice(0, kc).concat(typedIds.slice(0, kt));
   }
   const isTyped = q => TYPED_TYPES.includes(q && q.type);
-  const SRC_LABEL = { moe: '教育部基本字彙', moe1200: '教育部 1200 字', moe800: '教育部 800 字（國中進階）', extra: '補充字' };
+  const SRC_LABEL = { moe: '教育部基本字彙', moe1200: '教育部 1200 字', moe800: '教育部 800 字（國中進階）', extra: '補充字', textbook: '課本補充字' };
   const PATTERN_LV = { 1: '簡單', 2: '基本', 3: '進階' };
   const POS = { n: '名詞', v: '動詞', adj: '形容詞', adv: '副詞', num: '數字', pron: '代名詞', prep: '介系詞', conj: '連接詞', art: '冠詞', int: '感嘆詞', aux: '助動詞' };
   // 單字的題號：通常是 slug(w)；跟別的字撞名（May／may、Miss／miss）時用資料裡的 id
@@ -157,7 +160,7 @@
   const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   function Engine(data) {
-    const D = this.D = { words: data.words || [], phrases: data.phrases || [], roots: data.roots || [], grammar: data.grammar || [], patterns: data.patterns || [] };
+    const D = this.D = { words: data.words || [], phrases: data.phrases || [], roots: data.roots || [], grammar: data.grammar || [], patterns: data.patterns || [], textbook: data.textbook || [] };
     this.meta = []; this.byId = {};
     const add = (m, make) => { m.tkey = m.module + ':' + m.topic; m.make = () => Object.assign({ id: m.id, module: m.module, topic: m.topic, tkey: m.tkey, type: m.type, title: m.title, why: '' }, make()); this.meta.push(m); this.byId[m.id] = m; };
 
@@ -275,6 +278,50 @@
       (p.typed || []).forEach((t, k) => typedQ('patterns', p.id, `p:${p.id}:t${k}`, t, why));
     });
 
+    // ---- 課本單元專屬題（2026-10-18）：照單元的詞表（科目×星期×人稱）組出來；module 'textbook'、setOnly（一般練習／例題庫不出）
+    // 題號＝內容（tb:<單元>:<題型>:<人稱>:<科目>:<星期>），錯題庫可以原題重做；寫法照台灣課本：class 前不加冠詞、星期首字大寫、PE 大寫、簡答 Yes, I do.
+    this.tbq = {};
+    D.textbook.forEach(u => {
+      const F = this.tbq[u.id] = {}, base = `tb:${u.id}`, topic = u.id;
+      const reg = (fam, id, type, title, make, extra) => { add(Object.assign({ id, module: 'textbook', topic, type, title, setOnly: true }, extra || {}), make); (F[fam] = F[fam] || []).push(id); };
+      const subs = u.subjects || [], days = u.days || [], ppl = u.people || [];
+      const sen = (p, s, d, cls, blank) => `${blank === 'aux' ? '___' : p.aux} ${p.en} have ${s.en}${cls === false ? '' : ' class'} ${blank === 'on' ? '___' : 'on'} ${d.en}?`;
+      const qAlts = (p, s, d) => { const a = [sen(p, s, d, false)]; if (s.alt) { const s2 = Object.assign({}, s, { en: s.alt }); a.push(sen(p, s2, d), sen(p, s2, d, false)); } return a; };
+      const zhQ = (p, s, d) => `${p.zh}${d.zh}有${s.zh}課嗎？`;
+      const short = (who, aux, yes) => (yes ? `Yes, ${who} ${aux === 'Do' ? 'do' : 'does'}.` : `No, ${who} ${aux === 'Do' ? "don't" : "doesn't"}.`);
+      const whyP = p => (p.aux === 'Do' ? `主詞是 ${p.en}，問句用 Do；簡答 Yes, I do. / No, I don't.` : `主詞是 ${p.en}（一個人），問句用 Does；簡答 Yes, ${p.ans} does. / No, ${p.ans} doesn't.`);
+      const other = (arr, x) => shuffle(arr.filter(y => y !== x))[0];
+      ppl.forEach(p => subs.forEach(s => days.forEach(d => {
+        const key = `${p.k}:${slug(s.en)}:${slug(d.en)}`, Q = sen(p, s, d), alts = qAlts(p, s, d), zq = zhQ(p, s, d);
+        reg('dd', `${base}:dd:${key}`, 'tb-fill', Q, () => ({ prompt: sen(p, s, d, true, 'aux'), sub: '選出空格裡的字', options: shuffle(['Do', 'Does', 'Is', 'Are']), answer: p.aux, speakText: Q, why: whyP(p) }));
+        reg('ddT', `${base}:dd:${key}:type`, 'tb-fill-type', Q, () => ({ prompt: sen(p, s, d, true, 'aux'), sub: '打出空格裡的字', input: 'type', options: null, answer: p.aux, alts: [], speakText: Q, why: whyP(p) }));
+        reg('on', `${base}:on:${key}`, 'tb-fill', Q, () => ({ prompt: sen(p, s, d, true, 'on'), sub: '選出空格裡的字', options: shuffle(['on', 'in', 'at', 'to']), answer: 'on', speakText: Q, why: `星期幾前面一律用 on：on ${d.en}。` }));
+        reg('onT', `${base}:on:${key}:type`, 'tb-fill-type', Q, () => ({ prompt: sen(p, s, d, true, 'on'), sub: '打出空格裡的字', input: 'type', options: null, answer: 'on', alts: [], speakText: Q, why: `星期幾前面一律用 on：on ${d.en}。` }));
+        reg('ask', `${base}:ask:${key}`, 'tb-ask-type', Q, () => ({ prompt: `問${p.k === 'you' ? '對方（你）' : p.zh}：${d.zh}有沒有${s.zh}課？`, sub: `提示：${p.en}／${s.en}／${d.en}　用鍵盤打出問句`, input: 'type', options: null, answer: Q, alts: alts.slice(), speakText: Q, why: whyP(p) }));
+        reg('ro', `${base}:ro:${key}`, 'reorder', Q, () => ({ prompt: zq, sub: '把字卡排成正確的英文句子', input: 'chips', options: chips(Q), answer: Q, speakText: Q, why: whyP(p) }));
+        reg('sp', `${base}:sp:${key}`, 'speak', Q, () => ({ prompt: Q, en: true, sub: zq, input: 'mic', play: true, options: null, answer: Q, alts: alts.slice(), speakMode: 'sentence', speakText: Q, why: whyP(p) }));
+        reg('zh', `${base}:zh:${key}`, 'zh2en-type', Q, () => ({ prompt: zq, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: Q, alts: alts.slice(), speakText: Q, why: whyP(p) }));
+        // 聽力：聽英文問句，選意思對的中文（干擾＝換科目／換星期／換人稱各一個）
+        reg('li', `${base}:li:${key}`, 'tb-listen', Q, () => ({ prompt: '聽聽看，選出意思對的中文', options: shuffle([zq, zhQ(p, other(subs, s), d), zhQ(p, s, other(days, d)), zhQ(other(ppl, p), s, d)]), answer: zq, speakText: Q, auto: true, play: true, why: `${Q}＝${zq}` }));
+        // 回答問句（⭕ 有／❌ 沒有）：選擇＋打字；干擾＝助動詞用錯、相反的回答、人稱用錯
+        [true, false].forEach(yes => {
+          const right = short(p.ans, p.aux, yes), cue = yes ? '⭕ 有' : '❌ 沒有', yn = yes ? 'y' : 'n';
+          const o = ppl.find(x => x.k === p.other) || p;
+          const wrong = [short(p.ans, p.aux === 'Do' ? 'Does' : 'Do', yes), short(p.ans, p.aux, !yes), short(o.k === 'you' ? 'you' : o.ans, o.k === 'you' ? 'Do' : o.aux, yes)];
+          reg('ans', `${base}:ans:${key}:${yn}`, 'tb-answer', `${Q} → ${right}`, () => ({ prompt: Q, en: true, play: true, sub: `（${cue}）選出正確的回答`, options: shuffle([right].concat(wrong)), answer: right, speakText: Q + ' ' + right, why: whyP(p) }), { yes });
+          reg('anst', `${base}:anst:${key}:${yn}`, 'tb-answer-type', `${Q} → ${right}`, () => ({ prompt: Q, en: true, play: true, sub: `（${cue}）打出簡答`, input: 'type', options: null, answer: right, alts: [right.replace(',', '')], speakText: Q + ' ' + right, why: whyP(p) }), { yes });
+        });
+      })));
+      // 情境對話：每句重組／🎤／中翻英打字；情境選擇題
+      ((u.dialog && u.dialog.lines) || []).forEach((l, i) => {
+        const why = `情境對話：${l.en}（${l.zh}）`;
+        reg('dlro', `${base}:dl:${i}:reorder`, 'reorder', l.en, () => ({ prompt: l.zh, sub: '把字卡排成正確的英文句子', input: 'chips', options: chips(l.en), answer: l.en, speakText: l.en, why }));
+        reg('dlsp', `${base}:dl:${i}:speak`, 'speak', l.en, () => ({ prompt: l.en, en: true, sub: l.zh, input: 'mic', play: true, options: null, answer: l.en, alts: (l.alts || []).slice(), speakMode: 'sentence', speakText: l.en, why }));
+        reg('dlty', `${base}:dl:${i}:type`, 'zh2en-type', l.en, () => ({ prompt: l.zh, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: l.en, alts: (l.alts || []).slice(), speakText: l.en, why }));
+      });
+      ((u.dialog && u.dialog.choose) || []).forEach(c => reg('dc', `${base}:dc:${c.id}`, 'tb-answer', `${c.prompt} → ${c.answer}`, () => ({ prompt: c.prompt, en: /[a-z]/i.test(c.prompt), play: /[a-z]/i.test(c.prompt), sub: c.sub, options: shuffle(c.options), answer: c.answer, speakText: /[a-z]/i.test(c.answer) ? c.answer : c.prompt, why: c.why || '' })));
+    });
+
     // ---- 每個學習項目的固定題組（全部答對過才能按「學會了」）----
     // 題號只增不改：舊題的 id 意思不變，已答對的紀錄照算；文法／句型改成「10 題非打字＋5 題打字」時，
     // 換進來的打字題是新 id（要再答對一次），換出去的舊題仍在題庫裡、只是不算進這一組。
@@ -330,6 +377,42 @@
 
   Engine.prototype = {
     get(id) { const m = this.byId[id]; return m ? m.make() : null; },
+    // ---- 課本單元（2026-10-18）----
+    tbUnit(unitId) { return this.D.textbook.find(u => u.id === unitId) || null; },
+    // 本課的單字／片語／句型／文法：照各資料檔的 tb 標記（同一個字不重複新增，id 不變）
+    tbItems(unitId) {
+      const has = x => (x.tb || []).includes(unitId), D = this.D;
+      return { words: D.words.filter(has), phrases: D.phrases.filter(has), patterns: D.patterns.filter(has), grammar: D.grammar.filter(has) };
+    },
+    // 從某一類專屬題隨機挑 n 題；同一輪裡「人稱＋科目＋星期」不重複（重組和中翻英不會剛好是同一句、互相洩答案）
+    tbPick(unitId, fam, n, used, f) {
+      const out = [];
+      for (const id of shuffle((this.tbq[unitId] || {})[fam] || [])) {
+        if (out.length >= n) break;
+        if (f && !f(id)) continue;
+        const c = id.split(':').slice(3, 6).join(':');
+        if (/^tb:[^:]+:(dd|on|ask|ro|sp|zh|li|ans|anst):/.test(id)) { if (used.has(c)) continue; used.add(c); }
+        out.push(id);
+      }
+      return out;
+    },
+    // ✏️ 專屬題一輪（練習）：聽力 1、選 Do／Does 2、選短答 2、重組 2、情境 1、🎤 1（裝置支援才出）、填 on 1、打短答 1、造問句 2
+    // 順序：選擇類洗牌 → 🎤 → 打字（同「練習這組」）；回傳題目物件
+    tbPractice(unitId, o) {
+      const used = new Set(), P = (fam, n, f) => this.tbPick(unitId, fam, n, used, f);
+      const ids = [].concat(P('li', 1), P('dd', 2), P('ans', 2), P('ro', 2), P('dc', 1), o && o.speak ? P('sp', 1) : [], P('onT', 1), P('anst', 1), P('ask', 2));
+      return drillOrder(ids.map(id => this.get(id)).filter(Boolean));
+    },
+    // 📝 考試：20 題（每題 5 分），照段考順序分六大題，每次隨機組合；不出 🎤
+    // 聽力 4（單字聽音選字 2＋句子聽力 2）、選擇 5、填空 3（Do／Does、on、單字填空拼字）、重組 3、中翻英 3（單字 1＋句子 2）、回答問句 2（⭕ 一題、❌ 一題）
+    tbExam(unitId) {
+      const used = new Set(), P = (fam, n, f) => this.tbPick(unitId, fam, n, used, f);
+      const wk = shuffle(this.tbItems(unitId).words.map(wordKey)), W = (t, n) => wk.splice(0, n).map(k => `w:${k}:${t}`);
+      const secs = [['一、聽力', W('listen', 2).concat(P('li', 2))], ['二、選擇', P('dd', 2).concat(P('on', 1), P('ans', 1), P('dc', 1))],
+        ['三、填空', P('ddT', 1).concat(P('onT', 1), W('gap1', 1))], ['四、重組', P('ro', 2).concat(P('dlro', 1))],
+        ['五、中翻英', W('type', 1).concat(P('zh', 2))], ['六、回答問句', P('anst', 1, id => /:y$/.test(id)).concat(P('anst', 1, id => /:n$/.test(id)))]];
+      return secs.flatMap(([sec, ids]) => shuffle(ids).map(id => this.get(id)).filter(Boolean).map(q => Object.assign(q, { sec, pts: 5 })));
+    },
     sources() { return [...new Set(this.D.words.map(w => w.src || 'moe'))]; },
     topics(module) {
       if (module === 'words') { const s = []; this.D.words.forEach(w => { const t = (w.tags && w.tags[0]) || 'other'; if (!s.includes(t)) s.push(t); }); return s.map(t => ({ key: 'words:' + t, label: TAGS[t] || t })); }
@@ -337,6 +420,7 @@
       if (module === 'roots') return Object.keys(ROOT_T).map(t => ({ key: 'roots:' + t, label: ROOT_T[t] }));
       if (module === 'grammar') return this.D.grammar.map(g => ({ key: 'grammar:' + g.id, label: g.title }));
       if (module === 'patterns') return this.D.patterns.slice().sort((a, b) => (a.lv || 2) - (b.lv || 2)).map(p => ({ key: 'patterns:' + p.id, label: p.pattern, group: PATTERN_LV[p.lv || 2] }));
+      if (module === 'textbook') return this.D.textbook.map(u => ({ key: 'textbook:' + u.id, label: u.title }));
       return [];
     },
     // 學會紀錄的項目資訊：word:apple → {item:'apple', type:'單字'}
@@ -433,7 +517,7 @@
     }
   };
 
-  const KE = { Engine, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, TB_TYPES, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);
