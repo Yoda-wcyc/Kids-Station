@@ -254,6 +254,7 @@
     go('#quiz');
   }
   function startQuiz(cfg) {
+    if (cfg && cfg.tb) return startTb(cfg.tb, cfg.mode, cfg.back); // 課本專屬題／考試「再一次」：重新隨機組題
     if (!authOK('practice')) return;
     const list = cfg.ids ? KE.shuffle(cfg.ids).slice(0, cfg.count || 30).map(id => E.get(id)).filter(Boolean) : E.buildQuiz(cfg);
     if (!list.length) { alert('沒有符合條件的題目，換個選擇試試看！'); return; }
@@ -412,8 +413,27 @@
       <div class="row wrap"><button class="btn primary big" data-go="#tb/${esc(u.id)}/practice">去練習 ✏️</button><button class="btn big" data-go="#tb/${esc(u.id)}/test">去考試 📝</button></div>`;
     const pb = $('#tbplay'); if (pb) pb.onclick = () => speakAll(dl.lines.map(l => l.en));
   }
+  // ✏️ 練習：本課單字／片語／句型／文法沿用原本的「練習這組」（含口說、填空、打字，學會紀錄照舊）＋課本專屬題一輪（送 english:textbook）
   function tbPractice(u, body) {
-    body.innerHTML = `<div class="card center"><p>✏️ 練習馬上就來！先到 📖 教學看單字和句型吧。</p></div>`;
+    const it = E.tbItems(u.id), back = rendered;
+    const wcard = (id, en, zh, cls) => `<div class="card word ${cls || ''} ${isL(id) ? 'is-learned' : ''}"><div class="w en say">${esc(en)}</div><div class="zh">${esc(zh)}</div>${learnUI(id)}</div>`;
+    const n = E.tbPractice(u.id, { speak: canSpeak }).length;
+    const draw = () => {
+      body.innerHTML = `<section class="card"><h2>🎯 課本專屬題</h2><p>選 Do／Does、填 on、看提示造問句、選或打簡答、重組${canSpeak ? '、🎤 說說看' : ''}，一輪 ${n} 題，每次都不一樣。</p><button class="btn primary big" id="tbgo">✏️ 開始專屬題</button></section>
+        <section class="card"><h2>💬 本課句型・文法（🎯 練習這組）</h2><div class="cards">${it.patterns.map(p => `<div class="card pat ${isL(KE.patternItemId(p)) ? 'is-learned' : ''}"><div class="ph en say">${esc(p.pattern)}</div><div class="zh">${esc(p.zh)}</div>${learnUI(KE.patternItemId(p))}</div>`).join('')}${it.grammar.map(g => `<div class="card gram ${isL(KE.grammarItemId(g)) ? 'is-learned' : ''}"><b>📐 ${esc(g.title)}</b>${learnUI(KE.grammarItemId(g))}</div>`).join('')}</div></section>
+        ${u.groups.map(g => `<section class="card"><h2>${g.icon} 本課單字：${esc(g.title)}（🎯 練習這組）</h2><div class="cards">${(g.words || []).map(k => { const w = it.words.find(x => KE.wordKey(x) === k); return w ? wcard(KE.wordItemId(w), w.w, (u.tz || {})[k] || w.zh) : ''; }).join('')}${(g.phrases || []).map(k => { const p = it.phrases.find(x => x.id === k); return p ? wcard(KE.phraseItemId(p), p.p, (u.tz || {})[k] || p.zh, 'phrase') : ''; }).join('')}</div></section>`).join('')}`;
+      $('#tbgo').onclick = () => startTb(u.id, 'textbook', back);
+    };
+    redraw = draw; draw();
+  }
+  // 課本專屬題一輪（mode textbook）／考試（mode test）：要登入；練習問 english 額度、考試問 test 額度
+  function startTb(unitId, mode, back) {
+    if (!authOK(mode === 'test' ? '開始考試' : 'practice')) return;
+    const list = mode === 'test' ? E.tbExam(unitId) : E.tbPractice(unitId, { speak: canSpeak });
+    if (!list.length) return;
+    if (!quotaOK(mode === 'test' ? 'test' : 'english', () => startTb(unitId, mode, back))) return;
+    Q = { list, i: 0, answers: [], answered: false, cfg: { mode, tb: unitId, back: back || '#tb/' + unitId + '/learn' }, graduated: 0, result: null, exam: mode === 'test' };
+    go('#quiz');
   }
   function tbTest(u, body) {
     body.innerHTML = `<div class="card center"><p>📝 考試馬上就來！</p></div>`;
@@ -518,8 +538,9 @@
       : c === ' ' ? '<span class="gap-sp"></span>' : `<span class="gap-ch">${esc(c)}</span>`)).join('')}</div><div class="row"><button class="btn primary big" id="ok">送出</button></div>`;
     else body = `<div class="opts ${q.options.some(o => o.length > 14) ? 'one' : ''}">${q.options.map(o => `<button class="opt" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
     app.innerHTML = (Q.gate ? top('通過小測驗才能標記學會 ✨', Q.gate.back) + `<p class="gate-note">「${esc(E.itemInfo(Q.gate.itemId).item)}」小測驗：${Q.gate.total} 題要答對 ${Q.gate.need} 題</p>`
-      : Q.drill ? top('練習這組', Q.drill.back) + `<p class="drill-note">「${esc(E.itemInfo(Q.drill.itemId).item)}」${drillLine()}</p>` : top('練習中', '#practice')) + `<div class="bar"><i style="width:${Q.i / n * 100}%"></i></div><p class="count">第 ${Q.i + 1} / ${n} 題</p>
-      <div class="card qcard"><div class="qtype">${KE.TYPES[q.type]}</div><div class="prompt ${q.en ? 'en say' : ''}">${esc(q.prompt)}</div>${q.sub ? `<div class="sub ${q.subEn ? 'en' : ''}">${esc(q.sub)}</div>` : ''}${q.play ? `<button class="btn sound" id="play">🔊 ${q.type === 'speak' ? '聽示範' : '再聽一次'}</button>` : ''}</div>
+      : Q.drill ? top('練習這組', Q.drill.back) + `<p class="drill-note">「${esc(E.itemInfo(Q.drill.itemId).item)}」${drillLine()}</p>`
+      : Q.cfg && Q.cfg.tb ? top(Q.exam ? '📝 考試' : '✏️ 課本專屬題', Q.cfg.back) + `<p class="drill-note">${esc((E.tbUnit(Q.cfg.tb) || {}).title || '')}${Q.exam ? `・${esc(q.sec || '')}（每題 5 分，答完才看結果）` : ''}</p>` : top('練習中', '#practice')) + `<div class="bar"><i style="width:${Q.i / n * 100}%"></i></div><p class="count">第 ${Q.i + 1} / ${n} 題</p>
+      <div class="card qcard" data-qid="${esc(q.id)}"><div class="qtype">${KE.TYPES[q.type]}</div><div class="prompt ${q.en ? 'en say' : ''}">${esc(q.prompt)}</div>${q.sub ? `<div class="sub ${q.subEn ? 'en' : ''}">${esc(q.sub)}</div>` : ''}${q.play ? `<button class="btn sound" id="play">🔊 ${q.type === 'speak' ? '聽示範' : '再聽一次'}</button>` : ''}</div>
       ${body}<div id="fb"></div>`;
     const p = $('#play'); if (p) p.onclick = () => speak(q.speakText);
     $$('.opt').forEach(b => b.onclick = () => answer(q, b.dataset.v));
@@ -632,7 +653,7 @@
     const r = Q.result, msg = r.stars === 3 ? '超級厲害！🏆' : r.stars === 2 ? '做得很好！👍' : '多練幾次會更棒！💪';
     app.innerHTML = top('練習結果') + `<div class="card center result"><div class="stars">${'⭐'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</div><div class="score">${r.ok} / ${r.tot}</div><p>${msg}</p>${Q.graduated ? `<p>🎓 有 ${Q.graduated} 題錯題畢業了！</p>` : ''}</div>
       ${wrongList(r)}
-      <div class="row wrap"><button class="btn primary big" id="again">再練一次</button>${r.wrong.length ? '<button class="btn big" id="redo">練答錯的題目</button>' : ''}<button class="btn big" data-go="#home">回首頁</button></div>`;
+      <div class="row wrap"><button class="btn primary big" id="again">再練一次</button>${r.wrong.length ? '<button class="btn big" id="redo">練答錯的題目</button>' : ''}${Q.cfg && Q.cfg.back ? `<button class="btn big" data-go="${esc(Q.cfg.back)}">回課本</button>` : '<button class="btn big" data-go="#home">回首頁</button>'}</div>`;
     $('#again').onclick = () => startQuiz(Q.cfg);
     const rd = $('#redo'); if (rd) rd.onclick = () => startQuiz({ ids: r.wrong.map(q => q.id), mode: 'redo' });
   }

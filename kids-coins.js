@@ -11,7 +11,7 @@
   var TPE_MS = 8 * 3600 * 1000;            // 台北時間 = UTC+8（1979 年後沒有日光節約）
   var WEEK_MS = 7 * 86400 * 1000;
   var BATCH_MAX = 50, QUEUE_MAX = 500;
-  var MODES = ['practice', 'words', 'roots', 'grammar', 'patterns', 'mistakes', 'bank', 'redo', 'drill', 'speak'];
+  var MODES = ['practice', 'words', 'roots', 'grammar', 'patterns', 'mistakes', 'bank', 'redo', 'drill', 'speak', 'textbook', 'test'];   // textbook／test＝📘 課本進度的專屬題一輪／考試（2026-10-18）
   var TEST_PREFIX = { test_word: 'word', test_phrase: 'phrase', test_root: 'root', test_grammar: 'grammar', test_pattern: 'pattern' };
   var SUBJECTS = ['english', 'math', 'ai', 'social', 'science'];   // social／science＝心智圖（2026-10-09）
   var MM_RE = /^((social|science):(arch|cloze|quiz|mistakes)|(math|ai):mistakes|math:gcd|math:gcdword)$/;   // 心智圖一輪：背架構／考考自己／練習題；各科 📕 只練錯題一輪（2026-10-11）；math:gcd＝短除法換你算一輪（2026-10-14）；math:gcdword＝短除法應用題一輪（2026-10-14）

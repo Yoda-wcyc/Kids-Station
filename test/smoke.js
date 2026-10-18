@@ -227,6 +227,35 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
   it.patterns.forEach(p => ok(E.sets[KE.patternItemId(p)].length === 15 && p.ex.concat(p.extra, p.typed).every(e => !/\b(an?|the) (art|Chinese|English|math|music|PE|science|social studies) class\b/.test(e.en)) && p.ex.concat(p.extra, p.typed).every(e => !/\b(monday|tuesday|wednesday|thursday)\b/.test(e.en)), 'pattern 15 + no article before class + days capitalised: ' + p.id));
   ok(E.sets['grammar:do-does-on'].length === 15 && E.get('g:do-does-on:13:type').sub.includes('Do 或 Does') && E.check(E.get('g:do-does-on:13:type'), 'does').ok, 'grammar do-does-on set 15 + hints');
   (u.dialog.choose || []).forEach(c => ok(c.options.includes(c.answer) && new Set(c.options).size === 4, 'dialog choose ' + c.id));
+  // 專屬題（練習）：一輪 12 題＋🎤 1 題（裝置支援才出）；選擇類在前、🎤、打字最後；同一輪「人稱＋科目＋星期」不重複
+  for (let k = 0; k < 20; k++) {
+    const a = E.tbPractice(U, { speak: true }), b = E.tbPractice(U, { speak: false }), rank = a.map(KE.typedRank);
+    const combo = a.filter(q => /^tb:[^:]+:(dd|on|ask|ro|sp|li|ans|anst):/.test(q.id)).map(q => q.id.split(':').slice(3, 6).join(':'));
+    ok(a.length === 13 && b.length === 12 && !b.some(q => q.type === 'speak') && rank.every((r, i) => !i || r >= rank[i - 1]) && new Set(combo).size === combo.length && a.every(q => q.module === 'textbook'), 'tbPractice 13/12, typed last, combos unique');
+    ok(['tb-fill', 'tb-fill-type', 'tb-ask-type', 'tb-answer', 'tb-answer-type', 'reorder', 'speak'].every(t => a.some(q => q.type === t)) && a.filter(q => q.type === 'tb-fill-type').every(q => q.answer === 'on'), 'tbPractice covers Do/Does, on, ask, short answer, reorder, speak');
+  }
+  // 考試：20 題、每題 5 分、六大題照順序、不出 🎤、每次隨機
+  const ex1 = E.tbExam(U), ex2 = E.tbExam(U), SECS = ['一、聽力', '二、選擇', '三、填空', '四、重組', '五、中翻英', '六、回答問句'];
+  for (let k = 0; k < 30; k++) {
+    const ex = E.tbExam(U), secs = [...new Set(ex.map(q => q.sec))], cnt = SECS.map(s => ex.filter(q => q.sec === s).length);
+    ok(ex.length === 20 && ex.reduce((s, q) => s + q.pts, 0) === 100 && secs.join() === SECS.join() && cnt.join() === '4,5,3,3,3,2' && !ex.some(q => q.type === 'speak') && new Set(ex.map(q => q.id)).size === 20, 'tbExam 20 / 100 pts / sections ' + cnt);
+    ok(ex.filter(q => q.sec === '一、聽力').every(q => q.auto && q.play && q.options) && ex.filter(q => q.module === 'words').every(q => it.words.some(w => q.id.split(':')[1] === KE.wordKey(w))), 'tbExam listening auto-plays; word questions are unit words');
+    ok(ex.filter(q => q.sec === '六、回答問句').map(q => q.id.slice(-1)).sort().join() === 'n,y' && ex.every(q => E.check(q, q.input === 'gap' ? q.answer : q.answer).ok), 'tbExam answer section one ⭕ one ❌; self-check');
+  }
+  ok(ex1.map(q => q.id).join() !== ex2.map(q => q.id).join(), 'tbExam random each time');
+  // 所有打字題：alts、縮寫互收（Yes, I do. / No, I don't. ↔ do not；I'm ↔ I am）、去 class、P.E.、無逗號
+  const tbT = E.meta.filter(m => m.module === 'textbook' && KE.isTyped(m)).map(m => m.make());
+  ok(tbT.length === 96 * 4 + 192 + 3 && tbT.every(q => E.check(q, q.answer).ok && (q.alts || []).every(a => E.check(q, a).ok)), 'tb typed self/alts: ' + tbT.length);
+  tbT.forEach(q => { const full = KE.expandContr(q.answer); if (full !== q.answer.toLowerCase()) ok(E.check(q, full).ok && E.check(q, full.toUpperCase()).ok, 'tb typed accepts expansion: ' + q.id + ' → ' + full); });
+  const C = id => E.get(id);
+  ok(E.check(C('tb:hanlin-5-u2:anst:you:art:tuesday:n'), 'No, I do not.').ok && E.check(C('tb:hanlin-5-u2:anst:you:art:tuesday:n'), "no I don't").ok && !E.check(C('tb:hanlin-5-u2:anst:you:art:tuesday:n'), "No, I doesn't.").ok && E.check(C('tb:hanlin-5-u2:anst:she:art:tuesday:y'), 'yes she does').ok && !E.check(C('tb:hanlin-5-u2:anst:she:art:tuesday:y'), 'Yes, she do.').ok, 'short answers: contraction / comma / wrong aux');
+  ok(E.check(C('tb:hanlin-5-u2:ask:he:pe:monday'), 'Does he have P.E. class on Monday?').ok && E.check(C('tb:hanlin-5-u2:zh:you:social-studies:thursday'), 'Do you have social studies on Thursday').ok && !E.check(C('tb:hanlin-5-u2:zh:you:math:monday'), 'Do you have a math class on Monday?').ok && !E.check(C('tb:hanlin-5-u2:zh:he:math:monday'), 'Does he has math class on Monday?').ok && !E.check(C('tb:hanlin-5-u2:zh:he:math:monday'), 'Do he have math class on Monday?').ok, 'ask/zh typed: P.E., drop class ok; article / has / Do he wrong');
+  ok(E.check(C('tb:hanlin-5-u2:dl:2:type'), 'I am in a hurry').ok && E.check(C('tb:hanlin-5-u2:dd:she:art:monday:type'), 'does').ok && !E.check(C('tb:hanlin-5-u2:dd:she:art:monday:type'), 'do').ok && E.check(C('tb:hanlin-5-u2:on:he:art:monday:type'), 'ON').ok, "dialog I'm ↔ I am; Do/Does & on typed");
+  ok(C('tb:hanlin-5-u2:dd:you:math:monday').prompt === '___ you have math class on Monday?' && C('tb:hanlin-5-u2:on:she:pe:thursday').prompt === 'Does she have PE class ___ Thursday?' && C('tb:hanlin-5-u2:ans:he:music:wednesday:y').options.slice().sort().join('|') === "No, he doesn't.|Yes, he do.|Yes, he does.|Yes, she does." && C('tb:hanlin-5-u2:ans:you:art:tuesday:n').options.slice().sort().join('|') === "No, I doesn't.|No, I don't.|No, you don't.|Yes, I do.", 'question shapes (textbook style)');
+  ok(E.list({ modules: ['textbook'] }).length === 0 && E.buildQuiz({ count: 300, allowSpeak: true }).every(q => q.module !== 'textbook') && E.list({ ids: ['tb:hanlin-5-u2:zh:you:math:monday'] }).length === 1, 'textbook questions only in textbook pages (but redo by id works)');
+  ok(E.topicLabel('textbook:hanlin-5-u2') === '翰林 五年級 Unit 2', 'textbook topic label');
+  { const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
+    ok(CK.validEvent(ev('english:textbook')) && CK.validEvent(ev('english:test')) && !CK.validEvent(ev('english:textbooks')) && !CK.validEvent(ev('math:test')), 'kids-coins: english:textbook / english:test valid'); }
   ok(['learn', 'practice', 'test'].every(k => fs.readFileSync(path.join(root, 'app.js'), 'utf8').includes(`['${k}',`)) && /<script src="data\/textbook\.js(\?v=[0-9a-f]+)?"><\/script>/.test(fs.readFileSync(path.join(root, 'index.html'), 'utf8')), 'app tabs + index loads textbook.js');
 }
 
