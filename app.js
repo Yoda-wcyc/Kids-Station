@@ -268,7 +268,7 @@
     const st = stats(), mc = mistakeIds().length;
     app.innerHTML = top('小朋友學習站 🎈', false) + `
       <div class="stats"><div class="stat"><span>🔥</span><b>${st.streak}</b><small>連續天數</small></div><div class="stat"><span>✏️</span><b>${st.today}</b><small>今天做的題目</small></div><div class="stat"><span>⭐</span><b>${S.progress.stars}</b><small>星星</small></div></div>
-      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? D.textbook.map(u => u.title).slice(-1)[0] : '準備中', 'c2')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}</div>
+      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? `翰林五年級・${D.textbook.length} 個單元` : '準備中', 'c2')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}</div>
       <p class="muted center">小提示：看到英文，點一下就會唸給你聽 👂</p>${shareRow()}`;
   }
 
@@ -376,11 +376,13 @@
   function pTb(sub, tab) {
     const u = sub && E.tbUnit(sub);
     if (!u) {
-      app.innerHTML = top('📘 課本進度') + `<p class="muted">跟著學校的課本走：每一課都有 📖 教學、✏️ 練習、📝 考試。</p><div class="tiles">${D.textbook.map(x => tile('#tb/' + x.id + '/learn', '📘', x.title, x.theme, 'c2')).join('') || '<p class="muted">準備中</p>'}</div>`;
+      // 單元卡依冊別分組（五上、五下…）；draft＝依學校課程計畫整理、還沒拿課本核對
+      const books = [...new Set(D.textbook.map(x => x.book || ''))];
+      app.innerHTML = top('📘 課本進度') + `<p class="muted">翰林 Here We Go!：每一課都有 📖 教學、✏️ 練習、📝 考試。</p>` + (books.map(b => `<h2 class="tb-book">${esc(b || '課本')}</h2><div class="tiles">${D.textbook.filter(x => (x.book || '') === b).map(x => `<button class="tile c2 tb-unit" data-go="#tb/${esc(x.id)}/learn"><span class="ti">📘</span><b>${esc(x.title.replace(/^五[上下] /, ''))}</b><small class="en">${esc(x.theme)}</small>${x.draft ? '<small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}</button>`).join('')}</div>`).join('') || '<p class="muted">準備中</p>');
       return;
     }
     if (!TB_TABS.some(t => t[0] === tab)) tab = 'learn';
-    app.innerHTML = top(esc(u.title), '#tb') + `<p class="tb-theme"><span class="en say">${esc(u.theme)}</span> <small>${esc(u.themeZh || '')}</small></p>
+    app.innerHTML = top(esc(u.title), '#tb') + `<p class="tb-theme"><span class="en say">${esc(u.theme)}</span> <small>${esc(u.themeZh || '')}</small>${u.draft ? '<br><small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}</p>
       <nav class="tb-tabs" role="tablist">${TB_TABS.map(([k, t]) => `<button type="button" role="tab" class="tb-tab${k === tab ? ' on' : ''}" aria-selected="${k === tab}" data-go="#tb/${esc(u.id)}/${k}">${t}</button>`).join('')}</nav><div id="tbbody"></div>`;
     const body = $('#tbbody');
     if (tab === 'learn') return tbLearn(u, body);
@@ -389,26 +391,24 @@
   }
   function tbLearn(u, body) {
     const it = E.tbItems(u.id), wBy = new Map(it.words.map(w => [KE.wordKey(w), w])), phBy = new Map(it.phrases.map(p => [p.id, p]));
-    const card = (en, ipa, zh) => `<div class="card tbw"><div class="tbw-h"><span class="w en say">${esc(en)}</span>${sayBtn(en)}</div><div class="ipa">${esc(ipa || '')}</div><div class="zh">${esc(zh)}</div></div>`;
-    const words = u.groups.map(g => `<h3 class="tb-h3">${g.icon} ${esc(g.title)}</h3><div class="tb-words">${(g.words || []).map(k => { const w = wBy.get(k); return w ? card(w.w, w.ipa, (u.tz || {})[k] || w.zh) : ''; }).join('')}${(g.phrases || []).map(k => { const p = phBy.get(k); return p ? card(p.p, (u.ipa || {})[k], (u.tz || {})[k] || p.zh) : ''; }).join('')}</div>`).join('');
-    const days = u.days || [];
-    const sEn = t => `<span class="en say">${esc(t)}</span>`;
-    const g0 = it.grammar[0];
-    const grammar = `<div class="tb-on"><div class="tb-on-row">${days.map(d => `<span class="tb-pair say" data-say="on ${esc(d.en)}"><b class="tb-chip on">on</b><b class="tb-chip day en">${esc(d.en)}</b></span>`).join('')}</div>
-        <p class="tb-x"><span class="bad"><s class="en">in Monday</s> ✗</span><span class="bad"><s class="en">at Monday</s> ✗</span><span class="good"><b class="en">on Monday</b> ✓</span><span class="good"><b class="en">Monday</b>（第一個字母大寫）✓</span></p></div>
-      <div class="tblwrap"><table class="tbl tb-dd"><thead><tr><th>人稱</th><th>問句</th><th>肯定簡答</th><th>否定簡答</th><th>否定句</th></tr></thead><tbody>
-        <tr><td><b>I／you</b><br><small>（還有 we、they）</small></td><td><b class="hl">Do</b> ${sEn('you have art class?')}</td><td>${sEn('Yes, I do.')}</td><td>${sEn("No, I don't.")}</td><td>${sEn("I don't have art class.")}</td></tr>
-        <tr><td><b>he／she</b><br><small>（一個人）</small></td><td><b class="hl">Does</b> ${sEn('he have art class?')}</td><td>${sEn('Yes, he does.')}</td><td>${sEn("No, he doesn't.")}</td><td>${sEn("She doesn't have art class.")}</td></tr>
-      </tbody></table></div>
-      <p class="tb-has"><span class="en">Does she <s>has</s> <b class="hl">have</b> PE class?</span><br><small>用了 Do／Does／don't／doesn't，後面的動詞一律還原成原形 <b class="en">have</b>（不能用 has）</small></p>
-      ${g0 ? `<details class="card gram"><summary><b>文法重點（${esc(g0.title)}）</b></summary><ul class="rules">${g0.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ul></details>` : ''}`;
+    const card = (en, ipa, zh, pl) => `<div class="card tbw"><div class="tbw-h"><span class="w en say">${esc(en)}</span>${sayBtn(en)}</div><div class="ipa">${esc(ipa || '')}</div><div class="zh">${esc(zh)}</div>${pl ? `<div class="tbw-pl">複數：<span class="en say">${esc(pl)}</span></div>` : ''}</div>`;
+    const words = u.groups.map(g => `<h3 class="tb-h3">${g.icon} ${esc(g.title)}</h3><div class="tb-words">${(g.words || []).map(k => { const w = wBy.get(k); return w ? card(w.w, w.ipa, (u.tz || {})[k] || w.zh, (u.pl || {})[k]) : ''; }).join('')}${(g.phrases || []).map(k => { const p = phBy.get(k); return p ? card(p.p, (u.ipa || {})[k], (u.tz || {})[k] || p.zh) : ''; }).join('')}</div>`).join('');
+    // 文法圖解（資料在 textbook.js 的 visual）：[字]＝標色、~字~＝刪掉的錯字；全英文的格子可以點來唸
+    const mark = t => esc(t).replace(/\[(.+?)\]/g, '<b class="hl">$1</b>').replace(/~(.+?)~/g, '<s>$1</s>');
+    const cell = t => { const plain = String(t).replace(/~(.+?)~/g, '').replace(/[[\]]/g, '').replace(/\s+/g, ' ').trim(); return /[A-Za-z]/.test(plain) && !/[㐀-鿿]/.test(plain) ? `<span class="en say" data-say="${esc(plain)}">${mark(t)}</span>` : mark(t); };
+    const V = u.visual || {}, g0 = it.grammar[0];
+    const grammar = `${V.chips ? `<div class="tb-on"><div class="tb-on-row">${V.chips.items.map(d => `<span class="tb-pair say" data-say="${esc((V.chips.a ? V.chips.a + ' ' : '') + d)}">${V.chips.a ? `<b class="tb-chip on">${esc(V.chips.a)}</b>` : ''}<b class="tb-chip day en">${esc(d)}</b></span>`).join('')}</div></div>` : ''}
+      ${V.xs ? `<p class="tb-x">${V.xs.map(x => `<span class="${x.ok ? 'good' : 'bad'}">${x.ok ? `<b class="en">${esc(x.t)}</b>` : `<s class="en">${esc(x.t)}</s>`} ${x.ok ? '✓' : '✗'}${x.note ? `（${esc(x.note)}）` : ''}</span>`).join('')}</p>` : ''}
+      ${V.table ? `<div class="tblwrap"><table class="tbl tb-dd"><thead><tr>${V.table.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${V.table.rows.map(r => `<tr>${r.map(c => `<td>${cell(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''}
+      ${V.tip ? `<p class="tb-has">${cell(V.tip.en)}<br><small>${esc(V.tip.note || '')}</small></p>` : ''}
+      ${it.grammar.map(g => `<details class="card gram"><summary><b>文法重點（${esc(g.title)}）</b></summary><ul class="rules">${g.rules.map(r => `<li>${esc(r)}</li>`).join('')}</ul></details>`).join('')}`;
     const pats = it.patterns.map(p => `<span class="tb-pat en say">${esc(p.pattern)}</span>`).join('');
     const qa = (u.qa || []).map(x => `<div class="tb-qa"><div class="tb-q">${sayBtn(x.q)}<div><div class="en say">${esc(x.q)}</div><small>${esc(x.qz)}</small></div></div><div class="tb-arrow">➜</div><div class="tb-a">${sayBtn(x.a)}<div><div class="en say">${esc(x.a)}</div><small>${esc(x.az)}</small></div></div></div>`).join('');
     const dl = u.dialog;
     const dialog = dl ? `<div class="tb-dialog">${dl.lines.map(l => `<div class="tb-line ${l.side === 'r' ? 'r' : 'l'}"><span class="tb-who">${l.side === 'r' ? '👦' : '👧'} ${esc(l.who)}</span><div class="tb-bubble"><span class="en say">${esc(l.en)}</span>${sayBtn(l.en)}<small>${esc(l.zh)}</small></div></div>`).join('')}</div><button type="button" class="btn" id="tbplay">▶ 播放整段對話</button>` : '';
     body.innerHTML = `<section class="card"><h2>🔤 單字卡（點英文或 🔊 會唸）</h2>${words}</section>
       <section class="card"><h2>📐 文法圖解</h2>${grammar}</section>
-      <section class="card"><h2>💬 句型：問句 ➜ 簡答</h2><div class="tb-pats">${pats}</div>${qa}</section>
+      <section class="card"><h2>💬 句型：問句 ➜ 回答</h2><div class="tb-pats">${pats}</div>${qa}</section>
       ${dl ? `<section class="card"><h2>🎭 情境對話：${esc(dl.title)}</h2>${dialog}</section>` : ''}
       <div class="row wrap"><button class="btn primary big" data-go="#tb/${esc(u.id)}/practice">去練習 ✏️</button><button class="btn big" data-go="#tb/${esc(u.id)}/test">去考試 📝</button></div>`;
     const pb = $('#tbplay'); if (pb) pb.onclick = () => speakAll(dl.lines.map(l => l.en));

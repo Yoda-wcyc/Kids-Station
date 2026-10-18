@@ -278,48 +278,51 @@
       (p.typed || []).forEach((t, k) => typedQ('patterns', p.id, `p:${p.id}:t${k}`, t, why));
     });
 
-    // ---- 課本單元專屬題（2026-10-18）：照單元的詞表（科目×星期×人稱）組出來；module 'textbook'、setOnly（一般練習／例題庫不出）
-    // 題號＝內容（tb:<單元>:<題型>:<人稱>:<科目>:<星期>），錯題庫可以原題重做；寫法照台灣課本：class 前不加冠詞、星期首字大寫、PE 大寫、簡答 Yes, I do.
-    this.tbq = {};
+    // ---- 課本單元專屬題（2026-10-18）：每個單元在 data/textbook.js 給「句子 sents」和「問答 replies」，題型都從這兩樣組出來；
+    // module 'textbook'、setOnly（一般練習／例題庫不出）。題號＝內容：tb:<單元>:<題型>:<句子 key>，錯題庫可以原題重做。
+    // sents：{key, g(同組才互當聽力干擾), en, zh, alts, why, ask:{prompt, hint}, blanks:[{fam, w, opts, cue, hint, alts, why}]}
+    //   → 每句：重組 ro、🎤 sp、中翻英 zh、聽力 li（選意思對的中文）、看提示造句 ask（有 ask 才出）、每個空格：選 <fam>／打 <fam>:type
+    // replies：{key, card(同一輪不重複用), q, cue(⭕ 有／圖示提示), en, alts, wrong(3 個錯的), kind, why} → 選回答 ans、打回答 anst
+    this.tbq = {}; this.tbBlank = {};
     D.textbook.forEach(u => {
-      const F = this.tbq[u.id] = {}, base = `tb:${u.id}`, topic = u.id;
-      const reg = (fam, id, type, title, make, extra) => { add(Object.assign({ id, module: 'textbook', topic, type, title, setOnly: true }, extra || {}), make); (F[fam] = F[fam] || []).push(id); };
-      const subs = u.subjects || [], days = u.days || [], ppl = u.people || [];
-      const sen = (p, s, d, cls, blank) => `${blank === 'aux' ? '___' : p.aux} ${p.en} have ${s.en}${cls === false ? '' : ' class'} ${blank === 'on' ? '___' : 'on'} ${d.en}?`;
-      const qAlts = (p, s, d) => { const a = [sen(p, s, d, false)]; if (s.alt) { const s2 = Object.assign({}, s, { en: s.alt }); a.push(sen(p, s2, d), sen(p, s2, d, false)); } return a; };
-      const zhQ = (p, s, d) => `${p.zh}${d.zh}有${s.zh}課嗎？`;
-      const short = (who, aux, yes) => (yes ? `Yes, ${who} ${aux === 'Do' ? 'do' : 'does'}.` : `No, ${who} ${aux === 'Do' ? "don't" : "doesn't"}.`);
-      const whyP = p => (p.aux === 'Do' ? `主詞是 ${p.en}，問句用 Do；簡答 Yes, I do. / No, I don't.` : `主詞是 ${p.en}（一個人），問句用 Does；簡答 Yes, ${p.ans} does. / No, ${p.ans} doesn't.`);
-      const other = (arr, x) => shuffle(arr.filter(y => y !== x))[0];
-      ppl.forEach(p => subs.forEach(s => days.forEach(d => {
-        const key = `${p.k}:${slug(s.en)}:${slug(d.en)}`, Q = sen(p, s, d), alts = qAlts(p, s, d), zq = zhQ(p, s, d);
-        reg('dd', `${base}:dd:${key}`, 'tb-fill', Q, () => ({ prompt: sen(p, s, d, true, 'aux'), sub: '選出空格裡的字', options: shuffle(['Do', 'Does', 'Is', 'Are']), answer: p.aux, speakText: Q, why: whyP(p) }));
-        reg('ddT', `${base}:dd:${key}:type`, 'tb-fill-type', Q, () => ({ prompt: sen(p, s, d, true, 'aux'), sub: '打出空格裡的字', input: 'type', options: null, answer: p.aux, alts: [], speakText: Q, why: whyP(p) }));
-        reg('on', `${base}:on:${key}`, 'tb-fill', Q, () => ({ prompt: sen(p, s, d, true, 'on'), sub: '選出空格裡的字', options: shuffle(['on', 'in', 'at', 'to']), answer: 'on', speakText: Q, why: `星期幾前面一律用 on：on ${d.en}。` }));
-        reg('onT', `${base}:on:${key}:type`, 'tb-fill-type', Q, () => ({ prompt: sen(p, s, d, true, 'on'), sub: '打出空格裡的字', input: 'type', options: null, answer: 'on', alts: [], speakText: Q, why: `星期幾前面一律用 on：on ${d.en}。` }));
-        reg('ask', `${base}:ask:${key}`, 'tb-ask-type', Q, () => ({ prompt: `問${p.k === 'you' ? '對方（你）' : p.zh}：${d.zh}有沒有${s.zh}課？`, sub: `提示：${p.en}／${s.en}／${d.en}　用鍵盤打出問句`, input: 'type', options: null, answer: Q, alts: alts.slice(), speakText: Q, why: whyP(p) }));
-        reg('ro', `${base}:ro:${key}`, 'reorder', Q, () => ({ prompt: zq, sub: '把字卡排成正確的英文句子', input: 'chips', options: chips(Q), answer: Q, speakText: Q, why: whyP(p) }));
-        reg('sp', `${base}:sp:${key}`, 'speak', Q, () => ({ prompt: Q, en: true, sub: zq, input: 'mic', play: true, options: null, answer: Q, alts: alts.slice(), speakMode: 'sentence', speakText: Q, why: whyP(p) }));
-        reg('zh', `${base}:zh:${key}`, 'zh2en-type', Q, () => ({ prompt: zq, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: Q, alts: alts.slice(), speakText: Q, why: whyP(p) }));
-        // 聽力：聽英文問句，選意思對的中文（干擾＝換科目／換星期／換人稱各一個）
-        reg('li', `${base}:li:${key}`, 'tb-listen', Q, () => ({ prompt: '聽聽看，選出意思對的中文', options: shuffle([zq, zhQ(p, other(subs, s), d), zhQ(p, s, other(days, d)), zhQ(other(ppl, p), s, d)]), answer: zq, speakText: Q, auto: true, play: true, why: `${Q}＝${zq}` }));
-        // 回答問句（⭕ 有／❌ 沒有）：選擇＋打字；干擾＝助動詞用錯、相反的回答、人稱用錯
-        [true, false].forEach(yes => {
-          const right = short(p.ans, p.aux, yes), cue = yes ? '⭕ 有' : '❌ 沒有', yn = yes ? 'y' : 'n';
-          const o = ppl.find(x => x.k === p.other) || p;
-          const wrong = [short(p.ans, p.aux === 'Do' ? 'Does' : 'Do', yes), short(p.ans, p.aux, !yes), short(o.k === 'you' ? 'you' : o.ans, o.k === 'you' ? 'Do' : o.aux, yes)];
-          reg('ans', `${base}:ans:${key}:${yn}`, 'tb-answer', `${Q} → ${right}`, () => ({ prompt: Q, en: true, play: true, sub: `（${cue}）選出正確的回答`, options: shuffle([right].concat(wrong)), answer: right, speakText: Q, why: whyP(p) }), { yes });
-          reg('anst', `${base}:anst:${key}:${yn}`, 'tb-answer-type', `${Q} → ${right}`, () => ({ prompt: Q, en: true, play: true, sub: `（${cue}）打出簡答`, input: 'type', options: null, answer: right, alts: [right.replace(',', '')], speakText: Q, why: whyP(p) }), { yes });
+      const F = this.tbq[u.id] = {}, BF = this.tbBlank[u.id] = [], base = `tb:${u.id}`, topic = u.id;
+      const reg = (fam, id, type, title, card, make, extra) => { add(Object.assign({ id, module: 'textbook', topic, type, title, setOnly: true, card }, extra || {}), make); (F[fam] = F[fam] || []).push(id); };
+      const sents = u.sents || [], byG = {};
+      sents.forEach(x => { (byG[x.g || ''] = byG[x.g || ''] || []).push(x); });
+      sents.forEach(x => {
+        const why = x.why || u.why || '', alts = x.alts || [], k = x.key;
+        (x.blanks || []).forEach(bl => {
+          const re = new RegExp("(^|[^A-Za-z'])" + escRe(bl.w) + "(?![A-Za-z'])"), prompt = x.en.replace(re, (m, pre) => pre + '___');
+          const cue = bl.cue ? `（${bl.cue}）` : '', bw = bl.why || why;
+          if (!BF.includes(bl.fam)) BF.push(bl.fam);
+          reg(bl.fam, `${base}:${bl.fam}:${k}`, 'tb-fill', x.en, k, () => ({ prompt, sub: cue + '選出空格裡的字', options: shuffle(bl.opts), answer: bl.w, speakText: x.en, why: bw }));
+          reg(bl.fam + 'T', `${base}:${bl.fam}:${k}:type`, 'tb-fill-type', x.en, k, () => ({ prompt, sub: cue + (bl.hint ? `打出空格裡的字（提示：${bl.hint}）` : '打出空格裡的字'), input: 'type', options: null, answer: bl.w, alts: (bl.alts || []).slice(), speakText: x.en, why: bw }));
         });
-      })));
+        if (x.ask) reg('ask', `${base}:ask:${k}`, 'tb-ask-type', x.en, k, () => ({ prompt: x.ask.prompt, sub: `${x.ask.hint ? `提示：${x.ask.hint}　` : ''}用鍵盤打出${/\?$/.test(x.en) ? '問句' : '句子'}`, input: 'type', options: null, answer: x.en, alts: alts.slice(), speakText: x.en, why }));
+        reg('ro', `${base}:ro:${k}`, 'reorder', x.en, k, () => ({ prompt: x.zh, sub: '把字卡排成正確的英文句子', input: 'chips', options: chips(x.en), answer: x.en, speakText: x.en, why }));
+        reg('sp', `${base}:sp:${k}`, 'speak', x.en, k, () => ({ prompt: x.en, en: true, sub: x.zh, input: 'mic', play: true, options: null, answer: x.en, alts: alts.slice(), speakMode: 'sentence', speakText: x.en, why }));
+        reg('zh', `${base}:zh:${k}`, 'zh2en-type', x.en, k, () => ({ prompt: x.zh, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: x.en, alts: alts.slice(), speakText: x.en, why }));
+        // 聽力：聽英文，選意思對的中文（干擾＝同一組的其他句子，中文不一樣的才算）
+        reg('li', `${base}:li:${k}`, 'tb-listen', x.en, k, () => {
+          const pool = byG[x.g || ''].length > 3 ? byG[x.g || ''] : sents, zs = [];
+          shuffle(pool).forEach(y => { if (zs.length < 3 && y.zh !== x.zh && !zs.includes(y.zh)) zs.push(y.zh); });
+          return { prompt: '聽聽看，選出意思對的中文', options: shuffle([x.zh].concat(zs)), answer: x.zh, speakText: x.en, auto: true, play: true, why: `${x.en}＝${x.zh}` };
+        });
+      });
+      // 回答問句（看 cue：⭕ 有／❌ 沒有、圖示）：選擇＋打字
+      (u.replies || []).forEach(r => {
+        const why = r.why || u.why || '', alts = (r.alts || []).concat(/,/.test(r.en) ? [r.en.replace(/,/g, '')] : []);
+        reg('ans', `${base}:ans:${r.key}`, 'tb-answer', `${r.q} → ${r.en}`, r.card || r.key, () => ({ prompt: r.q, en: true, play: true, sub: `（${r.cue}）選出正確的回答`, options: shuffle([r.en].concat(r.wrong)), answer: r.en, speakText: r.q, why }), { kind: r.kind });
+        reg('anst', `${base}:anst:${r.key}`, 'tb-answer-type', `${r.q} → ${r.en}`, r.card || r.key, () => ({ prompt: r.q, en: true, play: true, sub: `（${r.cue}）打出回答`, input: 'type', options: null, answer: r.en, alts: alts.slice(), speakText: r.q, why }), { kind: r.kind });
+      });
       // 情境對話：每句重組／🎤／中翻英打字；情境選擇題
       ((u.dialog && u.dialog.lines) || []).forEach((l, i) => {
         const why = `情境對話：${l.en}（${l.zh}）`;
-        reg('dlro', `${base}:dl:${i}:reorder`, 'reorder', l.en, () => ({ prompt: l.zh, sub: '把字卡排成正確的英文句子', input: 'chips', options: chips(l.en), answer: l.en, speakText: l.en, why }));
-        reg('dlsp', `${base}:dl:${i}:speak`, 'speak', l.en, () => ({ prompt: l.en, en: true, sub: l.zh, input: 'mic', play: true, options: null, answer: l.en, alts: (l.alts || []).slice(), speakMode: 'sentence', speakText: l.en, why }));
-        reg('dlty', `${base}:dl:${i}:type`, 'zh2en-type', l.en, () => ({ prompt: l.zh, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: l.en, alts: (l.alts || []).slice(), speakText: l.en, why }));
+        reg('dlro', `${base}:dl:${i}:reorder`, 'reorder', l.en, null, () => ({ prompt: l.zh, sub: '把字卡排成正確的英文句子', input: 'chips', options: chips(l.en), answer: l.en, speakText: l.en, why }));
+        reg('dlsp', `${base}:dl:${i}:speak`, 'speak', l.en, null, () => ({ prompt: l.en, en: true, sub: l.zh, input: 'mic', play: true, options: null, answer: l.en, alts: (l.alts || []).slice(), speakMode: 'sentence', speakText: l.en, why }));
+        reg('dlty', `${base}:dl:${i}:type`, 'zh2en-type', l.en, null, () => ({ prompt: l.zh, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: l.en, alts: (l.alts || []).slice(), speakText: l.en, why }));
       });
-      ((u.dialog && u.dialog.choose) || []).forEach(c => reg('dc', `${base}:dc:${c.id}`, 'tb-answer', `${c.prompt} → ${c.answer}`, () => ({ prompt: c.prompt, en: /[a-z]/i.test(c.prompt), play: /[a-z]/i.test(c.prompt), sub: c.sub, options: shuffle(c.options), answer: c.answer, speakText: /[a-z]/i.test(c.answer) ? c.answer : c.prompt, why: c.why || '' })));
+      ((u.dialog && u.dialog.choose) || []).forEach(c => reg('dc', `${base}:dc:${c.id}`, 'tb-answer', `${c.prompt} → ${c.answer}`, null, () => ({ prompt: c.prompt, en: /[a-z]/i.test(c.prompt), play: /[a-z]/i.test(c.prompt), sub: c.sub, options: shuffle(c.options), answer: c.answer, speakText: /[a-z]/i.test(c.answer) ? c.answer : c.prompt, why: c.why || '' })));
     });
 
     // ---- 每個學習項目的固定題組（全部答對過才能按「學會了」）----
@@ -384,33 +387,47 @@
       const has = x => (x.tb || []).includes(unitId), D = this.D;
       return { words: D.words.filter(has), phrases: D.phrases.filter(has), patterns: D.patterns.filter(has), grammar: D.grammar.filter(has) };
     },
-    // 從某一類專屬題隨機挑 n 題；同一輪裡「人稱＋科目＋星期」不重複（重組和中翻英不會剛好是同一句、互相洩答案）
-    tbPick(unitId, fam, n, used, f) {
-      const out = [];
-      for (const id of shuffle((this.tbq[unitId] || {})[fam] || [])) {
-        if (out.length >= n) break;
-        if (f && !f(id)) continue;
-        const c = id.split(':').slice(3, 6).join(':');
-        if (/^tb:[^:]+:(dd|on|ask|ro|sp|zh|li|ans|anst):/.test(id)) { if (used.has(c)) continue; used.add(c); }
-        out.push(id);
+    // 從某幾類專屬題隨機挑 n 題（前一類不夠再用下一類）；同一輪裡同一個 card（同一句）不重複，重組和中翻英不會剛好是同一句、互相洩答案
+    tbPick(unitId, fams, n, used, f) {
+      // 句子少的單元（例如星期只有 15 句）同一句全用過了：第二輪只要求「同一題不重複」
+      const out = [], F = this.tbq[unitId] || {};
+      for (const strict of [true, false]) {
+        for (const fam of [].concat(fams)) {
+          for (const id of shuffle(F[fam] || [])) {
+            if (out.length >= n) return out;
+            if ((f && !f(id)) || used.has('#' + id)) continue;
+            const c = this.byId[id].card;
+            if (strict && c != null && used.has(c)) continue;
+            if (c != null) used.add(c);
+            used.add('#' + id); out.push(id);
+          }
+        }
       }
       return out;
     },
-    // ✏️ 專屬題一輪（練習）：聽力 1、選 Do／Does 2、選短答 2、重組 2、情境 1、🎤 1（裝置支援才出）、填 on 1、打短答 1、造問句 2
+    // 空格題：各種空格輪流挑（Do／Does、on、be 動詞…不會全是同一種）；typed＝打字版
+    tbBlanks(unitId, n, used, typed) {
+      const fams = shuffle(this.tbBlank[unitId] || []), out = [];
+      for (let round = 0; out.length < n && round < n; round++) fams.forEach(fm => { if (out.length < n) out.push(...this.tbPick(unitId, fm + (typed ? 'T' : ''), 1, used)); });
+      return out;
+    },
+    // ✏️ 專屬題一輪（練習）：聽力 1、選空格 2、選回答 2、重組 2、情境 1（沒有就再一題重組）、🎤 1（裝置支援才出）、打空格 1、打回答 1、造句 2
     // 順序：選擇類洗牌 → 🎤 → 打字（同「練習這組」）；回傳題目物件
     tbPractice(unitId, o) {
-      const used = new Set(), P = (fam, n, f) => this.tbPick(unitId, fam, n, used, f);
-      const ids = [].concat(P('li', 1), P('dd', 2), P('ans', 2), P('ro', 2), P('dc', 1), o && o.speak ? P('sp', 1) : [], P('onT', 1), P('anst', 1), P('ask', 2));
+      const used = new Set(), P = (fams, n, f) => this.tbPick(unitId, fams, n, used, f);
+      const ids = [].concat(P('li', 1), this.tbBlanks(unitId, 2, used), P('ans', 2), P('ro', 2), P(['dc', 'ro'], 1), o && o.speak ? P('sp', 1) : [], this.tbBlanks(unitId, 1, used, true), P('anst', 1), P(['ask', 'zh'], 2));
       return drillOrder(ids.map(id => this.get(id)).filter(Boolean));
     },
     // 📝 考試：20 題（每題 5 分），照段考順序分六大題，每次隨機組合；不出 🎤
-    // 聽力 4（單字聽音選字 2＋句子聽力 2）、選擇 5、填空 3（Do／Does、on、單字填空拼字）、重組 3、中翻英 3（單字 1＋句子 2）、回答問句 2（⭕ 一題、❌ 一題）
+    // 聽力 4（單字聽音選字 2＋句子聽力 2）、選擇 5（選空格 3、選回答 1、情境或選回答 1）、填空 3（打空格 2、單字填空拼字 1）、
+    // 重組 3（句子 2、對話或句子 1）、中翻英 3（單字 1＋句子 2）、回答問句 2（打字，兩題的 kind 不同：⭕／❌…）
     tbExam(unitId) {
-      const used = new Set(), P = (fam, n, f) => this.tbPick(unitId, fam, n, used, f);
+      const used = new Set(), P = (fams, n, f) => this.tbPick(unitId, fams, n, used, f);
       const wk = shuffle(this.tbItems(unitId).words.map(wordKey)), W = (t, n) => wk.splice(0, n).map(k => `w:${k}:${t}`);
-      const secs = [['一、聽力', W('listen', 2).concat(P('li', 2))], ['二、選擇', P('dd', 2).concat(P('on', 1), P('ans', 1), P('dc', 1))],
-        ['三、填空', P('ddT', 1).concat(P('onT', 1), W('gap1', 1))], ['四、重組', P('ro', 2).concat(P('dlro', 1))],
-        ['五、中翻英', W('type', 1).concat(P('zh', 2))], ['六、回答問句', P('anst', 1, id => /:y$/.test(id)).concat(P('anst', 1, id => /:n$/.test(id)))]];
+      const a1 = P('anst', 1), k1 = a1.length ? this.byId[a1[0]].kind : null, a2 = P('anst', 1, id => this.byId[id].kind !== k1);
+      const secs = [['一、聽力', W('listen', 2).concat(P('li', 2))], ['二、選擇', this.tbBlanks(unitId, 3, used).concat(P('ans', 1), P(['dc', 'ans'], 1))],
+        ['三、填空', this.tbBlanks(unitId, 2, used, true).concat(W('gap1', 1))], ['四、重組', P('ro', 2).concat(P(['dlro', 'ro'], 1))],
+        ['五、中翻英', W('type', 1).concat(P('zh', 2))], ['六、回答問句', a1.concat(a2.length ? a2 : P('anst', 1))]];
       // 不給提示：聽力以外的題不放 🔊（填空拼字、打字題的發音等於提示）
       return secs.flatMap(([sec, ids]) => shuffle(ids).map(id => this.get(id)).filter(Boolean).map(q => Object.assign(q, { sec, pts: 5 }, sec === secs[0][0] ? {} : { play: false, auto: false })));
     },

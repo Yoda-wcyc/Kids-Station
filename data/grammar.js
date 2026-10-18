@@ -2,7 +2,7 @@
    題組會把幾題填空改成「打字」（看不到選項）：答案不唯一時加 hint（原形字或中文意思，顯示在打字題提示裡），
    或把其他也對的答案放 alts（不可出現在 opts 裡，選擇題才不會兩個都對）。2026-10-18 */
 window.DATA_GRAMMAR = [
-{id:"be",title:"be 動詞 am / is / are",
+{id:"be",tb:["hanlin-5-u3"],title:"be 動詞 am / is / are",
  rules:["I 配 am。","he、she、it，或「一個」人／東西，配 is。","you、we、they，或「兩個以上」，配 are。","過去式：am、is → was；are → were。"],
  ex:[{en:"I am ten years old.",zh:"我十歲。"},{en:"They are my friends.",zh:"他們是我的朋友。"},{en:"The cat is very cute.",zh:"這隻貓很可愛。"}],
  q:[
@@ -20,7 +20,7 @@ window.DATA_GRAMMAR = [
  {"type":"fill","s":"I ___ happy now.","a":"am","opts":["am","is","are","be"],"why":"I 配 am。"},
  {"type":"fix","wrong":"We is in the classroom.","right":"We are in the classroom.","why":"We 是「我們」很多人，用 are。"}],
  typed:[{"zh":"我是一個學生。","en":"I am a student.","alts":["I'm a student."]},{"zh":"他們在公園裡。","en":"They are in the park.","alts":["They're in the park."]}]},
-{id:"present",title:"現在簡單式（第三人稱單數加 s）",
+{id:"present",tb:["hanlin-5-u4","hanlin-6-u2"],title:"現在簡單式（第三人稱單數加 s）",
  rules:["每天、常常會做的事，用現在簡單式。","主詞是 he、she、it 或「一個」人／東西時，動詞要加 s 或 es。","字尾是 s、sh、ch、x、o 的動詞加 es：go → goes、watch → watches。","子音＋y 結尾：去 y 加 ies，study → studies；have 要變成 has。"],
  ex:[{en:"She goes to school by bus.",zh:"她搭公車上學。"},{en:"My dad watches TV every night.",zh:"我爸爸每天晚上看電視。"},{en:"I play basketball after school.",zh:"我放學後打籃球。"}],
  q:[
@@ -92,7 +92,7 @@ window.DATA_GRAMMAR = [
  {"type":"fill","s":"Will you ___ to my party?","a":"come","hint":"來","opts":["come","comes","came","coming"],"why":"Will 後面的動詞用原形 come。"},
  {"type":"fix","wrong":"I will visiting Grandma tomorrow.","right":"I will visit Grandma tomorrow.","why":"will 後面直接接動詞原形，不加 ing。"}],
  typed:[{"zh":"明天會下雨。","en":"It will rain tomorrow.","alts":["It'll rain tomorrow.","It is going to rain tomorrow.","It's going to rain tomorrow."]},{"zh":"我明天要去游泳。","en":"I am going to swim tomorrow.","alts":["I'm going to swim tomorrow.","I will swim tomorrow.","I'll swim tomorrow.","I am going to go swimming tomorrow.","I'm going to go swimming tomorrow."]}]},
-{id:"plural",title:"名詞單數和複數",
+{id:"plural",tb:["hanlin-6-u1"],title:"名詞單數和複數",
  rules:["一個用單數；兩個以上用複數，通常加 s：cat → cats。","字尾是 s、sh、ch、x 的加 es：box → boxes、watch → watches。","子音＋y 結尾：去 y 加 ies：baby → babies。","特別的要背：man → men、child → children、foot → feet、tooth → teeth、mouse → mice、sheep → sheep。"],
  ex:[{en:"I have two brothers.",zh:"我有兩個哥哥。"},{en:"There are three boxes on the desk.",zh:"書桌上有三個箱子。"},{en:"The children are playing.",zh:"孩子們正在玩。"}],
  q:[
@@ -110,7 +110,7 @@ window.DATA_GRAMMAR = [
  {"type":"fill","s":"Many ___ are in the box.","a":"toys","hint":"toy","opts":["toy","toys","toies","toyes"],"why":"toy 是母音 o＋y 結尾，直接加 s：toys。"},
  {"type":"fix","wrong":"The childs are happy.","right":"The children are happy.","why":"child 的複數是 children，不加 s。"}],
  typed:[{"zh":"我有兩隻貓。","en":"I have two cats."},{"zh":"桌上有三個箱子。","en":"There are three boxes on the table."}]},
-{id:"article",title:"冠詞 a / an / the",
+{id:"article",tb:["hanlin-6-u3"],title:"冠詞 a / an / the",
  rules:["a 和 an 用在「一個」可以數的東西前面。","子音開頭用 a：a cat、a book。","母音的音開頭（a、e、i、o、u 的音）用 an：an apple、an egg。","大家都知道是哪一個、第二次提到，或世界上只有一個的東西，用 the：the sun。"],
  ex:[{en:"I have an apple and a banana.",zh:"我有一顆蘋果和一根香蕉。"},{en:"The sun is very hot today.",zh:"今天太陽很大。"},{en:"I see a cat. The cat is black.",zh:"我看到一隻貓。那隻貓是黑色的。"}],
  q:[
@@ -128,7 +128,7 @@ window.DATA_GRAMMAR = [
  {"type":"fill","s":"She has ___ new bike.","a":"a","hint":"一台","opts":["a","an","two","many"],"why":"new 是子音 n 開頭，用 a。"},
  {"type":"fix","wrong":"I have an book.","right":"I have a book.","why":"book 是子音 b 開頭，用 a。"}],
  typed:[{"zh":"我有一顆蘋果。","en":"I have an apple."},{"zh":"太陽很熱。","en":"The sun is hot."}]},
-{id:"pronoun",title:"代名詞：主格、受格、所有格",
+{id:"pronoun",tb:["hanlin-6-u1","hanlin-6-u4"],title:"代名詞：主格、受格、所有格",
  rules:["主格當主詞，放在動詞前面：I、you、he、she、it、we、they。","受格放在動詞或介系詞後面：me、you、him、her、it、us、them。","所有格是「…的」，後面要接名詞：my、your、his、her、its、our、their。","一組一組記：I-me-my、he-him-his、she-her-her、we-us-our、they-them-their。"],
  ex:[{en:"He likes me.",zh:"他喜歡我。"},{en:"This is her bag.",zh:"這是她的包包。"},{en:"We play with them every day.",zh:"我們每天跟他們玩。"}],
  q:[
@@ -200,7 +200,7 @@ window.DATA_GRAMMAR = [
  {"type":"fill","s":"___ I use your pen?","a":"Can","alts":["May", "Could"],"opts":["Can","Am","Is","Are"],"why":"問「我可以…嗎？」把 Can 放句首。"},
  {"type":"fix","wrong":"He should eats more vegetables.","right":"He should eat more vegetables.","why":"should 後面的動詞用原形，不加 s。"}],
  typed:[{"zh":"我會游泳。","en":"I can swim."},{"zh":"你應該多喝水。","en":"You should drink more water."}]},
-{id:"wh",title:"疑問詞 What / Who / Where / When / Why / How",
+{id:"wh",tb:["hanlin-5-u1"],title:"疑問詞 What / Who / Where / When / Why / How",
  rules:["What 什麼、Who 誰、Where 哪裡、When 什麼時候、Why 為什麼、How 怎麼樣。","How many 多少個、How old 幾歲、Which 哪一個。","疑問詞放在句子最前面：Where do you live?"],
  ex:[{en:"What is your name?",zh:"你叫什麼名字？"},{en:"Where do you live?",zh:"你住在哪裡？"},{en:"How old are you?",zh:"你幾歲？"}],
  q:[
@@ -219,7 +219,7 @@ window.DATA_GRAMMAR = [
  {"type":"fix","wrong":"Who is you?","right":"Who are you?","why":"you 要配 are。"}],
  typed:[{"zh":"你叫什麼名字？","en":"What is your name?","alts":["What's your name?"]},{"zh":"你住在哪裡？","en":"Where do you live?"}]},
 /* ---- 2026-10-18 擴充：there 存在句、be 動詞過去式、可數／不可數、頻率副詞（每個主題 15 題 fill/fix＋2 題打字）---- */
-{id:"there-be",title:"There is / are / was / were（某處有…）",
+{id:"there-be",tb:["hanlin-5-u4"],title:"There is / are / was / were（某處有…）",
  rules:["「某個地方有…」用 There is / There are，不要用 have。","一個，或不可數的東西（water、milk）用 There is；兩個以上用 There are。","過去（yesterday、last night）用 There was / There were。","問句把 is / are / was / were 移到 there 前面：Is there…? Are there…?；否定加 not：There isn't / There aren't。","問「有多少」：How many ＋複數名詞＋are there…?"],
  ex:[{"en":"There is a cat under the table.","zh":"桌子下面有一隻貓。"},{"en":"There are thirty students in my class.","zh":"我們班有三十個學生。"},{"en":"There was a big tree in the park.","zh":"（那時）公園裡有一棵大樹。"}],
  q:[
@@ -259,7 +259,7 @@ window.DATA_GRAMMAR = [
  {"type":"fix","wrong":"We was late for school yesterday.","right":"We were late for school yesterday.","why":"We 配 were。"},
  {"type":"fix","wrong":"The movie is boring last night.","right":"The movie was boring last night.","why":"last night 是過去，is 要改成 was。"}],
  typed:[{"zh":"他們昨天在公園。","en":"They were in the park yesterday.","alts":["They were at the park yesterday.","Yesterday they were in the park.","Yesterday, they were in the park.","Yesterday they were at the park.","Yesterday, they were at the park."]},{"zh":"你昨晚在家嗎？","en":"Were you at home last night?","alts":["Were you home last night?"]}]},
-{id:"countable",title:"可數／不可數：How many / How much、some / any",
+{id:"countable",tb:["hanlin-6-u3"],title:"可數／不可數：How many / How much、some / any",
  rules:["可以一個一個數的（apple、book、student）是可數名詞，兩個以上要變複數。","不能一個一個數的（water、milk、rice、money、bread）是不可數名詞：不加 s，也不用 a / an。","問數量：How many ＋複數名詞；問多少量或多少錢：How much ＋不可數名詞。","肯定句用 some；否定句和問句通常用 any（請別人吃喝的問句用 some：Would you like some tea?）。","不可數名詞要數的時候加單位：a glass of water、a piece of cake、a bowl of rice。"],
  ex:[{"en":"How many apples do you have?","zh":"你有幾顆蘋果？"},{"en":"How much milk do you want?","zh":"你要多少牛奶？"},{"en":"I have some bread, but I don't have any milk.","zh":"我有一些麵包，但是沒有牛奶。"}],
  q:[

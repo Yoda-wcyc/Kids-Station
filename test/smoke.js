@@ -56,9 +56,11 @@ G.forEach(g => {
     else { ok(q.type === 'fix' && q.wrong && q.right && q.wrong !== q.right, 'fix ' + q.right); }
   });
 });
-ok(P.length === 92 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 92 with 5 examples each'); // 2026-10-18 +2（翰林五 Unit 2）
-ok(new Set(P.map(p => p.id)).size === 92, 'pattern ids unique');
-ok(P.filter(p => p.lv === 1).length === 39 && P.filter(p => p.lv === 2).length === 31 && P.filter(p => p.lv === 3).length === 22, 'pattern levels 39/31/22');
+ok(P.length === 105 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 105 with 5 examples each'); // 2026-10-18 +2（翰林五上 Unit 2）＋13（翰林五上 U1/U3/U4、五下 U1–U4）
+ok(new Set(P.map(p => p.id)).size === 105, 'pattern ids unique');
+ok(P.filter(p => p.lv === 1).length === 50 && P.filter(p => p.lv === 2).length === 33 && P.filter(p => p.lv === 3).length === 22, 'pattern levels 50/33/22');
+// 課本句型：同一個句型裡的中文不重複（看中文選句子才不會兩個都對）
+P.filter(p => p.tb).forEach(p => { const z = p.ex.concat(p.extra).map(e => e.zh); ok(new Set(z).size === z.length, 'textbook pattern zh unique: ' + p.id); });
 ['there-is', 'want-to', 'like-ing', 'time-to', 'how-many', 'can-you', 'lets', 'have-to', 'it-is-to', 'what-do', 'i-think', 'dont'].forEach(id => ok(P.find(p => p.id === id && p.lv === 2), 'original pattern kept as 基本: ' + id));
 P.forEach(p => { const all = p.ex.concat(p.extra).map(e => e.en); ok(new Set(all).size === all.length, 'no duplicate sentences in ' + p.id); });
 P.forEach(p => p.typed.concat(p.extra).forEach(t => (t.alts || []).forEach(a => ok(a !== t.en && /^[A-Z]/.test(a), 'alt ok ' + a))));
@@ -73,7 +75,7 @@ P.forEach(p => ok(p.extra.length === 3 && p.extra.every(e => e.en && e.zh) && p.
 // ---- 引擎 ----
 // ---- 片語資料 ----
 const PH_TAGS = ['動詞片語', '介系詞片語', '時間', '地點', '日常用語', '形容詞片語'];
-ok(PH.length >= 340 && PH.length <= 360, 'phrases ~350: ' + PH.length);
+ok(PH.length >= 340 && PH.length <= 370, 'phrases ~350（+6 課本日常用語）: ' + PH.length);
 ok(new Set(PH.map(p => p.id)).size === PH.length, 'phrase ids unique');
 ok(new Set(PH.map(p => p.p.toLowerCase())).size === PH.length, 'phrases unique');
 ok(new Set(PH.map(p => p.zh)).size === PH.length, 'phrase zh unique (en2zh options never ambiguous)');
@@ -211,50 +213,80 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
   ok(E.get('g:plural:11:speak').answer === 'Many toys are in the box.' && E.get('g:plural:11').title === 'Many toys are in the box.', 'hint does not leak into sentence / speak');
 }
 
-// ---- 📘 課本單元（2026-10-18 翰林五年級 Unit 2）----
+// ---- 📘 課本單元（2026-10-18 翰林 Here We Go! 五上／五下）----
 {
+  const IDS = ['hanlin-5-u1', 'hanlin-5-u2', 'hanlin-5-u3', 'hanlin-5-u4', 'hanlin-6-u1', 'hanlin-6-u2', 'hanlin-6-u3', 'hanlin-6-u4'];
+  ok(TBK.map(x => x.id).join() === IDS.join() && new Set(TBK.map(x => x.id)).size === TBK.length, 'textbook units in book/unit order: ' + TBK.map(x => x.id));
+  ok(TBK.every(u => u.id === 'hanlin-5-u2' ? !u.draft : u.draft === true), 'draft flag: all units except U2 (Yoda textbook) are 待課本核對');
+  const SECS = ['一、聽力', '二、選擇', '三、填空', '四、重組', '五、中翻英', '六、回答問句'];
+  TBK.forEach(u => {
+    const U = u.id, it = E.tbItems(U), tag = ' [' + U + ']';
+    ok(E.tbUnit(U) === u && /^五[上下] Unit \d /.test(u.title) && u.groups.length >= 2, 'unit title / groups' + tag);
+    // 分組裡的每個字都有 tb 標記，有 tb 標記的字都在分組裡（不重複新增：一個字只有一筆）
+    const wk = it.words.map(KE.wordKey).sort().join(), gw = u.groups.flatMap(g => g.words || []), gp = u.groups.flatMap(g => g.phrases || []);
+    ok(gw.slice().sort().join() === wk && gp.slice().sort().join() === it.phrases.map(x => x.id).sort().join() && new Set(gw).size === gw.length, 'unit groups == tb-tagged words/phrases' + tag + ' ' + wk);
+    ok(gw.concat(gp).every(k => (u.tz || {})[k]), 'every unit word has textbook zh (tz)' + tag);
+    ok(u.patterns.join() === it.patterns.map(x => x.id).join() && u.patterns.length >= 1 && u.grammar.slice().sort().join() === it.grammar.map(g => g.id).sort().join(), 'unit def patterns/grammar match tb tags' + tag);
+    it.patterns.forEach(pt => ok(E.sets[KE.patternItemId(pt)].length === 15, 'pattern set 15 ' + pt.id));
+    // 句子與問答的資料品質
+    const sk = u.sents.map(x => x.key), rk = u.replies.map(x => x.key);
+    ok(new Set(sk).size === sk.length && new Set(rk).size === rk.length && u.sents.length >= 8 && u.replies.length >= 8, 'sents / replies keys unique' + tag);
+    u.sents.forEach(x => { ok(x.en && x.zh && /^[A-Z]/.test(x.en) && /[.?!]$/.test(x.en), 'sent shape ' + x.key + tag); (x.blanks || []).forEach(bl => ok(bl.opts.length === 4 && new Set(bl.opts).size === 4 && bl.opts.includes(bl.w), 'blank opts ' + x.key + ' ' + bl.fam + tag)); });
+    u.replies.forEach(r => ok(r.q && r.cue && r.kind && r.wrong.length === 3 && new Set(r.wrong.concat(r.en)).size === 4, 'reply wrong options distinct ' + r.key + tag));
+    E.meta.filter(m => m.module === 'textbook' && m.topic === U).forEach(m => {
+      const q = m.make();
+      if (q.options && q.input !== 'chips') ok(q.options.length === 4 && new Set(q.options).size === 4 && q.options.includes(q.answer), 'tb options ' + q.id);
+      if (m.type === 'tb-fill' || m.type === 'tb-fill-type') ok((q.prompt.match(/___/g) || []).length === 1, 'one blank ' + q.id + ' ' + q.prompt);
+      ok(E.check(q, q.answer).ok && (q.alts || []).every(x => E.check(q, x).ok), 'tb self/alts ' + q.id);
+      if (KE.isTyped(q)) { const full = KE.expandContr(q.answer); if (full !== q.answer.toLowerCase()) ok(E.check(q, full).ok && E.check(q, full.toUpperCase()).ok, 'tb typed accepts expansion: ' + q.id + ' → ' + full); }
+      if (/^tb:[^:]+:anst?:/.test(q.id)) ok(!q.speakText.includes(q.answer), 'short-answer audio does not read the answer ' + q.id);
+    });
+    // 專屬題（練習）：一輪 12 題＋🎤 1 題（裝置支援才出）；選擇類在前、🎤、打字最後；同一輪同一句（card）不重複
+    for (let k = 0; k < 10; k++) {
+      const a = E.tbPractice(U, { speak: true }), b = E.tbPractice(U, { speak: false }), rank = a.map(KE.typedRank);
+      const cards = a.map(q => E.byId[q.id].card).filter(c => c != null);
+      ok(a.length === 13 && b.length === 12 && !b.some(q => q.type === 'speak') && rank.every((r, i) => !i || r >= rank[i - 1]) && (u.sents.length < 30 || new Set(cards).size === cards.length) && a.every(q => q.module === 'textbook'), 'tbPractice 13/12, typed last, cards unique' + tag);
+      ok(['tb-fill', 'tb-fill-type', 'tb-answer', 'tb-answer-type', 'reorder', 'speak', 'tb-listen'].every(t => a.some(q => q.type === t)), 'tbPractice covers blanks, answers, reorder, speak, listening' + tag);
+    }
+    // 考試：20 題、每題 5 分、六大題照順序、不出 🎤、每次隨機；回答問句兩題的 kind 不同
+    const ex1 = E.tbExam(U), ex2 = E.tbExam(U);
+    for (let k = 0; k < 15; k++) {
+      const ex = E.tbExam(U), secs = [...new Set(ex.map(q => q.sec))], cnt = SECS.map(s => ex.filter(q => q.sec === s).length);
+      ok(ex.length === 20 && ex.reduce((s, q) => s + q.pts, 0) === 100 && secs.join() === SECS.join() && cnt.join() === '4,5,3,3,3,2' && !ex.some(q => q.type === 'speak') && new Set(ex.map(q => q.id)).size === 20, 'tbExam 20 / 100 pts / sections ' + cnt + tag);
+      ok(ex.filter(q => q.sec === '一、聽力').every(q => q.auto && q.play && q.options) && ex.filter(q => q.sec !== '一、聽力').every(q => !q.play && !q.auto) && ex.filter(q => q.module === 'words').every(q => it.words.some(w => q.id.split(':')[1] === KE.wordKey(w))), 'tbExam listening auto-plays only; word questions are unit words' + tag);
+      const kinds = ex.filter(q => q.sec === '六、回答問句').map(q => E.byId[q.id].kind);
+      ok(kinds.length === 2 && kinds[0] !== kinds[1] && ex.every(q => E.check(q, q.answer).ok), 'tbExam answer section: 2 different kinds; self-check' + tag);
+    }
+    ok(ex1.map(q => q.id).join() !== ex2.map(q => q.id).join(), 'tbExam random each time' + tag);
+    ok(E.topicLabel('textbook:' + U) === u.title, 'textbook topic label' + tag);
+  });
+  // ---- 五上 Unit 2（Yoda 提供課本內容）細項 ----
   const U = 'hanlin-5-u2', u = E.tbUnit(U), it = E.tbItems(U);
-  ok(u && u.title === '翰林 五年級 Unit 2' && TBK.length >= 1 && new Set(TBK.map(x => x.id)).size === TBK.length, 'textbook unit exists');
-  const wk = it.words.map(KE.wordKey).sort().join();
-  ok(wk === 'art,chinese,class,english,follow,math,monday,music,park,pe,science,social-studies,thursday,tuesday,wednesday', 'unit words (tb tags): ' + wk);
-  ok(it.phrases.map(p => p.id).join() === 'in-a-hurry' && it.patterns.map(p => p.id).join() === 'do-you-have-class,does-he-have-class' && it.grammar.map(g => g.id).join() === 'do-does-on', 'unit phrase / patterns / grammar');
-  // 分組裡的每個字都有 tb 標記，有 tb 標記的字都在分組裡（不重複新增：一個字只有一筆）
-  const gw = u.groups.flatMap(g => g.words || []), gp = u.groups.flatMap(g => g.phrases || []);
-  ok(gw.slice().sort().join() === wk && gp.join() === 'in-a-hurry' && u.groups.length === 3, 'unit groups == tb-tagged items');
+  ok(u.title === '五上 Unit 2 Do You Have PE Class on Monday?', 'U2 renamed');
+  ok(it.words.map(KE.wordKey).sort().join() === 'art,chinese,class,english,follow,math,monday,music,park,pe,science,social-studies,thursday,tuesday,wednesday', 'U2 unit words (tb tags)');
+  ok(it.phrases.map(p => p.id).join() === 'in-a-hurry' && it.patterns.map(p => p.id).join() === 'do-you-have-class,does-he-have-class' && it.grammar.map(g => g.id).join() === 'do-does-on', 'U2 phrase / patterns / grammar');
   ['art', 'Chinese', 'English', 'math', 'music', 'PE', 'science', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'class', 'park', 'follow'].forEach(w => ok(W.filter(x => x.w === w).length === 1 && W.find(x => x.w === w).src === 'moe1200', 'textbook word not duplicated, kept moe1200: ' + w));
   const ss = W.find(x => x.w === 'social studies'); ok(ss && ss.src === 'textbook' && ss.lv === 2 && E.itemSet('word:social-studies').length === 5, 'social studies added as textbook word');
-  ok(u.patterns.join() === it.patterns.map(p => p.id).join() && u.grammar.join() === it.grammar.map(g => g.id).join(), 'unit def patterns/grammar match tb tags');
-  it.patterns.forEach(p => ok(E.sets[KE.patternItemId(p)].length === 15 && p.ex.concat(p.extra, p.typed).every(e => !/\b(an?|the) (art|Chinese|English|math|music|PE|science|social studies) class\b/.test(e.en)) && p.ex.concat(p.extra, p.typed).every(e => !/\b(monday|tuesday|wednesday|thursday)\b/.test(e.en)), 'pattern 15 + no article before class + days capitalised: ' + p.id));
+  it.patterns.forEach(p => ok(p.ex.concat(p.extra, p.typed).every(e => !/\b(an?|the) (art|Chinese|English|math|music|PE|science|social studies) class\b/.test(e.en)) && p.ex.concat(p.extra, p.typed).every(e => !/\b(monday|tuesday|wednesday|thursday)\b/.test(e.en)), 'no article before class + days capitalised: ' + p.id));
   ok(E.sets['grammar:do-does-on'].length === 15 && E.get('g:do-does-on:13:type').sub.includes('Do 或 Does') && E.check(E.get('g:do-does-on:13:type'), 'does').ok, 'grammar do-does-on set 15 + hints');
   (u.dialog.choose || []).forEach(c => ok(c.options.includes(c.answer) && new Set(c.options).size === 4, 'dialog choose ' + c.id));
-  // 專屬題（練習）：一輪 12 題＋🎤 1 題（裝置支援才出）；選擇類在前、🎤、打字最後；同一輪「人稱＋科目＋星期」不重複
-  for (let k = 0; k < 20; k++) {
-    const a = E.tbPractice(U, { speak: true }), b = E.tbPractice(U, { speak: false }), rank = a.map(KE.typedRank);
-    const combo = a.filter(q => /^tb:[^:]+:(dd|on|ask|ro|sp|li|ans|anst):/.test(q.id)).map(q => q.id.split(':').slice(3, 6).join(':'));
-    ok(a.length === 13 && b.length === 12 && !b.some(q => q.type === 'speak') && rank.every((r, i) => !i || r >= rank[i - 1]) && new Set(combo).size === combo.length && a.every(q => q.module === 'textbook'), 'tbPractice 13/12, typed last, combos unique');
-    ok(['tb-fill', 'tb-fill-type', 'tb-ask-type', 'tb-answer', 'tb-answer-type', 'reorder', 'speak'].every(t => a.some(q => q.type === t)) && a.filter(q => q.type === 'tb-fill-type').every(q => q.answer === 'on'), 'tbPractice covers Do/Does, on, ask, short answer, reorder, speak');
-  }
-  // 考試：20 題、每題 5 分、六大題照順序、不出 🎤、每次隨機
-  const ex1 = E.tbExam(U), ex2 = E.tbExam(U), SECS = ['一、聽力', '二、選擇', '三、填空', '四、重組', '五、中翻英', '六、回答問句'];
-  for (let k = 0; k < 30; k++) {
-    const ex = E.tbExam(U), secs = [...new Set(ex.map(q => q.sec))], cnt = SECS.map(s => ex.filter(q => q.sec === s).length);
-    ok(ex.length === 20 && ex.reduce((s, q) => s + q.pts, 0) === 100 && secs.join() === SECS.join() && cnt.join() === '4,5,3,3,3,2' && !ex.some(q => q.type === 'speak') && new Set(ex.map(q => q.id)).size === 20, 'tbExam 20 / 100 pts / sections ' + cnt);
-    ok(ex.filter(q => q.sec === '一、聽力').every(q => q.auto && q.play && q.options) && ex.filter(q => q.module === 'words').every(q => it.words.some(w => q.id.split(':')[1] === KE.wordKey(w))), 'tbExam listening auto-plays; word questions are unit words');
-    ok(ex.filter(q => q.sec === '六、回答問句').map(q => q.id.slice(-1)).sort().join() === 'n,y' && ex.every(q => E.check(q, q.input === 'gap' ? q.answer : q.answer).ok), 'tbExam answer section one ⭕ one ❌; self-check');
-  }
-  ok(ex1.map(q => q.id).join() !== ex2.map(q => q.id).join(), 'tbExam random each time');
-  ok(ex1.filter(q => q.sec !== '一、聽力').every(q => !q.play && !q.auto) && E.meta.filter(m => /^tb:[^:]+:anst?:/.test(m.id)).every(m => { const q = m.make(); return !q.speakText.includes(q.answer); }), 'exam: no 🔊 hints outside listening; short-answer audio does not read the answer');
-  // 所有打字題：alts、縮寫互收（Yes, I do. / No, I don't. ↔ do not；I'm ↔ I am）、去 class、P.E.、無逗號
-  const tbT = E.meta.filter(m => m.module === 'textbook' && KE.isTyped(m)).map(m => m.make());
-  ok(tbT.length === 96 * 4 + 192 + 3 && tbT.every(q => E.check(q, q.answer).ok && (q.alts || []).every(a => E.check(q, a).ok)), 'tb typed self/alts: ' + tbT.length);
-  tbT.forEach(q => { const full = KE.expandContr(q.answer); if (full !== q.answer.toLowerCase()) ok(E.check(q, full).ok && E.check(q, full.toUpperCase()).ok, 'tb typed accepts expansion: ' + q.id + ' → ' + full); });
+  for (let k = 0; k < 15; k++) ok(E.tbExam(U).filter(q => q.sec === '六、回答問句').map(q => q.id.slice(-1)).sort().join() === 'n,y', 'U2 exam: one ⭕ one ❌');
+  const tbT = E.meta.filter(m => m.module === 'textbook' && m.topic === U && KE.isTyped(m));
+  ok(tbT.length === 96 * 4 + 192 + 3, 'U2 typed questions (same ids as first release): ' + tbT.length);
   const C = id => E.get(id);
   ok(E.check(C('tb:hanlin-5-u2:anst:you:art:tuesday:n'), 'No, I do not.').ok && E.check(C('tb:hanlin-5-u2:anst:you:art:tuesday:n'), "no I don't").ok && !E.check(C('tb:hanlin-5-u2:anst:you:art:tuesday:n'), "No, I doesn't.").ok && E.check(C('tb:hanlin-5-u2:anst:she:art:tuesday:y'), 'yes she does').ok && !E.check(C('tb:hanlin-5-u2:anst:she:art:tuesday:y'), 'Yes, she do.').ok, 'short answers: contraction / comma / wrong aux');
   ok(E.check(C('tb:hanlin-5-u2:ask:he:pe:monday'), 'Does he have P.E. class on Monday?').ok && E.check(C('tb:hanlin-5-u2:zh:you:social-studies:thursday'), 'Do you have social studies on Thursday').ok && !E.check(C('tb:hanlin-5-u2:zh:you:math:monday'), 'Do you have a math class on Monday?').ok && !E.check(C('tb:hanlin-5-u2:zh:he:math:monday'), 'Does he has math class on Monday?').ok && !E.check(C('tb:hanlin-5-u2:zh:he:math:monday'), 'Do he have math class on Monday?').ok, 'ask/zh typed: P.E., drop class ok; article / has / Do he wrong');
   ok(E.check(C('tb:hanlin-5-u2:dl:2:type'), 'I am in a hurry').ok && E.check(C('tb:hanlin-5-u2:dd:she:art:monday:type'), 'does').ok && !E.check(C('tb:hanlin-5-u2:dd:she:art:monday:type'), 'do').ok && E.check(C('tb:hanlin-5-u2:on:he:art:monday:type'), 'ON').ok, "dialog I'm ↔ I am; Do/Does & on typed");
-  ok(C('tb:hanlin-5-u2:dd:you:math:monday').prompt === '___ you have math class on Monday?' && C('tb:hanlin-5-u2:on:she:pe:thursday').prompt === 'Does she have PE class ___ Thursday?' && C('tb:hanlin-5-u2:ans:he:music:wednesday:y').options.slice().sort().join('|') === "No, he doesn't.|Yes, he do.|Yes, he does.|Yes, she does." && C('tb:hanlin-5-u2:ans:you:art:tuesday:n').options.slice().sort().join('|') === "No, I doesn't.|No, I don't.|No, you don't.|Yes, I do.", 'question shapes (textbook style)');
+  ok(C('tb:hanlin-5-u2:dd:you:math:monday').prompt === '___ you have math class on Monday?' && C('tb:hanlin-5-u2:on:she:pe:thursday').prompt === 'Does she have PE class ___ Thursday?' && C('tb:hanlin-5-u2:ans:he:music:wednesday:y').options.slice().sort().join('|') === "No, he doesn't.|Yes, he do.|Yes, he does.|Yes, she does." && C('tb:hanlin-5-u2:ans:you:art:tuesday:n').options.slice().sort().join('|') === "No, I doesn't.|No, I don't.|No, you don't.|Yes, I do.", 'U2 question shapes (textbook style, ids unchanged)');
+  // ---- 其他單元的寫法抽查 ----
+  ok(E.check(C('tb:hanlin-5-u1:anst:n:monday:tuesday'), "No, it is not. It is Tuesday.").ok && !E.check(C('tb:hanlin-5-u1:anst:y:monday'), 'Yes, it does.').ok && C('tb:hanlin-5-u1:isit:q:friday').prompt === '___ it Friday today?', 'U1: Is it … today? / Yes, it is.');
+  ok(C('tb:hanlin-5-u3:pl:go:she:post-office').prompt === "She's going to the ___." && E.check(C('tb:hanlin-5-u3:zh:go:i:park'), 'I am going to the park').ok && !E.check(C('tb:hanlin-5-u3:zh:go:i:park'), "I'm going to park.").ok, 'U3: going to the + place');
+  ok(E.check(C('tb:hanlin-5-u4:anst:hm:3:lion'), 'There are 3 lions.').ok && E.check(C('tb:hanlin-5-u4:anst:hm:1:koala'), 'There is one koala').ok && !E.check(C('tb:hanlin-5-u4:anst:hm:3:lion'), 'There are three lion.').ok && C('tb:hanlin-5-u4:like:dl:she:zebra').prompt === 'Does she ___ zebras?', 'U4: How many … are there? / plural / like');
+  ok(E.check(C('tb:hanlin-6-u1:zh:my:feet'), 'My foot hurts.').ok && !E.check(C('tb:hanlin-6-u1:anst:my:feet'), 'My feet hurts.').ok && C('tb:hanlin-6-u1:hurt:his:eyes').answer === 'hurt' && C('tb:hanlin-6-u1:hurt:my:foot').answer === 'hurts', 'U5-1 hurts / hurt');
+  ok(C('tb:hanlin-6-u2:has:s:she:fever').answer === 'has' && C('tb:hanlin-6-u2:has:s:you:fever').answer === 'have' && C('tb:hanlin-6-u2:a:q:he:headache').prompt === 'Does he have ___ headache?' && W.filter(x => x.w === 'cold').map(x => KE.wordKey(x)).sort().join() === 'cold,cold-sick', 'U6-2 have/has, a, cold (sick) separate id');
+  ok(E.check(C('tb:hanlin-6-u3:anst:n:bread:lunch'), 'No, thank you. I would like some chicken.').ok && E.check(C('tb:hanlin-6-u3:zh:id:soup'), 'I would like some soup').ok, "U6-3 I'd like ↔ I would like");
+  ok(C("tb:hanlin-6-u4:own:it:tony-s:umbrella").answer === "Tony's" && E.check(C('tb:hanlin-6-u4:anst:pl:glasses:those:amy-s'), "They're Amy's glasses.").ok && !E.check(C('tb:hanlin-6-u4:anst:sg:cap:this:my'), 'It is me cap.').ok, "U6-4 possessives / They're");
   ok(E.list({ modules: ['textbook'] }).length === 0 && E.buildQuiz({ count: 300, allowSpeak: true }).every(q => q.module !== 'textbook') && E.list({ ids: ['tb:hanlin-5-u2:zh:you:math:monday'] }).length === 1, 'textbook questions only in textbook pages (but redo by id works)');
-  ok(E.topicLabel('textbook:hanlin-5-u2') === '翰林 五年級 Unit 2', 'textbook topic label');
   { const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
     ok(CK.validEvent(ev('english:textbook')) && CK.validEvent(ev('english:test')) && !CK.validEvent(ev('english:textbooks')) && !CK.validEvent(ev('math:test')), 'kids-coins: english:textbook / english:test valid'); }
   ok(['learn', 'practice', 'test'].every(k => fs.readFileSync(path.join(root, 'app.js'), 'utf8').includes(`['${k}',`)) && /<script src="data\/textbook\.js(\?v=[0-9a-f]+)?"><\/script>/.test(fs.readFileSync(path.join(root, 'index.html'), 'utf8')), 'app tabs + index loads textbook.js');

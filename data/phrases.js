@@ -4,6 +4,12 @@
 (function () {
   const P = (p, zh, tag, ex, exZh, form) => (form ? { p, zh, tag, ex, exZh, form } : { p, zh, tag, ex, exZh });
   const L1 = [
+    P("what's the matter", '怎麼回事？', '日常用語', "What's the matter? You look sad.", '怎麼回事？你看起來很難過。'),
+    P('amazing', '太神奇了；好厲害', '日常用語', 'Amazing! You can do it!', '好厲害！你做得到！'),
+    P('too bad', '太可惜了', '日常用語', 'Too bad! The museum is closed today.', '太可惜了！博物館今天休館。'),
+    P('may I help you', '需要幫忙嗎？（店員用語）', '日常用語', 'May I help you?', '需要幫忙嗎？'),
+    P('say cheese', '笑一個（拍照時說）', '日常用語', 'Say cheese! One, two, three!', '笑一個！一、二、三！'),
+    P('good idea', '好主意', '日常用語', 'Good idea! Let\'s go.', '好主意！我們走吧。'),
     P('get up', '起床', '動詞片語', 'I get up at six thirty every day.', '我每天六點半起床。'),
     P('go to bed', '上床睡覺', '動詞片語', 'I go to bed at nine.', '我九點上床睡覺。'),
     P('go to sleep', '去睡覺', '動詞片語', "It's late. Please go to sleep.", '很晚了，請去睡覺。'),
@@ -374,6 +380,6 @@
     L2.map(x => Object.assign({ id: slug(x.p), lv: 2 }, x)),
     L3.map(x => Object.assign({ id: slug(x.p), lv: 3 }, x)));
   // 課本單元標記（2026-10-18）：這個片語是哪一課的課本字（id 不變、學會紀錄照舊）
-  const TB = { 'in-a-hurry': ['hanlin-5-u2'] };
+  const TB = { 'in-a-hurry': ['hanlin-5-u2'], 'good-idea': ['hanlin-5-u1'], 'have-a-good-time': ['hanlin-5-u1'], 'say-cheese': ['hanlin-5-u3'], 'excuse-me': ['hanlin-5-u3'], 'take-care': ['hanlin-5-u4'], 'calm-down': ['hanlin-5-u4'], 'what-s-wrong': ['hanlin-6-u1'], 'give-me-a-hand': ['hanlin-6-u1'], 'be-careful': ['hanlin-6-u1'], 'may-i-help-you': ['hanlin-6-u2'], 'you-re-welcome': ['hanlin-6-u2'], 'i-see': ['hanlin-6-u3'], 'too-bad': ['hanlin-6-u3'], 'amazing': ['hanlin-6-u4'], 'what-s-the-matter': ['hanlin-6-u4'] };
   window.DATA_PHRASES.forEach(p => { if (TB[p.id]) p.tb = TB[p.id].slice(); });
 })();
