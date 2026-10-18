@@ -3,25 +3,33 @@
 const vm = require('vm'), fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
 const ctx = { window: {} }; vm.createContext(ctx);
-['words', 'words-2', 'words-3', 'words-4', 'phrases', 'roots', 'grammar', 'patterns'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
+['words', 'words-2', 'words-3', 'words-4', 'words-5', 'phrases', 'roots', 'grammar', 'patterns'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
 const W = ctx.window.DATA_WORDS, PH = ctx.window.DATA_PHRASES, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS;
 const KE = require(path.join(root, 'engine.js'));
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 
 // ---- 資料格式 ----
-ok(W.length >= 1200 && W.length <= 1230, 'words ≈ 1200: ' + W.length);
+// 2026-10-18：words-5.js 加入教育部表二「其他常用 800 字」（lv 4，src moe800）
+const W1200 = W.filter(w => w.lv <= 3), W800 = W.filter(w => w.lv === 4);
+ok(W1200.length >= 1200 && W1200.length <= 1230, 'words lv1-3 ≈ 1200: ' + W1200.length);
+ok(W800.length >= 780 && W800.length <= 800, 'words lv4 ≈ 800: ' + W800.length);
+ok(W800.every(w => w.src === 'moe800'), 'lv4 → src moe800');
+// 10-18 校對：dumpling、kangaroo、panda 在官方表二（800 字），來源改 moe800，但等級維持 2（不動孩子既有進度）
+ok(W1200.filter(w => w.src === 'moe800').map(w => w.w + ':' + w.lv).sort().join() === 'dumpling:2,kangaroo:2,panda:2', 'lv1-3 裡標 moe800 的只有 dumpling/kangaroo/panda（lv 2）');
 const seenW = new Set();
 W.forEach(w => {
   ['w', 'ipa', 'pos', 'zh', 'ex', 'exZh', 'src'].forEach(k => ok(typeof w[k] === 'string' && w[k].length, `${w.w}.${k}`));
   ok(/^\/.+\/$/.test(w.ipa), 'ipa ' + w.w);
-  ok([1, 2, 3].includes(w.lv), 'lv ' + w.w);
+  ok([1, 2, 3, 4].includes(w.lv), 'lv ' + w.w);
   ok(KE.POS[w.pos], 'pos ' + w.w + ' ' + w.pos);
-  ok(['moe1200', 'extra'].includes(w.src), 'src ' + w.w + ' ' + w.src);
+  ok(['moe1200', 'moe800', 'extra'].includes(w.src), 'src ' + w.w + ' ' + w.src);
   ok(Array.isArray(w.tags) && w.tags.length && w.tags.every(t => KE.TAGS[t]), 'tags ' + w.w);
   ok(w.ex.toLowerCase().includes((w.form || w.w).toLowerCase()), `example contains word/form: ${w.w} → ${w.ex}`);
   const key = KE.wordKey(w); ok(!seenW.has(key), 'duplicate word key ' + key); seenW.add(key);
 });
-ok(W.filter(w => w.src === 'extra').map(w => w.w).sort().join() === 'dumpling,giraffe,kangaroo,panda', 'only 4 words outside the official 1200 list (marked extra)');
+ok(W.filter(w => w.src === 'extra').map(w => w.w).sort().join() === 'giraffe', 'only giraffe is outside the official 2000 list (marked extra)');
+// 10-18 校對：lv4 單字的中文不可跟同詞性的其他字一樣（看中文打字題會分不出來）
+W800.forEach(w => ok(!W.some(x => x !== w && x.pos === w.pos && x.zh === w.zh), 'lv4 zh unique within pos: ' + w.w + ' ' + w.zh));
 const lvCount = [1, 2, 3].map(l => W.filter(w => w.lv === l).length);
 ok(lvCount.every(n => n >= 350 && n <= 450), 'levels ≈ 400 each: ' + lvCount);
 ['cat', 'apple', 'happy', 'Monday', 'noodles'].forEach(w => ok(W.find(x => x.w === w && x.src === 'moe1200'), 'original word kept: ' + w));
@@ -32,10 +40,10 @@ R.forEach(r => {
   ok(r.words.length >= 2 && r.words.length <= 4, 'root words ' + r.p);
   r.words.forEach(w => ok(w.zh && w.parts.join('') === w.w, 'parts ' + w.w));
 });
-ok(G.length === 12, 'grammar topics');
+ok(G.length === 16, 'grammar topics');
 G.forEach(g => {
   ok(g.id && g.title && g.rules.length && g.ex.length >= 2, 'grammar ' + g.id);
-  ok(g.q.length === 13, 'grammar q count ' + g.id);
+  ok(G.indexOf(g) < 12 ? g.q.length === 13 : g.q.length >= 15, 'grammar q count ' + g.id); // 原 12 個主題 13 題；10-18 新增主題至少 15 題
   ok(Array.isArray(g.typed) && g.typed.length === 2 && g.typed.every(t => t.zh && t.en), 'grammar typed ' + g.id);
   g.q.forEach(q => {
     ok(q.why, 'why ' + g.id);
@@ -43,18 +51,24 @@ G.forEach(g => {
     else { ok(q.type === 'fix' && q.wrong && q.right && q.wrong !== q.right, 'fix ' + q.right); }
   });
 });
-ok(P.length === 48 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 48 with 5 examples each');
-ok(new Set(P.map(p => p.id)).size === 48, 'pattern ids unique');
-ok(P.filter(p => p.lv === 1).length === 24 && P.filter(p => p.lv === 2).length === 12 && P.filter(p => p.lv === 3).length === 12, 'pattern levels 24/12/12');
+ok(P.length === 90 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 90 with 5 examples each');
+ok(new Set(P.map(p => p.id)).size === 90, 'pattern ids unique');
+ok(P.filter(p => p.lv === 1).length === 37 && P.filter(p => p.lv === 2).length === 31 && P.filter(p => p.lv === 3).length === 22, 'pattern levels 37/31/22');
 ['there-is', 'want-to', 'like-ing', 'time-to', 'how-many', 'can-you', 'lets', 'have-to', 'it-is-to', 'what-do', 'i-think', 'dont'].forEach(id => ok(P.find(p => p.id === id && p.lv === 2), 'original pattern kept as 基本: ' + id));
 P.forEach(p => { const all = p.ex.concat(p.extra).map(e => e.en); ok(new Set(all).size === all.length, 'no duplicate sentences in ' + p.id); });
-P.forEach(p => p.typed.forEach(t => (t.alts || []).forEach(a => ok(a !== t.en && /^[A-Z]/.test(a), 'alt ok ' + a))));
+P.forEach(p => p.typed.concat(p.extra).forEach(t => (t.alts || []).forEach(a => ok(a !== t.en && /^[A-Z]/.test(a), 'alt ok ' + a))));
+G.forEach(g => (g.typed || []).forEach(t => (t.alts || []).forEach(a => ok(a !== t.en && /^[A-Z]/.test(a), 'grammar alt ok ' + a))));
+// 10-18 校對：新句型的打字題（typed＋extra）有縮寫就要收展開版（反之亦然）
+const EXPAND = [[/I'm/g, 'I am'], [/It's/g, 'It is'], [/What's/g, 'What is'], [/don't/g, 'do not'], [/doesn't/g, 'does not'], [/didn't/g, 'did not'], [/shouldn't/g, 'should not'], [/I'll/g, 'I will'], [/(I|We)'d like/g, '$1 would like']];
+P.slice(48).forEach(p => p.typed.concat(p.extra).forEach(t => { const full = EXPAND.reduce((s, [r, v]) => s.replace(r, v), t.en); if (full !== t.en) ok((t.alts || []).includes(full), 'contraction alts: ' + t.en + ' → ' + full); }));
+// 10-18 校對：新文法主題的題組會把最後 3 題填空改成打字（沒有選項、alts 為空）→ 答案不可是縮寫
+G.slice(12).forEach(g => g.q.filter(q => q.type === 'fill').slice(-3).forEach(q => ok(!/'/.test(q.a), 'typed fill answer not a contraction: ' + g.id + ' ' + q.s)));
 P.forEach(p => ok(p.extra.length === 3 && p.extra.every(e => e.en && e.zh) && p.typed.length === 2 && p.typed.every(t => t.zh && t.en), 'pattern extra/typed ' + p.id));
 
 // ---- 引擎 ----
 // ---- 片語資料 ----
 const PH_TAGS = ['動詞片語', '介系詞片語', '時間', '地點', '日常用語', '形容詞片語'];
-ok(PH.length >= 190 && PH.length <= 210, 'phrases ~200: ' + PH.length);
+ok(PH.length >= 340 && PH.length <= 360, 'phrases ~350: ' + PH.length);
 ok(new Set(PH.map(p => p.id)).size === PH.length, 'phrase ids unique');
 ok(new Set(PH.map(p => p.p.toLowerCase())).size === PH.length, 'phrases unique');
 ok(new Set(PH.map(p => p.zh)).size === PH.length, 'phrase zh unique (en2zh options never ambiguous)');
@@ -623,5 +637,5 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
 
 ok(E.itemSet('word:may-month').length === 5 && E.itemSet('word:may').length === 5 && E.get('w:may-month:zh2en').answer === 'May' && E.get('w:may:zh2en').answer === 'may', 'May / may keep separate ids');
 console.log(`bank build: engine ${msEngine.toFixed(0)} ms, all ${allQs.length} questions ${msBank.toFixed(0)} ms`);
-console.log(`OK  ${checks} checks | words ${W.length} (lv ${lvCount.join('/')}) | phrases ${PH.length} (${[1, 2, 3].map(l => PH.filter(p => p.lv === l).length).join('/')}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
+console.log(`OK  ${checks} checks | words ${W.length} (lv ${lvCount.join('/')}/${W800.length}) | phrases ${PH.length} (${[1, 2, 3].map(l => PH.filter(p => p.lv === l).length).join('/')}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
 console.log('pool per type:', JSON.stringify(counts));

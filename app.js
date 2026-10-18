@@ -286,7 +286,7 @@
     const srcs = E.sources(), tags = [...new Set(D.words.flatMap(w => w.tags || []))];
     app.innerHTML = top('單字卡', '#learn') + `<div class="filters">
       <input id="fq" class="search" type="search" placeholder="🔍 搜尋英文或中文" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="搜尋單字">
-      <select id="flv" aria-label="等級"><option value="">全部等級</option><option value="1">等級 1</option><option value="2">等級 2</option><option value="3">等級 3</option></select>
+      <select id="flv" aria-label="等級"><option value="">全部等級</option><option value="1">等級 1</option><option value="2">等級 2</option><option value="3">等級 3</option><option value="4">進階（國中）</option></select>
       <select id="ftag" aria-label="主題"><option value="">全部主題</option>${tags.map(t => `<option value="${esc(t)}">${esc(KE.TAGS[t] || t)}</option>`).join('')}</select>
       ${srcs.length > 1 ? `<select id="fsrc" aria-label="來源"><option value="">全部來源</option>${srcs.map(s => `<option value="${esc(s)}">${esc(srcLabel(s))}</option>`).join('')}</select>` : ''}
       <button class="btn primary" id="pw">🎯 練這些字</button><button class="btn" id="ps" ${canSpeak ? '' : 'disabled'} title="${canSpeak ? '用說的練這些字' : NO_SPEAK_MSG}">🎤 說說看</button></div>${canSpeak ? '' : `<p class="muted" id="psno">🎤 ${NO_SPEAK_MSG}</p>`}${lfBar('words')}<p class="muted" id="wn"></p><div class="cards" id="wl"></div><div class="pager" id="wp"></div>`;
@@ -297,7 +297,7 @@
       LF.page = Math.min(LF.page, pages - 1);
       const show = L.slice(LF.page * PAGE, LF.page * PAGE + PAGE);
       $('#wn').textContent = `這裡有 ${L.length} 個字${pages > 1 ? `（第 ${LF.page + 1}／${pages} 頁）` : ''}，點英文就會唸`;
-      $('#wl').innerHTML = show.map(w => `<div class="card word ${isL(KE.wordItemId(w)) ? 'is-learned' : ''}"><span class="lvb lv${w.lv}">等級 ${w.lv}</span><div class="w en say">${esc(w.w)}</div><div class="ipa">${esc(w.ipa)} <span class="pos">${esc(KE.POS[w.pos] || w.pos)}</span></div><div class="zh">${esc(w.zh)}</div>${w.ex ? `<div class="ex en say">${esc(w.ex)}</div><div class="exzh">${esc(w.exZh || '')}</div>` : ''}${learnUI(KE.wordItemId(w))}</div>`).join('');
+      $('#wl').innerHTML = show.map(w => `<div class="card word ${isL(KE.wordItemId(w)) ? 'is-learned' : ''}"><span class="lvb lv${w.lv}">${w.lv === 4 ? '進階（國中）' : '等級 ' + w.lv}</span><div class="w en say">${esc(w.w)}</div><div class="ipa">${esc(w.ipa)} <span class="pos">${esc(KE.POS[w.pos] || w.pos)}</span></div><div class="zh">${esc(w.zh)}</div>${w.ex ? `<div class="ex en say">${esc(w.ex)}</div><div class="exzh">${esc(w.exZh || '')}</div>` : ''}${learnUI(KE.wordItemId(w))}</div>`).join('');
       $('#wp').innerHTML = pages > 1 ? `<button class="btn" data-pg="-1" ${LF.page ? '' : 'disabled'}>⬅️ 上一頁</button><span>${LF.page + 1} / ${pages}</span><button class="btn" data-pg="1" ${LF.page < pages - 1 ? '' : 'disabled'}>下一頁 ➡️</button>` : '';
       $$('#wp [data-pg]').forEach(b => b.onclick = () => { LF.page += +b.dataset.pg; draw(); window.scrollTo(0, 0); });
     };
@@ -368,7 +368,7 @@
     app.innerHTML = top('練習設定') + `
       <section class="card"><h2>1. 選單元</h2>${mods.map(m => `<div class="mod"><label class="ck"><input type="checkbox" name="mod" value="${m}" ${L.mods.includes(m) ? 'checked' : ''}> ${KE.MODULES[m]}</label><details><summary>選主題</summary>${topicChecks(m, L)}</details></div>`).join('')}</section>
       <section class="card"><h2>2. 選題型</h2><div class="wrap">${types.map(y => `<label class="ck"><input type="checkbox" name="typ" value="${y}" ${L.offY.includes(y) ? '' : 'checked'}> ${KE.TYPES[y]}</label>`).join('')}<label class="ck${canSpeak ? '' : ' off'}"><input type="checkbox" name="typ" value="speak" ${canSpeak && L.speak ? 'checked' : ''} ${canSpeak ? '' : 'disabled'}> ${KE.TYPES.speak}</label></div><p class="muted" id="spnote">${canSpeak ? '🎤 說說看：可以只選它，也可以跟其他題型一起練（單字、片語、文法、句型都有）。要用麥克風，第一次會請爸爸媽媽同意。' : '🎤 ' + NO_SPEAK_MSG}</p></section>
-      <section class="card"><h2>3. 單字範圍</h2>${radios('lv', [['', '全部等級'], ['1', '等級 1'], ['2', '等級 2'], ['3', '等級 3']], L.lv)}${srcs.length > 1 ? radios('src', [['', '全部來源']].concat(srcs.map(s => [s, srcLabel(s)])), L.src) : ''}</section>
+      <section class="card"><h2>3. 單字範圍</h2>${radios('lv', [['', '全部等級'], ['1', '等級 1'], ['2', '等級 2'], ['3', '等級 3'], ['4', '進階（國中）']], L.lv)}${srcs.length > 1 ? radios('src', [['', '全部來源']].concat(srcs.map(s => [s, srcLabel(s)])), L.src) : ''}</section>
       <section class="card"><h2>4. 題數和錯題</h2>${radios('count', [['10', '10 題'], ['20', '20 題'], ['30', '30 題']], L.count)}${radios('ratio', [['0', '不加錯題'], ['0.3', '加 30% 錯題'], ['1', '只練錯題']], L.ratio)}<p class="muted">錯題庫目前有 ${mistakeIds().length} 題</p></section>
       ${voiceCard()}<button class="btn primary big wide" id="start">開始 🚀</button>`;
     bindVoice();

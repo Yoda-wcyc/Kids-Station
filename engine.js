@@ -27,7 +27,7 @@
     return choiceIds.slice(0, kc).concat(typedIds.slice(0, kt));
   }
   const isTyped = q => TYPED_TYPES.includes(q && q.type);
-  const SRC_LABEL = { moe: '教育部基本字彙', moe1200: '教育部 1200 字', extra: '補充字' };
+  const SRC_LABEL = { moe: '教育部基本字彙', moe1200: '教育部 1200 字', moe800: '教育部 800 字（國中進階）', extra: '補充字' };
   const PATTERN_LV = { 1: '簡單', 2: '基本', 3: '進階' };
   const POS = { n: '名詞', v: '動詞', adj: '形容詞', adv: '副詞', num: '數字', pron: '代名詞', prep: '介系詞', conj: '連接詞', art: '冠詞', int: '感嘆詞', aux: '助動詞' };
   // 單字的題號：通常是 slug(w)；跟別的字撞名（May／may、Miss／miss）時用資料裡的 id
