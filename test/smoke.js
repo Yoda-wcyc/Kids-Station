@@ -243,6 +243,7 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
     ok(ex.filter(q => q.sec === '六、回答問句').map(q => q.id.slice(-1)).sort().join() === 'n,y' && ex.every(q => E.check(q, q.input === 'gap' ? q.answer : q.answer).ok), 'tbExam answer section one ⭕ one ❌; self-check');
   }
   ok(ex1.map(q => q.id).join() !== ex2.map(q => q.id).join(), 'tbExam random each time');
+  ok(ex1.filter(q => q.sec !== '一、聽力').every(q => !q.play && !q.auto) && E.meta.filter(m => /^tb:[^:]+:anst?:/.test(m.id)).every(m => { const q = m.make(); return !q.speakText.includes(q.answer); }), 'exam: no 🔊 hints outside listening; short-answer audio does not read the answer');
   // 所有打字題：alts、縮寫互收（Yes, I do. / No, I don't. ↔ do not；I'm ↔ I am）、去 class、P.E.、無逗號
   const tbT = E.meta.filter(m => m.module === 'textbook' && KE.isTyped(m)).map(m => m.make());
   ok(tbT.length === 96 * 4 + 192 + 3 && tbT.every(q => E.check(q, q.answer).ok && (q.alts || []).every(a => E.check(q, a).ok)), 'tb typed self/alts: ' + tbT.length);

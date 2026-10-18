@@ -435,8 +435,25 @@
     Q = { list, i: 0, answers: [], answered: false, cfg: { mode, tb: unitId, back: back || '#tb/' + unitId + '/learn' }, graduated: 0, result: null, exam: mode === 'test' };
     go('#quiz');
   }
+  // 📝 考試：模擬段考 20 題（每題 5 分），每次隨機組合；不給提示、答完才看結果；錯題進英文錯題庫；送 english:test
   function tbTest(u, body) {
-    body.innerHTML = `<div class="card center"><p>📝 考試馬上就來！</p></div>`;
+    const back = rendered;
+    body.innerHTML = `<section class="card"><h2>📝 模擬段考：${esc(u.title)}</h2><ul class="rules"><li>共 20 題，每題 5 分，滿分 100 分。</li><li>一、聽力 4 題　二、選擇 5 題　三、填空 3 題　四、重組 3 題　五、中翻英 3 題　六、回答問句 2 題</li><li>考試中不給提示、不說對錯，全部答完才看分數和每一題的正確答案。</li><li>答錯的題目會收進 🩹 錯題庫，可以再練。</li></ul><button class="btn primary big" id="tbtest">📝 開始考試</button></section>`;
+    $('#tbtest').onclick = () => startTb(u.id, 'test', back);
+  }
+  function pExamResult() {
+    const r = Q.result, score = r.tot ? Math.round(r.ok / r.tot * 100) : 0, msg = score >= 90 ? '超級厲害！🏆' : score >= 70 ? '做得很好！👍' : '多練幾次會更棒！💪';
+    let sec = '';
+    const rows = Q.answers.map((a, i) => {
+      const q = a.q, head = q.sec !== sec ? (sec = q.sec, `<li class="tb-sec"><b>${esc(q.sec)}</b></li>`) : '';
+      const mine = a.skip ? '（沒有作答）' : String(a.input == null ? '' : a.input) || '（空白）';
+      return head + `<li class="${a.ok ? 'ok' : 'no'}"><b>${i + 1}. ${a.ok ? '✓' : '✗'}</b> <span class="badge">${KE.TYPES[q.type]}</span> <span class="${q.en ? 'en' : ''}">${esc(q.prompt)}</span>${a.ok ? '' : `<div>你的答案：<span class="en">${esc(mine)}</span></div>`}<div>正確答案：<b class="say en" data-say="${esc(q.speakText || q.answer)}">${esc(q.answer)}</b> 🔊</div></li>`;
+    }).join('');
+    app.innerHTML = top('📝 考試結果', Q.cfg.back) + `<div class="card center result"><div class="party">${score >= 90 ? '🎉🏅🎉' : '📝'}</div><div class="score">${score} 分</div><p>答對 ${r.ok} / ${r.tot} 題・${msg}</p>${r.wrong.length ? `<p class="muted">答錯的 ${r.wrong.length} 題已經收進 🩹 錯題庫</p>` : ''}</div>
+      <section class="card"><h2>每一題的對錯</h2><ul class="tb-res">${rows}</ul></section>
+      <div class="row wrap"><button class="btn primary big" id="again">再考一次（換新題目）</button>${r.wrong.length ? '<button class="btn big" id="redo">練答錯的題目</button>' : ''}<button class="btn big" data-go="${esc(Q.cfg.back)}">回課本</button></div>`;
+    $('#again').onclick = () => startQuiz(Q.cfg);
+    const rd = $('#redo'); if (rd) rd.onclick = () => startQuiz({ ids: r.wrong.map(q => q.id), mode: 'redo' });
   }
 
   // ---------- 練習設定 ----------
@@ -591,6 +608,8 @@
     // 學習幣（kids-coins.js）：每答一題記進「這一分鐘」；跳過不算作答
     if (window.KidsCoins) skipped ? KidsCoins.activity('english') : KidsCoins.answer(res.ok, 'english');
     Q.answers.push({ q, ok: res.ok, skip: !!skipped, input });
+    // 📝 考試：不給回饋、不唸答案，直接下一題；全部答完才看結果
+    if (Q.exam) { Q.i++; Q.answered = false; if (Q.i >= Q.list.length) finish(); else { pQuiz(); window.scrollTo(0, 0); } return; }
     $$('.opt').forEach(b => { b.disabled = true; if (b.dataset.v === q.answer) b.classList.add('right'); else if (b.dataset.v === input) b.classList.add('wrong'); });
     $$('#ok,#clr,#mic,#skip,.pool .chip,#ans,.gap-in').forEach(x => { x.disabled = true; });
     if (q.input === 'gap' && !skipped) $$('.gap-in').forEach((b, j) => b.classList.add(res.wrong && res.wrong.includes(j) ? 'bad' : 'good'));
@@ -649,6 +668,7 @@
   function pResult() {
     if (!Q || !Q.result) return go('#home');
     if (Q.gate) return pGateResult();
+    if (Q.exam) return pExamResult();
     if (Q.drill) return pDrillResult();
     const r = Q.result, msg = r.stars === 3 ? '超級厲害！🏆' : r.stars === 2 ? '做得很好！👍' : '多練幾次會更棒！💪';
     app.innerHTML = top('練習結果') + `<div class="card center result"><div class="stars">${'⭐'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</div><div class="score">${r.ok} / ${r.tot}</div><p>${msg}</p>${Q.graduated ? `<p>🎓 有 ${Q.graduated} 題錯題畢業了！</p>` : ''}</div>

@@ -308,8 +308,8 @@
           const right = short(p.ans, p.aux, yes), cue = yes ? '⭕ 有' : '❌ 沒有', yn = yes ? 'y' : 'n';
           const o = ppl.find(x => x.k === p.other) || p;
           const wrong = [short(p.ans, p.aux === 'Do' ? 'Does' : 'Do', yes), short(p.ans, p.aux, !yes), short(o.k === 'you' ? 'you' : o.ans, o.k === 'you' ? 'Do' : o.aux, yes)];
-          reg('ans', `${base}:ans:${key}:${yn}`, 'tb-answer', `${Q} → ${right}`, () => ({ prompt: Q, en: true, play: true, sub: `（${cue}）選出正確的回答`, options: shuffle([right].concat(wrong)), answer: right, speakText: Q + ' ' + right, why: whyP(p) }), { yes });
-          reg('anst', `${base}:anst:${key}:${yn}`, 'tb-answer-type', `${Q} → ${right}`, () => ({ prompt: Q, en: true, play: true, sub: `（${cue}）打出簡答`, input: 'type', options: null, answer: right, alts: [right.replace(',', '')], speakText: Q + ' ' + right, why: whyP(p) }), { yes });
+          reg('ans', `${base}:ans:${key}:${yn}`, 'tb-answer', `${Q} → ${right}`, () => ({ prompt: Q, en: true, play: true, sub: `（${cue}）選出正確的回答`, options: shuffle([right].concat(wrong)), answer: right, speakText: Q, why: whyP(p) }), { yes });
+          reg('anst', `${base}:anst:${key}:${yn}`, 'tb-answer-type', `${Q} → ${right}`, () => ({ prompt: Q, en: true, play: true, sub: `（${cue}）打出簡答`, input: 'type', options: null, answer: right, alts: [right.replace(',', '')], speakText: Q, why: whyP(p) }), { yes });
         });
       })));
       // 情境對話：每句重組／🎤／中翻英打字；情境選擇題
@@ -411,7 +411,8 @@
       const secs = [['一、聽力', W('listen', 2).concat(P('li', 2))], ['二、選擇', P('dd', 2).concat(P('on', 1), P('ans', 1), P('dc', 1))],
         ['三、填空', P('ddT', 1).concat(P('onT', 1), W('gap1', 1))], ['四、重組', P('ro', 2).concat(P('dlro', 1))],
         ['五、中翻英', W('type', 1).concat(P('zh', 2))], ['六、回答問句', P('anst', 1, id => /:y$/.test(id)).concat(P('anst', 1, id => /:n$/.test(id)))]];
-      return secs.flatMap(([sec, ids]) => shuffle(ids).map(id => this.get(id)).filter(Boolean).map(q => Object.assign(q, { sec, pts: 5 })));
+      // 不給提示：聽力以外的題不放 🔊（填空拼字、打字題的發音等於提示）
+      return secs.flatMap(([sec, ids]) => shuffle(ids).map(id => this.get(id)).filter(Boolean).map(q => Object.assign(q, { sec, pts: 5 }, sec === secs[0][0] ? {} : { play: false, auto: false })));
     },
     sources() { return [...new Set(this.D.words.map(w => w.src || 'moe'))]; },
     topics(module) {
