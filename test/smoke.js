@@ -29,7 +29,12 @@ W.forEach(w => {
 });
 ok(W.filter(w => w.src === 'extra').map(w => w.w).sort().join() === 'giraffe', 'only giraffe is outside the official 2000 list (marked extra)');
 // 10-18 校對：lv4 單字的中文不可跟同詞性的其他字一樣（看中文打字題會分不出來）
-W800.forEach(w => ok(!W.some(x => x !== w && x.pos === w.pos && x.zh === w.zh), 'lv4 zh unique within pos: ' + w.w + ' ' + w.zh));
+// 10-18 舊資料同類修正：擴大到全部單字（lv1-3 原有 16 對，如 store／shop、big／large）——同詞性同中文不得無區辨
+W.forEach(w => ok(!W.some(x => x !== w && x.pos === w.pos && x.zh === w.zh), 'zh unique within pos (all levels): ' + w.w + ' ' + w.zh));
+// 同義字 alts：指到存在、同詞性的字；看中文打字兩個都收（見下方引擎檢查）
+W.filter(w => w.alts).forEach(w => w.alts.forEach(a => { const x = W.find(y => y.w === a); ok(x && x !== w && x.pos === w.pos, 'word alt is a same-pos word: ' + w.w + ' → ' + a); }));
+ok(W.filter(w => w.alts).length === 29, 'words with alts: 14 對互收＋soccer→football = 29: ' + W.filter(w => w.alts).length);
+ok(W.find(w => w.w === 'football').zh === '美式足球；（英國）足球', 'football zh');
 const lvCount = [1, 2, 3].map(l => W.filter(w => w.lv === l).length);
 ok(lvCount.every(n => n >= 350 && n <= 450), 'levels ≈ 400 each: ' + lvCount);
 ['cat', 'apple', 'happy', 'Monday', 'noodles'].forEach(w => ok(W.find(x => x.w === w && x.src === 'moe1200'), 'original word kept: ' + w));
@@ -59,7 +64,7 @@ P.forEach(p => { const all = p.ex.concat(p.extra).map(e => e.en); ok(new Set(all
 P.forEach(p => p.typed.concat(p.extra).forEach(t => (t.alts || []).forEach(a => ok(a !== t.en && /^[A-Z]/.test(a), 'alt ok ' + a))));
 G.forEach(g => (g.typed || []).forEach(t => (t.alts || []).forEach(a => ok(a !== t.en && /^[A-Z]/.test(a), 'grammar alt ok ' + a))));
 // 10-18 校對：新句型的打字題（typed＋extra）有縮寫就要收展開版（反之亦然）
-const EXPAND = [[/I'm/g, 'I am'], [/It's/g, 'It is'], [/What's/g, 'What is'], [/don't/g, 'do not'], [/doesn't/g, 'does not'], [/didn't/g, 'did not'], [/shouldn't/g, 'should not'], [/I'll/g, 'I will'], [/(I|We)'d like/g, '$1 would like']];
+const EXPAND = [[/\bI'm\b/g, 'I am'], [/\bIt's\b/g, 'It is'], [/\bWhat's\b/g, 'What is'], [/\bdon't\b/g, 'do not'], [/\bdoesn't\b/g, 'does not'], [/\bdidn't\b/g, 'did not'], [/\bshouldn't\b/g, 'should not'], [/\bI'll\b/g, 'I will'], [/\b(I|We)'d like\b/g, '$1 would like']];
 P.slice(48).forEach(p => p.typed.concat(p.extra).forEach(t => { const full = EXPAND.reduce((s, [r, v]) => s.replace(r, v), t.en); if (full !== t.en) ok((t.alts || []).includes(full), 'contraction alts: ' + t.en + ' → ' + full); }));
 // 10-18 校對：新文法主題的題組會把最後 3 題填空改成打字（沒有選項、alts 為空）→ 答案不可是縮寫
 G.slice(12).forEach(g => g.q.filter(q => q.type === 'fill').slice(-3).forEach(q => ok(!/'/.test(q.a), 'typed fill answer not a contraction: ' + g.id + ' ' + q.s)));
@@ -142,6 +147,69 @@ ok(only.length === 5 && only.every(q => mids.includes(q.id)), 'only mistakes');
 const mixed = E.buildQuiz({ modules: ['words'], count: 10, mistakeRatio: 0.3, mistakes: mids });
 ok(mixed.length === 10 && mixed.filter(q => mids.includes(q.id)).length >= 3, 'mix 30% (at least 3 mistakes; random fill may add more)');
 ok(E.buildQuiz({ modules: ['words'], src: 'textbook-x', count: 10 }).length === 0, 'src filter');
+// ---- 2026-10-18 舊資料同類修正 ----
+// (a) 全部等級不含 lv4：只有明確選 lv 4（或來源選 moe800）才出 lv4；例題庫（list）照舊全部列
+{
+  const lvOf = q => (W.find(w => KE.wordKey(w) === q.id.split(':')[1]) || {}).lv;
+  for (let k = 0; k < 5; k++) ok(E.buildQuiz({ modules: ['words'], count: 300 }).every(q => lvOf(q) !== 4), 'all-levels quiz has no lv4');
+  ok(E.buildQuiz({ count: 300, allowSpeak: true }).filter(q => q.module === 'words').every(q => lvOf(q) !== 4), 'all-modules all-levels quiz has no lv4');
+  ok(E.buildQuiz({ modules: ['words'], lv: '', src: '', count: 200 }).every(q => lvOf(q) !== 4), 'practice page default (lv "") has no lv4');
+  const q4 = E.buildQuiz({ modules: ['words'], lv: '4', count: 50 }); ok(q4.length === 50 && q4.every(q => lvOf(q) === 4), 'lv 4 chosen → only lv4');
+  ok(E.buildQuiz({ modules: ['words'], src: 'moe800', count: 50 }).some(q => lvOf(q) === 4), 'src moe800 chosen → lv4 allowed');
+  ok(E.list({ modules: ['words'] }).some(m => m.lv === 4), 'bank list still has lv4');
+  const m4 = E.list({ modules: ['words'], lv: 4 }).slice(0, 3).map(m => m.id);
+  ok(E.buildQuiz({ count: 10, mistakeRatio: 1, mistakes: m4 }).length === 0 && E.buildQuiz({ lv: '4', count: 10, mistakeRatio: 1, mistakes: m4 }).length === 3, 'only-mistakes: lv4 mistakes only when lv 4 chosen');
+}
+// (b) 同義字：看中文打字兩個都收；看中文選英文、看英文選中文不拿同義字當干擾
+W.filter(w => w.alts).forEach(w => {
+  const k = KE.wordKey(w), ty = E.get(`w:${k}:type`);
+  ok(w.alts.every(a => E.check(ty, a).ok) && E.check(ty, w.w).ok && !E.check(E.get(`w:${k}:spell`), w.alts[0]).ok, 'synonym typed: ' + w.w + ' / ' + w.alts);
+  for (let i = 0; i < 6; i++) {
+    ok(!E.get(`w:${k}:zh2en`).options.some(o => w.alts.includes(o)), 'synonym not a zh2en distractor: ' + w.w);
+    const zhs = W.filter(x => w.alts.includes(x.w)).map(x => x.zh); ok(!E.get(`w:${k}:en2zh`).options.some(o => zhs.includes(o)), 'synonym zh not an en2zh distractor: ' + w.w);
+  }
+});
+ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), 'shop').ok && E.check(E.get('w:soccer:type'), 'football').ok && !E.check(E.get('w:football:type'), 'soccer').ok, 'store/shop both ways; soccer accepts football (not the reverse)');
+// (c) 縮寫／展開互收：所有句子打字題（文法、句型 typed／加練句／例句、片語）答案或 alts 的「全部展開」「全部縮寫」版都要收
+{
+  const CONTRACT = [
+    [/\bI am (?=\w)/g, "I'm "], [/\b(You|you|We|we|They|they) are (?=\w)/g, "$1're "], [/\b(He|he|She|she|It|it|That|that|What|what|Where|where|Who|who|There|there) is (?=\w)/g, "$1's "],
+    [/\bdo not\b/g, "don't"], [/\bDo not\b/g, "Don't"], [/\bdoes not\b/g, "doesn't"], [/\bdid not\b/g, "didn't"], [/\bis not\b/g, "isn't"], [/\bare not\b/g, "aren't"],
+    [/\bwas not\b/g, "wasn't"], [/\bwere not\b/g, "weren't"], [/\bcannot\b/g, "can't"], [/\bwill not\b/g, "won't"], [/\bshould not\b/g, "shouldn't"],
+    [/\b(I|You|We|They|He|She|It) will (?=\w)/g, "$1'll "], [/\b(I|We|They|You) would like\b/g, "$1'd like"]
+  ];
+  const contract = x => CONTRACT.reduce((t, [r, v]) => t.replace(r, v), x);
+  let n = 0;
+  E.meta.filter(m => KE.isTyped(m) && ['zh2en-type', 'grammar-fill-type', 'grammar-fix-type'].includes(m.type) && m.module !== 'words').forEach(m => {
+    const q = m.make();
+    [q.answer].concat(q.alts || []).forEach(f => [KE.expandContr(f), contract(f)].forEach(v => { if (v.toLowerCase() !== f.toLowerCase()) { n++; ok(E.check(q, v).ok, 'contraction both ways: ' + q.id + ' ' + f + ' → ' + v); } }));
+  });
+  ok(n > 150, 'contraction variants checked: ' + n);
+  const ty = id => E.get(id);
+  ok(E.check(ty('p:i-dont-like:x0:type'), 'I do not like bugs.').ok && E.check(ty('p:time-to:x1:type'), 'It is time to go home').ok && E.check(ty('p:i-am:x0:type'), "I'm tired").ok, 'old pattern extras: don\'t / It\'s / I\'m both ways');
+  ok(E.check(ty('p:because:t0'), "I'm hungry because I did not eat breakfast.").ok, 'mixed contraction + expansion accepted');
+  ok(!E.check(ty('p:time-to:x1:type'), 'Its time to go home').ok && !E.check(ty('p:lets:t1'), 'Let us sing').ok, "its ≠ it's; Let's not expanded");
+  const sp = E.get('p:i-am:0:speak'); ok(E.check(sp, ["I'm a student"]).ok && E.check(sp, ['I am a student']).ok && E.check(E.get('p:i-dont-like:0:speak'), ['I do not like ' + E.get('p:i-dont-like:0:speak').answer.replace(/^I don't like /, '')]).ok, 'speak: contraction both ways');
+}
+// (d) 文法填空改打字（看不到選項）：答案不唯一的題要有 hint（原形字或中文）或 alts；alts 不可在選項裡
+{
+  const UNIQUE = ['be:11', 'present:10', 'progressive:11', 'past:11', 'future:10', 'article:8', 'pronoun:10', 'pronoun:11', 'prep:8', 'prep:11', 'wh:9', 'wh:10', 'wh:11',
+    'there-be:7', 'there-be:8', 'there-be:9', 'past-be:7', 'past-be:8', 'past-be:9', 'countable:7', 'countable:8', 'countable:9', 'frequency:7', 'frequency:8', 'frequency:9']; // 看句子就只有一個答案
+  let nTyped = 0;
+  G.forEach(g => {
+    g.q.forEach((q, i) => { if (q.alts) ok(q.type === 'fill' ? q.alts.every(a => !q.opts.includes(a) && a !== q.a) : q.alts.every(a => a !== q.right), 'grammar alts not in opts: ' + g.id + ':' + i); });
+    E.sets[KE.grammarItemId(g)].filter(id => /:type$/.test(id) && !/:t\d+$/.test(id)).forEach(id => {
+      const i = +id.split(':')[2], q = g.q[i]; nTyped++;
+      ok(UNIQUE.includes(g.id + ':' + i) || q.hint || (q.alts && q.alts.length), 'typed fill needs hint/alts (answer not unique without options): ' + g.id + ':' + i + ' ' + (q.s || q.right));
+      if (q.hint) ok(E.get(id).sub.includes(q.hint), 'hint shown in typed sub: ' + id);
+    });
+  });
+  ok(nTyped === 48, 'typed fills in grammar sets: ' + nTyped);
+  const cm = E.get('g:modal:11:type'); ok(cm.prompt === '___ I use your pen?' && E.check(cm, 'Can').ok && E.check(cm, 'May').ok && E.check(cm, 'could').ok && !E.check(cm, 'Do').ok, 'Can / May / Could all correct (typed)');
+  ok(E.check(E.get('g:modal:11:speak'), ['May I use your pen']).ok && E.get('g:modal:11').options.filter(o => ['Can', 'May', 'Could'].includes(o)).length === 1, 'Can/May: speak accepts May; choice version has one correct option');
+  ok(E.get('g:plural:11:type').sub === '打出空格裡的字（提示：toy）' && E.get('g:pronoun:8:type').sub.includes('我們') && E.get('g:modal:10:type').sub.includes('必須'), 'hints: Many ___ are in the box (toy) / ___ are playing (我們) / ___ be quiet (必須)');
+  ok(E.get('g:plural:11:speak').answer === 'Many toys are in the box.' && E.get('g:plural:11').title === 'Many toys are in the box.', 'hint does not leak into sentence / speak');
+}
 
 // ---- 學會紀錄 ----
 ok(KE.fmtTaipei('2026-10-05T12:31:09Z') === '10/05 20:31' && KE.fmtTaipei('2026-10-05T16:05:00Z', true) === '2026-10-06 00:05:00', 'taipei time');

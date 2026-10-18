@@ -70,8 +70,20 @@
   function setLearned(L, itemId, iso, score) { const o = Object.assign({}, L); o[itemId] = score ? { at: iso, score } : { at: iso }; return o; }
   // 中翻英打字的判分：不分大小寫、去頭尾空白、空白合併、句尾 .!? 不計、彎引號統一；可接受 alts
   function typeNorm(s) { return String(s == null ? '' : s).replace(/[’‘`´]/g, "'").replace(/[“”]/g, '"').toLowerCase().replace(/\s+/g, ' ').trim().replace(/\s*[.!?]+$/, '').trim(); }
+  // 縮寫／展開互收（2026-10-18 舊資料同類修正）：I'm＝I am、don't＝do not、It's＝It is、can't＝cannot、I'll＝I will…
+  // 判分前把答案和輸入都展開成同一種寫法再比，混著寫（I'm … do not）也收。's 只展開代名詞／疑問詞／there／here／that（Tom's、Let's 不動）；
+  // 'd 只認 'd like／'d love（＝would）。先小寫、撇號統一成 '
+  const CONTR = [
+    [/\bwon't\b/g, 'will not'], [/\bcan't\b/g, 'cannot'], [/\bcan not\b/g, 'cannot'],
+    [/\b(do|does|did|is|are|was|were|have|has|had|should|could|would|must|need)n't\b/g, '$1 not'],
+    [/\bi'm\b/g, 'i am'], [/\b(you|we|they|what|who|where|there|here|how)'re\b/g, '$1 are'],
+    [/\b(i|you|we|they|he|she|it|that|there)'ll\b/g, '$1 will'], [/\b(i|you|we|they)'ve\b/g, '$1 have'],
+    [/\b(i|you|we|they|he|she)'d (like|love)\b/g, '$1 would $2'],
+    [/\b(he|she|it|that|what|where|who|how|there|here)'s\b/g, '$1 is']
+  ];
+  function expandContr(s) { return CONTR.reduce((t, [r, v]) => t.replace(r, v), String(s == null ? '' : s).toLowerCase().replace(/[’‘`´]/g, "'")); }
   function typeGrade(answer, alts, input) {
-    const t = typeNorm(input), ok = !!t && [answer].concat(alts || []).some(a => typeNorm(a) === t);
+    const t = typeNorm(input), tc = expandContr(t), ok = !!t && [answer].concat(alts || []).some(a => { const n = typeNorm(a); return n === t || expandContr(n) === tc; });
     let diffAt = -1;
     if (!ok) { const a = typeNorm(answer).split(' '), b = t ? t.split(' ') : []; diffAt = a.findIndex((w, i) => w !== b[i]); if (diffAt < 0) diffAt = a.length - 1; }
     return { ok, diffAt };
@@ -85,13 +97,15 @@
     return String(s == null ? '' : s).toLowerCase().replace(/[’‘`´']/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
       .split(' ').map(t => (/^\d+$/.test(t) ? (NUM_WORDS[+t] || TENS[+t] || t) : t)).join(' ');
   }
+  // 縮寫／展開互收：原樣比一次、兩邊都展開（expandContr）再比一次，任一個對就算（辨識結果寫 I'm、小朋友說 I am 也對）
+  const speakForms = s => [...new Set([speakNorm(s), speakNorm(expandContr(s))])].filter(Boolean);
   function speakGrade(answer, alts, heard, mode) {
-    const targets = [answer].concat(alts || []).map(speakNorm).filter(Boolean);
+    const targets = [...new Set([answer].concat(alts || []).flatMap(speakForms))];
     const list = (Array.isArray(heard) ? heard : [heard]).map(h => String(h == null ? '' : h));
     const at = list.findIndex(h => {
-      const n = speakNorm(h);
-      if (!n) return false;
-      return targets.some(t => n === t || (mode === 'word' && (' ' + n + ' ').includes(' ' + t + ' ')));
+      const ns = speakForms(h);
+      if (!ns.length) return false;
+      return ns.some(n => targets.some(t => n === t || (mode === 'word' && (' ' + n + ' ').includes(' ' + t + ' '))));
     });
     return { ok: at >= 0, at, heard: at >= 0 ? list[at] : (list[0] || '') };
   }
@@ -150,9 +164,10 @@
     // ---- 單字 ----
     D.words.forEach(w => {
       const topic = (w.tags && w.tags[0]) || 'other', key = wordKey(w);
-      // 干擾選項：同等級同主題 → 同詞性 → 同等級 → 全部；中文意思一樣的字不當干擾（看中文選英文才不會兩個都對）
+      // 干擾選項：同等級同主題 → 同詞性 → 同等級 → 全部；中文意思一樣的字、互為同義字（alts）的字不當干擾（看中文選英文才不會兩個都對）
+      const syn = x => (w.alts || []).includes(x.w) || (x.alts || []).includes(w.w);
       const tiers = f => {
-        const others = D.words.filter(x => x !== w && x.zh !== w.zh), lv = others.filter(x => x.lv === w.lv);
+        const others = D.words.filter(x => x !== w && x.zh !== w.zh && !syn(x)), lv = others.filter(x => x.lv === w.lv);
         return [lv.filter(x => (x.tags || []).some(t => (w.tags || []).includes(t))).map(f), lv.filter(x => x.pos === w.pos).map(f), lv.map(f), others.map(f)];
       };
       const why = `${w.w} ${w.ipa || ''} ＝ ${w.zh}`;
@@ -161,7 +176,8 @@
       add(Object.assign({ id: `w:${key}:zh2en`, type: 'zh2en' }, base), () => ({ prompt: w.zh, options: choice(w.w, tiers(x => x.w)), answer: w.w, speakText: w.w, why }));
       add(Object.assign({ id: `w:${key}:en2zh`, type: 'en2zh' }, base), () => ({ prompt: w.w, en: true, play: true, options: choice(w.zh, tiers(x => x.zh)), answer: w.zh, speakText: w.w, why }));
       add(Object.assign({ id: `w:${key}:spell`, type: 'spell' }, base), () => ({ prompt: '聽寫：把聽到的字拼出來', sub: `提示：${w.zh}（${w.w.length} 個字母）`, input: 'type', options: null, answer: w.w, alts: [], speakText: w.w, auto: true, play: true, why }));
-      add(Object.assign({ id: `w:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: w.zh, sub: `（${POS[w.pos] || w.pos}）打出這個英文字`, input: 'type', options: null, answer: w.w, alts: [], speakText: w.w, why }));
+      // 看中文打字：同義字（w.alts，如 shop 也收 store）一起算對（2026-10-18）
+      add(Object.assign({ id: `w:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: w.zh, sub: `（${POS[w.pos] || w.pos}）打出這個英文字`, input: 'type', options: null, answer: w.w, alts: (w.alts || []).slice(), speakText: w.w, why }));
       // 填空拼字 2 題（只在「練習這組」出；第 3 題挖約 1/3、第 4 題挖約 1/2）
       const gp = wordGaps(w.w);
       if (gp) [['gap1', gp.g1, '把少掉的字母填進去'], ['gap2', gp.g2, '再難一點：把少掉的字母填進去']].forEach(([s, gaps, sub]) =>
@@ -227,18 +243,19 @@
         if (q.type === 'fill') {
           add({ id, module: 'grammar', topic: g.id, type: 'grammar-fill', title: fillBlank(q.s, q.a) }, () => ({ prompt: q.s, options: shuffle(q.opts), answer: q.a, speakText: fillBlank(q.s, q.a), why: q.why }));
           // 打字版：打出空格裡的字（題組最後 5 題用；id 另起，選擇版的進度不受影響）
-          add({ id: id + ':type', module: 'grammar', topic: g.id, type: 'grammar-fill-type', title: fillBlank(q.s, q.a), setOnly: true }, () => ({ prompt: q.s, sub: '打出空格裡的字', input: 'type', options: null, answer: q.a, alts: [], speakText: fillBlank(q.s, q.a), why: q.why }));
-          grammarSpeak(id, fillBlank(q.s, q.a), q.why);
+          // 打字版沒有選項：q.hint（原形字或中文意思）顯示在提示裡讓答案唯一；q.alts＝其他也對的答案（如 Can／May）（2026-10-18）
+          add({ id: id + ':type', module: 'grammar', topic: g.id, type: 'grammar-fill-type', title: fillBlank(q.s, q.a), setOnly: true }, () => ({ prompt: q.s, sub: q.hint ? `打出空格裡的字（提示：${q.hint}）` : '打出空格裡的字', input: 'type', options: null, answer: q.a, alts: (q.alts || []).slice(), speakText: fillBlank(q.s, q.a), why: q.why }));
+          grammarSpeak(id, fillBlank(q.s, q.a), q.why, (q.alts || []).map(a => fillBlank(q.s, a)));
         } else {
           add({ id, module: 'grammar', topic: g.id, type: 'grammar-fix', title: q.right }, () => ({ prompt: '哪一句是對的？', options: shuffle([q.wrong, q.right]), answer: q.right, speakText: q.right, why: q.why }));
           // 打字版：顯示錯句，打出正確的句子（填空題不夠時才進題組）
-          add({ id: id + ':type', module: 'grammar', topic: g.id, type: 'grammar-fix-type', title: q.right, setOnly: true }, () => ({ prompt: q.wrong, sub: '這句有錯，打出正確的句子', input: 'type', options: null, answer: q.right, alts: [], speakText: q.right, why: q.why }));
-          grammarSpeak(id, q.right, q.why);
+          add({ id: id + ':type', module: 'grammar', topic: g.id, type: 'grammar-fix-type', title: q.right, setOnly: true }, () => ({ prompt: q.wrong, sub: '這句有錯，打出正確的句子', input: 'type', options: null, answer: q.right, alts: (q.alts || []).slice(), speakText: q.right, why: q.why }));
+          grammarSpeak(id, q.right, q.why, q.alts || []);
         }
       });
       // 🎤 說說看（只在題組出）：說出正確的完整句子（填空題＝填好的句子、改錯題＝正確的句子），整句比對
-      function grammarSpeak(id, sentence, why) {
-        add({ id: id + ':speak', module: 'grammar', topic: g.id, type: 'speak', title: sentence, setOnly: true }, () => ({ prompt: sentence, en: true, sub: '大聲說出這個完整的句子', input: 'mic', play: true, options: null, answer: sentence, alts: [], speakMode: 'sentence', speakText: sentence, why }));
+      function grammarSpeak(id, sentence, why, alts) {
+        add({ id: id + ':speak', module: 'grammar', topic: g.id, type: 'speak', title: sentence, setOnly: true }, () => ({ prompt: sentence, en: true, sub: '大聲說出這個完整的句子', input: 'mic', play: true, options: null, answer: sentence, alts: alts.slice(), speakMode: 'sentence', speakText: sentence, why }));
       }
       g.ex.forEach((e, j) => sentenceQs('grammar', g.id, `g:${g.id}:ex${j}`, e, `文法：${g.title}`));
       (g.typed || []).forEach((t, k) => typedQ('grammar', g.id, `g:${g.id}:t${k}`, t, `文法：${g.title}`));
@@ -389,9 +406,12 @@
     buildQuiz(cfg) {
       cfg = cfg || {};
       const count = cfg.count || 10, ratio = cfg.mistakeRatio || 0, mset = new Set(cfg.mistakes || []);
-      const pool = this.list(cfg);
+      // 單字「全部等級」不含 lv4（進階・國中）：要明確選第 4 級（lv 4），或來源明確選 moe800，才出 lv4（2026-10-18）
+      const src = cfg.src && cfg.src.length ? [].concat(cfg.src) : [];
+      const lvOk = m => m.module !== 'words' || m.lv !== 4 || !!cfg.lv || src.includes('moe800');
+      const pool = this.list(cfg).filter(lvOk);
       let mpool = pool.filter(m => mset.has(m.id));
-      if (ratio >= 1 && !mpool.length) mpool = [...mset].map(id => this.byId[id]).filter(m => m && (cfg.allowSpeak || m.type !== 'speak'));
+      if (ratio >= 1 && !mpool.length) mpool = [...mset].map(id => this.byId[id]).filter(m => m && lvOk(m) && (cfg.allowSpeak || m.type !== 'speak'));
       const nm = ratio >= 1 ? Math.min(count, mpool.length) : Math.min(Math.round(count * ratio), mpool.length);
       let chosen = shuffle(mpool).slice(0, nm);
       if (ratio < 1) {
@@ -413,7 +433,7 @@
     }
   };
 
-  const KE = { Engine, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

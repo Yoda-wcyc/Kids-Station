@@ -296,7 +296,7 @@ window.DATA_WORDS = (window.DATA_WORDS || []).concat([
 {w:"fog",ipa:"/fɔɡ/",pos:"n",zh:"霧",lv:4,tags:["weather"],ex:"There is thick fog on the mountain.",exZh:"山上有濃霧。",src:"moe800"},
 {w:"foggy",ipa:"/ˈfɔɡi/",pos:"adj",zh:"有霧的",lv:4,tags:["weather", "adj"],ex:"It is foggy this morning.",exZh:"今天早上起霧了。",src:"moe800"},
 {w:"foolish",ipa:"/ˈfulɪʃ/",pos:"adj",zh:"愚蠢的；傻的",lv:4,tags:["adj"],ex:"It was foolish to forget my keys.",exZh:"忘了帶鑰匙真是太傻了。",src:"moe800"},
-{w:"football",ipa:"/ˈfʊtˌbɔl/",pos:"n",zh:"美式足球",lv:4,tags:["sport"],ex:"My cousin in America plays football.",exZh:"我在美國的表哥打美式足球。",src:"moe800"},
+{w:"football",ipa:"/ˈfʊtˌbɔl/",pos:"n",zh:"美式足球；（英國）足球",lv:4,tags:["sport"],ex:"My cousin in America plays football.",exZh:"我在美國的表哥打美式足球。",src:"moe800"},
 {w:"forest",ipa:"/ˈfɔrɪst/",pos:"n",zh:"森林",lv:4,tags:["nature"],ex:"Many animals live in the forest.",exZh:"許多動物住在森林裡。",src:"moe800"},
 {w:"forgive",ipa:"/fɚˈɡɪv/",pos:"v",zh:"原諒；寬恕",lv:4,tags:["verb"],ex:"Please forgive me for being late.",exZh:"請原諒我遲到了。",src:"moe800"},
 {w:"form",ipa:"/fɔrm/",pos:"n",zh:"表格；形式",lv:4,tags:["thing"],ex:"Please fill out this form.",exZh:"請填寫這張表格。",src:"moe800"},
