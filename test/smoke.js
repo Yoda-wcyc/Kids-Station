@@ -605,6 +605,60 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     ok(same(A.local, B.local) && same(A.local, SM.normalize(remote.doc)) && last === 0 && puts <= 2, 'syncOnce: two devices converge, no ping-pong (puts ' + puts + ')');
     ok(A.local.mm['social:u1'].passedAt[2] === 2000 && A.local.mm['science:n2'] && A.local.eq.items.length === 10 && Object.keys(A.local.scratch).length === 3, 'syncOnce: B sees A\'s social level 2 pass, union of everything');
   })().catch(e => { console.error(e); process.exit(1); });
+  // ---- 自動即時同步（2026-10-19）：syncauto.js 計時零件＋syncOnce 的 lazy（伺服器沒變不合併）／cached（先 PUT、412 再 GET）----
+  {
+    const SA = require(path.join(root, 'syncauto.js'));
+    // 假時鐘：set/clear/advance
+    const clock = () => { let t = 0, id = 0; const q = new Map(); return { now: () => t, set: (f, ms) => { q.set(++id, { f, at: t + ms }); return id; }, clear: i => q.delete(i),
+      go(ms) { const end = t + ms; for (;;) { let nx = null; q.forEach((v, k) => { if (v.at <= end && (!nx || v.at < nx[1].at)) nx = [k, v]; }); if (!nx) break; q.delete(nx[0]); t = nx[1].at; nx[1].f(); } t = end; } }; };
+    let c = clock(), fired = [];
+    let d = SA.debouncer(() => fired.push(c.now()), { wait: 1500, maxWait: 3000, timer: c });
+    d.trigger(); c.go(1400); ok(!fired.length && d.pending(), 'debounce: not yet at 1.4s');
+    c.go(200); ok(fired.join() === '1500', 'debounce: single change → push at 1.5s: ' + fired.join());
+    fired = []; c.go(10000); const t0 = c.now(); [0, 1000, 2000, 2900].forEach(dt => { c.go(dt - (c.now() - t0)); d.trigger(); }); c.go(5000);
+    ok(fired.length === 1 && fired[0] - t0 === 3000, 'debounce: 4 changes in 2.9s merge into ONE push, at most 3s after the first: +' + (fired[0] - t0));
+    fired = []; d.trigger(); d.cancel(); c.go(5000); ok(!fired.length && !d.pending(), 'debounce: cancel');
+    d.trigger(); ok(d.flush() === true && fired.length === 1 && !d.pending() && d.flush() === false, 'debounce: flush sends now (page hidden)');
+    ok([0, 1, 2, 3, 4, 9].map(n => SA.backoff(n, SA.POLL_MS, SA.BACKOFF_MAX)).join() === '20000,40000,80000,120000,120000,120000', 'backoff: 20s → 40s → 80s → cap 2 min');
+    ok(SA.POLL_MS === 20000 && SA.PUSH_MAX === 3000, 'poll every 20s, push within 3s');
+    // 作答中延後套用：hold 期間 offer 不送，release 才送（只送一次）；忘了 release 的 hold 過期後 tick 補送
+    let n = 0, now = 0; const g = SA.gate({ now: () => now, ttl: 60000, deliver: () => n++ });
+    ok(g.offer() === true && n === 1, 'gate: not answering → deliver right away');
+    g.hold('english'); ok(g.offer() === false && n === 1 && g.queued(), 'gate: answering → hold the update');
+    g.offer(); g.hold('mindmap'); ok(g.release('english') === false && n === 1, 'gate: still held by another tag');
+    ok(g.release('mindmap') === true && n === 2 && !g.queued(), 'gate: round over → deliver once');
+    ok(g.release('mindmap') === false && n === 2, 'gate: release again → nothing');
+    g.hold('x'); g.offer(); now = 59999; ok(!g.tick() && n === 2, 'gate: hold still valid'); now = 60000; ok(g.tick() === true && n === 3, 'gate: stale hold expires → tick delivers');
+    ok(SA.ago(1000, 50000) === '剛剛' && SA.ago(1000, 1000 + 3 * 60000 + 5) === '3 分鐘前' && SA.ago(1, 1 + 2 * 3600000) === '2 小時前', 'ago text');
+  }
+  (async () => {
+    const doc0 = SM.normalize({ log: [{ t: 1, id: 'a', ok: 1 }], learned: {}, mistakes: {} });
+    const mk = (server, local) => { const calls = []; return { calls, io: {
+      get: async () => { calls.push('GET'); return server.next ? server.next() : { doc: JSON.parse(JSON.stringify(server.doc)), etag: server.etag, notModified: !!server.nm }; },
+      put: async (cd, dd, e) => { calls.push('PUT ' + e); if (e !== server.etag) return { conflict: true }; server.doc = JSON.parse(JSON.stringify(dd)); server.etag = server.etag + 1; return { etag: server.etag }; },
+      readLocal: () => local.d, writeLocal: x => { calls.push('WRITE'); local.d = x; } } }; };
+    // lazy＋伺服器沒變（204）→ 不合併、不寫本機、不 PUT
+    let S = { doc: doc0, etag: 5, nm: true }, L = { d: SM.merge(doc0, { log: [{ t: 9, id: 'b', ok: 1 }] }) }, x = mk(S, L);
+    let r = await SM.syncOnce(x.io, 'C', { lazy: true });
+    ok(r.ok && r.notModified && x.calls.join() === 'GET', 'syncOnce lazy + 204/304: one GET, no merge, no PUT: ' + x.calls.join());
+    // 不是 lazy（有待上傳）：304 拿手上的版本照樣合併、PUT
+    x = mk(S, L); r = await SM.syncOnce(x.io, 'C', {}); ok(r.ok && r.puts === 1 && x.calls.join() === 'GET,PUT 5', 'full + 304: merge with cached doc, PUT: ' + x.calls.join());
+    // cached：不先 GET，直接 PUT（If-Match 手上的 ETag）
+    L.d = SM.merge(L.d, { log: [{ t: 10, id: 'c', ok: 0 }] }); S.nm = false; x = mk(S, L);
+    r = await SM.syncOnce(x.io, 'C', { cached: { doc: S.doc, etag: S.etag } });
+    ok(r.ok && r.puts === 1 && x.calls.join() === 'PUT 6' && S.doc.log.length === 3, 'push with cached version: PUT only, no GET: ' + x.calls.join());
+    // cached 但別台先改過（412）→ GET → 合併 → PUT，別台的紀錄不會被蓋掉
+    const other = SM.merge(S.doc, { log: [{ t: 11, id: 'z', ok: 1 }] }); S.doc = other; S.etag = 9; L.d = SM.merge(L.d, { log: [{ t: 12, id: 'd', ok: 1 }] }); x = mk(S, L);
+    r = await SM.syncOnce(x.io, 'C', { cached: { doc: doc0, etag: 7 } });
+    ok(r.ok && x.calls.join() === 'PUT 7,GET,WRITE,PUT 9' && S.doc.log.some(e => e.id === 'z') && S.doc.log.some(e => e.id === 'd') && L.d.log.some(e => e.id === 'z'), 'push conflict (412) → GET, merge, PUT; other device kept: ' + x.calls.join());
+    // 一直衝突：第一次＋重試 3 次＝4 次就放棄（ok:false，等下次再試）
+    let k = 0; const busy = { doc: S.doc, etag: 100, next: () => ({ doc: JSON.parse(JSON.stringify(S.doc)), etag: 'stale' + (k++) }) }; L.d = SM.merge(L.d, { log: [{ t: 13, id: 'e', ok: 1 }] }); x = mk(busy, L);
+    r = await SM.syncOnce(x.io, 'C', { cached: { doc: S.doc, etag: 'old' } });
+    ok(!r.ok && r.conflict && x.calls.filter(s => /^PUT/.test(s)).length === 4, 'always 412 → 1 try + 3 retries then give up: ' + x.calls.filter(s => /^PUT/.test(s)).length);
+    // 沒有新東西：cached 合併後跟伺服器一樣 → 完全不連線
+    x = mk(S, { d: SM.normalize(S.doc) }); r = await SM.syncOnce(x.io, 'C', { cached: { doc: S.doc, etag: S.etag } });
+    ok(r.ok && !x.calls.length, 'push with nothing new → no request at all');
+  })().catch(e => { console.error(e); process.exit(1); });
   // 文件大小：英文作答壓縮到 500KB 以內時，新欄位照留；新欄位全部塞滿也只有幾十 KB
   const mmData = { window: {} }; vm.createContext(mmData);
   ['social/unit1-2.js', 'social/unit3-4.js', 'science/unit1-2.js', 'science/unit3-4.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f), 'utf8'), mmData));
@@ -727,7 +781,8 @@ ok(!/['"]ke_/.test(bal), 'balance.html does not use ke_* storage keys');
 const idx = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 ok(/<title>小朋友學習站<\/title>/.test(idx), 'site title');
 ok(idx.indexOf('subjects.js') < idx.indexOf('app.js'), 'subjects.js loads before app.js');
-ok(idx.indexOf('syncmerge.js') < idx.indexOf('sync.js') && idx.indexOf('sync.js') < idx.indexOf('app.js'), 'syncmerge.js → sync.js → app.js (sync card renders on first paint)');
+ok(idx.indexOf('syncmerge.js') < idx.indexOf('syncauto.js') && idx.indexOf('syncauto.js') < idx.indexOf('sync.js') && idx.indexOf('sync.js') < idx.indexOf('app.js'), 'syncmerge.js → syncauto.js → sync.js → app.js (sync card renders on first paint)');
+['account.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/short-division.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'), a = h.search(/src="(\.\.\/)?syncauto\.js"/), s = h.search(/src="(\.\.\/)?sync\.js"/); ok(h.search(/src="(\.\.\/)?syncmerge\.js"/) < a && a >= 0 && a < s, f + ' loads syncmerge.js → syncauto.js → sync.js'); });
 const sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
 ['國語', '數學', '社會', '自然', '英文', "n: 'AI'", '遊戲', '#s/', 'math/balance.html', '準備中，敬請期待', '← 回'].forEach(t => ok(sj.includes(t), 'subjects.js has ' + t));
 ok((sj.match(/\{ k: '[a-z]+', n: /g) || []).length === 7, '7 subject tabs');

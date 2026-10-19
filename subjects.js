@@ -85,6 +85,7 @@
   window.addEventListener('hashchange', route);
   // 帳號同步把別台的心智圖過關紀錄合併進來：正在看單元卡（不是開著 iframe）就重畫，卡片上的「過了幾關」才會是新的
   // （AI 錯題正在重答時不重畫，免得打斷）
-  window.addEventListener('kesync-data', () => { if (!box.hidden && !box.querySelector('iframe') && !/\/mistakes-go/.test(location.hash)) route(); });
+  // 2026-10-19：改聽 'kids-sync-updated'（自動同步輪詢合併到新資料時發；作答中 sync.js 會先扣著）；錯題庫清單頁也會跟著更新題數
+  window.addEventListener('kids-sync-updated', () => { if (!box.hidden && !box.querySelector('iframe') && !/\/mistakes-go/.test(location.hash)) route(); });
   route();
 })();

@@ -135,6 +135,8 @@
   window.addEventListener('hashchange', () => { if (location.hash !== rendered) render(); });
   function render() {
     const h = location.hash || '#home'; rendered = h; redraw = null; stopRec();
+    // 自動同步（sync.js）：英文作答中先不重畫別台合併進來的紀錄，這一輪結束（離開作答頁）才重畫
+    try { const K = window.KESync; if (K && K.hold) { if (/^#quiz/.test(h) && Q && !Q.result) K.hold('english'); else setTimeout(() => K.release('english'), 0); } } catch (e) { }
     if (/^#s\//.test(h)) return; // 其他科目由 subjects.js 負責
     const [p, sub, sub2] = h.slice(1).split('/');
     const pages = { home: pHome, learn: pLearn, practice: pPractice, quiz: pQuiz, result: pResult, mistakes: pMistakes, bank: pBank, parent: pParent, tb: pTb };
@@ -760,10 +762,23 @@
     if (b('soff')) b('soff').onclick = () => { if (confirm('要取消這台的同步嗎？這台的紀錄會留著，只是不再跟別台同步。')) { P.unpair(); render(); } };
   }
   // 同步把別台的紀錄合進來後：重新讀取，畫面停在原位（作答中不重畫）
+  // 2026-10-19 自動同步：sync.js 合併到新資料先呼叫 reloadData（只重讀、不重畫），畫面等 'kids-sync-updated'（作答中 sync.js 會先扣著）
   window.KEApp = {
     reload() { loadAll(); if (/^#quiz/.test(location.hash)) return; const y = window.scrollY; render(); window.scrollTo(0, y); },
+    reloadData() { loadAll(); },
     render() { const y = window.scrollY; render(); window.scrollTo(0, y); }
   };
+  // 別台的紀錄合進來（英文清單、學會徽章、錯題數、家長頁）：重畫目前這頁、停在原位；作答中不動；正在打字（輸入框有焦點）就等打完離開輸入框再畫
+  let syncRedraw = false;
+  function syncRender() {
+    if (/^#s\//.test(location.hash || '')) return;                // 其他科目：subjects.js 自己處理
+    if (/^#quiz/.test(location.hash || '')) return;               // 作答中：結束時 go('#result') 會畫新的
+    const a = document.activeElement;
+    if (a && app.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) { syncRedraw = true; return; }
+    syncRedraw = false; const y = window.scrollY; render(); window.scrollTo(0, y);
+  }
+  window.addEventListener('kids-sync-updated', syncRender);
+  document.addEventListener('focusout', () => { if (syncRedraw) setTimeout(() => { if (syncRedraw) syncRender(); }, 0); });
   // 🎤 說說看：說明（不需要同意；要關麥克風請用 iPad 設定）
   function speakCard() {
     return `<section class="card" id="spcard"><h2>🎤 說說看（麥克風）</h2><p>${SPEAK_NOTE}</p><p class="muted">單字、片語、文法、句型的「練習這組」都有說說看題。${MIC_ALLOW}不想用麥克風，可以到 iPad「設定」→「Safari」→「麥克風」關掉。</p>${canSpeak ? '' : `<p class="muted">${NO_SPEAK_MSG}；練習這組的說說看題可以先跳過，不算進「學會了」。</p>`}</section>`;

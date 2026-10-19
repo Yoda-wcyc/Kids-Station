@@ -197,12 +197,18 @@
   function correctIds(doc) { const d = normalize(doc), s = new Set(); d.log.forEach(e => { if (e.ok) s.add(e.id); }); Object.keys(d.agg).forEach(q => { if (d.agg[q].fc != null) s.add(q); }); return s; }
 
   // 同步一次：GET → 合併 → 本機有變就寫回 → 跟遠端不同才 PUT（If-Match；被別台搶先就重來）
-  // io = {get(code) → {doc,etag}|null, put(code,doc,etag) → {conflict?}, readLocal() → doc, writeLocal(doc)}
+  // io = {get(code) → {doc,etag,notModified?}|null, put(code,doc,etag) → {conflict?}, readLocal() → doc, writeLocal(doc)}
+  // opts（2026-10-19 自動同步）：
+  //   tries：最多試幾次（預設 4＝第一次＋衝突後最多重試 3 次）
+  //   lazy：第一次 GET 回「伺服器沒變」（notModified）就直接結束，不合併（輪詢用；本機沒有待上傳的變動才可以用）
+  //   cached：{doc,etag} 上次跟伺服器對到的版本。第一次不 GET，直接拿它合併後 PUT（If-Match 它的 etag）；被別台改過（412）才 GET 重來
   async function syncOnce(io, code, opts) {
-    const tries = (opts && opts.tries) || 3; let puts = 0, changedLocal = false;
+    opts = opts || {};
+    const tries = opts.tries || 4; let puts = 0, changedLocal = false, pre = opts.cached && opts.cached.doc ? opts.cached : null;
     for (let i = 0; i < tries; i++) {
-      const remote = await io.get(code);
+      const remote = pre || await io.get(code); pre = null;
       if (!remote) return { ok: false, notFound: true, puts, changedLocal };
+      if (opts.lazy && i === 0 && remote.notModified) return { ok: true, notModified: true, puts, changedLocal };
       const rdoc = normalize(remote.doc), merged = compact(merge(io.readLocal(), rdoc));
       // 寫回本機前再跟「現在的本機」合一次，期間新增的作答不會被蓋掉
       const fresh = compact(merge(io.readLocal(), merged));

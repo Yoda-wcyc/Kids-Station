@@ -117,8 +117,9 @@
 </main>
 <script src="kids-auth.js?v=42d7c72a13"></script>
 <script src="kids-coins.js?v=79bd3efb0b"></script>
-<script src="syncmerge.js?v=d6f26ac66d"></script>
-<script src="sync.js?v=8e78a66bba"></script>
+<script src="syncmerge.js?v=7e418bd41a"></script>
+<script src="syncauto.js?v=d7ed49f73e"></script>
+<script src="sync.js?v=c545e0927d"></script>
 <script>
 (function () {
   'use strict';
@@ -216,6 +217,7 @@
   }
   if (KS) {
     window.addEventListener('kesync', function () { drawSync(); });
+    window.addEventListener('kids-sync-updated', function () { drawSync(); });   // 自動同步合併到別台的紀錄：數量跟著更新
     $('#s-now').addEventListener('click', function () {
       var b = $('#s-now'); b.disabled = true; $('#s-status').textContent = '同步中…';
       KS.uploadNow().then(function () { b.disabled = false; drawSync(); }, function () { b.disabled = false; drawSync(); });

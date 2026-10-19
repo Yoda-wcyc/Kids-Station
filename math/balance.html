@@ -995,7 +995,8 @@ function persist(){
 }
 /* 帳號同步把別台的題目合併進來（storage／kesync-data）：重讀清單；正在編輯就先不動，目前這題還在就留在這題 */
 function syncReload(){
-  if (S.editing >= 0 || MK) return;
+  if (MK) return;
+  if (S.editing >= 0){ S.syncLater = true; return; }   // 正在編輯：編輯結束（endEdit）再套用
   var r = loadList(S.store); if (!r.ok) return;
   var same = r.list.length === S.list.length && r.list.every(function(it, k){ return it.q === S.list[k].q && !!it.own === !!S.list[k].own; });
   if (same) return;
@@ -1006,7 +1007,7 @@ function syncReload(){
   else { refreshLists(); loadProblem(0); }
 }
 window.addEventListener('storage', function(e){ if (e.key === STORE_KEY || e.key === null) syncReload(); });
-window.addEventListener('kesync-data', syncReload);
+window.addEventListener('kids-sync-updated', syncReload);   // 自動同步合併到新資料（首頁會把事件轉給子框）
 
 /* 題目代碼 */
 function exportCode(list){ return list.map(function(it){ return it.q; }).join('; '); }
@@ -1562,6 +1563,7 @@ $('keypad').addEventListener('click', function(e){
 function endEdit(){
   S.editing = -1;
   $('edit-note').hidden = true; $('btn-update').hidden = true; $('btn-cancel-edit').hidden = true; $('btn-add').hidden = false;
+  if (S.syncLater){ S.syncLater = false; setTimeout(syncReload, 0); }   // 編輯中別台改了清單：現在套用
 }
 $('btn-add').addEventListener('click', function(){
   var a = checkInput(); if (!a.ok) return;
@@ -1819,8 +1821,9 @@ try {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=79bd3efb0b"></script>
-<script src="../syncmerge.js?v=d6f26ac66d"></script>
-<script src="../sync.js?v=8e78a66bba"></script>
+<script src="../syncmerge.js?v=7e418bd41a"></script>
+<script src="../syncauto.js?v=d7ed49f73e"></script>
+<script src="../sync.js?v=c545e0927d"></script>
 <script>
 /* 會員閘門：看說明、翻「常見錯誤」卡片免登入；按步驟／自動播放／選題／換你算算看／自己出題／管理題目要登入 */
 if (window.KidsAuth) KidsAuth.guard('#controls button, #dots .dot, #tryme button, #tabs .tab[data-k], #editor-sec .keypad .key, #editor-sec .row button, #manage-sec button', 'math', { keys: ['ArrowLeft', 'ArrowRight'] });

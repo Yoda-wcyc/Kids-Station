@@ -908,7 +908,7 @@ function init(){
   if(m0 !== 'read'){ UI.mode = 'read'; if(loggedOK() && gate(m0, function(){ UI.mode = m0; saveUI(); enterMode(); })) UI.mode = m0; }
   enterMode();
   window.addEventListener('storage', function(e){ if(e.key === PKEY || e.key === null) onSynced(); });
-  window.addEventListener('kesync-data', onSynced);
+  window.addEventListener('kids-sync-updated', onSynced);   // 自動同步合併到新資料（首頁會把事件轉給子框）
 }
 window.MM = { refresh:function(){ if(!D.units[UI.unit]) UI.unit = 0; enterMode(); }, state:function(){ return {UI:UI, view:view, arch:arch, QZ:QZ, cloze:cloze, NODES:NODES, STAGE:STAGE}; }, act:function(name, data){ var el = document.createElement('button'); Object.keys(data || {}).forEach(function(k){ el.dataset[k] = data[k]; }); ACT[name](el); }, archSeq:archSeq };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
