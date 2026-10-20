@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>短除法：最大公因數・最小公倍數</title>
-<link rel="stylesheet" href="../style.css?v=f1518f44d6">
+<link rel="stylesheet" href="../style.css?v=d8aed364d6">
 <style>
 :root{--g:#2477c9;--g-bg:#d6ecff;--l:#d2601a;--l-bg:#ffe1c4;--bfs:clamp(30px,4.2vw + 12px,46px)}
 body{background:var(--bg)}
@@ -97,6 +97,7 @@ body{background:var(--bg)}
 </head>
 <body>
 <main class="sd">
+  <div id="kdone" hidden></div>
   <header class="sd-head">
     <h1 id="title">🧮 短除法：最大公因數・最小公倍數</h1>
     <p class="muted" id="lede">用短除法一步一步找出最大公因數和最小公倍數。先看步驟，再換你算，最後挑戰生活應用題！</p>
@@ -537,6 +538,7 @@ function subAns(kind) {
 }
 function tryEnd() {
   var n = T.items.length;
+  if (!T.mk && n && !T.doneSent) { T.doneSent = true; try { if (window.KidsDone) KidsDone.record('sd', T.lv, Math.round(T.ok / n * 100)); } catch (e) { } }   // 單元完成：這個難度最佳一輪（一次就全對的題數／題數）
   if (!T.sent) { T.sent = true; try { if (window.KidsCoins) KidsCoins.report({ type: 'practice_round', item: T.mk ? 'math:mistakes' : 'math:gcd', correct: T.ok, total: n }); } catch (e) { } }
   var eqLeft = mkLeft('eq'), wLeft = mkLeft('gcdword');
   $('try-q').hidden = true; $('try-end').hidden = false;
@@ -825,6 +827,7 @@ function wAns() {
 }
 function wEnd() {
   var n = W.items.length;
+  if (!W.mk && n && !W.doneSent) { W.doneSent = true; try { if (window.KidsDone) KidsDone.record('gw', W.lv, Math.round(W.ok / n * 100)); } catch (e) { } }   // 單元完成：應用題這個難度最佳一輪
   if (!W.sent) { W.sent = true; try { if (window.KidsCoins) KidsCoins.report({ type: 'practice_round', item: W.mk ? 'math:mistakes' : 'math:gcdword', correct: W.ok, total: n }); } catch (e) { } }
   var gLeft = mkLeft('gcd'), eqLeft = mkLeft('eq');
   $('w-q').hidden = true; $('w-end').hidden = false;
@@ -895,7 +898,14 @@ function setTab(k) {
   if (k === 'try' && !T) tryHome();
   if (k === 'word' && !W) wHome();
   if (k === 'see') seeRender();
+  paintDone();
 }
+/* 頁首：這個單元學完了沒（../completion.js 判定）。📝 應用題分頁＝「短除法：應用題」，其他分頁＝「短除法：換你算」；錯題練習不顯示 */
+function paintDone() {
+  try { var el = $('kdone'); if (!el || !window.KidsDone) return; if (MK || MKW) { el.hidden = true; return; }
+    KidsDone.mount(el, S.tab === 'word' ? 'math:gw' : 'math:sd', { title: S.tab === 'word' ? '短除法：應用題' : '短除法：換你算' }); } catch (e) { }
+}
+window.SDPage.paintDone = paintDone;
 $('tab-see').onclick = function () { setTab('see'); };
 $('tab-try').onclick = function () { setTab('try'); };
 $('tab-word').onclick = function () { setTab('word'); };
@@ -913,6 +923,7 @@ $('lv').addEventListener('click', function (e) {
 /* ================= 啟動 ================= */
 seeLoad([12, 18], 'both');
 if (MK && !mkLeft('gcd') && mkLeft('gcdword')) { MK = false; MKW = true; }   // 只有應用題錯題 → 直接練應用題錯題
+if (!MK && !MKW && /[?&]tab=word(?:&|$)/.test(location.search)) setTab('word');   // 課程地圖「短除法：應用題」直接開應用題分頁
 if (MKW) {
   /* 應用題錯題練習：type 'gcdword'，用同樣的模板＋數字原題重做（最多 30 題、最近答錯的先） */
   var witems = wordMkItems();
@@ -955,8 +966,11 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=79bd3efb0b"></script>
-<script src="../syncmerge.js?v=7e418bd41a"></script>
+<script src="../syncmerge.js?v=bc050566ae"></script>
+<script src="../completion.js?v=19d6bff8e8"></script>
+<script src="../kids-done.js?v=877f66af0a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
-<script src="../sync.js?v=c545e0927d"></script>
+<script src="../sync.js?v=cbdd56da2a"></script>
+<script>if (window.SDPage && SDPage.paintDone) SDPage.paintDone();</script>
 </body>
 </html>

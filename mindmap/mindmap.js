@@ -135,8 +135,11 @@ function recordResult(uid, level, pct, isReview){
   u.best[level] = Math.max(u.best[level] || 0, pct);
   var pass = pct >= PASS[level];
   if(pass){ u.passedAt[level] = t; u.lastPassAt = t; u.unlocked = Math.max(u.unlocked, Math.min(level + 1, 5)); if(isReview) u.reviewStep = (u.reviewStep || 0) + 1; }
-  lsSet(PKEY, p); syncTouch(true); return pass;
+  lsSet(PKEY, p); syncTouch(true); try{ if(window.KidsDone) window.KidsDone.refresh(); }catch(e){} return pass;
 }
+/* 單元完成（../completion.js 判定、../kids-done.js 補存＋頁首橫幅）：考考自己、練習題一輪的答對率（跟結果畫面上的 % 一樣）存進 kids_done */
+function doneRec(sec, pct){ try{ if(window.KidsDone && !MKMODE) window.KidsDone.record(sec, pk(unit().id), pct); }catch(e){} }
+function paintDone(){ try{ var el = $('#kdone'); if(!el || !window.KidsDone) return; if(MKMODE || !unit()){ el.hidden = true; return; } var u = unit(); window.KidsDone.mount(el, 'mm:' + pk(u.id), {compact:true, title:D.units.length > 1 ? unitLabel(u) + '・' + u.title : ''}); }catch(e){} }
 /* 帳號同步（sync.js；在首頁 iframe 裡借用首頁的 KESync）：一關結束馬上同步，挖空紀錄 3 秒後 */
 function syncTouch(now){ try{ var K = window.KESync; if(K) (now ? K.now : K.touch)(); }catch(e){} }
 /* 別台的紀錄合併進來（storage／kesync-data）：停在關卡首頁才重畫，正在玩的不打斷 */
@@ -467,6 +470,7 @@ function updateScore(){
 function checkClozeDone(){
   var keys = Object.keys(BL), s = scoreOf(keys); if(s.done < s.n) return;
   var pct = Math.round(s.ok / s.n * 100);
+  doneRec('cz', pct);
   /* 學習幣：這一組空格全部作答完＝一輪（同一組只報一次；按「再答一次」改對不重報） */
   var c = cloze[unit().id];
   if(c && !c.reported){ c.reported = true; var first = keys.filter(function(k){ return c.ans[k] && c.ans[k].first; }).length; coinRound('cloze', first, s.n); }
@@ -515,7 +519,7 @@ function startArch(level, review){
   if(level === 2) makeOpts();
   if(level === 4){ arch.l4 = kidsData(unit()).map(function(){ return {title:'', n:0, topics:[]}; }); showPanel(); renderL4(); return; }
   showMap(); render(); fit(false, AUTO_MIN); renderTray();
-  if(level >= 2) setTimeout(function(){ focusNode(curItem().id); }, 30);
+  if(level >= 2) setTimeout(function(){ var it = arch && curItem(); if(it) focusNode(it.id); }, 30);   // 30ms 內這一關已經結束／換關：不聚焦
 }
 function makeOpts(){
   var it = curItem(); if(!it) return;
@@ -746,7 +750,7 @@ function renderQuiz(){
 function quizDone(right){ var it = QZ.items[QZ.i]; it.done = true; it.right = right; if(right) QZ.ok++; coinAnswer(right);
   if(QZ.mk){ try{ if(KMx().record(SUBJ, it.mk, right) === 'graduated') QZ.grad++; }catch(e){} }
   else mkQuiz(it.q, right);
-  if(QZ.items.every(function(x){ return x.done; }) && !QZ.reported){ QZ.reported = true; coinRound(QZ.mk ? 'mistakes' : 'quiz', QZ.ok, QZ.items.length); }
+  if(QZ.items.every(function(x){ return x.done; }) && !QZ.reported){ QZ.reported = true; coinRound(QZ.mk ? 'mistakes' : 'quiz', QZ.ok, QZ.items.length); if(!QZ.mk) doneRec('qz', Math.round(QZ.ok / QZ.items.length * 100)); }
   renderQuiz(); }
 
 /* ---------- 📕 只練錯題（?mistakes=1；首頁錯題庫按「只練錯題」開這頁）----------
@@ -807,6 +811,7 @@ function updateChrome(){
   document.querySelectorAll('#tools [data-act]').forEach(function(b){ b.hidden = !showTools || (b.id === 'btnShuffle' && UI.mode !== 'cloze'); });
   if(!mapOn){ $('#trayTop').hidden = true; $('#trayBot').hidden = true; }
   if(MKMODE){ $('#units').hidden = true; $('#modes').hidden = true; $('#layoutSeg').style.visibility = 'hidden'; }
+  paintDone();
 }
 function enterMode(){
   closePop(); closeModal(); arch = null;
@@ -876,6 +881,7 @@ function buildDOM(){
     '<header class="mm-top"><div class="mm-row"><a class="mm-home" href="' + home + '">← 回' + CFG.name + '</a><h1>' + h1 + '</h1>' +
       '<div class="mm-segbox" id="layoutSeg" role="group" aria-label="排法"><button class="mm-b" data-act="layout" data-v="tree">🌳 橫向樹</button><button class="mm-b" data-act="layout" data-v="radial">🌞 放射狀</button></div>' +
       '<span class="mm-auth" data-kids-auth-slot></span></div>' +
+      '<div id="kdone" hidden></div>' +
       '<nav class="mm-units" id="units" aria-label="單元"></nav>' +
       '<nav class="mm-modes" id="modes" aria-label="模式"><button class="mm-b" data-act="mode" data-v="read">📖 看重點</button><button class="mm-b" data-act="mode" data-v="arch">🧠 背架構</button><button class="mm-b" data-act="mode" data-v="cloze">✏️ 考考自己</button><button class="mm-b" data-act="mode" data-v="quiz">📝 練習題</button></nav></header>' +
     '<main class="mm-main"><section class="mm-mapwrap" id="mapwrap"><div class="mm-tray tt" id="trayTop" hidden></div>' +

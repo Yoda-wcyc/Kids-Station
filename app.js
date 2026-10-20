@@ -270,7 +270,7 @@
     const st = stats(), mc = mistakeIds().length;
     app.innerHTML = top('小朋友學習站 🎈', false) + `
       <div class="stats"><div class="stat"><span>🔥</span><b>${st.streak}</b><small>連續天數</small></div><div class="stat"><span>✏️</span><b>${st.today}</b><small>今天做的題目</small></div><div class="stat"><span>⭐</span><b>${S.progress.stars}</b><small>星星</small></div></div>
-      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? `翰林五年級・${D.textbook.length} 個單元` : '準備中', 'c2')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}</div>
+      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? `翰林五年級・${D.textbook.length} 個單元` : '準備中', 'c2')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}<a class="tile c1" id="tile-map" href="map.html"><span class="ti">🗺️</span><b>課程地圖</b><small>哪些單元學完了、還差哪些</small></a></div>
       <p class="muted center">小提示：看到英文，點一下就會唸給你聽 👂</p>${shareRow()}`;
   }
 
@@ -380,17 +380,20 @@
     if (!u) {
       // 單元卡依冊別分組（五上、五下…）；draft＝依學校課程計畫整理、還沒拿課本核對
       const books = [...new Set(D.textbook.map(x => x.book || ''))];
-      app.innerHTML = top('📘 課本進度') + `<p class="muted">翰林 Here We Go!：每一課都有 📖 教學、✏️ 練習、📝 考試。</p>` + (books.map(b => `<h2 class="tb-book">${esc(b || '課本')}</h2><div class="tiles">${D.textbook.filter(x => (x.book || '') === b).map(x => `<button class="tile c2 tb-unit" data-go="#tb/${esc(x.id)}/learn"><span class="ti">📘</span><b>${esc(x.title.replace(/^五[上下] /, ''))}</b><small class="en">${esc(x.theme)}</small>${x.draft ? '<small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}</button>`).join('')}</div>`).join('') || '<p class="muted">準備中</p>');
+      app.innerHTML = top('📘 課本進度') + `<p class="muted">翰林 Here We Go!：每一課都有 📖 教學、✏️ 練習、📝 考試。</p>` + (books.map(b => `<h2 class="tb-book">${esc(b || '課本')}</h2><div class="tiles">${D.textbook.filter(x => (x.book || '') === b).map(x => `<button class="tile c2 tb-unit" data-go="#tb/${esc(x.id)}/learn"><span class="ti">📘</span><b>${esc(x.title.replace(/^五[上下] /, ''))}</b><small class="en">${esc(x.theme)}</small>${x.draft ? '<small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}${tbBadge(x.id)}</button>`).join('')}</div>`).join('') || '<p class="muted">準備中</p>');
       return;
     }
     if (!TB_TABS.some(t => t[0] === tab)) tab = 'learn';
-    app.innerHTML = top(esc(u.title), '#tb') + `<p class="tb-theme"><span class="en say">${esc(u.theme)}</span> <small>${esc(u.themeZh || '')}</small>${u.draft ? '<br><small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}</p>
+    app.innerHTML = top(esc(u.title), '#tb') + `<div id="kdb" hidden></div><p class="tb-theme"><span class="en say">${esc(u.theme)}</span> <small>${esc(u.themeZh || '')}</small>${u.draft ? '<br><small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}</p>
       <nav class="tb-tabs" role="tablist">${TB_TABS.map(([k, t]) => `<button type="button" role="tab" class="tb-tab${k === tab ? ' on' : ''}" aria-selected="${k === tab}" data-go="#tb/${esc(u.id)}/${k}">${t}</button>`).join('')}</nav><div id="tbbody"></div>`;
+    if (window.KidsDone) KidsDone.mount($('#kdb'), 'tb:' + u.id, { title: '' });   // 頁首：這個單元學完了沒（completion.js 判定）
     const body = $('#tbbody');
     if (tab === 'learn') return tbLearn(u, body);
     if (tab === 'practice') return tbPractice(u, body);
     return tbTest(u, body);
   }
+  // 單元卡上的小字：✅ 已完成／🟡 進行中 xx%／⚪ 還沒開始
+  function tbBadge(id) { try { const r = window.KidsDone && KidsDone.result('tb:' + id); return r ? `<small class="tb-st tb-st-${r.status}">${esc(KidsCompletion.statusText(r))}</small>` : ''; } catch (e) { return ''; } }
   function tbLearn(u, body) {
     const it = E.tbItems(u.id), wBy = new Map(it.words.map(w => [KE.wordKey(w), w])), phBy = new Map(it.phrases.map(p => [p.id, p]));
     const card = (en, ipa, zh, pl) => `<div class="card tbw"><div class="tbw-h"><span class="w en say">${esc(en)}</span>${sayBtn(en)}</div><div class="ipa">${esc(ipa || '')}</div><div class="zh">${esc(zh)}</div>${pl ? `<div class="tbw-pl">複數：<span class="en say">${esc(pl)}</span></div>` : ''}</div>`;
@@ -640,6 +643,7 @@
     const stars = tot ? (pct >= 0.9 ? 3 : pct >= 0.6 ? 2 : 1) : 0;
     S.progress.stars += stars; S.progress.quizzes++; save('ke_progress', S.progress);
     Q.result = { ok, tot, stars, wrong: Q.answers.filter(a => !a.ok && !a.skip).map(a => a.q) };
+    if (Q.exam && Q.cfg && Q.cfg.tb && tot && window.KidsDone) KidsDone.record('tb', Q.cfg.tb, Math.round(ok / tot * 100)); // 單元完成：考試最高分＋最近一次
     if (window.KESync) KESync.now(); // 一回合結束 → 馬上同步
     // 學習幣：一回練習結束就回報（給幾枚、門檻、少於 5 題不給，都由後端決定）
     if (window.KidsCoins && !Q.gate) KidsCoins.report({ type: 'practice_round', item: 'english:' + (Q.drill ? 'drill' : (Q.cfg && Q.cfg.mode) || 'practice'), correct: ok, total: tot });

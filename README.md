@@ -59,6 +59,9 @@ subjects.js/.css  科目列與活動卡片、iframe
 math/ ai/ game/   其他科目的活動頁（見上方「正本位置」）
 mindmap/          社會、自然心智圖（node mindmap/test/blanks.test.js、node mindmap/test/data.test.js）
 deploy_copy.py    正本 → 部署夾的複製（含排除規則）
+completion.js     單元完成的唯一判定處（純函式，node test/completion.test.js）
+kids-done.js      單元完成：補存紀錄 kids_done＋每個單元頁頁首橫幅（瀏覽器）
+map.html          🗺️ 課程地圖（首頁、帳號頁、各科卡片頁有入口）
 ```
 
 紀錄存在瀏覽器 localStorage：`ke_progress`、`ke_mistakes`、`ke_settings`、`ke_log`、`ke_learned`、`ke_correct`、`ke_agg`（壓縮過的舊紀錄）；配對資訊 `ke_sync`（只在這台）。家長頁可以匯出／匯入 JSON 備份（含學會紀錄）。
@@ -85,7 +88,7 @@ deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 家長頁「☁️ 裝置同步」：第一台按「產生同步碼」（像 `ABCD-EFGH`），另一台輸入同一組碼或打開同步連結（`https://yoda-wcyc.github.io/Kids-Station/#sync=ABCD-EFGH`），兩台的紀錄就自動合在一起。不用帳號。
 
 - **會同步**：作答紀錄（`ke_log`）、學會紀錄（`ke_learned`）、錯題庫（`ke_mistakes`）。題組進度、能不能按「學會了」都從合併後的作答紀錄算，所以也會一起同步。語音速度等設定**不**同步。
-- **其他科（文件 v3，2026-10-09）**：英文星星／完成回數（`ke_progress`，每台各記自己的、總數＝加總）、社會／自然心智圖過關與複習（`kids_mm_progress`）、挖空／背架構加權（`kids_mm_blanks`）、數學天平題目清單（`tianping-eq-list-v2`，聯集＋刪除墓碑，最多 30 題；清單狀態另存 `ke_sync_eq`）、Scratch「我完成了」（`kids_scratch_done`）。不同步：登入（`kids_jwt` 等）、學習幣（`kids_coin_*`）、設定（`ke_settings`、`kids_mm_ui`、`ks_parent_pin`）、遊戲存檔（`hi_*`、`hw_*`）。心智圖、天平在首頁 iframe 裡時借用首頁的同步；合併規則細節見 `syncmerge.js` 檔頭。舊版頁面讀到 v3 文件不會壞（只認得英文欄位），新版下次同步會從本機補回其他欄位。
+- **其他科（文件 v3，2026-10-09）**：英文星星／完成回數（`ke_progress`，每台各記自己的、總數＝加總）、社會／自然心智圖過關與複習（`kids_mm_progress`）、挖空／背架構加權（`kids_mm_blanks`）、數學天平題目清單（`tianping-eq-list-v2`，聯集＋刪除墓碑，最多 30 題；清單狀態另存 `ke_sync_eq`）、Scratch「我完成了」（`kids_scratch_done`）；2026-10-20 文件 v5 加單元完成紀錄（`kids_done`）。不同步：登入（`kids_jwt` 等）、學習幣（`kids_coin_*`）、設定（`ke_settings`、`kids_mm_ui`、`ks_parent_pin`）、遊戲存檔（`hi_*`、`hw_*`）。心智圖、天平在首頁 iframe 裡時借用首頁的同步；合併規則細節見 `syncmerge.js` 檔頭。舊版頁面讀到 v3 文件不會壞（只認得英文欄位），新版下次同步會從本機補回其他欄位。
 - **什麼時候（2026-10-19 起自動即時同步，計時零件在 `syncauto.js`）**：
   - 上傳：任何紀錄變動（作答、學會了／取消、錯題增減、心智圖過關與挖空、天平題目、Scratch 完成；別的分頁或子框寫進同步範圍也算）後 1.5 秒內沒有新變動就送，最晚 3 秒一定送；做完一回合、按學會了馬上送。先拿上次跟伺服器對到的版本合併直接 PUT（If-Match），被別台先改過（412）才 GET、合併再 PUT，最多重試 3 次。頁面藏起來／關掉（visibilitychange、pagehide）立刻送一次（PUT 用 fetch keepalive）。
   - 下載：有同步碼、頁面看得到時每 20 秒問一次（`GET ?since=<ETag>`，伺服器沒變回 204、不合併）；回到前景、focus、重新連上網路立刻問；頁面藏起來就停。連續失敗 40 秒、80 秒、最多 2 分鐘再試。
@@ -96,6 +99,21 @@ deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 - **隱私**：拿到同步碼的人都看得到練習紀錄（只有練習資料，沒有姓名等個人資料），不要公開分享。「取消同步」只是讓這台不再同步，這台的紀錄會留著。
 - **後端**：獨立的 Vercel 專案 `kids-sync`（https://kids-sync.vercel.app/api/sync，原始碼在 `G:\Yoda x Claude\_deploy\kids-sync\`），只用自己的 Blob store `kids-sync-store`。要換後端只改 `sync.js` 裡的 `backend`（create/get/put）。
 - **測試**：`node test/smoke.js`（含合併規則、自動同步計時零件）；`node test/live-sync.js`（要網路：兩台假裝置對線上 API 同步、確認收斂）。
+
+## 單元完成與課程地圖（2026-10-20）
+
+每個單元頁最上方有橫幅：✅ 已完成／🟡 進行中 xx%（列出每一項 ✔ 已達成／✘ 還差什麼）／⚪ 還沒開始；`map.html` 依科目列出每個單元（狀態色＋文字＋百分比，點一格進單元）、整體完成率、各科 x/y 完成、英文題庫學會百分比。判定規則全部在 `completion.js` 檔頭：
+
+| 單元 | 完成條件 |
+|---|---|
+| 英文課本（tb:<單元>） | 本課 tb 單字、片語、句型都「學會了」＋本單元考試最高分 ≥ 80 |
+| 社會／自然（mm:<科>:<單元>） | 背架構第 1～4 關都過＋考考自己一輪 ≥ 80%＋練習題一輪 ≥ 80% |
+| 天平 | 8 題內建題的「換你算算看」都算對過 |
+| 短除法／應用題 | 換你算四種難度各一輪 ≥ 80%；應用題基本、進階各一輪 ≥ 80%（應用題分頁的橫幅是「短除法：應用題」） |
+| AI 三頁 | 各玩完一次（看到結果） |
+| Scratch 七堂 | 講義按過「我完成了」（kids_scratch_done，只讀；講義頁在 game\ 不加橫幅，只在地圖顯示） |
+
+補存紀錄統一存在 `kids_done`（課本考試最高＋最近一次、心智圖考考自己／練習題最佳 %、天平內建題、短除法／應用題各難度最佳 %、AI 玩完），跟著裝置同步（文件 v5 的 `done` 欄位）。以前沒存的分數回推不了，照實顯示「還沒有紀錄」。不改任何練習的計分方式。
 
 ## 單字庫（1215 字）
 

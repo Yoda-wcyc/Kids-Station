@@ -212,3 +212,7 @@ select{min-height:48px;font:inherit;font-size:1rem;padding:6px 12px;border:2px s
 .tb-res li.ok{border-left-color:var(--ok)}.tb-res li.ok>b:first-child{color:#16784a}.tb-res li.no{border-left-color:var(--no);background:#fffafa}.tb-res li.no>b:first-child{color:var(--no)}
 .tb-res li.tb-sec{border-left:0;border-bottom:0;padding:14px 0 2px;color:#b4530a;background:none}
 @media (max-width:560px){.tb-qa{grid-template-columns:1fr}.tb-arrow{display:none}.tb-tab{font-size:.95rem}}
+/* 單元完成（2026-10-20）：課本單元卡上的狀態小字、首頁「課程地圖」入口（a.tile）；頁首橫幅樣式在 kids-done.js */
+a.tile{text-decoration:none}
+.tile .tb-st{margin-top:4px;padding:2px 10px;border-radius:999px;font-weight:700;opacity:1;background:rgba(255,255,255,.85)}
+.tile .tb-st-done{color:#145c38}.tile .tb-st-doing{color:#6b4e00}.tile .tb-st-todo{color:#4a5563}

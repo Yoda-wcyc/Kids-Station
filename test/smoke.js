@@ -538,7 +538,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   };
   // 相容：舊文件（v1 伺服器新建、v2 只有英文）讀進來不會壞，新欄位都是空的
   const v1 = SM.normalize({ v: 1, created: '2026-10-09T00:00:00Z', log: [], learned: {}, mistakes: {} }), v2 = SM.normalize(devA);
-  ok(v1.v === 4 && SM.VERSION === 4 && same(v1.mk, {}) && same(v1.mm, {}) && same(v1.mmBlanks, {}) && same(v1.scratch, {}) && same(v1.ctr, {}) && v1.eq.items.length === 0 && same(v1.eq.del, {}), 'v1 doc → v3 with empty sections');
+  ok(v1.v === 5 && SM.VERSION === 5 && same(v1.mk, {}) && same(v1.mm, {}) && same(v1.mmBlanks, {}) && same(v1.scratch, {}) && same(v1.ctr, {}) && v1.eq.items.length === 0 && same(v1.eq.del, {}), 'v1 doc → v3 with empty sections');
   ok(v2.log.length === 3 && same(SM.normalize(undefined).mm, {}) && same(SM.normalize({ mm: 5, mmBlanks: [1], eq: 'x', scratch: null, ctr: 7 }).eq, SM.normEq(null)), 'v2 / garbage sections do not throw');
   ok(same(SM.merge(v2, v1).log, SM.merge(devA, {}).log), 'v2 English fields unchanged by v3');
   // 社會／自然過關（kids_mm_progress）：過關聯集＋最佳成績＋最新過關時間；複習跟著最新那次
@@ -794,8 +794,9 @@ const nonEmpty = rel => { const p = path.join(root, rel); return fs.existsSync(p
   .forEach(rel => ok(nonEmpty(rel), rel + ' exists and is non-empty'));
 // 寫死 src 的活動卡（數學 2〔天平、短除法 2026-10-14〕、AI 3、Scratch 1）共 6 張；社會、自然的單元卡由 MM_UNITS 產生（src 是樣板字串，不算在這 5 張裡），下面另外檢查
 const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
-ok(srcs.length === 6, 'activity cards: ' + srcs.length);
-srcs.forEach(s => ok(nonEmpty(s), 'activity src exists: ' + s));
+// ＋1 張不列卡片的 hidden 入口（2026-10-20 課程地圖「短除法：應用題」→ math/short-division.html?tab=word）
+ok(srcs.length === 7 && (sj.match(/hidden: true/g) || []).length === 1, 'activity cards: ' + srcs.length);
+srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----
 ok(sj.includes('src: `mindmap/${k}.html?u=${id}`'), 'mindmap unit card src template');
@@ -838,6 +839,24 @@ fs.readdirSync(path.join(root, 'game/scratch-td/web')).filter(f => f.endsWith('.
   ['inputtools', 'handwrit', '上傳網址', 'Code.gs', 'ke_upload'].forEach(bad => ok(!s.includes(bad), `${f} still contains ${bad}`));
 });
 ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
+
+// ---- 單元完成＋課程地圖（2026-10-20）：completion.js 判定、kids-done.js 補存＋頁首橫幅、map.html；規則細節在 test/completion.test.js ----
+{
+  ['completion.js', 'kids-done.js', 'map.html'].forEach(f => ok(nonEmpty(f), f + ' exists'));
+  const loads = (f, pre) => { const h = fs.readFileSync(path.join(root, f), 'utf8'), at = s => h.search(new RegExp('<script src="' + (pre + s).replace(/[.]/g, '\\.') + '(\\?v=[0-9a-f]+)?"></script>'));
+    return at('syncmerge.js') >= 0 && at('syncmerge.js') < at('completion.js') && at('completion.js') < at('kids-done.js'); };
+  [['index.html', ''], ['map.html', ''], ['mindmap/social.html', '../'], ['mindmap/science.html', '../'], ['math/balance.html', '../'], ['math/short-division.html', '../'], ['ai/hallucinate.html', '../'], ['ai/ask-well.html', '../'], ['ai/secrets.html', '../']]
+    .forEach(([f, pre]) => ok(loads(f, pre), f + ' loads syncmerge.js → completion.js → kids-done.js'));
+  ['ai/hallucinate.html', 'ai/ask-well.html', 'ai/secrets.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'); ok(h.includes("KidsDone.record('ai'") && h.includes('KidsDone.mount(') && h.includes('id="kdone"'), f + ': records 玩完 + banner'); });
+  const appJs = fs.readFileSync(path.join(root, 'app.js'), 'utf8'), mmJs2 = fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8'), sdH = fs.readFileSync(path.join(root, 'math', 'short-division.html'), 'utf8'), balH = fs.readFileSync(path.join(root, 'math', 'balance.html'), 'utf8');
+  ok(appJs.includes("KidsDone.record('tb', Q.cfg.tb") && appJs.includes("KidsDone.mount($('#kdb'), 'tb:'") && appJs.includes('href="map.html"'), 'app.js: exam score saved, textbook banner, home 課程地圖 tile');
+  ok(mmJs2.includes("doneRec('cz', pct)") && mmJs2.includes("doneRec('qz'") && mmJs2.includes("'mm:' + pk(u.id)"), 'mindmap.js: 考考自己／練習題 best saved, banner');
+  ok(sdH.includes("KidsDone.record('sd', T.lv") && sdH.includes("KidsDone.record('gw', W.lv") && sdH.includes("'math:gw' : 'math:sd'") && balH.includes("KidsDone.record('bal'") && balH.includes("'math:balance'"), 'math pages: records + banners');
+  ok(fs.readFileSync(path.join(root, 'account.html'), 'utf8').includes('href="map.html"'), 'account.html: 課程地圖 entry');
+  const syncJs = fs.readFileSync(path.join(root, 'sync.js'), 'utf8');
+  ok(syncJs.includes("K_DONE = 'kids_done'") && syncJs.includes('done: ld(K_DONE, {})') && /WATCH = \[[^\]]*K_DONE\]/.test(syncJs), 'sync.js: kids_done synced (read, write, watch)');
+  require('./completion.test.js');
+}
 
 ok(E.itemSet('word:may-month').length === 5 && E.itemSet('word:may').length === 5 && E.get('w:may-month:zh2en').answer === 'May' && E.get('w:may:zh2en').answer === 'may', 'May / may keep separate ids');
 console.log(`bank build: engine ${msEngine.toFixed(0)} ms, all ${allQs.length} questions ${msBank.toFixed(0)} ms`);

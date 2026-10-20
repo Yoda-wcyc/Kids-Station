@@ -9,7 +9,7 @@
 <meta name="robots" content="noindex">
 <title>我的帳號 · 小朋友學習站</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23ffd166'/%3E%3Ctext x='90' y='120' font-size='86' text-anchor='middle' font-family='Arial,sans-serif' font-weight='bold' fill='%23263445'%3EAB%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css?v=f1518f44d6">
+<link rel="stylesheet" href="style.css?v=d8aed364d6">
 <style>
 .mbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:3px solid var(--line);box-shadow:0 2px 10px rgba(38,52,69,.06)}
 .mbar-in{max-width:620px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:12px}
@@ -48,6 +48,7 @@
 <header class="mbar"><div class="mbar-in"><a class="brand" href="index.html">🎈 小朋友學習站</a><a class="btn" href="index.html">← 回學習站</a></div></header>
 <main class="wrapm">
   <div class="hero"><div class="big-i">🧑‍🏫</div><h1>我的帳號</h1></div>
+  <p class="center" style="margin:0 0 14px"><a class="btn big" id="go-map" href="map.html">🗺️ 課程地圖</a></p>
   <p class="msg" id="msg" role="status" aria-live="polite" hidden></p>
 
   <section class="card center" id="out" hidden>
@@ -96,7 +97,7 @@
         <dt>這台的紀錄</dt><dd id="s-count">…</dd>
       </dl>
       <button class="btn primary big wide" type="button" id="s-now" style="margin-top:14px">☁️ 立刻上傳並同步</button>
-      <p class="muted" style="margin:10px 0 0">會同步英文（作答、學會、錯題、星星）、社會和自然心智圖（過關、複習時間、挖空紀錄）、數學天平自己出的題目、Scratch 完成紀錄；上傳舊紀錄不會補發學習幣。</p>
+      <p class="muted" style="margin:10px 0 0">會同步英文（作答、學會、錯題、星星、課本考試分數）、社會和自然心智圖（過關、複習時間、挖空紀錄、考考自己／練習題最佳成績）、數學（天平題目、換你算與應用題最佳成績）、AI 玩完紀錄、Scratch 完成紀錄；上傳舊紀錄不會補發學習幣。</p>
     </section>
 
     <form class="card" id="f-pw" novalidate>
@@ -117,9 +118,9 @@
 </main>
 <script src="kids-auth.js?v=42d7c72a13"></script>
 <script src="kids-coins.js?v=79bd3efb0b"></script>
-<script src="syncmerge.js?v=7e418bd41a"></script>
+<script src="syncmerge.js?v=bc050566ae"></script>
 <script src="syncauto.js?v=d7ed49f73e"></script>
-<script src="sync.js?v=c545e0927d"></script>
+<script src="sync.js?v=cbdd56da2a"></script>
 <script>
 (function () {
   'use strict';
