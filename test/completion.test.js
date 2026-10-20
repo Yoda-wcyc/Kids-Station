@@ -55,17 +55,35 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   const K = 'social:u1', pr = lv => ({ [K]: { unlocked: Math.min(5, lv.length + 1), best: Object.fromEntries(lv.map(l => [l, 100])), passedAt: Object.fromEntries(lv.map(l => [l, T0])), lastPassAt: T0, reviewStep: 0 } });
   let r = ev('mm:social:u1', {});
   ok(r.status === 'todo' && r.checklist.length === 3, 'mm: empty → todo, 3 checks');
-  r = ev('mm:social:u1', { mm: pr([1, 2, 3, 4]), done: { mm: { [K]: { cz: 80, qz: 80 } } } });
-  ok(r.status === 'done' && r.pct === 100, 'mm: 4 levels + 考考自己 80 + 練習題 80 (exactly) → done');
-  r = ev('mm:social:u1', { mm: pr([1, 2, 3, 4]), done: { mm: { [K]: { cz: 79, qz: 100 } } } });
-  ok(r.status === 'doing' && !r.checklist[1].ok && /79%/.test(r.checklist[1].detail) && r.pct === 67, 'mm: 考考自己 79 → doing 67%: ' + r.pct);
+  r = ev('mm:social:u1', { mm: pr([1, 2, 3, 4]), done: { mm: { [K]: { czFirst: 80, qz: 80 } } } });
+  ok(r.status === 'done' && r.pct === 100, 'mm: 4 levels + 考考自己第一次答對 80 + 練習題 80 (exactly) → done');
+  r = ev('mm:social:u1', { mm: pr([1, 2, 3, 4]), done: { mm: { [K]: { czFirst: 79, qz: 100 } } } });
+  ok(r.status === 'doing' && !r.checklist[1].ok && /79%/.test(r.checklist[1].detail) && r.pct === 67, 'mm: 考考自己第一次答對 79 → doing 67%: ' + r.pct);
+  // 考考自己只採用 czFirst（第一次作答就答對）：舊紀錄只有 cz（含「再答一次」才答對的格子）→ 未達成，說要再做一輪
+  r = ev('mm:social:u1', { mm: pr([1, 2, 3, 4]), done: { mm: { [K]: { cz: 100, qz: 100 } } } });
+  ok(r.status === 'doing' && !r.checklist[1].ok && /再答一次/.test(r.checklist[1].detail) && /第一次/.test(r.checklist[1].label), 'mm: old record (cz 100, no czFirst) → not achieved: ' + r.checklist[1].detail);
+  ok(ev('mm:social:u1', { done: { mm: { [K]: { cz: 50 } } } }).status === 'doing', 'mm: old cz record still counts as progress (doing, not todo)');
+  r = ev('mm:social:u1', { mm: pr([1, 2, 3, 4]), done: { mm: { [K]: { cz: 60, czFirst: 85, qz: 90 } } } });
+  ok(r.status === 'done' && /85%/.test(r.checklist[1].detail), 'mm: czFirst decides, old cz ignored');
+  // 一輪 10 格：7 格第一次就答對、2 格「再答一次」才答對、1 格看答案 → 結果畫面 9/10＝90%，但存的第一次答對率 70% → 未達成
+  {
+    const cells = [...Array(7).fill({ st: 'ok', first: true }), { st: 'ok', first: false, retry: true }, { st: 'ok', first: false, retry: true }, { st: 'shown' }];
+    const firstPct = Math.round(cells.filter(c => c.st === 'ok' && c.first && !c.retry).length / cells.length * 100), shownPct = Math.round(cells.filter(c => c.st === 'ok').length / cells.length * 100);
+    const sv = KC.record({}, 'czFirst', K, firstPct, 1);
+    r = ev('mm:social:u1', { mm: pr([1, 2, 3, 4]), done: Object.assign(sv, { mm: { [K]: Object.assign({}, sv.mm[K], { qz: 100 }) } }) });
+    ok(shownPct === 90 && firstPct === 70 && r.status === 'doing' && /70%/.test(r.checklist[1].detail), 'mm: retried cells not counted (shown 90%, saved first 70% → not achieved)');
+    // 再一輪 8/10 第一次就答對（另 2 格重答才對）→ 80% → 達成
+    const sv2 = KC.record(sv, 'czFirst', K, Math.round(8 / 10 * 100), 2);
+    ok(sv2.mm[K].czFirst === 80 && ev('mm:social:u1', { mm: pr([1, 2, 3, 4]), done: { mm: { [K]: { czFirst: sv2.mm[K].czFirst, qz: 80 } } } }).status === 'done', 'mm: next round 8/10 first-try → 80 → done');
+  }
   r = ev('mm:social:u1', { mm: pr([1, 2]), done: { mm: { [K]: { qz: 90 } } } });
   ok(r.status === 'doing' && /還差第 3、4 關/.test(r.checklist[0].detail) && /還沒有紀錄/.test(r.checklist[1].detail) && r.checklist[2].ok, 'mm: partial levels, cz no record, qz ok');
   ok(ev('mm:social:u1', { mmBlanks: { [K]: { sess: 1, w: {}, a: {} } } }).status === 'doing', 'mm: only cloze blanks practised → doing');
   ok(ev('mm:social:u2', { mm: pr([1, 2, 3, 4]) }).status === 'todo', 'mm: other unit untouched → todo');
   ok(ev('mm:science:n1', { mm: { 'science:n1': { unlocked: 1, best: { 1: 50 }, passedAt: {} } } }).status === 'doing', 'mm: failed level 1 (best 50) counts as progress');
-  let s = KC.record({}, 'cz', K, 70, 1); s = KC.record(s, 'cz', K, 60, 2); s = KC.record(s, 'qz', K, 0, 3);
-  ok(same(s.mm[K], { cz: 70, qz: 0 }), 'record cz/qz: best kept, 0% kept as progress: ' + C(s.mm[K]));
+  let s = KC.record({}, 'czFirst', K, 70, 1); s = KC.record(s, 'czFirst', K, 60, 2); s = KC.record(s, 'qz', K, 0, 3);
+  ok(same(s.mm[K], { czFirst: 70, qz: 0 }), 'record czFirst/qz: best kept, 0% kept as progress: ' + C(s.mm[K]));
+  ok(same(KC.record({ mm: { [K]: { cz: 95 } } }, 'czFirst', K, 40, 4).mm[K], { cz: 95, czFirst: 40 }), 'record czFirst: keeps old cz alongside (separate field)');
 }
 
 // ---------- 數學 ----------
@@ -143,6 +161,12 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   const AB = SM.merge(A, B).done;
   ok(same(AB.tb.u1, { best: 90, last: 50, at: 200 }) && AB.tb.u2.best === 80, 'done.tb: best max, last follows newer at: ' + C(AB.tb));
   ok(same(AB.mm['social:u1'], { cz: 60, qz: 85 }) && AB.mm['science:n1'].cz === 100, 'done.mm: per field max, union of units');
+  // czFirst：一樣取大、跟著同步；舊文件（只有 cz/qz）合併不會壞
+  const F1 = { done: { mm: { 'social:u1': { czFirst: 70 }, 'social:u2': { cz: 90 } } } }, F2 = { done: { mm: { 'social:u1': { czFirst: 85, cz: 95, qz: 40 } } } };
+  const F12 = SM.merge(F1, F2).done.mm;
+  ok(same(F12['social:u1'], { cz: 95, czFirst: 85, qz: 40 }) && same(F12['social:u2'], { cz: 90 }), 'done.mm.czFirst: max, merged with old cz-only records: ' + C(F12));
+  ok(SM.normalize({ done: { mm: { 'social:u1': { czFirst: 150, zz: 3 } } } }).done.mm['social:u1'].czFirst === 100, 'done.mm.czFirst: clamped, unknown fields dropped');
+  props(F1, F2, A, 'done czFirst');
   ok(same(AB.bal, { b1: 300, b2: 600 }) && same(AB.ai, { 'ask-well': 5, secrets: 900 }), 'done.bal／ai: union, earliest time');
   ok(same(AB.sd, { l20: 80, tri: 20 }) && same(SM.merge(A, {}).done.sd, { l20: 0 }), 'done.sd: max, 0% round kept');
   ok(SM.merge(B, Cc).done.tb.u1.last === 75, 'done.tb: same at → larger last (deterministic)');

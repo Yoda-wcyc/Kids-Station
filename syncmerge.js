@@ -176,7 +176,10 @@
   // 每一節：依 key 排序、整理、丟掉不合格的；keys＝只收這幾個 key
   function dsec(x, one, keys) { const o = {}, d = obj(x); Object.keys(d).sort().forEach(k => { if (!DONE_KEY.test(k) || (keys && keys.indexOf(k) < 0)) return; const v = one(d[k]); if (v != null) o[k] = v; }); return o; }
   function normTb(e) { if (!e || typeof e !== 'object') return null; const b = pct(e.best), l = pct(e.last), at = ms(e.at); if (b == null && l == null) return null; const last = l == null ? b : l; return { best: Math.max(b == null ? 0 : b, last), last, at }; }
-  function normMmD(e) { if (!e || typeof e !== 'object') return null; const o = {}; ['cz', 'qz'].forEach(k => { const v = pct(e[k]); if (v != null) o[k] = v; }); return Object.keys(o).length ? o : null; }
+  // mm：cz＝考考自己一輪答對率（含「再答一次」才答對的格子，2026-10-20 第一版存的；判定已不採用）、czFirst＝考考自己一輪「第一次作答就答對」的格數／總格數（判定用）、
+  //     qz＝練習題一輪答對率（每題只答一次，本來就是第一次答對率）。三個都取最佳（大）。
+  const MM_F = ['cz', 'czFirst', 'qz'];
+  function normMmD(e) { if (!e || typeof e !== 'object') return null; const o = {}; MM_F.forEach(k => { const v = pct(e[k]); if (v != null) o[k] = v; }); return Object.keys(o).length ? o : null; }
   function normDone(x) {
     const d = obj(x), once = v => ms(v) || null;
     return { tb: dsec(d.tb, normTb), mm: dsec(d.mm, normMmD), bal: dsec(d.bal, once), sd: dsec(d.sd, pct, SD_K), gw: dsec(d.gw, pct, GW_K), ai: dsec(d.ai, once) };
@@ -185,7 +188,7 @@
   function mergeDone(a, b) {
     a = normDone(a); b = normDone(b);
     const tb = mergeSection(a.tb, b.tb, (x, y) => { const n = x.at !== y.at ? (x.at > y.at ? x : y) : (x.last >= y.last ? x : y); return { best: Math.max(x.best, y.best), last: n.last, at: n.at }; });
-    const mm = mergeSection(a.mm, b.mm, (x, y) => { const o = {}; ['cz', 'qz'].forEach(k => { if (x[k] != null || y[k] != null) o[k] = maxOf(x[k], y[k]); }); return o; });
+    const mm = mergeSection(a.mm, b.mm, (x, y) => { const o = {}; MM_F.forEach(k => { if (x[k] != null || y[k] != null) o[k] = maxOf(x[k], y[k]); }); return o; });
     // 數字節（0 分也要留著：做過一輪＝有進度），兩邊都有才用 fn
     const nums = (x, y, fn) => { const o = {}; Object.keys(Object.assign({}, x, y)).sort().forEach(k => { o[k] = x[k] != null && y[k] != null ? fn(x[k], y[k]) : (x[k] != null ? x[k] : y[k]); }); return o; };
     const first = (x, y) => Math.min(x, y), best = (x, y) => Math.max(x, y);

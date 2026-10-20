@@ -7,7 +7,9 @@
 
    完成規則（Yoda 2026-10-20）：
    - 英文課本單元（tb:<單元>）：本課 tb 標記的單字、片語、句型都「學會了」（ke_learned，按學會了要過小測驗）＋本單元考試最高分 ≥ 80。
-   - 社會／自然單元（mm:<科>:<單元>）：背架構第 1～4 關都過（kids_mm_progress.passedAt）＋考考自己一輪 ≥ 80% 一次＋練習題一輪 ≥ 80% 一次。
+   - 社會／自然單元（mm:<科>:<單元>）：背架構第 1～4 關都過（kids_mm_progress.passedAt）＋考考自己一輪「第一次作答就答對」≥ 80% 一次＋練習題一輪 ≥ 80% 一次。
+     考考自己只看 czFirst（第一次就答對的格數／總格數；按「再答一次」或答錯後才答對的格子不算）。結果畫面給小孩看的答對率照舊（含再答一次）。
+     舊紀錄只有 cz（含再答一次、分不出來）→ 不採用、當未達成，要再做一輪（Yoda 2026-10-20）。練習題每題只答一次，qz 本來就是第一次答對率。
    - 天平（math:balance）：8 題內建題的「換你算算看」都算對過一次。
    - 短除法（math:sd）：四種難度（20 以內、100 以內、三位數、三個數）的換你算各有一輪 ≥ 80%（一次就全對的題數／5）。
    - 短除法應用題（math:gw）：基本、進階各有一輪 ≥ 80%。
@@ -16,7 +18,7 @@
    - 英文題庫（課本以外）：只算學會百分比（依類別、等級），不判完成。
 
    新補存的紀錄 kids_done（統一一個 key；格式與合併規則在 syncmerge.js 的 normDone／mergeDone，跟著同步文件 v5 的 done 欄位）：
-     {tb:{'<課本單元>':{best,last,at}}, mm:{'<科>:<單元>':{cz,qz}}, bal:{b1…b8:第一次算對的時間}, sd:{l20,l100,l3d,tri:最佳 %},
+     {tb:{'<課本單元>':{best,last,at}}, mm:{'<科>:<單元>':{cz,czFirst,qz}}, bal:{b1…b8:第一次算對的時間}, sd:{l20,l100,l3d,tri:最佳 %},
       gw:{basic,adv:最佳 %}, ai:{'<頁>':第一次玩完的時間}}
    以前沒存的分數（舊的考試、考考自己、練習題、短除法、AI）回推不了，照實顯示「還沒有紀錄」。 */
 (function (root) {
@@ -57,12 +59,12 @@
   }
 
   // ---------- 儲存（kids_done）的更新：record 回傳新的物件（不改原本的）----------
-  // sec：tb（考試分數）、cz／qz（心智圖考考自己／練習題 %，key＝'<科>:<單元>'）、sd／gw（難度的最佳 %）、bal／ai（第一次的時間）
+  // sec：tb（考試分數）、czFirst／qz（心智圖考考自己第一次答對率／練習題 %，key＝'<科>:<單元>'；cz＝舊版的含重答答對率，只為相容留著）、sd／gw（難度的最佳 %）、bal／ai（第一次的時間）
   function record(store, sec, key, val, now) {
     const s = SM.normDone(store), t = Math.max(1, Math.floor(+now || Date.now())), v = Math.max(0, Math.min(100, Math.round(+val || 0)));
     key = String(key || '');
     if (sec === 'tb') { const p = s.tb[key]; s.tb[key] = { best: Math.max(p ? p.best : 0, v), last: v, at: t }; }
-    else if (sec === 'cz' || sec === 'qz') { const p = Object.assign({}, s.mm[key]); p[sec] = Math.max(p[sec] == null ? 0 : p[sec], v); s.mm[key] = p; }
+    else if (sec === 'cz' || sec === 'czFirst' || sec === 'qz') { const p = Object.assign({}, s.mm[key]); p[sec] = Math.max(p[sec] == null ? 0 : p[sec], v); s.mm[key] = p; }
     else if (sec === 'sd' || sec === 'gw') s[sec][key] = Math.max(s[sec][key] == null ? 0 : s[sec][key], v);
     else if (sec === 'bal' || sec === 'ai') { if (!s[sec][key]) s[sec][key] = t; }
     else return s;
@@ -103,16 +105,19 @@
   }
 
   // ---------- 社會／自然心智圖單元 ----------
+  const CZ_LABEL = `考考自己一輪第一次就答對 ${PASS}% 以上`;
   function mmUnit(subj, uid, ctx) {
     const key = subj + ':' + uid, p = obj(obj(ctx.mm)[key]), pa = obj(p.passedAt), d = obj(SM.normDone(ctx.done).mm[key]);
     const passed = [1, 2, 3, 4].filter(l => num(pa[l]) != null), miss = [1, 2, 3, 4].filter(l => num(pa[l]) == null);
     const checks = [
       { label: '背架構第 1～4 關都過關', ok: !miss.length, p: passed.length / 4, detail: miss.length ? `已過 ${passed.length}/4 關，還差第 ${miss.join('、')} 關` : '4 關都過了' },
-      scoreCheck('考考自己一輪答對 80% 以上', d.cz, '考考自己（全部空格都作答完）'),
+      d.czFirst == null && d.cz != null
+        ? { label: CZ_LABEL, ok: false, p: 0, detail: `以前的紀錄算進了「再答一次」才答對的格子，不算：再做一整輪考考自己，第一次就答對 ${PASS}% 以上` }
+        : scoreCheck(CZ_LABEL, d.czFirst, '考考自己（全部空格都作答完）'),
       scoreCheck('練習題一輪答對 80% 以上', d.qz, '練習題')
     ];
     const b = obj(obj(ctx.mmBlanks)[key]);
-    const any = passed.length > 0 || Object.keys(obj(p.best)).length > 0 || d.cz != null || d.qz != null || (+b.sess > 0) || Object.keys(obj(b.w)).length > 0 || Object.keys(obj(b.a)).length > 0;
+    const any = passed.length > 0 || Object.keys(obj(p.best)).length > 0 || d.cz != null || d.czFirst != null || d.qz != null || (+b.sess > 0) || Object.keys(obj(b.w)).length > 0 || Object.keys(obj(b.a)).length > 0;
     return result(checks, any);
   }
 

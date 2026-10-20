@@ -192,7 +192,7 @@ function npByPid(node, pi){ return pi < 0 ? titleNp(node) : npOf(node)[pi]; }
 function newDraw(){
   var u = unit(), st = bstore(u.id), pts = unitPoints(u);
   var dr = SB.drawCloze(pts, st, R); SB.commitSession(st, dr); bsave(u.id, st);
-  cloze[u.id] = {draw:dr, ans:{}};
+  cloze[u.id] = {draw:dr, ans:{}, miss:{}};
 }
 var BL = {}, BL_BY = {};   // key -> blank；nodeId -> [keys]（含子孫）
 function indexBlanks(){
@@ -207,6 +207,9 @@ function indexBlanks(){
   })(u, []);
 }
 function cz(){ var id = unit().id; if(!cloze[id]) newDraw(); return cloze[id].ans; }
+/* 這一組裡「第一次沒答對」的格子（答錯過、看答案、按再答一次）：記在這一組上，不跟著 BL 重建歸零；單元完成只算第一次就答對（Yoda 2026-10-20） */
+function czMiss(key){ cz(); var c = cloze[unit().id]; if(!c.miss) c.miss = {}; if(key) c.miss[key] = 1; return c.miss; }
+function firstOkOf(keys){ var s = cz(), m = czMiss(); return keys.filter(function(k){ return s[k] && s[k].st === 'ok' && s[k].first && !m[k]; }).length; }
 function scoreOf(keys){ var s = cz(), ok = 0, done = 0; keys.forEach(function(k){ if(s[k]){ done++; if(s[k].st === 'ok') ok++; } }); return {ok:ok, done:done, n:keys.length}; }
 function hiddenSet(pid){ var dr = cloze[unit().id] && cloze[unit().id].draw; return new Set(UI.mode === 'cloze' && dr ? (dr.picks[pid] || []) : []); }
 function logBlank(b, ok){ var uid = unit().id, st = bstore(uid); SB.recordAnswer(st, b.cand.w, ok, 'w'); bsave(uid, st); mkBlank(b, ok); }
@@ -455,12 +458,12 @@ function blankSubmit(){
   var b = BL[popKey], inp = $('#popIn'); if(!b || !inp) return;
   var s = cz();
   if(!inp.value.trim()){ $('#popMsg').textContent = '先寫寫看喔！'; return; }
-  if(matchAns(inp.value, b.cand.w, b.cand.alts)){ s[popKey] = {st:'ok', first:!b.tries && !b.logged}; coinAnswer(true); if(!b.logged){ b.logged = true; logBlank(b, !b.tries); } var nid = b.node.id; closePop(); toast('答對了！🎉'); render(nid); checkClozeDone(); }
-  else { b.tries = (b.tries || 0) + 1; coinAnswer(false);
+  if(matchAns(inp.value, b.cand.w, b.cand.alts)){ s[popKey] = {st:'ok', first:!b.tries && !b.logged && !czMiss()[popKey]}; coinAnswer(true); if(!b.logged){ b.logged = true; logBlank(b, !b.tries); } var nid = b.node.id; closePop(); toast('答對了！🎉'); render(nid); checkClozeDone(); }
+  else { b.tries = (b.tries || 0) + 1; czMiss(popKey); coinAnswer(false);
     var m = $('#popMsg'); m.className = 'msg no'; m.textContent = b.tries >= 2 ? '還不對喔～可以按「看答案」' : '不對喔，再想想看！'; var pp = $('#pop'); pp.classList.remove('shake'); void pp.offsetWidth; pp.classList.add('shake'); inp.select(); }
 }
-function blankShow(){ var b = BL[popKey]; if(!b) return; cz()[popKey] = {st:'shown'}; coinAnswer(false); if(!b.logged){ b.logged = true; logBlank(b, false); } var nid = b.node.id; closePop(); render(nid); checkClozeDone(); }
-function blankRetry(){ var k = popKey; delete cz()[k]; closePop(); var b = BL[k]; render(b && b.node.id); if(BL[k]){ BL[k].logged = true; BL[k].tries = 1; } openBlank(k); }
+function blankShow(){ var b = BL[popKey]; if(!b) return; czMiss(popKey); cz()[popKey] = {st:'shown'}; coinAnswer(false); if(!b.logged){ b.logged = true; logBlank(b, false); } var nid = b.node.id; closePop(); render(nid); checkClozeDone(); }
+function blankRetry(){ var k = popKey; czMiss(k); delete cz()[k]; closePop(); var b = BL[k]; render(b && b.node.id); if(BL[k]){ BL[k].logged = true; BL[k].tries = 1; } openBlank(k); }
 function updateScore(){
   var el = $('#score');
   if(UI.mode !== 'cloze'){ el.hidden = true; return; }
@@ -469,11 +472,11 @@ function updateScore(){
 }
 function checkClozeDone(){
   var keys = Object.keys(BL), s = scoreOf(keys); if(s.done < s.n) return;
-  var pct = Math.round(s.ok / s.n * 100);
-  doneRec('cz', pct);
+  var pct = Math.round(s.ok / s.n * 100), first = firstOkOf(keys);
+  doneRec('czFirst', Math.round(first / s.n * 100));   /* 單元完成：存「第一次作答就答對」的比率；結果畫面的答對率（含再答一次）照舊給小孩看 */
   /* 學習幣：這一組空格全部作答完＝一輪（同一組只報一次；按「再答一次」改對不重報） */
   var c = cloze[unit().id];
-  if(c && !c.reported){ c.reported = true; var first = keys.filter(function(k){ return c.ans[k] && c.ans[k].first; }).length; coinRound('cloze', first, s.n); }
+  if(c && !c.reported){ c.reported = true; coinRound('cloze', first, s.n); }
   showModal('<div class="big">' + (pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : '💪') + '</div><h2>全部空格都完成了！</h2><div class="pct">' + s.ok + ' / ' + s.n + '</div><p>答對率 ' + pct + '%（看答案 ' + (s.n - s.ok) + ' 格）</p>' +
     '<div class="btns"><button class="mm-b on" data-act="reshuffle">🔀 換一組再練</button><button class="mm-b" data-act="modalClose">好</button></div>');
 }
