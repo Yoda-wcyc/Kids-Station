@@ -771,7 +771,11 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     ok(sjm.includes('math/multiples.html?mistakes=1') && sjm.includes('math/multiply.html?mistakes=1') && kmj.includes("p.type === 'multiples' ? '倍數'") && kmj.includes("p.type === 'multiply' ? '乘法'") && kmj.includes('function mathMore(') && balh.includes("KidsMistakes.mathMore(['multiples', 'multiply'])") && sdh.includes("t !== 'multiples' && t !== 'multiply'"), 'multiples／multiply mistakes: routes + badges + 接著練 links; 天平 count excludes them');
     const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
     ok(['math:multiples', 'math:multiples-test', 'math:multiply'].every(it => CK.validEvent(ev(it))) && ['math:multiple', 'math:multiples-tests', 'math:multiply:x', 'math:test', 'english:multiply'].every(it => !CK.validEvent(ev(it))), 'kids-coins: math:multiples／multiples-test／multiply valid, look-alikes not');
-    require('./multiples.test.js'); require('./multiply.test.js');
+    // 練習卷第一回、第二回線上考試（2026-10-21）：multiples-papers.js 接在 multiples.js 後面；考試選單三選一；練習卷分數記 mp.p1／p2；錯題先用原卷題目重做
+    ok(/<script src="multiples\.js(\?v=[0-9a-f]+)?"><\/script>\s*<script src="multiples-papers\.js(\?v=[0-9a-f]+)?"><\/script>/.test(muh) && muh.includes("pick('e-go', '🎲', '隨機考卷（每次不同）'") &&
+      muh.includes("doneRec('mp', E.mode, R.total)") && muh.includes('MULP.fromMistake(e.p)) || M.fromMistake(e.p)') && muh.includes('常見錯誤提醒'), 'multiples.html: 考試三選一（隨機／第一回／第二回）＋練習卷分數＋錯題原卷重做');
+    ok(SM.MP_K.includes('p1') && SM.MP_K.includes('p2'), 'syncmerge: done.mp 收 p1、p2（練習卷各回最高分）');
+    require('./multiples.test.js'); require('./multiply.test.js'); require('./multiples-papers.test.js');
   }
   ok(!/['"]ke_mistakes['"]/.test(fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8')) && fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("KEY = 'kids_mistakes'"), 'kids_ prefix key; English ke_mistakes untouched');
 }

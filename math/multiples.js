@@ -472,7 +472,7 @@
     }
   }
 
-  // ---------- 考試：照原卷六大題（9／9／16／20／36／10）----------
+  // ---------- 考試：照原卷六大題（9／9／16／20／36／10）；紙本練習卷第一回、第二回（固定題目）在 multiples-papers.js ----------
   var EXAM = [{ no: 1, title: '圈圈看', note: '每題 3 分，共 9 分' }, { no: 2, title: '想一想，再回答問題', note: '每題 3 分，共 9 分' }, { no: 3, title: '填填看', note: '每格 2 分，共 16 分' },
     { no: 4, title: '找出最小公倍數，並從最小公倍數開始依序寫出 3 個公倍數', note: '每題 4 分（最小公倍數 2 分、3 個公倍數 2 分），共 20 分' },
     { no: 5, title: '把做法和答案記下來', note: '每題 6 分（數字對、單位錯扣 1 分），共 36 分' }, { no: 6, title: '素養題', note: '每題 5 分，共 10 分' }];
@@ -513,8 +513,8 @@
     return { total: total, max: max, secs: res };
   }
 
-  // 錯題庫：p＝{type:'multiples', k, v, q}；用 build(k, v) 原題重做
-  function mkEntry(Q) { return { id: Q.id, p: { type: 'multiples', k: Q.kind, v: Q.v.slice(), q: Q.short || Q.text } }; }
+  // 錯題庫：p＝{type:'multiples', k, v, q}；用 build(k, v) 原題重做。練習卷（multiples-papers.js）的題多帶 paper、pn（MULP.fromMistake 用原卷題目重做）
+  function mkEntry(Q) { var p = { type: 'multiples', k: Q.kind, v: Q.v.slice(), q: Q.short || Q.text }; if (Q.paper) { p.paper = Q.paper; p.pn = Q.pn; } return { id: Q.id, p: p }; }
   function fromMistake(p) { return p && p.type === 'multiples' && GROUP_OF[p.k] && Array.isArray(p.v) ? build(p.k, p.v) : null; }
 
   var MUL = { GROUPS: GROUPS, GROUP_OF: GROUP_OF, GROUP_KINDS: GROUP_KINDS, WORD_NAME: WORD_NAME, DIV_KINDS: DIV_KINDS, UNITS: UNITS, CTX: CTX, RULE: RULE, METHOD: METHOD, PTS: PTS, EXAM: EXAM,

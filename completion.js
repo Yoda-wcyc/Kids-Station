@@ -13,7 +13,8 @@
    - 天平（math:balance）：8 題內建題的「換你算算看」都算對過一次。
    - 短除法（math:sd）：四種難度（20 以內、100 以內、三位數、三個數）的換你算各有一輪 ≥ 80%（一次就全對的題數／5）。
    - 短除法應用題（math:gw）：基本、進階各有一輪 ≥ 80%。
-   - 倍數與公倍數（math:mul，2026-10-21）：✏️ 練習六種題型（圈圈看、想一想、填填看、最小公倍數、應用題、素養題）各有一輪 ≥ 80%（第一次就答對的題數／題數）＋📝 考試最高分 ≥ 80。
+   - 倍數與公倍數（math:mul，2026-10-21）：✏️ 練習六種題型（圈圈看、想一想、填填看、最小公倍數、應用題、素養題）各有一輪 ≥ 80%（第一次就答對的題數／題數）＋📝 考試最高分 ≥ 80
+     （隨機考卷 test、練習卷第一回 p1、第二回 p2，任何一份 ≥ 80 都算）。
    - 乘法快算（math:mx，2026-10-21）：⏱️ 挑戰「二位數×一位數」「二位數×二位數」各有一輪（20 題）答對 ≥ 90% 而且平均每題在秒數內（同一輪兩個都要到；記在 mx.<題型>.ok）：
      二位數×一位數 ≤ 10 秒、二位數×二位數 ≤ 20 秒（Yoda 2026-10-21 由 10 秒放寬）；其他題型（九九、整十、三位×一位）不算完成，達標記號照 10 秒。
    - AI 三頁（ai:<頁>）：各玩完一次（看到結果頁）。
@@ -23,7 +24,7 @@
    新補存的紀錄 kids_done（統一一個 key；格式與合併規則在 syncmerge.js 的 normDone／mergeDone，跟著同步文件 v5 的 done 欄位）：
      {tb:{'<課本單元>':{best,last,at}}, mm:{'<科>:<單元>':{cz,czFirst,qz}}, bal:{b1…b8:第一次算對的時間}, sd:{l20,l100,l3d,tri:最佳 %},
       gw:{basic,adv:最佳 %}, ai:{'<頁>':第一次玩完的時間},
-      mp:{circle,both,fill,lcm,word,lit:最佳 %, test:考試最高分}, mx:{'<題型>':{acc:最佳 %, sp:最快平均秒數×10, ok:第一次達標的時間}}}
+      mp:{circle,both,fill,lcm,word,lit:最佳 %, test:隨機考卷最高分, p1,p2:練習卷第一回／第二回最高分}, mx:{'<題型>':{acc:最佳 %, sp:最快平均秒數×10, ok:第一次達標的時間}}}
    以前沒存的分數（舊的考試、考考自己、練習題、短除法、AI）回推不了，照實顯示「還沒有紀錄」。 */
 (function (root) {
   'use strict';
@@ -152,11 +153,14 @@
     const s = SM.normDone(ctx.done).gw;
     return result(GW_LV.map(([k, t]) => scoreCheck(`應用題「${t}」一輪 80% 以上`, s[k], `「${t}」應用題（5 題）`)), GW_LV.some(([k]) => s[k] != null));
   }
+  // 考試：隨機考卷（test）、練習卷第一回（p1）、第二回（p2）任何一份最高分 ≥ 80 就算（Yoda 2026-10-21：選寬鬆者）
+  const MP_EXAM = [['test', '隨機考卷'], ['p1', '練習卷第一回'], ['p2', '練習卷第二回']];
   function multiples(ctx) {
-    const s = SM.normDone(ctx.done).mp, t = s.test;
+    const s = SM.normDone(ctx.done).mp, got = MP_EXAM.filter(([k]) => s[k] != null), t = got.length ? Math.max(...got.map(([k]) => s[k])) : null;
+    const each = got.length ? `（${got.map(([k, n]) => `${n} ${s[k]} 分`).join('、')}）` : '', label = `📝 考試 ${PASS} 分以上（隨機考卷或任一回練習卷）`;
     const checks = MP_G.map(([k, n]) => scoreCheck(`✏️ 練習「${n}」一輪 ${PASS}% 以上`, s[k], `「${n}」練習`));
-    checks.push(t == null ? { label: `📝 考試 ${PASS} 分以上`, ok: false, p: 0, detail: '還沒有考試紀錄：到 📝 考試考一次' }
-      : t >= PASS ? { label: `📝 考試 ${PASS} 分以上`, ok: true, p: 1, detail: `最高 ${t} 分` } : { label: `📝 考試 ${PASS} 分以上`, ok: false, p: 0, detail: `最高 ${t} 分，要考到 ${PASS} 分以上` });
+    checks.push(t == null ? { label, ok: false, p: 0, detail: '還沒有考試紀錄：到 📝 考試考一份（隨機考卷或練習卷）' }
+      : t >= PASS ? { label, ok: true, p: 1, detail: `最高 ${t} 分${each}` } : { label, ok: false, p: 0, detail: `最高 ${t} 分${each}，任何一份要考到 ${PASS} 分以上` });
     return result(checks, Object.keys(s).length > 0);
   }
   function multiply(ctx) {

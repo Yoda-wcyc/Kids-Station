@@ -102,6 +102,22 @@ body{background:var(--bg)}
 .ri .yours{color:var(--muted)}
 .ri .right{font-weight:800;color:#145c38}
 .ri ol{margin:4px 0;padding-left:1.4em;color:#4d3800}
+/* 📝 考試：選考卷、練習卷（固定題目、分步作答）*/
+.ex-picks{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));margin:10px 0;text-align:left}
+.ex-picks .card{margin:0;display:flex;flex-direction:column;gap:6px}
+.ex-picks h3{margin:0;font-size:1.12rem}
+.ex-picks p{margin:0;line-height:1.55}
+.ex-picks .btn{margin-top:auto}
+.ex-rule{background:#f4f9ff;border-radius:10px;padding:6px 10px;margin:0 0 8px;font-size:.95rem;line-height:1.6;color:#21476e}
+.ex-intro{background:#fff8ec;border-left:6px solid var(--pri);border-radius:10px;padding:8px 12px;margin:0 0 8px;line-height:1.75;font-weight:600}
+.es p{margin:8px 0 4px}
+.es .method{margin:4px 0}
+.es .method .btn{min-height:56px}
+.es-side{border-left:4px solid var(--line);padding-left:10px;margin:6px 0}
+.ex-tip{background:var(--no-bg);border-radius:10px;padding:8px 12px;margin:10px 0 0;line-height:1.7;font-weight:700;color:#8a1f22}
+.ri .pts{display:flex;flex-wrap:wrap;gap:4px 8px;margin:4px 0;padding:0;list-style:none;font-size:.92rem}
+.ri .pts li{border-radius:8px;padding:1px 8px;font-weight:700}
+.ri .pts li.y{background:var(--ok-bg);color:#145c38}.ri .pts li.n{background:var(--no-bg);color:#8a1f22}
 </style>
 </head>
 <body>
@@ -109,7 +125,7 @@ body{background:var(--bg)}
   <div id="kdone" hidden></div>
   <header class="mu-head">
     <h1 id="title">✖️ 倍數與公倍數</h1>
-    <p class="muted" id="lede">五上單元三。先看教學，再分題型練習，最後照原卷配分考一次（100 分）。</p>
+    <p class="muted" id="lede">五上單元三。先看教學，再分題型練習，最後考一次（隨機考卷或兩回練習卷，照原卷配分 100 分）。</p>
   </header>
 
   <div class="mu-tabs" role="tablist" id="tabs">
@@ -206,7 +222,8 @@ body{background:var(--bg)}
 <script src="../kids-mistakes.js?v=ad913ae20a"></script>
 <script src="short-division.js?v=17afc65cb7"></script>
 <script src="multiply.js?v=002b1af76c"></script>
-<script src="multiples.js?v=3b933cbf86"></script>
+<script src="multiples.js?v=57f6dab5a4"></script>
+<script src="multiples-papers.js?v=00a691b6b8"></script>
 <script>
 (function () {
 'use strict';
@@ -218,7 +235,12 @@ body{background:var(--bg)}
      一輪結束送 practice_round 'math:multiples'（correct＝第一次就答對的題數）、KidsDone.record('mp', 題型, %)。
    📝 考試：要登入。照原卷六大題、配分 9／9／16／20／36／10，題目每次隨機；交卷才看結果（分數、每題對錯、正解、應用題關鍵步驟）。
      送 practice_round 'math:multiples-test'（correct＝全對的題數）、KidsDone.record('mp','test', 分數)。
-   錯題：收進數學錯題庫 id 'mul:<題型>:<數字>'，p＝{type:'multiples', k, v, q}（MUL.mkEntry）；?mistakes=1 用 MUL.fromMistake 原題重做，做完送 'math:mistakes'。 */
+     考試選單（2026-10-21）：🎲 隨機考卷（每次不同）／📄 練習卷 第一回／📄 練習卷 第二回。練習卷＝紙本固定題目（multiples-papers.js，window.MULP），
+     題目、數字、配分照紙本；第 5、6 大題分步作答（① 選方法 → ② 除法算式與商餘 → ③ 商要不要 +1 → ④ 乘法 → 答案＋單位；公倍數題：① → 最小公倍數 → 答案），交卷前不給對錯，
+     部分給分規則見 MULP.SEC_RULE；結果頁有每題對錯、正解、部分分明細、答案卷的步驟要點、各大題常見錯誤提醒。
+     練習卷一樣送 'math:multiples-test'，分數記 KidsDone.record('mp', 'p1'|'p2', 分數)（各回最高分；完成判定：任一份考卷 ≥80）。
+   錯題：收進數學錯題庫 id 'mul:<題型>:<數字>'（練習卷：'mul:p1:5-1'），p＝{type:'multiples', k, v, q[, paper, pn]}（MUL.mkEntry）；
+     ?mistakes=1 先用 MULP.fromMistake（練習卷原題），再用 MUL.fromMistake 原題重做，做完送 'math:mistakes'。 */
 var $ = function (id) { return document.getElementById(id); };
 var M = window.MUL, X = window.MX;
 var MK = /[?&]mistakes=1(?:&|$)/.test(location.search);
@@ -378,6 +400,7 @@ function pQ() {
   msg(''); pRender(true);
 }
 function isWord(Q) { return !!Q.steps; }
+function keyStepsOf(Q) { return Q.keySteps && Q.keySteps.length ? Q.keySteps : M.keySteps(Q); }   // 練習卷的題：答案卷的步驟要點
 function pRender(focus) {
   var Q = P.Q, st = Q.st;
   $('p-prog').innerHTML = (P.mk ? '📕 錯題練習　' : '') + '<span>第 ' + (P.idx + 1) + ' / ' + P.items.length + ' 題</span><span class="muted">第一次就答對 ' + P.ok + ' 題</span><span class="muted">' + esc(GNAME[Q.group] + (isWord(Q) ? '・' + M.WORD_NAME[Q.kind] : '')) + '</span>';
@@ -387,7 +410,7 @@ function pRender(focus) {
   if (st.done) {
     var more = P.idx + 1 < P.items.length;
     a = '<p>' + (st.wrong ? '💪 完成了！這題有答錯的地方，已經收進 📕 錯題庫。' : '🎉 第一次就答對！') + '</p>' +
-      '<p><b>正解：</b>' + esc(M.answerText(Q)) + '</p><ol class="steps">' + M.keySteps(Q).map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol>' +
+      '<p><b>正解：</b>' + esc(M.answerText(Q)) + '</p><ol class="steps">' + keyStepsOf(Q).map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol>' +
       '<div class="row"><button type="button" class="btn primary big" id="p-next">' + (more ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
   } else if (isWord(Q)) a = stepHTML(Q);
   else {
@@ -532,21 +555,74 @@ $('prac').addEventListener('keydown', function (e) {
 $('prac').addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('bad')) e.target.classList.remove('bad'); });
 
 /* ================= 📝 考試 ================= */
+var MP = window.MULP || null;
+function bestOf(k) { try { var d = JSON.parse(localStorage.getItem('kids_done') || 'null'), v = d && d.mp && d.mp[k]; return typeof v === 'number' ? v : null; } catch (e) { return null; } }
 function eStartHTML() {
-  return '<h2>📝 考試（100 分）</h2><p>照課本單元卷六大題出題，數字每次都不一樣：</p><p class="muted" style="font-size:1rem;line-height:1.7">' +
+  var pick = function (id, icon, name, desc, key, ready) {
+    var b = bestOf(key);
+    return '<div class="card" data-pick="' + key + '"><h3>' + icon + ' ' + esc(name) + '</h3><p class="muted">' + esc(desc) + '</p>' + (b != null ? '<p><b>最高 ' + b + ' 分</b>' + (b >= 80 ? ' ✅' : '') + '</p>' : '') +
+      '<button type="button" class="btn primary" id="' + id + '"' + (ready ? '' : ' disabled') + '>' + (ready ? '開始 ▶' : '準備中') + '</button></div>';
+  };
+  var papers = MP ? MP.list() : [{ id: 'p1', title: '練習卷 第一回', ready: false }, { id: 'p2', title: '練習卷 第二回', ready: false }];
+  return '<h2>📝 考試（100 分）</h2><p>選一份考卷：</p><div class="ex-picks">' +
+    pick('e-go', '🎲', '隨機考卷（每次不同）', '照課本單元卷六大題出題，數字每次都不一樣。', 'test', true) +
+    papers.map(function (p) { return pick('e-' + p.id, '📄', p.title, '紙本練習卷的題目、數字、配分，一模一樣；應用題、素養題要一步一步寫做法。', p.id, p.ready); }).join('') +
+    '</div><p class="muted" style="font-size:1rem;line-height:1.7">' +
     M.EXAM.map(function (s) { return s.no + '. ' + esc(s.title) + '（' + esc(s.note) + '）'; }).join('<br>') +
-    '</p><p>寫完按「交卷」才會看到分數、每題對錯和正解。答錯的題會收進 📕 錯題庫。</p><button type="button" class="btn primary big" id="e-go">開始考試 ▶</button>';
+    '</p><p>寫完按「交卷」才會看到分數、每題對錯和正解。答錯的題會收進 📕 錯題庫。<b>任何一份考卷考到 80 分以上，就算考試過關。</b></p>';
 }
-function eHome() { E = null; $('e-start').hidden = false; $('e-paper').hidden = true; $('e-result').hidden = true; $('e-start').innerHTML = eStartHTML(); }
-function eStart() {
+function eHome() { E = null; $('e-start').hidden = false; $('e-paper').hidden = true; $('e-result').hidden = true; $('e-start').innerHTML = eStartHTML(); window.scrollTo(0, 0); }
+// 單位下拉：常用單位＋這一題的單位
+function unitOpts(Q) { var us = M.UNITS.slice(); (MP ? MP.unitsOf(Q) : []).forEach(function (u) { if (us.indexOf(u) < 0) us.push(u); }); return us; }
+function unitSelP(f, Q) { return '<select data-f="' + f + '" aria-label="單位"><option value="">單位</option>' + unitOpts(Q).map(function (u) { return '<option>' + esc(u) + '</option>'; }).join('') + '</select>'; }
+// 練習卷第 5、6 大題：分步作答（交卷前不給對錯；選了方法才出現那一種的格子）
+function divSide(pre, lab, n0) {
+  return '<div class="es-side" data-side="' + (pre || 'a') + '">' + (lab ? '<p><b>' + lab + '</b></p>' : '') +
+    '<p><b>' + CIRC[n0] + ' 除法算式：</b>被除數 ÷ 除數 ＝ 商 … 餘數（整除的話餘數寫 0）</p><div class="eq">' + inp(pre + 'x', '', '被除數', 6) + ' ÷ ' + inp(pre + 'y', 'sm', '除數', 4) + ' ＝ ' + inp(pre + 'q', 'sm', '商', 4) + ' … ' + inp(pre + 'r', 'sm', '餘數', 4) + '</div>' +
+    '<p><b>' + CIRC[n0 + 1] + ' 商要不要 +1？</b></p><div class="method" data-f="' + pre + 'pl" role="group"><button type="button" class="btn" data-ep="1" aria-pressed="false">要 +1</button><button type="button" class="btn" data-ep="0" aria-pressed="false">不用 +1</button></div>' +
+    '<p><b>' + CIRC[n0 + 2] + ' 用乘法算出來：</b></p><div class="eq">' + inp(pre + 'ma', 'sm', '乘數', 4) + ' × ' + inp(pre + 'mb', 'sm', '乘數', 4) + ' ＝ ' + inp(pre + 'mp', '', '乘積', 7) + '</div></div>';
+}
+function stepFormHTML(Q) {
+  var h = '<div class="es"><p><b>① 這題要用哪一種方法？</b></p><div class="method" data-f="em" role="group">' +
+    M.METHOD.map(function (m) { return '<button type="button" class="btn" data-em="' + m[0] + '" aria-pressed="false">' + esc(m[1]) + '</button>'; }).join('') + '</div>';
+  h += '<div class="es-div" hidden>' + (Q.kind === 'lminmax' ? divSide('a', '最少：', 1) + divSide('b', '最多：', 1) : divSide('a', '', 1)) + '</div>';
+  h += '<div class="es-lcm" hidden><p><b>② 最小公倍數：</b></p><div class="eq">' + inp('l', '', '最小公倍數', 6) + '</div>' +
+    (Q.kind === 'wlcmr' ? '<p><b>③ 範圍裡的那一個：</b>最小公倍數 × 幾倍</p><div class="eq">' + Q.l + ' × ' + inp('k', 'sm', '幾倍', 3) + ' ＝ ' + inp('p', '', '乘積', 7) + '</div>' : '') + '</div>';
+  var us = MP.unitsOf(Q);
+  h += '<p><b>答：</b></p>' + (Q.kind === 'lminmax'
+    ? '<div class="row w">最少 ' + inp('n0', '', '最少', 7) + unitSelP('u0', Q) + '　最多 ' + inp('n1', '', '最多', 7) + unitSelP('u1', Q) + '</div>'
+    : us.map(function (u, j) { return '<div class="row w">' + (j ? '也就是 ' : '答：') + inp('n' + j, '', '答案', 7) + unitSelP('u' + j, Q) + '</div>'; }).join(''));
+  return h + '</div>';
+}
+function pressedV(el, f, attr) { var b = el.querySelector('[data-f="' + f + '"] [aria-pressed="true"]'); return b ? b.getAttribute(attr) : ''; }
+function readStep(Q, el) {
+  var side = function (pre) { var o = {}; ['x', 'y', 'q', 'r', 'ma', 'mb', 'mp'].forEach(function (k) { o[k] = fval(el, pre + k); }); o.pl = pressedV(el, pre + 'pl', 'data-ep'); return o; };
+  var us = MP.unitsOf(Q);
+  return { m: pressedV(el, 'em', 'data-em'), a: side('a'), b: side('b'), l: fval(el, 'l'), k: fval(el, 'k'), p: fval(el, 'p'),
+    nums: us.map(function (u, j) { return fval(el, 'n' + j); }), units: us.map(function (u, j) { return fval(el, 'u' + j); }) };
+}
+function stepBlank(a) { return !a.m && !a.nums.join('').trim(); }
+function stepAnsText(Q, a) {
+  var o = ['方法：' + (a.m === 'div' ? '用除法' : a.m === 'lcm' ? '找公倍數' : '（沒選）')];
+  var side = function (s, lab) { o.push(lab + (s.x || '—') + ' ÷ ' + (s.y || '—') + ' ＝ ' + (s.q || '—') + ' … ' + (s.r || '—') + '，' + (s.pl === '1' ? '商 +1' : s.pl === '0' ? '商不用 +1' : '（+1 沒選）') + '，' + (s.ma || '—') + ' × ' + (s.mb || '—') + ' ＝ ' + (s.mp || '—')); };
+  if (a.m === 'div') { if (Q.kind === 'lminmax') { side(a.a, '最少 '); side(a.b, '最多 '); } else side(a.a, ''); }
+  if (a.m === 'lcm') o.push('最小公倍數 ' + (a.l || '—') + (Q.kind === 'wlcmr' ? '，' + Q.l + ' × ' + (a.k || '—') + ' ＝ ' + (a.p || '—') : ''));
+  o.push('答：' + a.nums.map(function (x, j) { return (x || '—') + ' ' + (a.units[j] || '（沒寫單位）'); }).join('，'));
+  return o.join('｜');
+}
+function eStart(mode) {
+  mode = mode || 'rand';
   if (!authOK()) return;
-  if (!startAct(eStart)) return;
-  E = { secs: M.exam(), sent: false, confirm: false };
-  var h = '', qn = 0;
+  if (!startAct(function () { eStart(mode); })) return;
+  var paper = mode !== 'rand' && MP ? MP.exam(mode) : null;
+  if (mode !== 'rand' && !paper) { eHome(); return; }
+  E = { mode: mode, paper: paper, secs: paper ? paper.secs : M.exam(), sent: false, confirm: false };
+  var h = paper ? '<div class="card center"><h2 id="e-title" style="margin:0">📄 ' + esc(paper.title) + '</h2><p class="muted" style="margin:4px 0 0">題目、數字、配分跟紙本一樣（100 分）。第 5、6 大題要一步一步寫做法，交卷後才看對錯。</p></div>' : '', qn = 0;
   E.secs.forEach(function (s) {
-    h += '<div class="card ex-sec" data-sec="' + s.no + '"><h3>' + CIRC[s.no - 1] + ' ' + esc(s.title) + ' <small>（' + esc(s.note) + '）</small></h3>';
-    if (s.no === 2 && s.items[0]) h += '<p class="q-text" style="text-align:center;border:2px dashed var(--line);border-radius:12px;padding:6px">' + s.items[0].nums.join('　') + '</p>';
-    s.items.forEach(function (Q, j) { qn++; h += '<div class="ex-item" data-q="' + qn + '" data-id="' + esc(Q.id) + '"><p class="q-text">(' + (j + 1) + ') ' + esc(Q.text) + '</p>' + inputsHTML(Q, 'e') + '</div>'; });
+    h += '<div class="card ex-sec" data-sec="' + s.no + '"><h3>' + CIRC[s.no - 1] + ' ' + esc(s.title) + ' <small>（' + esc(s.note) + '）</small></h3>' + (s.rule ? '<p class="ex-rule">📏 配分：' + esc(s.rule) + '</p>' : '');
+    if (s.no === 2 && s.items[0]) h += '<p class="q-text" style="text-align:center;border:2px dashed var(--line);border-radius:12px;padding:6px">' + (s.pool || s.items[0].nums).join('　') + '</p>';
+    if (s.intro) h += '<p class="ex-intro">' + esc(s.intro) + '</p>';
+    s.items.forEach(function (Q, j) { qn++; h += '<div class="ex-item" data-q="' + qn + '" data-id="' + esc(Q.id) + '"><p class="q-text">(' + (j + 1) + ') ' + esc(Q.text) + '</p>' + (paper && MP.isStep(Q) ? stepFormHTML(Q) : inputsHTML(Q, 'e')) + '</div>'; });
     h += '</div>';
   });
   h += '<div class="card center"><p class="msg" id="e-msg" role="status" aria-live="polite"></p><button type="button" class="btn primary big" id="e-submit">交卷 📝</button></div>';
@@ -554,26 +630,35 @@ function eStart() {
   window.scrollTo(0, 0);
 }
 function eItems() { var out = []; E.secs.forEach(function (s) { s.items.forEach(function (Q) { out.push(Q); }); }); return out; }
+function stepPaper(Q) { return !!(E && E.paper && MP.isStep(Q)); }
 function eSubmit() {
   var els = $('e-paper').querySelectorAll('.ex-item'), qs = eItems(), answers = {}, blanks = 0;
-  qs.forEach(function (Q, i) { var a = readAns(Q, els[i]); answers[Q.id] = a; if (blank(Q, a)) blanks++; });
+  qs.forEach(function (Q, i) { var sp = stepPaper(Q), a = sp ? readStep(Q, els[i]) : readAns(Q, els[i]); answers[Q.id] = a; if (sp ? stepBlank(a) : blank(Q, a)) blanks++; });
   if (blanks && !E.confirm) { E.confirm = true; $('e-msg').className = 'msg bad'; $('e-msg').textContent = '還有 ' + blanks + ' 題沒有寫，確定要交卷嗎？再按一次「交卷」就交出去。'; return; }
-  var R = M.examScore(E.secs, answers), right = 0;
+  var R = E.paper ? MP.score(E.secs, answers) : M.examScore(E.secs, answers), right = 0;
   R.secs.forEach(function (s) { s.items.forEach(function (it) { coinAnswer(it.r.ok); if (it.r.ok) { right++; mkRec(it.Q, true); } else mkRec(it.Q, false); }); });
   E.R = R; E.answers = answers;
-  if (!E.sent) { E.sent = true; coinReport('math:multiples-test', right, qs.length); doneRec('mp', 'test', R.total); }
-  var h = '<div class="card center"><p class="res-tot" id="e-score">' + R.total + ' 分</p><p>' + (R.total >= 80 ? '🎉 80 分以上，過關！' : '💪 再練一下，80 分就過關') + '　全對 ' + right + ' / ' + qs.length + ' 題</p><div class="res-sec">' +
+  if (!E.sent) {
+    E.sent = true; coinReport('math:multiples-test', right, qs.length);
+    if (E.paper) doneRec('mp', E.mode, R.total);   // 練習卷各回最高分（p1、p2）
+    else doneRec('mp', 'test', R.total);
+  }
+  var again = E.paper ? '再考一次（同一回）▶' : '再考一次（換題）▶';
+  var h = '<div class="card center">' + (E.paper ? '<p class="muted" style="margin:0">📄 ' + esc(E.paper.title) + '</p>' : '') + '<p class="res-tot" id="e-score">' + R.total + ' 分</p><p>' + (R.total >= 80 ? '🎉 80 分以上，過關！' : '💪 再練一下，80 分就過關') + '　全對 ' + right + ' / ' + qs.length + ' 題</p><div class="res-sec">' +
     R.secs.map(function (s) { return '<span>' + CIRC[s.no - 1] + ' ' + s.got + '／' + s.max + '</span>'; }).join('') + '</div>' +
-    '<div class="row" style="justify-content:center;display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn primary big" id="e-again">再考一次（換題）▶</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a></div></div>';
-  R.secs.forEach(function (s) {
-    h += '<div class="card ex-sec"><h3>' + CIRC[s.no - 1] + ' ' + esc(s.title) + ' <small>' + s.got + '／' + s.max + ' 分</small></h3>';
+    '<div class="row" style="justify-content:center;display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn primary big" id="e-again">' + again + '</button><button type="button" class="btn" id="e-menu">換一份考卷</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a></div></div>';
+  R.secs.forEach(function (s, si) {
+    var S0 = E.secs[si];
+    h += '<div class="card ex-sec"><h3>' + CIRC[s.no - 1] + ' ' + esc(s.title) + ' <small>' + s.got + '／' + s.max + ' 分</small></h3>' + (S0.rule ? '<p class="ex-rule">📏 配分：' + esc(S0.rule) + '</p>' : '');
     s.items.forEach(function (it, j) {
-      var Q = it.Q, r = it.r, word = !!Q.steps || Q.kind === 'lminmax' || Q.kind === 'lsquare';
-      h += '<div class="ri ' + (r.ok ? 'ok' : 'no') + '" data-ok="' + r.ok + '"><span class="mk">' + (r.ok ? '✔' : '✘') + '</span><b>(' + (j + 1) + ')</b> ' + esc(Q.short || Q.text) + '　<small>' + r.got + '／' + r.max + ' 分</small><br>' +
-        '<span class="yours">你的答案：' + esc(ansText(Q, E.answers[Q.id])) + '</span><br><span class="right">正解：' + esc(M.answerText(Q)) + '</span>' +
-        (!r.ok && r.hint ? '<br><small>💡 ' + esc(r.hint) + '</small>' : '') +
-        (word || !r.ok ? '<ol>' + M.keySteps(Q).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') + '</div>';
+      var Q = it.Q, r = it.r, word = !!Q.steps || Q.kind === 'lminmax' || Q.kind === 'lsquare', sp = stepPaper(Q);
+      h += '<div class="ri ' + (r.ok ? 'ok' : 'no') + '" data-ok="' + r.ok + '" data-id="' + esc(Q.id) + '" data-got="' + r.got + '"><span class="mk">' + (r.ok ? '✔' : '✘') + '</span><b>(' + (j + 1) + ')</b> ' + esc(E.paper ? Q.text : (Q.short || Q.text)) + '　<small>' + r.got + '／' + r.max + ' 分</small><br>' +
+        '<span class="yours">你的答案：' + esc(sp ? stepAnsText(Q, E.answers[Q.id]) : ansText(Q, E.answers[Q.id])) + '</span><br><span class="right">正解：' + esc(M.answerText(Q)) + '</span>' +
+        (sp ? '<ul class="pts">' + r.parts.map(function (p) { return '<li class="' + (p.ok ? 'y' : 'n') + '">' + (p.ok ? '✔ ' : '✘ ') + esc(p.label) + ' ' + p.got + '／' + p.max + '</li>'; }).join('') + '</ul>' : '') +
+        (!r.ok && r.hint ? '<div><small>💡 ' + esc(r.hint) + '</small></div>' : '') +
+        (word || !r.ok ? '<ol>' + keyStepsOf(Q).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : '') + '</div>';
     });
+    if (S0.tip) h += '<p class="ex-tip">⚠️ 常見錯誤提醒：' + esc(S0.tip) + '</p>';
     h += '</div>';
   });
   $('e-paper').hidden = true; $('e-result').hidden = false; $('e-result').innerHTML = h;
@@ -581,9 +666,18 @@ function eSubmit() {
 }
 $('exam').addEventListener('click', function (e) {
   var t = e.target, b;
-  if (t.id === 'e-go' || t.id === 'e-again') { eStart(); return; }
+  if (t.id === 'e-go') { eStart('rand'); return; }
+  if (t.id === 'e-p1' || t.id === 'e-p2') { eStart(t.id.slice(2)); return; }
+  if (t.id === 'e-again') { eStart(E ? E.mode : 'rand'); return; }
+  if (t.id === 'e-menu') { eHome(); return; }
   if (t.id === 'e-submit') { eSubmit(); return; }
-  if ((b = t.closest('.chips [data-i]'))) { b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); if (E) { E.confirm = false; } }
+  if ((b = t.closest('.chips [data-i]'))) { b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); if (E) { E.confirm = false; } return; }
+  // 練習卷分步：選方法（顯示那一種的格子）、商要不要 +1（單選）
+  if ((b = t.closest('[data-em],[data-ep]'))) {
+    Array.prototype.forEach.call(b.parentNode.querySelectorAll('[data-em],[data-ep]'), function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    if (b.hasAttribute('data-em')) { var es = b.closest('.es'), m = b.getAttribute('data-em'); es.querySelector('.es-div').hidden = m !== 'div'; es.querySelector('.es-lcm').hidden = m !== 'lcm'; }
+    if (E) E.confirm = false;
+  }
 });
 $('exam').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.preventDefault(); });
 
@@ -611,7 +705,7 @@ if (/[?&]tab=prac(?:&|$)/.test(location.search)) setTab('prac');
 if (MK) {
   /* 錯題練習：type 'multiples' 的數學錯題，用同樣的題型＋數字原題重做（最多 30 題、最近答錯的先） */
   var items = [];
-  try { KidsMistakes.list('math').forEach(function (e) { if (items.length >= 30) return; var Q = M.fromMistake(e.p); if (Q) items.push(Q); }); } catch (e) { }
+  try { KidsMistakes.list('math').forEach(function (e) { if (items.length >= 30) return; var Q = (window.MULP && MULP.fromMistake(e.p)) || M.fromMistake(e.p); if (Q) items.push(Q); }); } catch (e) { }
   document.title = '倍數錯題練習';
   $('title').textContent = '📕 倍數與公倍數錯題練習';
   $('lede').textContent = '答錯過的題目，用一樣的數字再做一次。同一題連續答對 3 次就會畢業 🎓';
@@ -627,8 +721,8 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=e1a8c7b5ad"></script>
-<script src="../syncmerge.js?v=4f58ece59c"></script>
-<script src="../completion.js?v=53814517b2"></script>
+<script src="../syncmerge.js?v=6b0cc80b23"></script>
+<script src="../completion.js?v=97da5fff3c"></script>
 <script src="../kids-done.js?v=877f66af0a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
 <script src="../sync.js?v=cbdd56da2a"></script>

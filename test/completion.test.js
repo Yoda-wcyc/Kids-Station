@@ -120,6 +120,15 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   ok(KC.MP_G.map(x => x[0]).join() === require(path.join(root, 'math', 'multiples.js')).GROUPS.map(x => x[0]).join(), 'mul: 題型 list matches math/multiples.js GROUPS');
   s = KC.record({}, 'mp', 'word', 70, 1); s = KC.record(s, 'mp', 'word', 90, 2); s = KC.record(s, 'mp', 'word', 60, 3); s = KC.record(s, 'mp', 'test', 84, 4); s = KC.record(s, 'mp', 'zz', 100, 5);
   ok(same(s.mp, { test: 84, word: 90 }), 'record mp: best kept, unknown key dropped: ' + C(s.mp));
+  // 練習卷第一回 p1、第二回 p2（2026-10-21）：任何一份考卷 ≥80 都算考試達成；各回最高分
+  r = ev('math:mul', { done: mp({ test: 60, p1: 85 }) });
+  ok(r.status === 'done' && r.checklist[6].ok && /最高 85 分/.test(r.checklist[6].detail) && /練習卷第一回 85 分/.test(r.checklist[6].detail) && /隨機考卷 60 分/.test(r.checklist[6].detail), 'mul: 隨機 60 + 第一回 85 → 考試達成: ' + r.checklist[6].detail);
+  r = ev('math:mul', { done: { mp: { p2: 80 } } });
+  ok(r.status === 'doing' && r.checklist[6].ok, 'mul: only 第二回 80 → 考試達成');
+  r = ev('math:mul', { done: mp({ test: 70, p1: 79, p2: 50 }) });
+  ok(r.status === 'doing' && !r.checklist[6].ok && /最高 79 分/.test(r.checklist[6].detail), 'mul: 三份都 <80 → 未達成: ' + r.checklist[6].detail);
+  s = KC.record({}, 'mp', 'p1', 90, 1); s = KC.record(s, 'mp', 'p1', 70, 2); s = KC.record(s, 'mp', 'p2', 65, 3);
+  ok(same(s.mp, { p1: 90, p2: 65 }) && same(SM.mergeDone({ mp: { p1: 90 } }, { mp: { p1: 95, p2: 40 } }).mp, { p1: 95, p2: 40 }), 'record/merge mp p1, p2: best kept');
   // 乘法快算：二位×一位（≤10 秒）、二位×二位（≤20 秒，2026-10-21 放寬）挑戰各一輪 ≥90% 且平均在秒數內（同一輪）
   ok(ev('math:mx', {}).status === 'todo' && ev('math:mx', {}).checklist.length === 2, 'mx: empty → todo, 2 checks');
   s = KC.record({}, 'mx', 'd21', { acc: 90, sec: 10 }, 7);

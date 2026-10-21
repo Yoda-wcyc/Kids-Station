@@ -1,6 +1,6 @@
 /* syncmerge.js — 裝置同步的合併規則（純函式，不碰 DOM／網路以外的東西；瀏覽器與 Node 共用）
    文件格式 v6（2026-10-21 起；v5 欄位完全不變，只在 done 裡多 mp、mx 兩節，舊文件少了它們就當空的）：
-    done.mp:{circle,both,fill,lcm,word,lit:最佳 %, test:考試最高分}                       ← 數學〈倍數與公倍數〉各題型練習一輪最佳 %＋考試最高分
+    done.mp:{circle,both,fill,lcm,word,lit:最佳 %, test:考試最高分, p1,p2:練習卷第一回／第二回最高分}   ← 數學〈倍數與公倍數〉各題型練習一輪最佳 %＋考試最高分（p1、p2 2026-10-21 加；舊版裝置會丟掉、新版下次同步從本機補回）
     done.mx:{nn,d21,d22t,d22,d31:{acc:最佳 %, sp:最快平均秒數×10, ok:第一次達標的時間}}   ← 數學〈乘法快算〉挑戰（一輪 ≥90% 且平均每題 ≤ 門檻秒數＝ok：二位×二位 20 秒、其他 10 秒；判定在 completion.js）
    - mp：各項取大。mx：acc 取大、sp 取小、ok 取最早（聯集）。舊版（v5）裝置的 normDone 會丟掉 mp／mx → 新版下次同步從本機補回來（跟 v4→v5 的 done 一樣）。
    文件格式 v5（2026-10-20 起；v4 欄位完全不變，只多一個 done 欄位，舊文件少了它就當空的）：
@@ -184,7 +184,7 @@
   //     qz＝練習題一輪答對率（每題只答一次，本來就是第一次答對率）。三個都取最佳（大）。
   const MM_F = ['cz', 'czFirst', 'qz'];
   // mp：倍數與公倍數（各題型練習最佳 %、考試最高分）；mx：乘法快算挑戰（acc 最佳 %、sp 最快平均秒數×10、ok 第一次達標時間）
-  const MP_K = ['circle', 'both', 'fill', 'lcm', 'word', 'lit', 'test'], MX_K = ['nn', 'd21', 'd22t', 'd22', 'd31'];
+  const MP_K = ['circle', 'both', 'fill', 'lcm', 'word', 'lit', 'test', 'p1', 'p2'], MX_K = ['nn', 'd21', 'd22t', 'd22', 'd31'];
   function normMx(e) {
     if (!e || typeof e !== 'object') return null; const acc = pct(e.acc); if (acc == null) return null;
     const o = { acc }, sp = num(e.sp, null), ok = ms(e.ok);
