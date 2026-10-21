@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>乘法快算</title>
+<link rel="stylesheet" href="../style.css?v=d8aed364d6">
+<style>
+body{background:var(--bg)}
+[hidden]{display:none!important}
+.mx{max-width:900px;margin:0 auto;padding:12px 16px calc(48px + env(safe-area-inset-bottom))}
+.mx-head h1{font-size:clamp(1.35rem,1rem + 1.4vw,1.8rem);margin:4px 0 2px}
+.mx-head p{margin:0 0 10px}
+@media (max-width:600px){.mx-head{padding-right:84px}}
+.btn[aria-pressed="true"],.btn[aria-selected="true"]{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 3px 0 #d96a22}
+.btn.sm{min-height:44px;padding:6px 14px;font-size:.95rem}
+.selbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.selbar .lab{font-weight:700;color:var(--muted);font-size:.95rem;margin-right:2px}
+.mx-tabs{display:flex;gap:10px;margin:10px 0 14px}
+.mx-tabs .btn{flex:1 1 0;min-height:56px;font-size:1.1rem}
+.prog{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-weight:700;margin:4px 0 10px}
+.timer{font-variant-numeric:tabular-nums;background:#fff;border:2px solid var(--line);border-radius:12px;padding:2px 10px}
+.qbig{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;font-size:clamp(2rem,1.4rem + 3vw,3rem);font-weight:900;font-variant-numeric:tabular-nums;margin:10px 0}
+.ans-in{width:4.6em;min-height:64px;font:inherit;font-size:inherit;text-align:center;border:3px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);font-variant-numeric:tabular-nums}
+.ans-in:focus{outline:none;border-color:var(--pri)}
+.ans-in.bad{border-color:var(--no);background:var(--no-bg)}
+.msg{min-height:1.6em;margin:10px 0 0;font-size:1.15rem;font-weight:700;line-height:1.55;text-align:center}
+.msg.bad{color:var(--no)}
+.msg.good{color:var(--ok)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:8px 0 0}
+.full{background:var(--ok-bg);color:#145c38;border-radius:12px;padding:8px 12px;font-weight:800;font-size:1.15rem;text-align:center;margin:8px 0}
+/* 直式格子 */
+.vg-wrap{display:flex;justify-content:center;overflow-x:auto;margin:6px 0}
+.vg{display:inline-grid;gap:4px 4px;align-items:center;font-variant-numeric:tabular-nums}
+.vg .lab{font-size:.85rem;color:var(--muted);text-align:right;padding-right:6px;white-space:nowrap}
+.vg .d{width:2.2em;height:2.2em;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800}
+.vg .line{border-top:3px solid var(--ink);grid-column:1/-1;height:0}
+.vg input{width:2.2em;height:2.2em;font:inherit;font-size:1.5rem;font-weight:800;text-align:center;border:3px dashed var(--pri);border-radius:10px;background:#fffaf2;color:var(--ink);padding:0}
+.vg input:focus{outline:none;border-style:solid;background:#fff}
+.vg input.bad{border-color:var(--no);background:var(--no-bg);border-style:solid}
+.vg input.ok{border-color:var(--ok);background:var(--ok-bg);border-style:solid}
+.end .big{font-size:3rem;margin:0}
+.end .score{font-size:2rem;font-weight:800}
+.stat{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
+.stat span{background:#fff;border:2px solid var(--line);border-radius:12px;padding:4px 12px;font-weight:700}
+.pass{font-weight:800;border-radius:12px;padding:8px 12px;margin:8px 0}
+.pass.y{background:var(--ok-bg);color:#145c38}.pass.n{background:#fff6dc;color:#4d3800}
+.wl{text-align:left;margin:8px auto;max-width:560px;line-height:1.7}
+.mk-mark{border:3px solid var(--pri);background:#fff6ec}
+</style>
+</head>
+<body>
+<main class="mx">
+  <div id="kdone" hidden></div>
+  <header class="mx-head">
+    <h1 id="title">⚡ 乘法快算</h1>
+    <p class="muted" id="lede">方法會了，分數常常掉在乘法算錯。先練拆解（15×57＝15×50＋15×7），再挑戰一輪 20 題計時。</p>
+  </header>
+
+  <div class="selbar" id="lv" role="group" aria-label="題型"><span class="lab">題型</span></div>
+
+  <div class="mx-tabs" role="tablist" id="tabs">
+    <button type="button" class="btn" role="tab" id="tab-prac" aria-selected="true">✏️ 練習</button>
+    <button type="button" class="btn" role="tab" id="tab-chal" aria-selected="false">⏱️ 挑戰</button>
+    <button type="button" class="btn" role="tab" id="tab-mk" aria-selected="false">📕 錯題重練</button>
+  </div>
+
+  <section id="play">
+    <div class="card center" id="start"></div>
+    <div id="q" hidden>
+      <div class="prog" id="prog"></div>
+      <div class="card center" id="qcard"></div>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </div>
+    <div class="card center end" id="end" hidden></div>
+  </section>
+</main>
+
+<script src="../kids-mistakes.js?v=ad913ae20a"></script>
+<script src="multiply.js?v=002b1af76c"></script>
+<script>
+(function () {
+'use strict';
+/* 〈乘法快算〉頁面。出題、拆解、直式（純函式）在 multiply.js（window.MX）。全部要登入（requireLogin＋一輪開始 startActivity('math')）。
+   ✏️ 練習：一輪 10 題，答錯給拆解提示（「15×57 再算一次：15×50=750、15×7=105，加起來是多少？」），第二次再錯給完整算法；
+     可開「📐 直式格子」逐位作答，哪一位、哪個進位錯就說哪一位。
+   ⏱️ 挑戰：一輪 20 題、計時、不給提示；結束看答對率、平均每題秒數。二位數×一位數、二位數×二位數 一輪 ≥90% 且平均 ≤10 秒＝達標（completion.js 判定）。
+   📕 錯題重練（?mistakes=1 也是）：數學錯題庫裡 type 'multiply' 的題（id 'mx:<a>x<b>'），做完送 practice_round 'math:mistakes'。
+   每次作答 KidsCoins.answer(ok,'math')；練習／挑戰一輪結束送 practice_round 'math:multiply'；挑戰結束 KidsDone.record('mx', 題型, {acc, sec})。 */
+var $ = function (id) { return document.getElementById(id); };
+var X = window.MX, MK = /[?&]mistakes=1(?:&|$)/.test(location.search);
+var N_PRAC = 10, N_CHAL = 20, UIK = 'kids_mx_ui';
+function ld() { try { return JSON.parse(localStorage.getItem(UIK)) || {}; } catch (e) { return {}; } }
+var S = { lv: X.LV.indexOf(ld().lv) >= 0 ? ld().lv : 'd21', mode: 'prac', grid: !!ld().grid };
+var R = null;
+window.MXPage = { S: S, R: function () { return R; } };   // 測試用
+function saveUI() { try { localStorage.setItem(UIK, JSON.stringify({ lv: S.lv, grid: S.grid })); } catch (e) { } }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'math'); } catch (e) { } }
+function coinReport(item, c, n) { try { if (window.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); } catch (e) { } }
+function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
+function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
+function mkRec(q, ok) { try { return window.KidsMistakes ? KidsMistakes.record('math', 'mx:' + q.a + 'x' + q.b, ok, { type: 'multiply', a: q.a, b: q.b, lv: q.lv || '', q: q.a + '×' + q.b }) : null; } catch (e) { return null; } }
+function mkList() {
+  var out = [];
+  try { KidsMistakes.list('math').forEach(function (e) { var p = e.p || {}; if (p.type === 'multiply' && X.valid(p.a, p.b) && out.length < 30) out.push({ a: p.a, b: p.b, lv: p.lv || '' }); }); } catch (e) { }
+  return out;
+}
+function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['eq', 'gcd', 'gcdword', 'multiples']) : ''; } catch (e) { return ''; } }
+function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
+function msg(t, kind) { var m = $('msg'); m.innerHTML = t || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); }
+
+/* ---------- 題型、分頁 ---------- */
+$('lv').insertAdjacentHTML('beforeend', X.LV.map(function (k) { return '<button type="button" class="btn sm" data-lv="' + k + '" aria-pressed="' + (k === S.lv) + '">' + X.LV_NAME[k] + '<small style="opacity:.75">　' + X.LV_EG[k] + '</small></button>'; }).join(''));
+$('lv').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-lv]'); if (!b) return;
+  S.lv = b.getAttribute('data-lv'); saveUI();
+  Array.prototype.forEach.call($('lv').querySelectorAll('[data-lv]'), function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+  if (!R || R.mode !== 'mk') home();
+});
+function setTab(k) {
+  if (!authOK()) return;
+  S.mode = k; stopClock();
+  ['prac', 'chal', 'mk'].forEach(function (x) { $('tab-' + x).setAttribute('aria-selected', String(x === k)); });
+  $('lv').hidden = k === 'mk';
+  home();
+}
+$('tab-prac').onclick = function () { setTab('prac'); };
+$('tab-chal').onclick = function () { setTab('chal'); };
+$('tab-mk').onclick = function () { setTab('mk'); };
+
+function home() {
+  R = null; stopClock();
+  $('start').hidden = false; $('q').hidden = true; $('end').hidden = true; $('start').className = 'card center';
+  var h;
+  if (S.mode === 'prac') h = '<h2>✏️ 練習：' + X.LV_NAME[S.lv] + '</h2><p>一輪 ' + N_PRAC + ' 題。答錯會告訴你怎麼拆著算（例：' + esc(X.hint(15, 57)) + '）。</p>' +
+    '<div class="row"><button type="button" class="btn sm" id="grid-tg" aria-pressed="' + S.grid + '">📐 直式格子（一位一位寫，抓進位錯誤）</button></div>' +
+    '<p class="muted">直式格子：從個位開始寫，寫完一格會自動跳到左邊那一格。</p><button type="button" class="btn primary big" id="go">開始這一輪 ▶</button>';
+  else if (S.mode === 'chal') h = '<h2>⏱️ 挑戰：' + X.LV_NAME[S.lv] + '</h2><p>一輪 ' + N_CHAL + ' 題，計時、不給提示，打完按 Enter 或「確定」就換下一題。</p>' +
+    '<p class="muted">「二位數×一位數」「二位數×二位數」答對 90% 以上、平均每題 10 秒內，就算學完這個單元。</p><button type="button" class="btn primary big" id="go">開始挑戰 ▶</button>';
+  else { var n = mkList().length; $('start').className = 'card center mk-mark'; h = '<h2>📕 錯題重練</h2>' + (n ? '<p>乘法錯題有 <b>' + n + '</b> 題。同一題連續答對 3 次就會畢業 🎓</p><button type="button" class="btn primary big" id="go">開始重練（' + n + ' 題）▶</button>' : '<p id="mk-empty">目前沒有乘法錯題 🎉</p>' + mkMore()); }
+  $('start').innerHTML = h;
+}
+function go() {
+  if (!authOK()) return;
+  if (S.mode !== 'mk' && !startAct(go)) return;
+  var items = S.mode === 'mk' ? mkList() : X.round(S.lv, S.mode === 'chal' ? N_CHAL : N_PRAC);
+  if (!items.length) { home(); return; }
+  R = { mode: S.mode, lv: S.lv, items: items, idx: 0, ok: 0, grad: 0, secs: [], oks: [], sent: false, mk: S.mode === 'mk', wrongList: [] };
+  ask();
+}
+
+/* ---------- 一題 ---------- */
+var clock = null, hideAt = 0;
+function stopClock() { if (clock) { clearInterval(clock); clock = null; } }
+function totalSoFar() { return R ? R.secs.reduce(function (s, x) { return s + x; }, 0) + (R.Q && !R.Q.done ? (now() - R.Q.t0 - R.Q.paused) / 1000 : 0) : 0; }
+function tick() { var t = $('tmr'); if (t && R) t.textContent = '⏱ ' + totalSoFar().toFixed(1) + ' 秒'; }
+document.addEventListener('visibilitychange', function () {   // 挑戰中切出去的時間不算
+  if (!R || !R.Q || R.Q.done) return;
+  if (document.hidden) hideAt = now(); else if (hideAt) { R.Q.paused += now() - hideAt; hideAt = 0; }
+});
+function ask() {
+  var it = R.items[R.idx];
+  R.Q = { a: it.a, b: it.b, lv: it.lv || R.lv, tries: 0, wrong: false, done: false, showFull: false, t0: now(), paused: 0, V: X.vertical(it.a, it.b) };
+  $('start').hidden = true; $('end').hidden = true; $('q').hidden = false;
+  msg(''); draw();
+  if (R.mode === 'chal' && !clock) clock = setInterval(tick, 200);
+}
+function gridOn() { return R.mode !== 'chal' && S.grid && R.Q.V && R.Q.b >= 1; }
+function gridHTML(V) {
+  var w = V.width, h = '<div class="vg-wrap"><div class="vg" style="grid-template-columns:auto repeat(' + w + ',2.2em)" role="group" aria-label="直式">';
+  var stat = function (lab, digits) { h += '<div class="lab">' + lab + '</div>'; digits.forEach(function (d) { h += '<div class="d">' + d + '</div>'; }); };
+  stat('', X.rowDigits(V.top, 0, w)); stat('×', X.rowDigits(V.bot, 0, w));
+  h += '<div class="line"></div>';
+  V.rows.forEach(function (r, ri) {
+    if (r.k === 'sum') h += '<div class="line"></div>';
+    h += '<div class="lab">' + esc(r.k === 'sum' ? '＋' : r.label) + '</div>';
+    for (var c = 0; c < w; c++) {
+      var blank = !r.tens && r.shift && c >= w - r.shift;
+      h += blank ? '<div class="d"></div>' : '<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" data-r="' + ri + '" data-c="' + c + '" aria-label="' + esc(r.label) + ' 第 ' + (w - c) + ' 位">';
+    }
+  });
+  return h + '</div></div>';
+}
+function draw() {
+  var Q = R.Q, n = R.items.length;
+  $('prog').innerHTML = (R.mk ? '📕 錯題重練　' : '') + '<span>第 ' + (R.idx + 1) + ' / ' + n + ' 題</span><span class="muted">' + (R.mode === 'chal' ? '答對 ' : '第一次就對 ') + R.ok + ' 題</span>' +
+    (R.mode === 'chal' ? '<span class="timer" id="tmr">⏱ ' + totalSoFar().toFixed(1) + ' 秒</span>' : '') + (R.mk ? '' : '<span class="muted">' + X.LV_NAME[R.lv] + '</span>');
+  var h;
+  if (Q.done) {
+    var more = R.idx + 1 < n;
+    h = '<div class="qbig">' + Q.a + ' × ' + Q.b + ' ＝ ' + (Q.a * Q.b) + '</div><p class="full" id="full">' + esc(X.full(Q.a, Q.b)) + '</p>' +
+      '<p>' + (Q.wrong ? '💪 這題收進 📕 錯題庫了，之後再練一次。' : '🎉 第一次就答對！') + '</p><div class="row"><button type="button" class="btn primary big" id="next">' + (more ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
+  } else if (gridOn()) {
+    h = '<div class="qbig">' + Q.a + ' × ' + Q.b + ' ＝ ？</div>' + gridHTML(Q.V) + '<p class="full" id="gfull"' + (Q.showFull ? '' : ' hidden') + '>' + esc(X.full(Q.a, Q.b)) + '</p>' +
+      '<div class="row"><button type="button" class="btn primary big" id="ok">確定</button><button type="button" class="btn sm" id="tip">💡 看拆解</button><button type="button" class="btn sm" id="grid-off">改成直接寫答案</button></div>';
+  } else {
+    h = '<div class="qbig"><span>' + Q.a + ' × ' + Q.b + ' ＝</span><input class="ans-in" id="ans" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" aria-label="' + Q.a + '乘以' + Q.b + '的答案"></div>' +
+      (Q.showFull ? '<p class="full">' + esc(X.full(Q.a, Q.b)) + '</p>' : '') + '<div class="row"><button type="button" class="btn primary big" id="ok">確定</button>' +
+      (R.mode !== 'chal' ? '<button type="button" class="btn sm" id="tip">💡 看拆解</button>' + (Q.V ? '<button type="button" class="btn sm" id="grid-on">📐 用直式格子</button>' : '') : '') + '</div>';
+  }
+  $('qcard').innerHTML = h;
+  var f = $('ans') || $('qcard').querySelector('.vg input:last-of-type') || $('next');
+  if (gridOn() && !Q.done) { var ins = $('qcard').querySelectorAll('.vg input[data-r="0"]'); f = ins[ins.length - 1]; }
+  if (f) try { f.focus({ preventScroll: true }); } catch (e) { }
+}
+function readGrid(ri) { var w = R.Q.V.width, out = []; for (var c = 0; c < w; c++) { var el = $('qcard').querySelector('input[data-r="' + ri + '"][data-c="' + c + '"]'); out.push(el ? el.value.trim() : ''); } return out; }
+function checkGrid() {
+  var Q = R.Q, V = Q.V, first = null;
+  V.rows.forEach(function (r, ri) {
+    var res = X.checkRow(V, ri, readGrid(ri));
+    for (var c = 0; c < V.width; c++) { var el = $('qcard').querySelector('input[data-r="' + ri + '"][data-c="' + c + '"]'); if (!el) continue; el.classList.toggle('bad', res.bad.indexOf(c) >= 0); el.classList.toggle('ok', res.ok); }
+    if (!res.ok && !first) first = res;
+  });
+  return first;
+}
+function wrongOnce() { var Q = R.Q; if (!Q.wrong) { Q.wrong = true; mkRec(Q, false); } }
+function submit() {
+  var Q = R.Q; if (!Q || Q.done) return;
+  if (R.mode === 'chal') {
+    var v = X.parseNum($('ans').value); if (v == null) { msg('先寫答案喔', 'bad'); return; }
+    var ok = v === Q.a * Q.b, sec = Math.max(0, (now() - Q.t0 - Q.paused) / 1000);
+    coinAnswer(ok); R.secs.push(sec); R.oks.push(ok); Q.done = true;
+    if (ok) { R.ok++; if (mkRec(Q, true) === 'graduated') R.grad++; } else { wrongOnce(); R.wrongList.push({ a: Q.a, b: Q.b, v: v }); }
+    R.idx++;
+    if (R.idx >= R.items.length) end(); else ask();
+    msg(ok ? '✓ 對' : '✗ ' + Q.a + '×' + Q.b + ' ＝ ' + (Q.a * Q.b), ok ? 'good' : 'bad');
+    return;
+  }
+  var right;
+  if (gridOn()) {
+    var bad = checkGrid(); right = !bad;
+    coinAnswer(right);
+    if (!right) {
+      Q.tries++; wrongOnce();
+      if (Q.tries >= 3 && $('gfull')) { Q.showFull = true; $('gfull').hidden = false; }   // 錯三次：給完整算法（格子裡寫的不清掉）
+      msg('再看一次 👀 ' + esc(bad.text), 'bad');
+      return;
+    }
+  } else {
+    var val = X.parseNum($('ans').value);
+    if (val == null) { msg('先寫答案喔', 'bad'); return; }
+    right = val === Q.a * Q.b; coinAnswer(right);
+    if (!right) {
+      Q.tries++; wrongOnce(); $('ans').classList.add('bad');
+      if (Q.tries >= 2 && !Q.showFull) { Q.showFull = true; draw(); msg('看一下完整算法，再寫一次答案 👇', 'bad'); }
+      else msg('👀 ' + esc(X.hint(Q.a, Q.b)), 'bad');
+      try { $('ans').select(); } catch (e) { }
+      return;
+    }
+  }
+  Q.done = true;
+  if (!Q.wrong) { R.ok++; if (mkRec(Q, true) === 'graduated') R.grad++; }
+  msg('答對了！🎉', 'good'); draw();
+}
+function end() {
+  stopClock();
+  var n = R.items.length, s = X.summarize(R.secs, R.oks), h;
+  if (!R.sent) {
+    R.sent = true;
+    coinReport(R.mk ? 'math:mistakes' : 'math:multiply', R.ok, n);
+    if (R.mode === 'chal') try { if (window.KidsDone) KidsDone.record('mx', R.lv, { acc: s.acc, sec: s.avg }); } catch (e) { }
+  }
+  $('q').hidden = true; $('end').hidden = false;
+  if (R.mode === 'chal') {
+    var pass = window.KidsCompletion && KidsCompletion.mxPass ? KidsCompletion.mxPass(s.acc, s.avg) : (s.acc >= 90 && s.avg <= 10);
+    h = '<p class="big">' + (pass ? '🏆' : '💪') + '</p><p class="score" id="end-score">' + R.ok + ' / ' + n + '</p>' +
+      '<div class="stat"><span id="end-acc">答對 ' + s.acc + '%</span><span>總共 ' + s.total.toFixed(1) + ' 秒</span><span id="end-avg">平均每題 ' + s.avg.toFixed(1) + ' 秒</span></div>' +
+      '<p class="pass ' + (pass ? 'y' : 'n') + '" id="end-pass">' + (pass ? '✅ 達標：答對 90% 以上、平均 10 秒內！' : '還差一點：要答對 90% 以上，而且平均每題 10 秒內') + '</p>' +
+      (R.wrongList.length ? '<div class="wl"><b>答錯的題（已收進 📕 錯題庫）：</b><br>' + R.wrongList.map(function (w) { return esc(w.a + '×' + w.b + '：你寫 ' + w.v + '　→ ' + X.full(w.a, w.b)); }).join('<br>') + '</div>' : '');
+  } else h = '<p class="big">' + (R.ok === n ? '🏆' : '💪') + '</p><p class="score" id="end-score">' + R.ok + ' / ' + n + '</p><p>第一次就答對 ' + R.ok + ' 題' + (R.grad ? '，🎓 有 ' + R.grad + ' 題錯題畢業了！' : R.ok < n ? '；答錯的題在 📕 錯題庫。' : '！') + '</p>';
+  h += '<div class="row">' + (R.mk ? (MK ? '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + mkMore() : '<button type="button" class="btn primary big" id="home">回錯題重練</button>')
+    : '<button type="button" class="btn primary big" id="again">再來一輪 ▶</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a>') + '</div>';
+  $('end').innerHTML = h;
+  window.scrollTo(0, 0);
+}
+$('play').addEventListener('click', function (e) {
+  var t = e.target.closest('button') || e.target;
+  if (t.id === 'go' || t.id === 'again') go();
+  else if (t.id === 'home') home();
+  else if (t.id === 'grid-tg') { S.grid = !S.grid; saveUI(); t.setAttribute('aria-pressed', String(S.grid)); }
+  else if (t.id === 'grid-on' || t.id === 'grid-off') { S.grid = t.id === 'grid-on'; saveUI(); msg(''); draw(); }
+  else if (t.id === 'ok') submit();
+  else if (t.id === 'tip' && R && R.Q && R.mode !== 'chal') { msg('💡 ' + esc(X.hint(R.Q.a, R.Q.b).replace(' 再算一次：', '：拆開算 ')), ''); try { if (window.KidsCoins) KidsCoins.activity('math'); } catch (x) { } }   // 練習可以先看拆解（不算答錯）
+  else if (t.id === 'next') { R.idx++; if (R.idx >= R.items.length) end(); else ask(); }
+});
+$('play').addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+  e.preventDefault(); submit();
+});
+// 直式格子：寫一格就跳到左邊那一格（同一列寫完跳到下一列的個位）
+$('play').addEventListener('input', function (e) {
+  var el = e.target; if (el.classList) el.classList.remove('bad');
+  if (!el.hasAttribute || !el.hasAttribute('data-r')) return;
+  var v = String(el.value).replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/[^0-9]/g, '');
+  el.value = v.slice(-1); if (!el.value) return;
+  var r = +el.getAttribute('data-r'), c = +el.getAttribute('data-c'), q = function (rr, cc) { return $('qcard').querySelector('input[data-r="' + rr + '"][data-c="' + cc + '"]'); };
+  var nx = q(r, c - 1);
+  if (!nx) { var row = $('qcard').querySelectorAll('input[data-r="' + (r + 1) + '"]'); nx = row[row.length - 1]; }
+  if (nx) try { nx.focus(); } catch (x) { }
+});
+
+/* ---------- 頁首：單元完成 ---------- */
+function paintDone() { try { var el = $('kdone'); if (!el || !window.KidsDone) return; if (MK) { el.hidden = true; return; } KidsDone.mount(el, 'math:mx', { title: '乘法快算' }); } catch (e) { } }
+window.MXPage.paintDone = paintDone;
+
+/* ---------- 啟動 ---------- */
+if (MK) {
+  document.title = '乘法錯題練習'; $('title').textContent = '📕 乘法錯題練習'; $('lede').textContent = '答錯過的乘法再算一次。同一題連續答對 3 次就會畢業 🎓';
+  $('tabs').hidden = true; $('lv').hidden = true; S.mode = 'mk';
+  var items = mkList();
+  if (items.length) { R = { mode: 'mk', lv: 'mk', items: items, idx: 0, ok: 0, grad: 0, secs: [], oks: [], sent: false, mk: true, wrongList: [] }; ask(); }   // 練習額度在錯題庫按「只練錯題」時已經算過
+  else home();
+} else home();
+})();
+</script>
+<script src="../kids-auth.js?v=42d7c72a13"></script>
+<script src="../kids-coins.js?v=e1a8c7b5ad"></script>
+<script src="../syncmerge.js?v=2ee771fc34"></script>
+<script src="../completion.js?v=7f8cad335b"></script>
+<script src="../kids-done.js?v=877f66af0a"></script>
+<script src="../syncauto.js?v=d7ed49f73e"></script>
+<script src="../sync.js?v=cbdd56da2a"></script>
+<script>if (window.MXPage && MXPage.paintDone) MXPage.paintDone();</script>
+</body>
+</html>

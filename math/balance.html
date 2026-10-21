@@ -573,7 +573,7 @@ footer .share-row{margin:14px 0 0}
   </footer>
 </main>
 
-<script src="../kids-mistakes.js?v=173d219279"></script>
+<script src="../kids-mistakes.js?v=ad913ae20a"></script>
 <script>
 (function(){
 'use strict';
@@ -951,7 +951,7 @@ var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, sto
    全部做完送 practice_round 'math:mistakes'（correct＝一次就算對的題數）。 */
 var MK = /[?&]mistakes=1/.test(location.search);
 /* 短除法錯題（p.type 'gcd'；應用題 'gcdword'）在 short-division.html?mistakes=1 練（只有應用題時那頁自己轉去練應用題）；這裡做完還有的話給一顆「接著練」 */
-function gcdMore(){ var n = 0; try { n = (window.KidsMistakes ? KidsMistakes.list('math') : []).filter(function(e){ return e.p && (e.p.type === 'gcd' || e.p.type === 'gcdword'); }).length; } catch (e){} return n ? '<a class="btn" id="mk-gcd" href="short-division.html?mistakes=1">接著練短除法錯題（' + n + ' 題）▶</a>' : ''; }
+function gcdMore(){ var n = 0; try { n = (window.KidsMistakes ? KidsMistakes.list('math') : []).filter(function(e){ return e.p && (e.p.type === 'gcd' || e.p.type === 'gcdword'); }).length; } catch (e){} return (n ? '<a class="btn" id="mk-gcd" href="short-division.html?mistakes=1">接著練短除法錯題（' + n + ' 題）▶</a>' : '') + (window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['multiples', 'multiply']) : ''); }
 function mkRec(q, ok){ try { return window.KidsMistakes ? KidsMistakes.record('math', 'eq:' + q, ok, { q:q }) : null; } catch (e){ return null; } }
 var timers = [], anims = [];
 function later(fn, ms){ var id = setTimeout(fn, ms); timers.push(id); return id; }
@@ -1823,9 +1823,9 @@ try {
 })();
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
-<script src="../kids-coins.js?v=79bd3efb0b"></script>
-<script src="../syncmerge.js?v=ba372ea861"></script>
-<script src="../completion.js?v=398c1ebdec"></script>
+<script src="../kids-coins.js?v=e1a8c7b5ad"></script>
+<script src="../syncmerge.js?v=2ee771fc34"></script>
+<script src="../completion.js?v=7f8cad335b"></script>
 <script src="../kids-done.js?v=877f66af0a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
 <script src="../sync.js?v=cbdd56da2a"></script>

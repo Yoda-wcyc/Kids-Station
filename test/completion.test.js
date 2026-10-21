@@ -1,4 +1,4 @@
-// completion.test.js — 單元完成判定（completion.js）＋同步 v5 的 done 欄位（syncmerge.js）單元測試
+// completion.test.js — 單元完成判定（completion.js）＋同步 v6 的 done 欄位（syncmerge.js）單元測試（v6＝2026-10-21 done 多 mp、mx）
 // 用法：node test/completion.test.js（smoke.js 也會跑這支）
 'use strict';
 const vm = require('vm'), fs = require('fs'), path = require('path');
@@ -107,6 +107,33 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   ok(ev('math:gw', { done: { gw: { basic: 80, adv: 80 } } }).status === 'done', 'gw: basic 80 + adv 80 → done');
   r = ev('math:gw', { done: { gw: { basic: 100 } } });
   ok(r.status === 'doing' && r.pct === 50 && /還沒有紀錄/.test(r.checklist[1].detail), 'gw: only basic → doing 50%');
+  // 倍數與公倍數（2026-10-21）：六種題型練習各一輪 ≥80% ＋ 考試 ≥80
+  const mp = (o) => ({ mp: Object.assign({ circle: 80, both: 80, fill: 80, lcm: 80, word: 80, lit: 80, test: 80 }, o || {}) });
+  ok(ev('math:mul', {}).status === 'todo' && ev('math:mul', {}).checklist.length === 7, 'mul: empty → todo, 7 checks (6 題型＋考試)');
+  ok(ev('math:mul', { done: mp() }).status === 'done', 'mul: all 80 (exactly) + test 80 → done');
+  r = ev('math:mul', { done: mp({ word: 79 }) });
+  ok(r.status === 'doing' && r.pct === Math.round(6 / 7 * 100) && !r.checklist[4].ok && /應用題/.test(r.checklist[4].label) && /最佳一輪 79%/.test(r.checklist[4].detail), 'mul: 應用題 79 → doing, names it: ' + r.pct);
+  r = ev('math:mul', { done: mp({ test: 79 }) });
+  ok(r.status === 'doing' && !r.checklist[6].ok && /最高 79 分/.test(r.checklist[6].detail), 'mul: test 79 → not done: ' + r.checklist[6].detail);
+  r = ev('math:mul', { done: { mp: { test: 95 } } });
+  ok(r.status === 'doing' && r.checklist[6].ok && r.checklist.slice(0, 6).every(c => !c.ok && /還沒有紀錄/.test(c.detail)), 'mul: test only → doing, practice still missing');
+  ok(KC.MP_G.map(x => x[0]).join() === require(path.join(root, 'math', 'multiples.js')).GROUPS.map(x => x[0]).join(), 'mul: 題型 list matches math/multiples.js GROUPS');
+  s = KC.record({}, 'mp', 'word', 70, 1); s = KC.record(s, 'mp', 'word', 90, 2); s = KC.record(s, 'mp', 'word', 60, 3); s = KC.record(s, 'mp', 'test', 84, 4); s = KC.record(s, 'mp', 'zz', 100, 5);
+  ok(same(s.mp, { test: 84, word: 90 }), 'record mp: best kept, unknown key dropped: ' + C(s.mp));
+  // 乘法快算：二位×一位、二位×二位 挑戰各一輪 ≥90% 且平均 ≤10 秒（同一輪）
+  ok(ev('math:mx', {}).status === 'todo' && ev('math:mx', {}).checklist.length === 2, 'mx: empty → todo, 2 checks');
+  s = KC.record({}, 'mx', 'd21', { acc: 90, sec: 10 }, 7);
+  ok(s.mx.d21.ok === 7 && s.mx.d21.acc === 90 && s.mx.d21.sp === 100, 'record mx: 90% & 10.0 s (exactly) → ok: ' + C(s.mx));
+  s = KC.record({}, 'mx', 'd21', { acc: 100, sec: 10.1 }, 1); s = KC.record(s, 'mx', 'd21', { acc: 85, sec: 6 }, 2);
+  ok(!s.mx.d21.ok && s.mx.d21.acc === 100 && s.mx.d21.sp === 60, 'record mx: fast round and accurate round separately do NOT pass (same round needed): ' + C(s.mx));
+  r = KC.evaluate('math:mx', {}, { done: s });
+  ok(r.status === 'doing' && !r.checklist[0].ok && /最佳 100%、最快平均 6\.0 秒/.test(r.checklist[0].detail), 'mx: shows best acc and fastest avg: ' + r.checklist[0].detail);
+  s = KC.record(s, 'mx', 'd21', { acc: 95, sec: 8.4 }, 3); s = KC.record(s, 'mx', 'd21', { acc: 50, sec: 30 }, 4);
+  ok(s.mx.d21.ok === 3 && s.mx.d21.acc === 100 && s.mx.d21.sp === 60, 'record mx: ok kept at first passing round, later bad round does not undo it');
+  s = KC.record(s, 'mx', 'd22', { acc: 100, sec: 9.9 }, 5);
+  ok(KC.evaluate('math:mx', {}, { done: s }).status === 'done', 'mx: d21 + d22 passed → done');
+  ok(KC.evaluate('math:mx', {}, { done: { mx: { d22t: { acc: 100, sp: 50, ok: 1 }, nn: { acc: 100, sp: 20, ok: 1 } } } }).status === 'doing', 'mx: 九九／整十 達標不算（只看二位×一位、二位×二位）');
+  ok(KC.mxPass(90, 10) && !KC.mxPass(89, 5) && !KC.mxPass(100, 10.01) && KC.MX_N === 20, 'mxPass thresholds 90% / 10 s, round 20');
 }
 
 // ---------- AI／Scratch ----------
@@ -119,11 +146,11 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
 // ---------- 地圖：目錄、整體完成率、題庫 ----------
 {
   const M = KC.build(DATA, {});
-  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:8,social:4,science:4,math:3,ai:3,scratch:7' && M.total === 29 && M.done === 0 && M.pct === 0, 'map: 29 judgeable units: ' + M.subjects.map(s => s.k + ':' + s.total).join());
+  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:8,social:4,science:4,math:5,ai:3,scratch:7' && M.total === 31 && M.done === 0 && M.pct === 0, 'map: 31 judgeable units: ' + M.subjects.map(s => s.k + ':' + s.total).join());
   ok(M.subjects.every(s => s.units.every(u => u.href && u.title && ['done', 'doing', 'todo'].includes(u.status))), 'map: every cell has href, title, status');
   const ctx = { learned: Object.fromEntries(KC.tbItems(DATA, 'hanlin-5-u2', KE).map(x => [x.id, { at: '2026-10-20T01:00:00Z' }])), done: { tb: { 'hanlin-5-u2': { best: 85, last: 85, at: T0 } }, ai: { secrets: T0 } } };
   const M2 = KC.build(DATA, ctx);
-  ok(M2.done === 2 && M2.subjects[0].done === 1 && M2.subjects[0].units.find(u => u.key === 'tb:hanlin-5-u2').status === 'done' && M2.subjects[4].done === 1, 'map: one textbook unit + one AI page done → 2/29');
+  ok(M2.done === 2 && M2.subjects[0].done === 1 && M2.subjects[0].units.find(u => u.key === 'tb:hanlin-5-u2').status === 'done' && M2.subjects[4].done === 1, 'map: one textbook unit + one AI page done → 2/31');
   const bw = M2.bank.find(b => b.k === 'words');
   ok(M2.bank.map(b => b.k).join() === 'words,phrases,roots,grammar,patterns' && bw.total === W.DATA_WORDS.length && bw.levels.map(l => l.lv).join() === '1,2,3,4' && bw.learned >= 15, 'bank: categories + word levels 1–4, learned counted: ' + bw.learned + '/' + bw.total);
   ok(M2.bank.find(b => b.k === 'patterns').levels.length === 3 && M2.bank.find(b => b.k === 'roots').levels.length === 0, 'bank: pattern levels 簡單／基本／進階, roots no levels');
@@ -142,18 +169,29 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   ok(bm && same(JSON.parse(bm[1].replace(/'/g, '"')), KC.BAL), 'BAL matches balance.html BUILTIN');
   KC.AI.forEach(([id]) => ok(sj.includes(`src: 'ai/${id}.html'`) && fs.existsSync(path.join(root, 'ai', id + '.html')), 'AI page exists: ' + id));
   ok(sj.includes("src: 'math/short-division.html?tab=word', hidden: true") && M.subjects[3].units[2].href === 'index.html#s/math/short-division-word', 'gcd-word map link opens the 應用題 tab');
+  // 新單元（2026-10-21）：地圖連到首頁數學卡（subjects.js 的 id／dk 要一致）
+  ok(M.subjects[3].units[3].href === 'index.html#s/math/multiples' && sj.includes("id: 'multiples'") && sj.includes("src: 'math/multiples.html', dk: 'math:mul'"), 'multiples: map link + home card dk');
+  ok(M.subjects[3].units[4].href === 'index.html#s/math/multiply' && sj.includes("id: 'multiply'") && sj.includes("src: 'math/multiply.html', dk: 'math:mx'"), 'multiply: map link + home card dk');
 }
 
-// ---------- 同步 v5：done 欄位 ----------
+// ---------- 同步 v5／v6：done 欄位 ----------
 {
   const props = (a, b, c, name) => {
     ok(same(SM.merge(a, b), SM.merge(b, a)), name + ': commutative');
     const ab = SM.merge(a, b); ok(same(SM.merge(ab, a), ab) && same(SM.merge(ab, b), ab) && same(SM.merge(ab, ab), ab), name + ': idempotent');
     ok(same(SM.merge(SM.merge(a, b), c), SM.merge(a, SM.merge(b, c))), name + ': associative');
   };
-  ok(SM.VERSION === 5, 'sync doc version 5');
+  ok(SM.VERSION === 6, 'sync doc version 6');
   const v4 = SM.normalize({ v: 4, log: [], learned: {}, mistakes: {}, mk: {} });
-  ok(v4.v === 5 && same(v4.done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {} }), 'v4 doc → v5 with empty done');
+  ok(v4.v === 6 && same(v4.done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: {}, mx: {} }), 'v4 doc → v6 with empty done');
+  // v6：mp 取大、mx acc 取大／sp 取小／ok 取最早；壞資料不會壞
+  const P1 = { done: { mp: { circle: 60, test: 85 }, mx: { d21: { acc: 80, sp: 70 }, d22: { acc: 95, sp: 95, ok: 900 } } } }, P2 = { done: { mp: { circle: 90, word: 0 }, mx: { d21: { acc: 95, sp: 120, ok: 500 }, d22: { acc: 70, sp: 60, ok: 700 } } } }, P3 = { done: { mp: { lit: 100 }, mx: { nn: { acc: 100, sp: 20 } } } };
+  const P12 = SM.merge(P1, P2).done;
+  ok(same(P12.mp, { circle: 90, test: 85, word: 0 }) && same(P12.mx.d21, { acc: 95, sp: 70, ok: 500 }) && same(P12.mx.d22, { acc: 95, sp: 60, ok: 700 }), 'done.mp／mx merge: ' + C(P12.mp) + ' ' + C(P12.mx));
+  props(P1, P2, P3, 'done v6 mp/mx');
+  ok(same(SM.normalize({ done: { mp: { circle: 150, zz: 5, test: 'x' }, mx: { d21: { acc: 'abc' }, d22: { acc: 50, sp: -3, ok: 'y' }, qq: { acc: 1 } } } }).done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: { circle: 100 }, mx: { d22: { acc: 50 } } }), 'garbage mp／mx: clamps, drops unknown');
+  const strip5 = d => { const n = SM.normalize(d); delete n.done.mp; delete n.done.mx; n.v = 5; return n; }, full6 = SM.merge(SM.merge(P1, P2), P3);
+  ok(same(SM.merge(full6, strip5(full6)), full6), 'v5 device drops mp/mx → v6 merge restores them from local');
   ok(same(SM.normalize({ done: 'x' }).done, SM.normDone(null)) && same(SM.normalize({ done: { tb: [1], sd: { l20: 'abc', l100: 150, zz: 5 }, ai: { '': 5, ok: -1 } } }).done.sd, { l100: 100 }), 'garbage done does not throw, clamps %, drops unknown');
   const A = { done: { tb: { u1: { best: 70, last: 70, at: 100 } }, mm: { 'social:u1': { cz: 60 } }, bal: { b1: 500, b2: 600 }, sd: { l20: 0 }, gw: { basic: 40 }, ai: { secrets: 900 } } };
   const B = { done: { tb: { u1: { best: 90, last: 50, at: 200 }, u2: { best: 80, last: 80, at: 50 } }, mm: { 'social:u1': { qz: 85 }, 'science:n1': { cz: 100 } }, bal: { b1: 300 }, sd: { l20: 80, tri: 20 }, ai: { secrets: 1000, 'ask-well': 5 } } };
@@ -182,7 +220,7 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
     const dA = { local: SM.normalize(A) }, dB = { local: SM.normalize(B) };
     for (let i = 0; i < 3; i++) { await SM.syncOnce(io(dA), 'X'); await SM.syncOnce(io(dB), 'X'); }
     const last = (await SM.syncOnce(io(dA), 'X')).puts + (await SM.syncOnce(io(dB), 'X')).puts;
-    ok(same(dA.local, dB.local) && same(dA.local.done, AB) && remote.doc.v === 5 && last === 0, 'syncOnce: two devices converge on done, remote doc v5');
+    ok(same(dA.local, dB.local) && same(dA.local.done, AB) && remote.doc.v === 6 && last === 0, 'syncOnce: two devices converge on done, remote doc v6');
     // 第二台的紀錄同步進來 → 判定跟著變（地圖、橫幅讀的就是這份）
     const tbDone = { learned: Object.fromEntries(KC.tbItems(DATA, 'hanlin-5-u1', KE).map(x => [x.id, { at: '2026-10-20T01:00:00Z' }])) };
     const devX = { local: SM.normalize(tbDone) }, devY = { local: SM.normalize({ done: { tb: { 'hanlin-5-u1': { best: 88, last: 88, at: T0 } } } }) };

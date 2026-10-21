@@ -182,7 +182,7 @@ body{background:var(--bg)}
   </section>
 </main>
 
-<script src="../kids-mistakes.js?v=173d219279"></script>
+<script src="../kids-mistakes.js?v=ad913ae20a"></script>
 <script src="short-division.js?v=17afc65cb7"></script>
 <script src="gcd-word.js?v=ad02b84034"></script>
 <script>
@@ -544,7 +544,7 @@ function tryEnd() {
   $('try-q').hidden = true; $('try-end').hidden = false;
   $('try-end').innerHTML = '<p class="big">' + (T.ok === n ? '🏆' : '💪') + '</p><p class="score" id="try-score">' + T.ok + ' / ' + n + '</p><p>一次就全對 ' + T.ok + ' 題' +
     (T.grad ? '，🎓 有 ' + T.grad + ' 題錯題畢業了！' : (T.ok < n ? '；答錯的題在 📕 錯題庫等你復仇。' : '！')) + '</p><div class="row">' +
-    (T.mk ? '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + (wLeft ? '<a class="btn" id="mk-word" href="short-division.html?mistakes=word">接著練應用題錯題（' + wLeft + ' 題）▶</a>' : '') + (eqLeft ? '<a class="btn" href="balance.html?mistakes=1">接著練天平錯題 ▶</a>' : '')
+    (T.mk ? '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + (wLeft ? '<a class="btn" id="mk-word" href="short-division.html?mistakes=word">接著練應用題錯題（' + wLeft + ' 題）▶</a>' : '') + (eqLeft ? '<a class="btn" href="balance.html?mistakes=1">接著練天平錯題 ▶</a>' : '') + mkMore()
       : '<button type="button" class="btn primary big" id="try-again">再來一輪 ▶</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a>') + '</div>';
 }
 $('try').addEventListener('click', function (e) {
@@ -576,9 +576,10 @@ var WS = { lv: 'basic', cat: 'mix' };   // 開始畫面的選擇
 var W = null;                           // 這一輪
 window.SDPage.W = function () { return W; };
 window.SDPage.wQ = function () { wQ(); };   // 測試用：換掉 W.items 後重畫目前這一題
-function mkLeft(type) {   // 數學錯題庫裡還有幾題：'gcd'＝短除法、'gcdword'＝應用題、'eq'＝天平（其他）
-  try { return KidsMistakes.list('math').filter(function (e) { var t = e.p && e.p.type; return type === 'eq' ? (t !== 'gcd' && t !== 'gcdword') : t === type; }).length; } catch (e) { return 0; }
+function mkLeft(type) {   // 數學錯題庫裡還有幾題：'gcd'＝短除法、'gcdword'＝應用題、'eq'＝天平（其他；倍數 'multiples'、乘法 'multiply' 不算）
+  try { return KidsMistakes.list('math').filter(function (e) { var t = e.p && e.p.type; return type === 'eq' ? (t !== 'gcd' && t !== 'gcdword' && t !== 'multiples' && t !== 'multiply') : t === type; }).length; } catch (e) { return 0; }
 }
+function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['multiples', 'multiply']) : ''; } catch (e) { return ''; } }
 function wMsg(t, kind) { var m = $('w-msg'); m.innerHTML = t || ''; m.className = 'sd-msg' + (kind ? ' ' + kind : ''); }
 function wAuth() {   // 作答要登入；這一輪第一次作答時 startActivity('math')
   if (!authOK()) return false;
@@ -833,7 +834,7 @@ function wEnd() {
   $('w-q').hidden = true; $('w-end').hidden = false;
   $('w-end').innerHTML = '<p class="big">' + (W.ok === n ? '🏆' : '💪') + '</p><p class="score" id="w-score">' + W.ok + ' / ' + n + '</p><p>一次就全對 ' + W.ok + ' 題' +
     (W.grad ? '，🎓 有 ' + W.grad + ' 題錯題畢業了！' : (W.ok < n ? '；答錯的題在 📕 錯題庫等你復仇。' : '！')) + '</p><div class="row">' +
-    (W.mk ? '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + (gLeft ? '<a class="btn" id="mk-gcd" href="short-division.html?mistakes=1">接著練短除法錯題 ▶</a>' : '') + (eqLeft ? '<a class="btn" href="balance.html?mistakes=1">接著練天平錯題 ▶</a>' : '')
+    (W.mk ? '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + (gLeft ? '<a class="btn" id="mk-gcd" href="short-division.html?mistakes=1">接著練短除法錯題 ▶</a>' : '') + (eqLeft ? '<a class="btn" href="balance.html?mistakes=1">接著練天平錯題 ▶</a>' : '') + mkMore()
       : '<button type="button" class="btn primary big" id="w-again">再來一輪 ▶</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a>') + '</div>';
 }
 $('word').addEventListener('click', function (e) {
@@ -965,9 +966,9 @@ if (MK) {
 })();
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
-<script src="../kids-coins.js?v=79bd3efb0b"></script>
-<script src="../syncmerge.js?v=ba372ea861"></script>
-<script src="../completion.js?v=398c1ebdec"></script>
+<script src="../kids-coins.js?v=e1a8c7b5ad"></script>
+<script src="../syncmerge.js?v=2ee771fc34"></script>
+<script src="../completion.js?v=7f8cad335b"></script>
 <script src="../kids-done.js?v=877f66af0a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
 <script src="../sync.js?v=cbdd56da2a"></script>

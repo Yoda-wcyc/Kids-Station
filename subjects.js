@@ -8,7 +8,10 @@
     math: [{ id: 'balance', title: '天平解方程式', desc: '用天平學加減方程式，可以自己出題，也有括號題', icon: '⚖️', src: 'math/balance.html', dk: 'math:balance' },
       { id: 'short-division', title: '短除法：最大公因數・最小公倍數', desc: '看短除法一步一步畫，再換你算：公因數、商、互質了停！兩個數、三個數都有，還有生活應用題', icon: '🧮', src: 'math/short-division.html', dk: 'math:sd' },
       // 課程地圖「短除法：應用題」直接開到 📝 應用題分頁（不另外列卡片）
-      { id: 'short-division-word', title: '短除法：應用題', icon: '🧮', src: 'math/short-division.html?tab=word', hidden: true }],
+      { id: 'short-division-word', title: '短除法：應用題', icon: '🧮', src: 'math/short-division.html?tab=word', hidden: true },
+      // 2026-10-21：五上單元三〈倍數與公倍數〉（教學／練習／考試）＋〈乘法快算〉（考卷上算錯最多的乘法）
+      { id: 'multiples', title: '倍數與公倍數', desc: '五上單元三：倍數判斷、範圍內的倍數、最小公倍數、四種應用題判斷（不超過／比它多／剛好／最少幾包），還有照原卷配分的考試', icon: '✖️', src: 'math/multiples.html', dk: 'math:mul' },
+      { id: 'multiply', title: '乘法快算', desc: '九九、二位數×一位數、二位數×二位數、三位數×一位數：練習有拆解提示和直式格子，挑戰一輪 20 題計時', icon: '⚡', src: 'math/multiply.html', dk: 'math:mx' }],
     ai: [
       { id: 'hallucinate', title: 'AI 會唬爛', desc: 'AI 有時會很有自信地說錯。學會三招不被騙：自己查、問大人、多找一個地方對答案。', icon: '🤥', src: 'ai/hallucinate.html', dk: 'ai:hallucinate' },
       { id: 'ask-well', title: '怎麼問得好', desc: '同一件事，問法不同答案就差很多。練習講清楚、給背景、說形式，讓 AI 真的幫得上忙。', icon: '💬', src: 'ai/ask-well.html', dk: 'ai:ask-well' },
@@ -37,9 +40,15 @@
   // 📕 錯題庫（kids-mistakes.js）：有題目的科目各一張卡 → #s/<科>/mistakes（清單免登入）；「只練錯題」→ #s/<科>/mistakes-go[-<單元>]
   //   社會／自然 → iframe mindmap/<科>.html?mistakes=1[&u=單元]；數學 → iframe math/balance.html?mistakes=1（錯題全是短除法 p.type 'gcd'／應用題 'gcdword' 時改開
   //   math/short-division.html?mistakes=1（只有應用題時 ?mistakes=word）；都有時天平做完有「接著練短除法錯題」，短除法做完有「接著練應用題錯題」）；AI → 在這頁重答（KidsMistakes.aiPlay）
+  //   2026-10-21：倍數（p.type 'multiples'）→ math/multiples.html?mistakes=1、乘法（'multiply'）→ math/multiply.html?mistakes=1；順序＝天平 → 短除法 → 應用題 → 倍數 → 乘法，
+  //   每一頁做完都有「接著練…錯題」（KidsMistakes.mathMore）
   const MK_SUBJ = ['social', 'science', 'math', 'ai'];
   const KM = () => window.KidsMistakes;
-  const mathMkSrc = () => { let l = []; try { l = KM().list('math'); } catch (e) { } const g = l.filter(e => e.p && e.p.type === 'gcd').length, w = l.filter(e => e.p && e.p.type === 'gcdword').length; return g + w && g + w === l.length ? (g ? 'math/short-division.html?mistakes=1' : 'math/short-division.html?mistakes=word') : 'math/balance.html?mistakes=1'; };
+  const mathMkSrc = () => {
+    let l = []; try { l = KM().list('math'); } catch (e) { }
+    const n = t => l.filter(e => e.p && e.p.type === t).length, g = n('gcd'), w = n('gcdword'), m = n('multiples'), x = n('multiply');
+    return !l.length || g + w + m + x < l.length ? 'math/balance.html?mistakes=1' : g ? 'math/short-division.html?mistakes=1' : w ? 'math/short-division.html?mistakes=word' : m ? 'math/multiples.html?mistakes=1' : 'math/multiply.html?mistakes=1';
+  };
   const mkDesc = k => { let n = 0; try { n = KM() ? KM().count(k) : 0; } catch (e) { } return n ? `有 ${n} 題等你復仇` : '目前沒有錯題 🎉'; };
   MK_SUBJ.forEach(k => { if (ACTS[k]) ACTS[k].push({ id: 'mistakes', title: '錯題庫', desc: () => mkDesc(k), icon: '📕', href: `#s/${k}/mistakes` }); });
   // 單元卡上的完成狀態（kids-done.js／completion.js；沒載入就不顯示）

@@ -1,4 +1,8 @@
 /* syncmerge.js — 裝置同步的合併規則（純函式，不碰 DOM／網路以外的東西；瀏覽器與 Node 共用）
+   文件格式 v6（2026-10-21 起；v5 欄位完全不變，只在 done 裡多 mp、mx 兩節，舊文件少了它們就當空的）：
+    done.mp:{circle,both,fill,lcm,word,lit:最佳 %, test:考試最高分}                       ← 數學〈倍數與公倍數〉各題型練習一輪最佳 %＋考試最高分
+    done.mx:{nn,d21,d22t,d22,d31:{acc:最佳 %, sp:最快平均秒數×10, ok:第一次達標的時間}}   ← 數學〈乘法快算〉挑戰（一輪 ≥90% 且平均每題 ≤10 秒＝ok；判定在 completion.js）
+   - mp：各項取大。mx：acc 取大、sp 取小、ok 取最早（聯集）。舊版（v5）裝置的 normDone 會丟掉 mp／mx → 新版下次同步從本機補回來（跟 v4→v5 的 done 一樣）。
    文件格式 v5（2026-10-20 起；v4 欄位完全不變，只多一個 done 欄位，舊文件少了它就當空的）：
     done:{tb:{'<課本單元>':{best,last,at}}, mm:{'<科>:<單元>':{cz,qz}}, bal:{b1…b8:ms}, sd:{l20,l100,l3d,tri:%}, gw:{basic,adv:%}, ai:{'<頁>':ms}}
                                                                                           ← kids_done（單元完成用的補存紀錄；判定在 completion.js）
@@ -28,7 +32,7 @@
    - ctr：每台裝置各記自己的星星／回數（各欄取大），本機總數＝全部裝置加總，所以兩台不會互相蓋掉也不會重複算。 */
 (function (root) {
   'use strict';
-  const MAX_BYTES = 500 * 1024, VERSION = 5, MAX_EQ = 30, MAX_EQ_DEL = 100;
+  const MAX_BYTES = 500 * 1024, VERSION = 6, MAX_EQ = 30, MAX_EQ_DEL = 100;
 
   function h53(str) {
     let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
@@ -179,10 +183,19 @@
   // mm：cz＝考考自己一輪答對率（含「再答一次」才答對的格子，2026-10-20 第一版存的；判定已不採用）、czFirst＝考考自己一輪「第一次作答就答對」的格數／總格數（判定用）、
   //     qz＝練習題一輪答對率（每題只答一次，本來就是第一次答對率）。三個都取最佳（大）。
   const MM_F = ['cz', 'czFirst', 'qz'];
+  // mp：倍數與公倍數（各題型練習最佳 %、考試最高分）；mx：乘法快算挑戰（acc 最佳 %、sp 最快平均秒數×10、ok 第一次達標時間）
+  const MP_K = ['circle', 'both', 'fill', 'lcm', 'word', 'lit', 'test'], MX_K = ['nn', 'd21', 'd22t', 'd22', 'd31'];
+  function normMx(e) {
+    if (!e || typeof e !== 'object') return null; const acc = pct(e.acc); if (acc == null) return null;
+    const o = { acc }, sp = num(e.sp, null), ok = ms(e.ok);
+    if (sp != null && sp > 0) o.sp = Math.min(36000, Math.max(1, Math.round(sp)));
+    if (ok) o.ok = ok;
+    return o;
+  }
   function normMmD(e) { if (!e || typeof e !== 'object') return null; const o = {}; MM_F.forEach(k => { const v = pct(e[k]); if (v != null) o[k] = v; }); return Object.keys(o).length ? o : null; }
   function normDone(x) {
     const d = obj(x), once = v => ms(v) || null;
-    return { tb: dsec(d.tb, normTb), mm: dsec(d.mm, normMmD), bal: dsec(d.bal, once), sd: dsec(d.sd, pct, SD_K), gw: dsec(d.gw, pct, GW_K), ai: dsec(d.ai, once) };
+    return { tb: dsec(d.tb, normTb), mm: dsec(d.mm, normMmD), bal: dsec(d.bal, once), sd: dsec(d.sd, pct, SD_K), gw: dsec(d.gw, pct, GW_K), ai: dsec(d.ai, once), mp: dsec(d.mp, pct, MP_K), mx: dsec(d.mx, normMx, MX_K) };
   }
   const maxOf = (a, b) => Math.max(a == null ? -Infinity : a, b == null ? -Infinity : b);
   function mergeDone(a, b) {
@@ -192,10 +205,12 @@
     // 數字節（0 分也要留著：做過一輪＝有進度），兩邊都有才用 fn
     const nums = (x, y, fn) => { const o = {}; Object.keys(Object.assign({}, x, y)).sort().forEach(k => { o[k] = x[k] != null && y[k] != null ? fn(x[k], y[k]) : (x[k] != null ? x[k] : y[k]); }); return o; };
     const first = (x, y) => Math.min(x, y), best = (x, y) => Math.max(x, y);
-    return normDone({ tb, mm, bal: nums(a.bal, b.bal, first), sd: nums(a.sd, b.sd, best), gw: nums(a.gw, b.gw, best), ai: nums(a.ai, b.ai, first) });
+    const lo = (x, y) => (x == null ? y : y == null ? x : Math.min(x, y));
+    const mx = mergeSection(a.mx, b.mx, (x, y) => { const o = { acc: Math.max(x.acc, y.acc) }, sp = lo(x.sp, y.sp), ok = lo(x.ok, y.ok); if (sp != null) o.sp = sp; if (ok != null) o.ok = ok; return o; });
+    return normDone({ tb, mm, bal: nums(a.bal, b.bal, first), sd: nums(a.sd, b.sd, best), gw: nums(a.gw, b.gw, best), ai: nums(a.ai, b.ai, first), mp: nums(a.mp, b.mp, best), mx });
   }
 
-  // 整理成 v5：補 r、去重、排序；t ≤ cut 的舊紀錄只保留「答對過」到 agg；新欄位缺了就是空的（讀舊文件不會壞）
+  // 整理成 v6：補 r、去重、排序；t ≤ cut 的舊紀錄只保留「答對過」到 agg；新欄位缺了就是空的（讀舊文件不會壞）
   function normalize(doc) {
     const d = obj(doc), cut = +d.cut || 0, agg = mergeAgg(obj(d.agg), {}), seen = new Map();
     (Array.isArray(d.log) ? d.log : []).forEach(e0 => {
@@ -256,7 +271,7 @@
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function normCode(s) { const c = String(s || '').toUpperCase().replace(/[\s-]/g, ''); return c.length === 8 && [...c].every(ch => ALPHA.includes(ch)) ? c.slice(0, 4) + '-' + c.slice(4) : null; }
 
-  const SM = { MAX_BYTES, VERSION, MAX_EQ, MK_DEL, rid, canon, bytes, normalize, merge, compact, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone };
+  const SM = { MAX_BYTES, VERSION, MAX_EQ, MK_DEL, rid, canon, bytes, normalize, merge, compact, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, MP_K, MX_K };
   if (typeof module !== 'undefined' && module.exports) module.exports = SM;
   root.KESyncMerge = SM;
 })(typeof window !== 'undefined' ? window : globalThis);

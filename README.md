@@ -31,6 +31,8 @@
 |---|---|---|
 | 天平解方程式 | `math\balance.html` | 同一支 |
 | 短除法：最大公因數・最小公倍數 | `math\short-division.html`（畫面：📖 看步驟／✏️ 換你算／📝 應用題）＋`math\short-division.js`（純函式，`node test/short-division.test.js`）＋`math\gcd-word.js`（應用題 13 個模板，`node test/gcd-word.test.js`）；瀏覽器實測 kids-member `tests\short-division-browser.js`、`tests\gcd-word-browser.js` | 同一批 |
+| 倍數與公倍數（五上單元三，2026-10-21） | `math\multiples.html`（📖 教學免登入／✏️ 練習六種題型／📝 考試照原卷 9・9・16・20・36・10 配分）＋`math\multiples.js`（純函式，`node test/multiples.test.js`）；瀏覽器實測 kids-member `tests\multiples-browser.js` | 同一批 |
+| 乘法快算（2026-10-21） | `math\multiply.html`（✏️ 練習含拆解提示與直式格子／⏱️ 挑戰 20 題計時／📕 錯題重練）＋`math\multiply.js`（純函式，`node test/multiply.test.js`） | 同一批 |
 | 社會／自然心智圖 | `mindmap\`：`social.html`、`science.html`、`mindmap.js`／`.css`（兩科共用引擎）、`blanks.js`、`data\social\`、`data\science\`；`test\`、`_demo\`、`.md` 只留本機 | 同一批（不含 test、_demo、.md） |
 | AI 三頁 | `ai\hallucinate.html`、`ai\ask-well.html`、`ai\secrets.html` | 同一支 |
 | Scratch 塔防 | `game\scratch-td\`：`_build\`（產生器與驗證）、`積木腳本規格.md`、中文檔名講義與 .sb3 | `game\scratch-td\web\`（ASCII 檔名，由 `_build\gen_handout.py` 產生，不要手改） |
@@ -110,10 +112,12 @@ map.html          🗺️ 課程地圖（首頁、帳號頁、各科卡片頁有
 | 社會／自然（mm:<科>:<單元>） | 背架構第 1～4 關都過＋考考自己一輪 ≥ 80%＋練習題一輪 ≥ 80% |
 | 天平 | 8 題內建題的「換你算算看」都算對過 |
 | 短除法／應用題 | 換你算四種難度各一輪 ≥ 80%；應用題基本、進階各一輪 ≥ 80%（應用題分頁的橫幅是「短除法：應用題」） |
+| 倍數與公倍數 | 六種題型練習各一輪 ≥ 80%（第一次就答對）＋考試最高分 ≥ 80 |
+| 乘法快算 | 挑戰「二位數×一位數」「二位數×二位數」各一輪 20 題 ≥ 90% 且平均每題 ≤ 10 秒（同一輪） |
 | AI 三頁 | 各玩完一次（看到結果） |
 | Scratch 七堂 | 講義按過「我完成了」（kids_scratch_done，只讀；講義頁在 game\ 不加橫幅，只在地圖顯示） |
 
-補存紀錄統一存在 `kids_done`（課本考試最高＋最近一次、心智圖考考自己／練習題最佳 %、天平內建題、短除法／應用題各難度最佳 %、AI 玩完），跟著裝置同步（文件 v5 的 `done` 欄位）。以前沒存的分數回推不了，照實顯示「還沒有紀錄」。不改任何練習的計分方式。
+補存紀錄統一存在 `kids_done`（課本考試最高＋最近一次、心智圖考考自己／練習題最佳 %、天平內建題、短除法／應用題各難度最佳 %、AI 玩完），跟著裝置同步（文件 v5 的 `done` 欄位；2026-10-21 文件 v6 在 done 裡加 `mp` 倍數各題型最佳 %／考試最高分、`mx` 乘法挑戰最佳 %／最快平均秒數／達標時間）。以前沒存的分數回推不了，照實顯示「還沒有紀錄」。不改任何練習的計分方式。
 
 ## 單字庫（1215 字）
 
