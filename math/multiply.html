@@ -84,7 +84,7 @@ body{background:var(--bg)}
 /* 〈乘法快算〉頁面。出題、拆解、直式（純函式）在 multiply.js（window.MX）。全部要登入（requireLogin＋一輪開始 startActivity('math')）。
    ✏️ 練習：一輪 10 題，答錯給拆解提示（「15×57 再算一次：15×50=750、15×7=105，加起來是多少？」），第二次再錯給完整算法；
      可開「📐 直式格子」逐位作答，哪一位、哪個進位錯就說哪一位。
-   ⏱️ 挑戰：一輪 20 題、計時、不給提示；結束看答對率、平均每題秒數。二位數×一位數、二位數×二位數 一輪 ≥90% 且平均 ≤10 秒＝達標（completion.js 判定）。
+   ⏱️ 挑戰：一輪 20 題、計時、不給提示；結束看答對率、平均每題秒數。一輪 ≥90% 且平均每題在秒數內＝達標：二位數×一位數 ≤10 秒、二位數×二位數 ≤20 秒（Yoda 2026-10-21），其他題型 ≤10 秒（completion.js 的 mxPass／mxSec 判定）。
    📕 錯題重練（?mistakes=1 也是）：數學錯題庫裡 type 'multiply' 的題（id 'mx:<a>x<b>'），做完送 practice_round 'math:mistakes'。
    每次作答 KidsCoins.answer(ok,'math')；練習／挑戰一輪結束送 practice_round 'math:multiply'；挑戰結束 KidsDone.record('mx', 題型, {acc, sec})。 */
 var $ = function (id) { return document.getElementById(id); };
@@ -137,7 +137,7 @@ function home() {
     '<div class="row"><button type="button" class="btn sm" id="grid-tg" aria-pressed="' + S.grid + '">📐 直式格子（一位一位寫，抓進位錯誤）</button></div>' +
     '<p class="muted">直式格子：從個位開始寫，寫完一格會自動跳到左邊那一格。</p><button type="button" class="btn primary big" id="go">開始這一輪 ▶</button>';
   else if (S.mode === 'chal') h = '<h2>⏱️ 挑戰：' + X.LV_NAME[S.lv] + '</h2><p>一輪 ' + N_CHAL + ' 題，計時、不給提示，打完按 Enter 或「確定」就換下一題。</p>' +
-    '<p class="muted">「二位數×一位數」「二位數×二位數」答對 90% 以上、平均每題 10 秒內，就算學完這個單元。</p><button type="button" class="btn primary big" id="go">開始挑戰 ▶</button>';
+    '<p class="muted" id="chal-rule">「二位數×一位數」答對 90% 以上、平均每題 10 秒內；「二位數×二位數」答對 90% 以上、平均每題 20 秒內。兩個都達標，就算學完這個單元。</p><button type="button" class="btn primary big" id="go">開始挑戰 ▶</button>';
   else { var n = mkList().length; $('start').className = 'card center mk-mark'; h = '<h2>📕 錯題重練</h2>' + (n ? '<p>乘法錯題有 <b>' + n + '</b> 題。同一題連續答對 3 次就會畢業 🎓</p><button type="button" class="btn primary big" id="go">開始重練（' + n + ' 題）▶</button>' : '<p id="mk-empty">目前沒有乘法錯題 🎉</p>' + mkMore()); }
   $('start').innerHTML = h;
 }
@@ -263,10 +263,11 @@ function end() {
   }
   $('q').hidden = true; $('end').hidden = false;
   if (R.mode === 'chal') {
-    var pass = window.KidsCompletion && KidsCompletion.mxPass ? KidsCompletion.mxPass(s.acc, s.avg) : (s.acc >= 90 && s.avg <= 10);
+    var lim = window.KidsCompletion && KidsCompletion.mxSec ? KidsCompletion.mxSec(R.lv) : (R.lv === 'd22' ? 20 : 10);
+    var pass = window.KidsCompletion && KidsCompletion.mxPass ? KidsCompletion.mxPass(s.acc, s.avg, R.lv) : (s.acc >= 90 && s.avg <= lim);
     h = '<p class="big">' + (pass ? '🏆' : '💪') + '</p><p class="score" id="end-score">' + R.ok + ' / ' + n + '</p>' +
       '<div class="stat"><span id="end-acc">答對 ' + s.acc + '%</span><span>總共 ' + s.total.toFixed(1) + ' 秒</span><span id="end-avg">平均每題 ' + s.avg.toFixed(1) + ' 秒</span></div>' +
-      '<p class="pass ' + (pass ? 'y' : 'n') + '" id="end-pass">' + (pass ? '✅ 達標：答對 90% 以上、平均 10 秒內！' : '還差一點：要答對 90% 以上，而且平均每題 10 秒內') + '</p>' +
+      '<p class="pass ' + (pass ? 'y' : 'n') + '" id="end-pass">' + (pass ? '✅ 達標：答對 90% 以上、平均 ' + lim + ' 秒內！' : '還差一點：要答對 90% 以上，而且平均每題 ' + lim + ' 秒內') + '</p>' +
       (R.wrongList.length ? '<div class="wl"><b>答錯的題（已收進 📕 錯題庫）：</b><br>' + R.wrongList.map(function (w) { return esc(w.a + '×' + w.b + '：你寫 ' + w.v + '　→ ' + X.full(w.a, w.b)); }).join('<br>') + '</div>' : '');
   } else h = '<p class="big">' + (R.ok === n ? '🏆' : '💪') + '</p><p class="score" id="end-score">' + R.ok + ' / ' + n + '</p><p>第一次就答對 ' + R.ok + ' 題' + (R.grad ? '，🎓 有 ' + R.grad + ' 題錯題畢業了！' : R.ok < n ? '；答錯的題在 📕 錯題庫。' : '！') + '</p>';
   h += '<div class="row">' + (R.mk ? (MK ? '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + mkMore() : '<button type="button" class="btn primary big" id="home">回錯題重練</button>')
@@ -316,8 +317,8 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=e1a8c7b5ad"></script>
-<script src="../syncmerge.js?v=2ee771fc34"></script>
-<script src="../completion.js?v=7f8cad335b"></script>
+<script src="../syncmerge.js?v=4f58ece59c"></script>
+<script src="../completion.js?v=53814517b2"></script>
 <script src="../kids-done.js?v=877f66af0a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
 <script src="../sync.js?v=cbdd56da2a"></script>

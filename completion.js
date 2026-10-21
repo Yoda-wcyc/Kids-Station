@@ -14,7 +14,8 @@
    - 短除法（math:sd）：四種難度（20 以內、100 以內、三位數、三個數）的換你算各有一輪 ≥ 80%（一次就全對的題數／5）。
    - 短除法應用題（math:gw）：基本、進階各有一輪 ≥ 80%。
    - 倍數與公倍數（math:mul，2026-10-21）：✏️ 練習六種題型（圈圈看、想一想、填填看、最小公倍數、應用題、素養題）各有一輪 ≥ 80%（第一次就答對的題數／題數）＋📝 考試最高分 ≥ 80。
-   - 乘法快算（math:mx，2026-10-21）：⏱️ 挑戰「二位數×一位數」「二位數×二位數」各有一輪（20 題）答對 ≥ 90% 而且平均每題 ≤ 10 秒（同一輪兩個都要到；記在 mx.<題型>.ok）。
+   - 乘法快算（math:mx，2026-10-21）：⏱️ 挑戰「二位數×一位數」「二位數×二位數」各有一輪（20 題）答對 ≥ 90% 而且平均每題在秒數內（同一輪兩個都要到；記在 mx.<題型>.ok）：
+     二位數×一位數 ≤ 10 秒、二位數×二位數 ≤ 20 秒（Yoda 2026-10-21 由 10 秒放寬）；其他題型（九九、整十、三位×一位）不算完成，達標記號照 10 秒。
    - AI 三頁（ai:<頁>）：各玩完一次（看到結果頁）。
    - Scratch 七堂（scratch:<1–7>）：各有「我完成了」（kids_scratch_done，只讀）。
    - 英文題庫（課本以外）：只算學會百分比（依類別、等級），不判完成。
@@ -42,8 +43,10 @@
   const GW_LV = [['basic', '基本'], ['adv', '進階']];
   // 倍數與公倍數：練習題型（要跟 math/multiples.js 的 GROUPS 一樣，test 會對）；乘法快算：要達標的挑戰題型與門檻
   const MP_G = [['circle', '圈圈看'], ['both', '想一想'], ['fill', '填填看'], ['lcm', '最小公倍數'], ['word', '應用題'], ['lit', '素養題']];
-  const MX_REQ = [['d21', '二位數×一位數'], ['d22', '二位數×二位數']], MX_ACC = 90, MX_SEC = 10, MX_N = 20;
-  const mxPass = (acc, sec) => num(acc) != null && num(sec) != null && +acc >= MX_ACC && +sec <= MX_SEC;
+  // MX_SEC：各題型「平均每題秒數」門檻（沒列的題型用 MX_SEC0）；二位×二位 20 秒（Yoda 2026-10-21）
+  const MX_REQ = [['d21', '二位數×一位數'], ['d22', '二位數×二位數']], MX_ACC = 90, MX_SEC = { d21: 10, d22: 20 }, MX_SEC0 = 10, MX_N = 20;
+  const mxSec = lv => MX_SEC[lv] || MX_SEC0;
+  const mxPass = (acc, sec, lv) => num(acc) != null && num(sec) != null && +acc >= MX_ACC && +sec <= mxSec(lv);
   const AI = [['hallucinate', 'AI 會唬爛', '🤥'], ['ask-well', '怎麼問得好', '💬'], ['secrets', '秘密不能說', '🔒']];
   const SCRATCH = ['怪物沿 S 形路線走到城堡', '分身變出一串怪物＋生命＋失敗畫面', '高台／低地塔位＋點擊蓋塔＋金錢', '自製走路積木＋怪物血量＋打倒得錢',
     '開始按鈕＋波次＋勝利畫面＋清場', '加料①：蓋兵營＋派小兵站崗', '加料②：小兵擋怪互打＋兵營補兵'];
@@ -75,10 +78,10 @@
     else if (sec === 'sd' || sec === 'gw') s[sec][key] = Math.max(s[sec][key] == null ? 0 : s[sec][key], v);
     else if (sec === 'bal' || sec === 'ai') { if (!s[sec][key]) s[sec][key] = t; }
     else if (sec === 'mp') s.mp[key] = Math.max(s.mp[key] == null ? 0 : s.mp[key], v);
-    else if (sec === 'mx') {   // val＝{acc:%, sec:平均每題秒數}；同一輪 acc ≥ 90 且 sec ≤ 10 才記 ok
+    else if (sec === 'mx') {   // val＝{acc:%, sec:平均每題秒數}；同一輪 acc ≥ 90 且 sec ≤ 該題型門檻（mxSec）才記 ok
       const o = val && typeof val === 'object' ? val : {}, acc = Math.max(0, Math.min(100, Math.round(+o.acc || 0))), sp = Math.max(1, Math.round((+o.sec || 0) * 10)), p = s.mx[key] || {};
       const n = { acc: Math.max(p.acc == null ? 0 : p.acc, acc) }; n.sp = p.sp ? Math.min(p.sp, sp) : sp;
-      const ok = p.ok || (mxPass(acc, sp / 10) ? t : 0); if (ok) n.ok = ok;
+      const ok = p.ok || (mxPass(acc, sp / 10, key) ? t : 0); if (ok) n.ok = ok;
       s.mx[key] = n;
     }
     else return s;
@@ -159,10 +162,10 @@
   function multiply(ctx) {
     const s = SM.normDone(ctx.done).mx;
     const checks = MX_REQ.map(([k, n]) => {
-      const r = s[k], label = `⏱️ 挑戰「${n}」一輪 ${MX_ACC}% 以上、平均每題 ${MX_SEC} 秒內`;
+      const r = s[k], sec = mxSec(k), label = `⏱️ 挑戰「${n}」一輪 ${MX_ACC}% 以上、平均每題 ${sec} 秒內`;
       if (!r) return { label, ok: false, p: 0, detail: `還沒有挑戰紀錄：做完一輪 ${MX_N} 題的挑戰` };
       const best = `最佳 ${r.acc}%` + (r.sp ? `、最快平均 ${(r.sp / 10).toFixed(1)} 秒` : '');
-      return r.ok ? { label, ok: true, p: 1, detail: `達標了（${best}）` } : { label, ok: false, p: 0, detail: `${best}；同一輪要答對 ${MX_ACC}% 以上，而且平均每題 ${MX_SEC} 秒內` };
+      return r.ok ? { label, ok: true, p: 1, detail: `達標了（${best}）` } : { label, ok: false, p: 0, detail: `${best}；同一輪要答對 ${MX_ACC}% 以上，而且平均每題 ${sec} 秒內` };
     });
     return result(checks, Object.keys(s).length > 0);
   }
@@ -238,7 +241,7 @@
   const STATUS_TEXT = { done: '✅ 已完成', doing: '🟡 進行中', todo: '⚪ 還沒開始' };
   const statusText = r => (r.status === 'doing' ? `${STATUS_TEXT.doing} ${r.pct}%` : STATUS_TEXT[r.status]);
 
-  const KC = { PASS, MM_UNITS, BAL, SD_LV, GW_LV, MP_G, MX_REQ, MX_ACC, MX_SEC, MX_N, mxPass, AI, SCRATCH, record, tbItems, evaluate, catalog, bank, build, statusText, STATUS_TEXT, _: { tbUnit, mmUnit, balance, shortDiv, gcdWord, multiples, multiply, aiPage, scratchLesson, result } };
+  const KC = { PASS, MM_UNITS, BAL, SD_LV, GW_LV, MP_G, MX_REQ, MX_ACC, MX_SEC, MX_SEC0, MX_N, mxSec, mxPass, AI, SCRATCH, record, tbItems, evaluate, catalog, bank, build, statusText, STATUS_TEXT, _: { tbUnit, mmUnit, balance, shortDiv, gcdWord, multiples, multiply, aiPage, scratchLesson, result } };
   if (typeof module !== 'undefined' && module.exports) module.exports = KC;
   root.KidsCompletion = KC;
 })(typeof window !== 'undefined' ? window : globalThis);

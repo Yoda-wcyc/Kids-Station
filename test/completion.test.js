@@ -120,7 +120,7 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   ok(KC.MP_G.map(x => x[0]).join() === require(path.join(root, 'math', 'multiples.js')).GROUPS.map(x => x[0]).join(), 'mul: 題型 list matches math/multiples.js GROUPS');
   s = KC.record({}, 'mp', 'word', 70, 1); s = KC.record(s, 'mp', 'word', 90, 2); s = KC.record(s, 'mp', 'word', 60, 3); s = KC.record(s, 'mp', 'test', 84, 4); s = KC.record(s, 'mp', 'zz', 100, 5);
   ok(same(s.mp, { test: 84, word: 90 }), 'record mp: best kept, unknown key dropped: ' + C(s.mp));
-  // 乘法快算：二位×一位、二位×二位 挑戰各一輪 ≥90% 且平均 ≤10 秒（同一輪）
+  // 乘法快算：二位×一位（≤10 秒）、二位×二位（≤20 秒，2026-10-21 放寬）挑戰各一輪 ≥90% 且平均在秒數內（同一輪）
   ok(ev('math:mx', {}).status === 'todo' && ev('math:mx', {}).checklist.length === 2, 'mx: empty → todo, 2 checks');
   s = KC.record({}, 'mx', 'd21', { acc: 90, sec: 10 }, 7);
   ok(s.mx.d21.ok === 7 && s.mx.d21.acc === 90 && s.mx.d21.sp === 100, 'record mx: 90% & 10.0 s (exactly) → ok: ' + C(s.mx));
@@ -133,7 +133,19 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   s = KC.record(s, 'mx', 'd22', { acc: 100, sec: 9.9 }, 5);
   ok(KC.evaluate('math:mx', {}, { done: s }).status === 'done', 'mx: d21 + d22 passed → done');
   ok(KC.evaluate('math:mx', {}, { done: { mx: { d22t: { acc: 100, sp: 50, ok: 1 }, nn: { acc: 100, sp: 20, ok: 1 } } } }).status === 'doing', 'mx: 九九／整十 達標不算（只看二位×一位、二位×二位）');
-  ok(KC.mxPass(90, 10) && !KC.mxPass(89, 5) && !KC.mxPass(100, 10.01) && KC.MX_N === 20, 'mxPass thresholds 90% / 10 s, round 20');
+  ok(KC.mxPass(90, 10, 'd21') && !KC.mxPass(89, 5, 'd21') && !KC.mxPass(100, 10.01, 'd21') && KC.MX_N === 20, 'mxPass d21 thresholds 90% / 10 s, round 20');
+  ok(KC.mxPass(100, 19.9, 'd22') && KC.mxPass(90, 20, 'd22') && !KC.mxPass(100, 20.1, 'd22') && !KC.mxPass(89, 12, 'd22'), 'mxPass d22: 19.9 s / 20 s pass, 20.1 s fails, 89% fails');
+  ok(KC.mxSec('d21') === 10 && KC.mxSec('d22') === 20 && ['nn', 'd22t', 'd31', undefined].every(k => KC.mxSec(k) === 10) && !KC.mxPass(100, 10.1), 'mxSec: d21 10、d22 20、其他（含沒給題型）10');
+  s = KC.record({}, 'mx', 'd22', { acc: 95, sec: 19.9 }, 11);
+  ok(s.mx.d22.ok === 11 && s.mx.d22.sp === 199, 'record mx d22: 95% & 19.9 s → ok: ' + C(s.mx));
+  s = KC.record({}, 'mx', 'd22', { acc: 100, sec: 20.1 }, 12);
+  ok(!s.mx.d22.ok && s.mx.d22.sp === 201, 'record mx d22: 100% & 20.1 s → NOT ok: ' + C(s.mx));
+  s = KC.record({}, 'mx', 'd21', { acc: 100, sec: 15 }, 13);
+  ok(!s.mx.d21.ok, 'record mx d21: 15 s still NOT ok (二位×一位 維持 10 秒)');
+  r = KC.evaluate('math:mx', {}, { done: {} });
+  ok(/平均每題 10 秒內/.test(r.checklist[0].label) && /二位數×二位數.*平均每題 20 秒內/.test(r.checklist[1].label), 'mx labels: d21 10 秒、d22 20 秒: ' + r.checklist.map(c => c.label).join(' ｜ '));
+  r = KC.evaluate('math:mx', {}, { done: { mx: { d22: { acc: 95, sp: 250 } } } });
+  ok(!r.checklist[1].ok && /平均每題 20 秒內/.test(r.checklist[1].detail), 'mx d22 detail says 20 秒: ' + r.checklist[1].detail);
 }
 
 // ---------- AI／Scratch ----------
