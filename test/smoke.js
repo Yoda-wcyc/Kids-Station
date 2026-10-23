@@ -383,11 +383,19 @@ const qg = E.get('w:apple:gap1'), fill = (q, f) => q.answer.split('').map((c, i)
 ok(E.check(qg, fill(qg, c => c.toUpperCase())).ok && !E.check(qg, fill(qg, (c, i) => (i === qg.gaps[0] ? 'z' : c))).ok && !E.check(qg, fill(qg, () => '_')).ok && !E.check(qg, 'appl').ok, 'gap grade: case-insensitive, every box must be right');
 ok(E.check(qg, qg.gaps.map(p => qg.answer[p])).ok && E.check(qg, fill(qg, (c, i) => (i === qg.gaps[0] ? 'z' : c))).wrong.join() === '0', 'gap grade: array input / wrong boxes');
 R.forEach(r => {
-  const ids = E.itemSet(KE.rootItemId(r)), n = r.words.length, t = typesOfIds(ids);
-  ok(ids.length === 1 + 2 * n && unique(ids) && t[0] === 'root-meaning' && t.slice(1, 1 + n).every(x => x === 'root-word') && t.slice(-n).every(x => x === 'root-type'), 'root set ' + r.p);
-  ok(ids.slice(-n).map(id => E.get(id).answer).join() === r.words.map(x => x.w).join(), 'root typed answers ' + r.p);
-  ids.slice(-n).forEach((id, i) => { const q = E.get(id); ok(q.prompt.includes('___') && q.prompt.includes(r.words[i].zh), 'root-type hint ' + id); });
+  const ids = E.itemSet(KE.rootItemId(r)), n = r.words.length, k = Math.max(n, 3), t = typesOfIds(ids);
+  ok(ids.length === 1 + n + k && unique(ids) && t[0] === 'root-meaning' && t.slice(1, 1 + n).every(x => x === 'root-word') && t.slice(-k).every(x => x === 'root-type'), 'root set ' + r.p);
+  const t1 = ids.slice(ids.length - k, ids.length - k + n);
+  ok(t1.map(id => E.get(id).answer).join() === r.words.map(x => x.w).join(), 'root typed answers ' + r.p);
+  t1.forEach((id, i) => { const q = E.get(id); ok(q.prompt.includes('___') && q.prompt.includes(r.words[i].zh), 'root-type hint ' + id); });
+  // 2026-10-23：練習這組至少 3 題打字、全部排最後；補的 :type2 是例字換一種藏法（跟原本那題提示不同），只在題組出
+  const typedIdx = ids.map((id, i) => (KE.isTyped(E.byId[id]) ? i : -1)).filter(i => i >= 0);
+  ok(typedIdx.length >= 3 && typedIdx.every((v, j) => v === ids.length - typedIdx.length + j), 'root set ≥3 typed, typed last ' + r.p);
+  ok(E.drill(KE.rootItemId(r), new Set()).slice(-typedIdx.length).every(q => KE.isTyped(q)), 'root drill typed last ' + r.p);
+  ids.filter(id => /:type2$/.test(id)).forEach(id => { const q = E.get(id), q1 = E.get(id.replace(/2$/, '')); ok(E.byId[id].setOnly && q.answer === q1.answer && q.prompt.includes('___') && q.prompt !== q1.prompt && E.check(q, q.answer).ok, 'root type2 other hide ' + id); });
 });
+ok(R.filter(r => r.words.length < 3).map(r => r.p).join() === 'over-,bi-,tri-,super-,sub-,inter-,scope' && E.get('r:overeat:type2').prompt === '吃太多 ＝ ___ + eat' && E.get('r:periscope:type2').prompt === '潛望鏡 ＝ peri + ___', 'root type2: 7 roots padded, root part hidden');
+ok(!E.list({ modules: ['roots'] }).some(m => /:type2$/.test(m.id)), 'root type2 not in general practice');
 // 文法／句型題組（2026-10-09 起）：10 題非打字＋5 題打字，打字題排最後（E.sets＝基本組成；練習這組再從裡面換 2 題成口說）
 G.forEach(gr => {
   const ids = E.sets[KE.grammarItemId(gr)], t = typesOfIds(ids);

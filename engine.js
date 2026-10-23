@@ -248,6 +248,19 @@
           why: `${w.parts.join(' + ')} ＝ ${w.w}（${r.p} ＝ ${r.m}）`
         }));
       });
+      // 字根拼字（打字）補題（2026-10-23，只在「練習這組」出）：例字少於 3 個時，同一個例字換一種藏法再出一題（:type2），湊滿 3 題打字。
+      // 優先挑「原本沒藏到字根本身」的例字，這次藏字根（over + ___ → ___ + eat）；都藏過了就藏下一個部分
+      const core = r.p.replace(/-/g, '');
+      r.words.map((w, i) => {
+        const L = w.parts.length, hid = L - 1 - (i % L), ri = w.parts.indexOf(core);
+        return { w, hide: ri >= 0 && ri !== hid ? ri : (hid + 1) % L, pri: ri >= 0 && ri !== hid ? 0 : 1, i };
+      }).filter(x => x.w.parts.length >= 2).sort((a, b) => a.pri - b.pri || a.i - b.i).slice(0, Math.max(0, 3 - r.words.length)).forEach(({ w, hide }) => {
+        const hint = w.parts.map((x, k) => (k === hide ? '___' : x)).join(' + ');
+        add({ id: `r:${slug(w.w)}:type2`, module: 'roots', topic: r.t, type: 'root-type', title: `${w.w}　${w.zh}`, setOnly: true }, () => ({
+          prompt: `${w.zh} ＝ ${hint}`, sub: '打出整個英文字', input: 'type', options: null, answer: w.w, alts: [], speakText: w.w,
+          why: `${w.parts.join(' + ')} ＝ ${w.w}（${r.p} ＝ ${r.m}）`
+        }));
+      });
     });
 
     // ---- 句子題：文法例句與句型例句共用 ----
@@ -352,7 +365,8 @@
     D.words.forEach(w => { const k = wordKey(w); this.sets[wordItemId(w)] = keep([`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:gap1`, `w:${k}:gap2`, `w:${k}:type`]); });
     // 片語（2026-10-23 起）：選擇 4 題 → 打字 3 題（中翻英打字 → 例句填空打字 → 聽寫片語）；舊 5 題 id 不變，新加的 2 題要再答對一次
     D.phrases.forEach(ph => { this.sets[phraseItemId(ph)] = keep(['listen', 'zh2en', 'en2zh', 'fill', 'type', 'filltype', 'dict'].map(t => `ph:${ph.id}:${t}`)); });
-    D.roots.forEach(r => { this.sets[rootItemId(r)] = keep([`r:${slug(r.p)}:meaning`].concat(r.words.map(x => `r:${slug(x.w)}:word`), r.words.map(x => `r:${slug(x.w)}:type`))); });
+    // 字根（2026-10-23 起打字至少 3 題）：意思 → 組單字 → 字根拼字（打字）→ 補的換藏法打字（:type2，新 id 要再答對一次；舊進度、學會紀錄不動）
+    D.roots.forEach(r => { this.sets[rootItemId(r)] = keep([`r:${slug(r.p)}:meaning`].concat(r.words.map(x => `r:${slug(x.w)}:word`), r.words.map(x => `r:${slug(x.w)}:type`), r.words.map(x => `r:${slug(x.w)}:type2`))); });
     // 文法：打字題＝原有的中翻英打字 → 不夠 5 題時把填空題換成「打出空格裡的字」（從最後一題填空往前換）→ 還不夠才換改錯句（打字）
     D.grammar.forEach(g => {
       const typed = (g.typed || []).map((t, k) => `g:${g.id}:t${k}`);
