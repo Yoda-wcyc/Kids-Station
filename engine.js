@@ -6,16 +6,16 @@
   const ROOT_T = { prefix: '字首', suffix: '字尾', root: '字根' };
   const MODULES = { words: '單字', phrases: '片語', roots: '字根字首', grammar: '文法', patterns: '句型' };
   const PHRASE_LV = { 1: '必會', 2: '基本', 3: '進階' };
-  const TYPES = { 'listen-choose': '聽音選字', zh2en: '看中文選英文', en2zh: '看英文選中文', spell: '聽寫拼字', 'root-meaning': '字首字尾的意思', 'root-word': '用字根組單字', 'grammar-fill': '文法填空', 'grammar-fix': '挑出正確的句子', reorder: '句子重組', 'pattern-choose': '看中文選句子', 'phrase-fill': '片語填空', 'zh2en-type': '中翻英打字', 'root-type': '字根拼字（打字）', speak: '🎤 說說看', 'grammar-fill-type': '文法填空（打字）', 'grammar-fix-type': '改正錯句（打字）', 'word-gap': '填空拼字',
+  const TYPES = { 'listen-choose': '聽音選字', zh2en: '看中文選英文', en2zh: '看英文選中文', spell: '聽寫拼字', 'root-meaning': '字首字尾的意思', 'root-word': '用字根組單字', 'grammar-fill': '文法填空', 'grammar-fix': '挑出正確的句子', reorder: '句子重組', 'pattern-choose': '看中文選句子', 'phrase-fill': '片語填空', 'zh2en-type': '中翻英打字', 'root-type': '字根拼字（打字）', speak: '🎤 說說看', 'grammar-fill-type': '文法填空（打字）', 'grammar-fix-type': '改正錯句（打字）', 'word-gap': '填空拼字', 'phrase-fill-type': '例句填空（打字）', 'phrase-dictation': '聽寫片語',
     // 課本單元專屬題（2026-10-18，只在 📘 課本進度的練習／考試出）
     'tb-fill': '選出正確的字', 'tb-fill-type': '填空（打字）', 'tb-ask-type': '看提示造問句（打字）', 'tb-answer': '選出正確的回答', 'tb-answer-type': '打出簡答', 'tb-listen': '聽力：選出意思' };
   const TB_TYPES = ['tb-fill', 'tb-fill-type', 'tb-ask-type', 'tb-answer', 'tb-answer-type', 'tb-listen'];
   // 只放在「練習這組」的題型（一般練習回合、例題庫不出，題型組成維持原樣）；課本專屬題也不進一般練習
-  const SET_ONLY_TYPES = ['word-gap', 'grammar-fill-type', 'grammar-fix-type'].concat(TB_TYPES);
-  const MOD_TYPES = { words: ['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type', 'speak'], phrases: ['listen-choose', 'zh2en', 'en2zh', 'phrase-fill', 'zh2en-type', 'speak'], roots: ['root-meaning', 'root-word', 'root-type'], grammar: ['grammar-fill', 'grammar-fix', 'reorder', 'zh2en-type', 'grammar-fill-type', 'grammar-fix-type', 'speak'], patterns: ['reorder', 'pattern-choose', 'zh2en-type', 'speak'] };
+  const SET_ONLY_TYPES = ['word-gap', 'grammar-fill-type', 'grammar-fix-type', 'phrase-fill-type', 'phrase-dictation'].concat(TB_TYPES);
+  const MOD_TYPES = { words: ['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type', 'speak'], phrases: ['listen-choose', 'zh2en', 'en2zh', 'phrase-fill', 'zh2en-type', 'phrase-fill-type', 'phrase-dictation', 'speak'], roots: ['root-meaning', 'root-word', 'root-type'], grammar: ['grammar-fill', 'grammar-fix', 'reorder', 'zh2en-type', 'grammar-fill-type', 'grammar-fix-type', 'speak'], patterns: ['reorder', 'pattern-choose', 'zh2en-type', 'speak'] };
   const TYPED = 'zh2en-type';
   // 鍵盤打字題（練習一組時排最後；共用同一個打字介面與判分）
-  const TYPED_TYPES = ['spell', 'zh2en-type', 'root-type', 'grammar-fill-type', 'grammar-fix-type', 'word-gap', 'tb-fill-type', 'tb-ask-type', 'tb-answer-type'];
+  const TYPED_TYPES = ['spell', 'zh2en-type', 'root-type', 'grammar-fill-type', 'grammar-fix-type', 'word-gap', 'tb-fill-type', 'tb-ask-type', 'tb-answer-type', 'phrase-fill-type', 'phrase-dictation'];
   // 排序等級：選擇類 0 → 🎤 說說看 1 → 填空拼字 2 → 其他打字 3（練習這組照這個順序；答錯重排也不越級）
   const typedRank = q => (q && q.type === 'speak' ? 1 : !isTyped(q) ? 0 : q.type === 'word-gap' ? 2 : 3);
   // 文法、句型的固定題組：10 題非打字＋5 題打字（打字題排最後）；總數不足 15 時照 2:1 的比例
@@ -158,6 +158,14 @@
   function unsetLearned(L, itemId, iso) { const o = Object.assign({}, L); if (iso) o[itemId] = { removedAt: iso }; else delete o[itemId]; return o; }
   const wordItemId = w => 'word:' + wordKey(w), patternItemId = p => 'pattern:' + p.id, grammarItemId = g => 'grammar:' + g.id, rootItemId = r => 'root:' + slug(r.p), phraseItemId = p => 'phrase:' + p.id;
   const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // 片語在例句裡的位置（例句填空打字用）：照 form／p 找整個字（前後不能接字母），只出現一次才回傳 {answer＝例句裡的原樣, prompt＝挖空的例句}；
+  // 出現 0 次或 2 次以上回傳 null（答案不唯一，不出這題）
+  function phraseInEx(ph) {
+    const re = new RegExp("(^|[^A-Za-z'])(" + escRe(ph.form || ph.p) + ")(?![A-Za-z'])", 'gi'), hits = [...String(ph.ex).matchAll(re)];
+    if (hits.length !== 1) return null;
+    const h = hits[0], at = h.index + h[1].length;
+    return { answer: h[2], prompt: ph.ex.slice(0, at) + '___' + ph.ex.slice(at + h[2].length) };
+  }
 
   function Engine(data) {
     const D = this.D = { words: data.words || [], phrases: data.phrases || [], roots: data.roots || [], grammar: data.grammar || [], patterns: data.patterns || [], textbook: data.textbook || [] };
@@ -206,6 +214,15 @@
       }));
       add(Object.assign({ id: `ph:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: ph.zh, sub: '打出這個英文片語', input: 'type', options: null, answer: ph.p, alts: ph.form ? [ph.form] : [], speakText: ph.p, why }));
       add(Object.assign({ id: `ph:${key}:speak`, type: 'speak' }, base), () => ({ prompt: ph.p, en: true, sub: ph.zh, input: 'mic', play: true, options: null, answer: ph.p, alts: ph.form ? [ph.form] : [], speakMode: 'sentence', speakText: ph.p, why }));
+      // 打字 2 題（2026-10-23，只在「練習這組」出）：
+      // 例句填空打字：例句挖掉整個片語（照例句裡的寫法，如 ran away、is good at），給中文＋時態提示（fillHint）；fillAlts＝放進句子也對的片語
+      const fm = phraseInEx(ph);
+      if (fm) add(Object.assign({ id: `ph:${key}:filltype`, type: 'phrase-fill-type', setOnly: true }, base), () => ({
+        prompt: fm.prompt, sub: `打出空格裡的片語（提示：${ph.zh}${ph.fillHint ? '，' + ph.fillHint : ''}）${ph.form ? '　要配合句子改形式' : ''}`, input: 'type', options: null,
+        answer: fm.answer, alts: (ph.fillAlts || []).slice(), speakText: ph.ex, why: `${ph.p}（${ph.zh}）：${ph.ex}　${ph.exZh}`
+      }));
+      // 聽寫片語：播放片語，打出來（提示中文意思和字數）
+      add(Object.assign({ id: `ph:${key}:dict`, type: 'phrase-dictation', setOnly: true }, base), () => ({ prompt: '聽寫：把聽到的片語打出來', sub: `提示：${ph.zh}（${ph.p.trim().split(/\s+/).length} 個字）`, input: 'type', options: null, answer: ph.p, alts: [], speakText: ph.p, auto: true, play: true, why }));
     });
 
     // ---- 字根字首 ----
@@ -333,7 +350,8 @@
     // 單字（2026-10-09 起）：聽音選字 → 看中文選英文 → 填空拼字（約 1/3）→ 填空拼字（約 1/2）→ 看中文打字；順序固定不洗牌。
     // listen／zh2en／type 沿用舊 id（舊進度照算）；en2zh、spell 退出題組但留在題庫；只有 1 個字母的字（a、I）沒有填空，這組 3 題
     D.words.forEach(w => { const k = wordKey(w); this.sets[wordItemId(w)] = keep([`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:gap1`, `w:${k}:gap2`, `w:${k}:type`]); });
-    D.phrases.forEach(ph => { this.sets[phraseItemId(ph)] = keep(['listen', 'zh2en', 'en2zh', 'fill', 'type'].map(t => `ph:${ph.id}:${t}`)); });
+    // 片語（2026-10-23 起）：選擇 4 題 → 打字 3 題（中翻英打字 → 例句填空打字 → 聽寫片語）；舊 5 題 id 不變，新加的 2 題要再答對一次
+    D.phrases.forEach(ph => { this.sets[phraseItemId(ph)] = keep(['listen', 'zh2en', 'en2zh', 'fill', 'type', 'filltype', 'dict'].map(t => `ph:${ph.id}:${t}`)); });
     D.roots.forEach(r => { this.sets[rootItemId(r)] = keep([`r:${slug(r.p)}:meaning`].concat(r.words.map(x => `r:${slug(x.w)}:word`), r.words.map(x => `r:${slug(x.w)}:type`))); });
     // 文法：打字題＝原有的中翻英打字 → 不夠 5 題時把填空題換成「打出空格裡的字」（從最後一題填空往前換）→ 還不夠才換改錯句（打字）
     D.grammar.forEach(g => {
@@ -355,7 +373,7 @@
     });
 
     // ---- 練習這組的題組（2026-10-09 起一律含口說；見 drillIds／itemSet）----
-    // 單字：選 → 選 → 🎤 → 填空 → 填空 → 打字（6 題）；片語：非打字題最後加 1 題 🎤；
+    // 單字：選 → 選 → 🎤 → 填空 → 填空 → 打字（6 題）；片語：選 4 → 🎤 → 打字 3（8 題）；
     // 文法、句型：前 10 題非打字裡，從後面換 2 題成 🎤（不同句子），後 5 題打字不變；字根不加
     this.speakSets = {};
     const swap2 = (set, toSpeak) => {
@@ -367,7 +385,7 @@
       return out;
     };
     D.words.forEach(w => { const k = wordKey(w); this.speakSets[wordItemId(w)] = keep([`w:${k}:listen`, `w:${k}:zh2en`, `w:${k}:speak`, `w:${k}:gap1`, `w:${k}:gap2`, `w:${k}:type`]); });
-    D.phrases.forEach(ph => { this.speakSets[phraseItemId(ph)] = keep(['listen', 'zh2en', 'en2zh', 'fill', 'speak', 'type'].map(t => `ph:${ph.id}:${t}`)); });
+    D.phrases.forEach(ph => { this.speakSets[phraseItemId(ph)] = keep(['listen', 'zh2en', 'en2zh', 'fill', 'speak', 'type', 'filltype', 'dict'].map(t => `ph:${ph.id}:${t}`)); });
     D.grammar.forEach(g => { this.speakSets[grammarItemId(g)] = swap2(this.sets[grammarItemId(g)], id => (/^g:[^:]+:\d+$/.test(id) ? id + ':speak' : null)); });
     D.patterns.forEach(p => { this.speakSets[patternItemId(p)] = swap2(this.sets[patternItemId(p)], id => { const m = /^(p:[^:]+:\d+):(choose|reorder)$/.exec(id); return m ? m[1] + ':speak' : null; }); });
     this.speakOn = false;          // app 依「裝置支援語音辨識」設定：支援 → 口說題算進解鎖條件
@@ -535,7 +553,7 @@
     }
   };
 
-  const KE = { Engine, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, TB_TYPES, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, phraseInEx, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, TB_TYPES, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

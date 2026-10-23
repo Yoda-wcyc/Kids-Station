@@ -296,10 +296,27 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
 ok(KE.fmtTaipei('2026-10-05T12:31:09Z') === '10/05 20:31' && KE.fmtTaipei('2026-10-05T16:05:00Z', true) === '2026-10-06 00:05:00', 'taipei time');
 ok(KE.fmtTaipei('') === '' && KE.fmtTaipei('bad') === '', 'taipei time empty/bad');
 const allItems = W.map(KE.wordItemId).concat(PH.map(KE.phraseItemId), R.map(KE.rootItemId), G.map(KE.grammarItemId), P.map(KE.patternItemId));
-// 片語：題組 5 題、打字最後；填空題干擾選項不等於答案、空格只有一個；小測驗＝看中文選＋填空＋打字，3/3
+// 片語：題組 7 題（2026-10-23 起選 4＋打字 3）、打字最後；填空題干擾選項不等於答案、空格只有一個；小測驗＝看中文選＋填空＋打字，3/3
+ok(!E.list({ modules: ['phrases'], types: ['phrase-fill-type', 'phrase-dictation'] }).length && E.list({ modules: ['phrases'], types: ['phrase-fill-type', 'phrase-dictation'], withSetOnly: true }).length === PH.length * 2, 'new phrase typed types are set-only (one each per phrase)');
 PH.forEach(p => {
   const id = KE.phraseItemId(p), ids = E.itemSet(id), t = ids.map(q => E.byId[q].type);
-  ok(ids.length === 5 && t.join() === 'listen-choose,zh2en,en2zh,phrase-fill,zh2en-type', 'phrase set ' + p.id);
+  ok(ids.length === 7 && t.join() === 'listen-choose,zh2en,en2zh,phrase-fill,zh2en-type,phrase-fill-type,phrase-dictation', 'phrase set ' + p.id);
+  ok(t.slice(-3).every(x => KE.TYPED_TYPES.includes(x)) && t.slice(0, -3).every(x => !KE.TYPED_TYPES.includes(x)), 'phrase set: ≥3 typed, typed last ' + p.id);
+  // 例句填空打字：答案在例句裡只出現一次（整個字比對）、挖空後只剩一個空格且例句不再含答案；填回去＝原例句；答案（不分大小寫）和縮寫展開都收
+  const hit = KE.phraseInEx(p), ft = E.get(`ph:${p.id}:filltype`);
+  ok(hit && ft && ft.answer === hit.answer && ft.input === 'type' && !ft.options && !ft.play, 'phrase fill-type exists ' + p.id);
+  ok((ft.prompt.match(/___/g) || []).length === 1 && ft.prompt.replace('___', ft.answer) === p.ex && !ft.prompt.toLowerCase().includes(ft.answer.toLowerCase()), 'phrase fill-type blank unique ' + p.id + ' → ' + ft.prompt);
+  ok(ft.answer.toLowerCase() === (p.form || p.p).toLowerCase() && E.check(ft, ft.answer.toUpperCase() + '.').ok && E.check(ft, KE.expandContr(ft.answer)).ok, 'phrase fill-type grade (case, contractions) ' + p.id);
+  ok(ft.sub.includes(p.zh) && (!p.fillHint || ft.sub.includes(p.fillHint)) && (!p.form || ft.sub.includes('改形式')), 'phrase fill-type hint ' + p.id);
+  // 例句裡的動詞變了形（form 的第一個字跟原形不同，且不是只把 be 拿掉）→ 一定要有時態提示，答案才唯一
+  if (p.form && p.form.split(' ')[0].toLowerCase() !== p.p.split(' ')[0].toLowerCase() && !p.p.toLowerCase().endsWith(' ' + p.form.toLowerCase())) ok(!!p.fillHint, 'inflected fill-type needs tense hint ' + p.id + ' ' + p.form);
+  // 原形不收（例句要的是變化形時）；別的片語不收（除非列在 fillAlts）
+  if (p.form && p.form.toLowerCase() !== p.p.toLowerCase()) ok(!E.check(ft, p.p).ok || (p.fillAlts || []).includes(p.p), 'fill-type rejects base form when ex is inflected ' + p.id);
+  (p.fillAlts || []).forEach(a => ok(E.check(ft, a).ok && PH.some(x => x !== p && ((x.form || x.p).toLowerCase() === a.toLowerCase() || x.p.toLowerCase() === a.toLowerCase() || /^(had|have) /.test(a)) ), 'fill-type alt accepted & is a phrase ' + p.id + ' ' + a));
+  // 聽寫片語：播放片語、打出原形；不分大小寫、縮寫互收
+  const dt = E.get(`ph:${p.id}:dict`);
+  ok(dt && dt.input === 'type' && dt.auto && dt.play && dt.speakText === p.p && dt.answer === p.p && E.check(dt, p.p.toUpperCase()).ok && E.check(dt, KE.expandContr(p.p)).ok && !E.check(dt, p.p.split(' ')[0] + ' x').ok, 'phrase dictation ' + p.id);
+  ok(dt.sub.includes(p.zh) && dt.sub.includes(`${p.p.split(/\s+/).length} 個字`), 'phrase dictation hint ' + p.id);
   for (let k = 0; k < 3; k++) {
     const f = E.get(`ph:${p.id}:fill`);
     ok((f.prompt.match(/___/g) || []).length === 1 && f.options.length === 4 && f.options.includes(f.answer) && new Set(f.options).size === 4 && f.options.filter(o => o === f.answer).length === 1, 'phrase fill options ' + p.id + ' ' + f.options);
@@ -403,8 +420,18 @@ W.forEach(w => { const one = w.w.replace(/[^A-Za-z]/g, '').length < 2, id = KE.w
   ok(tOf(id, SON).join() === (one ? 'listen-choose,zh2en,speak,zh2en-type' : 'listen-choose,zh2en,speak,word-gap,word-gap,zh2en-type'), 'word speak set ' + w.w);
   ok(E.drill(id, new Set(), SON).map(q => q.type).join() === tOf(id, SON).join(), 'word speak drill fixed order ' + w.w); });
 PH.forEach(p => { const id = KE.phraseItemId(p);
-  ok(tOf(id, SON).join() === 'listen-choose,zh2en,en2zh,phrase-fill,speak,zh2en-type', 'phrase speak set ' + p.id);
-  const d = E.drill(id, new Set(), SON).map(q => q.type); ok(d[4] === 'speak' && d[5] === 'zh2en-type', 'phrase drill: speak last of non-typed ' + p.id); });
+  ok(tOf(id, SON).join() === 'listen-choose,zh2en,en2zh,phrase-fill,speak,zh2en-type,phrase-fill-type,phrase-dictation', 'phrase speak set ' + p.id);
+  const d = E.drill(id, new Set(), SON).map(q => q.type); ok(d.length === 8 && d[4] === 'speak' && d.slice(5).join() === 'zh2en-type,phrase-fill-type,phrase-dictation', 'phrase drill: speak last of non-typed, 3 typed last ' + p.id); });
+// 舊進度：以前答對過舊 5 題（＋🎤）的片語，新 2 題還沒答 → 練習這組只出新的 2 題（打字介面）；學會紀錄不受影響
+{ const old = new Set(['listen', 'zh2en', 'en2zh', 'fill', 'speak', 'type'].map(t => 'ph:get-up:' + t)), d = E.drill('phrase:get-up', old, SON);
+  ok(d.map(q => q.id).join() === 'ph:get-up:filltype,ph:get-up:dict' && d.every(q => q.input === 'type') && !E.progress('phrase:get-up', old, SON).complete, 'old phrase progress kept: only 2 new typed left');
+  const L = KE.setLearned({}, 'phrase:get-up', '2026-10-06T00:00:00Z', '3/3'); ok(L['phrase:get-up'].at && E.learnedRows(L)[0].type === '片語', 'learned phrase record untouched by new set');
+  const ft = E.get('ph:get-up:filltype'), ra = E.get('ph:run-away:filltype'), bg = E.get('ph:be-good-at:filltype');
+  ok(ft.prompt === 'I ___ at six thirty every day.' && E.check(ft, 'Get up').ok && !E.check(ft, 'got up').ok, 'get up fill-type');
+  ok(ra.answer === 'ran away' && E.check(ra, 'ran away').ok && !E.check(ra, 'run away').ok && ra.sub.includes('過去式'), 'ran away fill-type (past hint)');
+  ok(bg.answer === 'is good at' && !E.check(bg, 'be good at').ok && E.check(bg, "is good at").ok && bg.sub.includes('現在式'), 'is good at fill-type');
+  ok(E.check(E.get("ph:what-s-the-matter:filltype"), 'what is the matter').ok && E.check(E.get("ph:what-s-the-matter:filltype"), "What's wrong").ok, 'contractions + alts in fill-type');
+  ok(E.check(E.get("ph:i-m-sorry:dict"), 'i am sorry').ok && E.check(E.get('ph:watch-tv:dict'), 'watch tv').ok, 'dictation: contractions, case'); }
 G.forEach(gr => { const id = KE.grammarItemId(gr), s = E.itemSet(id, SON), t = tOf(id, SON);
   ok(s.length === 15 && t.slice(0, 10).filter(x => x === 'speak').length === 2 && t.slice(0, 10).every(x => !KE.TYPED_TYPES.includes(x)) && t.slice(-5).join() === tOf(id).slice(-5).join(), 'grammar speak set 10(+2 speak)+5 ' + gr.id);
   s.filter(q => E.byId[q].type === 'speak').forEach(q => { const k = +q.split(':')[2], gq = gr.q[k], sen = gq.type === 'fill' ? KE.fillBlank(gq.s, gq.a) : gq.right, x = E.get(q);

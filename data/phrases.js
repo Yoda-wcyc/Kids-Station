@@ -382,4 +382,31 @@
   // 課本單元標記（2026-10-18）：這個片語是哪一課的課本字（id 不變、學會紀錄照舊）
   const TB = { 'in-a-hurry': ['hanlin-5-u2'], 'good-idea': ['hanlin-5-u1'], 'have-a-good-time': ['hanlin-5-u1'], 'say-cheese': ['hanlin-5-u3'], 'excuse-me': ['hanlin-5-u3'], 'take-care': ['hanlin-5-u4'], 'calm-down': ['hanlin-5-u4'], 'what-s-wrong': ['hanlin-6-u1'], 'give-me-a-hand': ['hanlin-6-u1'], 'be-careful': ['hanlin-6-u1'], 'may-i-help-you': ['hanlin-6-u2'], 'you-re-welcome': ['hanlin-6-u2'], 'i-see': ['hanlin-6-u3'], 'too-bad': ['hanlin-6-u3'], 'amazing': ['hanlin-6-u4'], 'what-s-the-matter': ['hanlin-6-u4'] };
   window.DATA_PHRASES.forEach(p => { if (TB[p.id]) p.tb = TB[p.id].slice(); });
+  // 例句填空打字（phrase-fill-type，2026-10-23）：例句挖掉整個片語，要打出片語（動詞照例句變化）。
+  // 沒有選項可看 → 時態不明的句子給時態提示（fillHint）；意思相近、放進例句也對的片語收進 fillAlts，確保唯一可判。
+  const NOW = '現在式', PAST = '過去式';
+  const FILL_HINT = {
+    'get-up': NOW, 'go-to-bed': NOW, 'wake-up': NOW, 'take-a-shower': NOW, 'brush-your-teeth': NOW, 'go-to-school': NOW, 'go-shopping': NOW,
+    'play-basketball': NOW, 'play-soccer': NOW, 'do-homework': NOW, 'have-breakfast': NOW, 'have-dinner': NOW, 'watch-tv': NOW, 'go-swimming': NOW,
+    'play-with': NOW, 'fly-a-kite': NOW, 'sing-a-song': NOW, 'feed-the-fish': NOW, 'walk-the-dog': NOW, 'clean-your-room': NOW, 'make-the-bed': NOW,
+    'comb-your-hair': NOW, 'go-to-the-library': NOW, 'jump-rope': NOW, 'take-a-nap': NOW,
+    'take-care-of': NOW, 'get-off': NOW, 'come-from': NOW, 'help-each-other': NOW, 'do-the-dishes': NOW, 'get-home': NOW, 'do-the-laundry': NOW,
+    'go-camping': NOW, 'look-like': NOW, 'belong-to': NOW, 'agree-with': NOW, 'take-the-mrt': NOW, 'get-along-with': NOW, 'look-forward-to': NOW,
+    'take-place': NOW, 'depend-on': NOW, 'pass-by': NOW, 'spend-time': NOW,
+    'be-good-at': NOW, 'be-afraid-of': NOW, 'be-full-of': NOW, 'be-proud-of': NOW, 'be-busy-with': NOW, 'be-different-from': NOW, 'be-famous-for': NOW,
+    'be-happy-to': NOW, 'be-angry-with': NOW, 'be-close-to': NOW, 'be-crazy-about': NOW, 'be-made-of': NOW, 'be-bad-at': NOW,
+    'be-interested-in': NOW, 'be-worried-about': NOW, 'be-good-for': NOW, 'be-tired-of': NOW, 'be-excited-about': NOW, 'be-similar-to': NOW,
+    'be-satisfied-with': NOW, 'be-responsible-for': NOW, 'be-known-as': NOW, 'be-used-to': NOW, 'be-covered-with': NOW, 'be-popular-with': NOW,
+    'run-away': PAST, 'have-a-good-time': PAST, 'fall-asleep': PAST, 'run-out-of': PAST, 'come-up-with': PAST, 'look-around': PAST, 'break-down': PAST,
+    'be-surprised-at': PAST, 'look-for': '進行式（-ing）'
+  };
+  const FILL_ALTS = {
+    'a-lot-of': ['lots of'], 'lots-of': ['a lot of'], 'a-piece-of': ['a slice of'], 'a-slice-of': ['a piece of'],
+    'right-now': ['right away'], 'right-away': ['right now', 'in a minute'], 'in-a-minute': ['right away'],
+    'what-s-the-matter': ["what's wrong"], 'what-s-wrong': ["what's the matter"], 'too-bad': ['what a pity'], 'what-a-pity': ['too bad'],
+    'a-long-time-ago': ['once upon a time'], 'once-upon-a-time': ['a long time ago'], 'have-fun': ['have a good time'], 'have-a-good-time': ['had fun'],
+    'look-out': ['be careful'], 'be-careful': ['look out'], 'hurry-up': ['come on'], 'go-to-bed': ['go to sleep'], 'go-to-sleep': ['go to bed'],
+    'never-mind': ["it doesn't matter"], 'you-re-welcome': ['my pleasure']
+  };
+  window.DATA_PHRASES.forEach(p => { if (FILL_HINT[p.id]) p.fillHint = FILL_HINT[p.id]; if (FILL_ALTS[p.id]) p.fillAlts = FILL_ALTS[p.id].slice(); });
 })();
