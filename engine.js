@@ -75,13 +75,13 @@
   function typeNorm(s) { return String(s == null ? '' : s).replace(/[’‘`´]/g, "'").replace(/[“”]/g, '"').toLowerCase().replace(/\s+/g, ' ').trim().replace(/\s*[.!?]+$/, '').trim(); }
   // 縮寫／展開互收（2026-10-18 舊資料同類修正）：I'm＝I am、don't＝do not、It's＝It is、can't＝cannot、I'll＝I will…
   // 判分前把答案和輸入都展開成同一種寫法再比，混著寫（I'm … do not）也收。's 只展開代名詞／疑問詞／there／here／that（Tom's、Let's 不動）；
-  // 'd 只認 'd like／'d love（＝would）。先小寫、撇號統一成 '
+  // 'd 只認 'd like／'d love（＝would）和 'd better（＝had better，2026-10-25）。先小寫、撇號統一成 '
   const CONTR = [
     [/\bwon't\b/g, 'will not'], [/\bcan't\b/g, 'cannot'], [/\bcan not\b/g, 'cannot'],
     [/\b(do|does|did|is|are|was|were|have|has|had|should|could|would|must|need)n't\b/g, '$1 not'],
     [/\bi'm\b/g, 'i am'], [/\b(you|we|they|what|who|where|there|here|how)'re\b/g, '$1 are'],
     [/\b(i|you|we|they|he|she|it|that|there)'ll\b/g, '$1 will'], [/\b(i|you|we|they)'ve\b/g, '$1 have'],
-    [/\b(i|you|we|they|he|she)'d (like|love)\b/g, '$1 would $2'],
+    [/\b(i|you|we|they|he|she)'d (like|love)\b/g, '$1 would $2'], [/\b(i|you|we|they|he|she)'d better\b/g, '$1 had better'],
     [/\b(he|she|it|that|what|where|who|how|there|here)'s\b/g, '$1 is']
   ];
   function expandContr(s) { return CONTR.reduce((t, [r, v]) => t.replace(r, v), String(s == null ? '' : s).toLowerCase().replace(/[’‘`´]/g, "'")); }
@@ -231,7 +231,8 @@
 
     // ---- 片語：聽音選、看中文選、看英文選、例句填空、中翻英打字 ----
     // 填空題的「不同類別」：時間／地點／介系詞片語算同一家（放進彼此的例句常常也通順，如 by car ↔ in summer），互相不當干擾（2026-10-25）
-    const phFam = t => (['時間', '地點', '介系詞片語'].includes(t) ? '副詞性' : t);
+    // 動詞片語／日常用語也算同一家：日常用語很多是祈使句（be quiet、hold on、take care），放進 Can you ___? / Let's ___ 也通（2026-10-25 第 5 批校對）
+    const phFam = t => (['時間', '地點', '介系詞片語'].includes(t) ? '副詞性' : ['動詞片語', '日常用語'].includes(t) ? '動詞性' : t);
     D.phrases.forEach(ph => {
       const topic = ph.lv + '|' + ph.tag, ans = ph.form || ph.p, key = ph.id, why = `${ph.p} ＝ ${ph.zh}`;
       // ph.alts（2026-10-25）：片語本身的其他寫法（如 hide and seek 不打連字號），所有打字題都收；例句打字把句中的片語換成 alts 也收

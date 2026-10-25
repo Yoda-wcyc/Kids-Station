@@ -3,7 +3,7 @@
 const vm = require('vm'), fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
 const ctx = { window: {} }; vm.createContext(ctx);
-['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'phrases', 'roots', 'grammar', 'patterns', 'textbook'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
+['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
 const W = ctx.window.DATA_WORDS, PH = ctx.window.DATA_PHRASES, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS, TBK = ctx.window.DATA_TEXTBOOK;
 const KE = require(path.join(root, 'engine.js'));
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
@@ -39,7 +39,11 @@ W.forEach(w => ok(!W.some(x => x !== w && x.pos === w.pos && x.zh === w.zh), 'zh
 W.filter(w => w.alts).forEach(w => w.alts.forEach(a => { const x = W.find(y => y.w === a); ok(x && x !== w && x.pos === w.pos, 'word alt is a same-pos word: ' + w.w + ' → ' + a); }));
 // 10-25 第 4 批校對：新抽象字與既有字近義的 15 對互收（stress／pressure、occur／happen、rapid／quick、rapid／fast…），
 // 4 個單向（brief→short、simply→just、fries→French fries、R.O.C.→Republic of China）
-ok(W.filter(w => w.alts).length === 62, 'words with alts: 14 對互收＋soccer→football＋第 4 批 33 字 = 62: ' + W.filter(w => w.alts).length);
+ok(W.filter(w => w.alts).length === 185, 'words with alts: 14 對互收＋soccer→football＋第 4 批 33 字＋第 5 批全庫近義字 123 字 = 185: ' + W.filter(w => w.alts).length);
+// 10-25 第 5 批校對 B：全庫近義字互收（anybody／anyone、bike／bicycle、mom／mother、TV／television…67 對互收＋11 個單向）；中文不再寫「（＝anyone）」
+const altBoth = (a, b) => [[a, b], [b, a]].every(([x, y]) => (W.find(w => w.w === x).alts || []).includes(y));
+ok([['anybody', 'anyone'], ['bike', 'bicycle'], ['mom', 'mother'], ['dad', 'father'], ['TV', 'television'], ['plane', 'airplane'], ['phone', 'telephone'], ['fast', 'quick']].every(([a, b]) => altBoth(a, b)), '10-25 第 5 批：近義字互收');
+ok(!W.some(w => /（＝[A-Za-z]/.test(w.zh) && w.w !== "let's"), '中文不寫（＝英文同義字）（會洩答案）');
 ok(W.find(w => w.w === 'stress').alts.includes('pressure') && W.find(w => w.w === 'pressure').alts.includes('stress') && W.find(w => w.w === 'happen').alts.includes('occur'), '10-25 校對：stress／pressure、occur／happen 互收');
 ok(W.find(w => w.w === 'football').zh === '美式足球；（英國）足球', 'football zh');
 const lvCount = [1, 2, 3].map(l => W.filter(w => w.lv === l).length);
@@ -63,9 +67,9 @@ G.forEach(g => {
     else { ok(q.type === 'fix' && q.wrong && q.right && q.wrong !== q.right, 'fix ' + q.right); }
   });
 });
-ok(P.length === 145 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 145 with 5 examples each'); // 2026-10-25 第 2 批 +40 // 2026-10-18 +2（翰林五上 Unit 2）＋13（翰林五上 U1/U3/U4、五下 U1–U4）
-ok(new Set(P.map(p => p.id)).size === 145, 'pattern ids unique');
-ok(P.filter(p => p.lv === 1).length === 63 && P.filter(p => p.lv === 2).length === 50 && P.filter(p => p.lv === 3).length === 32, 'pattern levels 63/50/32');
+ok(P.length === 185 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 185 with 5 examples each'); // 2026-10-25 第 5 批 +40（patterns-2.js） // 2026-10-25 第 2 批 +40 // 2026-10-18 +2（翰林五上 Unit 2）＋13（翰林五上 U1/U3/U4、五下 U1–U4）
+ok(new Set(P.map(p => p.id)).size === 185, 'pattern ids unique');
+ok(P.filter(p => p.lv === 1).length === 74 && P.filter(p => p.lv === 2).length === 64 && P.filter(p => p.lv === 3).length === 47, 'pattern levels 74/64/47');
 // 課本句型：同一個句型裡的中文不重複（看中文選句子才不會兩個都對）
 P.filter(p => p.tb).forEach(p => { const z = p.ex.concat(p.extra).map(e => e.zh); ok(new Set(z).size === z.length, 'textbook pattern zh unique: ' + p.id); });
 ['there-is', 'want-to', 'like-ing', 'time-to', 'how-many', 'can-you', 'lets', 'have-to', 'it-is-to', 'what-do', 'i-think', 'dont'].forEach(id => ok(P.find(p => p.id === id && p.lv === 2), 'original pattern kept as 基本: ' + id));
@@ -85,7 +89,7 @@ P.forEach(p => ok(p.extra.length === 3 && p.extra.every(e => e.en && e.zh) && p.
 // ---- 引擎 ----
 // ---- 片語資料 ----
 const PH_TAGS = ['動詞片語', '介系詞片語', '時間', '地點', '日常用語', '形容詞片語', '名詞片語'];
-ok(PH.length >= 500 && PH.length <= 520, 'phrases ~517（10-25 擴充第 1 批 +148、第 4 批名詞片語 +7）: ' + PH.length);
+ok(PH.length === 651, 'phrases 651（10-25 擴充第 1 批 +148、第 4 批名詞片語 +7、第 5 批 phrases-2.js +134）: ' + PH.length);
 ok(PH.filter(p => p.tag === '名詞片語').map(p => p.id).join() === 'bus-stop,police-station,fire-station,movie-theater,police-officer,mail-carrier,roller-blade', '名詞片語 7 個');
 ok(new Set(PH.map(p => p.id)).size === PH.length, 'phrase ids unique');
 ok(new Set(PH.map(p => p.p.toLowerCase())).size === PH.length, 'phrases unique');
@@ -207,6 +211,8 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
   const ty = id => E.get(id);
   ok(E.check(ty('p:i-dont-like:x0:type'), 'I do not like bugs.').ok && E.check(ty('p:time-to:x1:type'), 'It is time to go home').ok && E.check(ty('p:i-am:x0:type'), "I'm tired").ok, 'old pattern extras: don\'t / It\'s / I\'m both ways');
   ok(E.check(ty('p:because:t0'), "I'm hungry because I did not eat breakfast.").ok, 'mixed contraction + expansion accepted');
+  // 10-25 第 5 批：'d better ＝ had better 由 engine 縮寫表處理（句型資料不再手寫展開版 alts）
+  ok(KE.expandContr("You'd better hurry") === 'you had better hurry' && E.check(ty('p:had-better:x0:type'), 'You had better wear a coat.').ok && E.check(ty('p:had-better:t1'), 'You had better not eat too much').ok && E.check(E.get('p:had-better:0:speak'), ['you had better hurry']).ok && !P.find(p => p.id === 'had-better').ex.concat(P.find(p => p.id === 'had-better').extra, P.find(p => p.id === 'had-better').typed).some(e => (e.alts || []).some(a => /had better/.test(a))), "had better: 'd better 展開互收（engine）");
   ok(!E.check(ty('p:time-to:x1:type'), 'Its time to go home').ok && !E.check(ty('p:lets:t1'), 'Let us sing').ok, "its ≠ it's; Let's not expanded");
   const sp = E.get('p:i-am:0:speak'); ok(E.check(sp, ["I'm a student"]).ok && E.check(sp, ['I am a student']).ok && E.check(E.get('p:i-dont-like:0:speak'), ['I do not like ' + E.get('p:i-dont-like:0:speak').answer.replace(/^I don't like /, '')]).ok, 'speak: contraction both ways');
 }
@@ -314,7 +320,7 @@ ok(KE.fmtTaipei('2026-10-05T12:31:09Z') === '10/05 20:31' && KE.fmtTaipei('2026-
 ok(KE.fmtTaipei('') === '' && KE.fmtTaipei('bad') === '', 'taipei time empty/bad');
 const allItems = W.map(KE.wordItemId).concat(PH.map(KE.phraseItemId), R.map(KE.rootItemId), G.map(KE.grammarItemId), P.map(KE.patternItemId));
 // 片語：題組 7 題（2026-10-23 起選 4＋打字 3）、打字最後；填空題干擾選項不等於答案、空格只有一個；小測驗＝看中文選＋填空＋打字，3/3
-const PH_ADV = ['時間', '地點', '介系詞片語'], PH_BY_OPT = {};
+const PH_ADV = ['時間', '地點', '介系詞片語'], PH_VERB = ['動詞片語', '日常用語'], PH_BY_OPT = {}; // 10-25 第 5 批：動詞片語／日常用語（多是祈使句）也互不當填空干擾
 PH.forEach(x => [...new Set([x.p, x.form].filter(Boolean))].forEach(s => (PH_BY_OPT[s] = PH_BY_OPT[s] || []).push(x)));
 const phAlt = (a, b) => [[a, b], [b, a]].some(([u, v]) => (u.fillAlts || []).some(s => [v.p, v.form].some(t => t && t.toLowerCase() === s.toLowerCase())));
 { const hs = t => E.get('ph:play-hide-and-seek:' + t); ok(['type', 'dict', 'filltype'].every(t => E.check(hs(t), 'play hide and seek').ok && E.check(hs(t), 'play hide-and-seek').ok) && E.check(hs('extype'), "Let's play hide and seek in the park.").ok && E.check(hs('extype'), "Let's play hide-and-seek in the park.").ok && !E.check(hs('type'), 'play hide').ok, '10-25 校對：hide-and-seek 不打連字號也算對（打字、聽寫、例句填空、例句中翻英）'); }
@@ -343,7 +349,7 @@ PH.forEach(p => {
     const f = E.get(`ph:${p.id}:fill`);
     ok((f.prompt.match(/___/g) || []).length === 1 && f.options.length === 4 && f.options.includes(f.answer) && new Set(f.options).size === 4 && f.options.filter(o => o === f.answer).length === 1, 'phrase fill options ' + p.id + ' ' + f.options);
     // 2026-10-25：填空干擾不可也通順——時間／地點／介系詞片語互不當干擾；互收（fillAlts）的片語不當干擾（填空、看中文選都是）
-    f.options.filter(o => o !== f.answer).forEach(o => (PH_BY_OPT[o] || []).forEach(x => ok(!(PH_ADV.includes(p.tag) && PH_ADV.includes(x.tag)) && !phAlt(p, x), `phrase fill distractor plausible: ${p.id} ← ${o}`)));
+    f.options.filter(o => o !== f.answer).forEach(o => (PH_BY_OPT[o] || []).forEach(x => ok(!(PH_ADV.includes(p.tag) && PH_ADV.includes(x.tag)) && !(PH_VERB.includes(p.tag) && PH_VERB.includes(x.tag)) && !phAlt(p, x), `phrase fill distractor plausible: ${p.id} ← ${o}`)));
     const z = E.get(`ph:${p.id}:zh2en`); z.options.filter(o => o !== z.answer).forEach(o => (PH_BY_OPT[o] || []).forEach(x => ok(!phAlt(p, x), `phrase zh2en distractor is an alt: ${p.id} ← ${o}`)));
   }
   const ty = E.get(`ph:${p.id}:type`);
