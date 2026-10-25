@@ -266,7 +266,7 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
   ok(it.words.map(KE.wordKey).sort().join() === 'art,chinese,class,english,follow,math,monday,music,park,pe,science,social-studies,thursday,tuesday,wednesday', 'U2 unit words (tb tags)');
   ok(it.phrases.map(p => p.id).join() === 'in-a-hurry' && it.patterns.map(p => p.id).join() === 'do-you-have-class,does-he-have-class' && it.grammar.map(g => g.id).join() === 'do-does-on', 'U2 phrase / patterns / grammar');
   ['art', 'Chinese', 'English', 'math', 'music', 'PE', 'science', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'class', 'park', 'follow'].forEach(w => ok(W.filter(x => x.w === w).length === 1 && W.find(x => x.w === w).src === 'moe1200', 'textbook word not duplicated, kept moe1200: ' + w));
-  const ss = W.find(x => x.w === 'social studies'); ok(ss && ss.src === 'textbook' && ss.lv === 2 && E.itemSet('word:social-studies').length === 5, 'social studies added as textbook word');
+  const ss = W.find(x => x.w === 'social studies'); ok(ss && ss.src === 'textbook' && ss.lv === 2 && E.itemSet('word:social-studies').length === 6, 'social studies added as textbook word');
   it.patterns.forEach(p => ok(p.ex.concat(p.extra, p.typed).every(e => !/\b(an?|the) (art|Chinese|English|math|music|PE|science|social studies) class\b/.test(e.en)) && p.ex.concat(p.extra, p.typed).every(e => !/\b(monday|tuesday|wednesday|thursday)\b/.test(e.en)), 'no article before class + days capitalised: ' + p.id));
   ok(E.sets['grammar:do-does-on'].length === 15 && E.get('g:do-does-on:13:type').sub.includes('Do 或 Does') && E.check(E.get('g:do-does-on:13:type'), 'does').ok, 'grammar do-does-on set 15 + hints');
   (u.dialog.choose || []).forEach(c => ok(c.options.includes(c.answer) && new Set(c.options).size === 4, 'dialog choose ' + c.id));
@@ -300,8 +300,8 @@ const allItems = W.map(KE.wordItemId).concat(PH.map(KE.phraseItemId), R.map(KE.r
 ok(!E.list({ modules: ['phrases'], types: ['phrase-fill-type', 'phrase-dictation'] }).length && E.list({ modules: ['phrases'], types: ['phrase-fill-type', 'phrase-dictation'], withSetOnly: true }).length === PH.length * 2, 'new phrase typed types are set-only (one each per phrase)');
 PH.forEach(p => {
   const id = KE.phraseItemId(p), ids = E.itemSet(id), t = ids.map(q => E.byId[q].type);
-  ok(ids.length === 7 && t.join() === 'listen-choose,zh2en,en2zh,phrase-fill,zh2en-type,phrase-fill-type,phrase-dictation', 'phrase set ' + p.id);
-  ok(t.slice(-3).every(x => KE.TYPED_TYPES.includes(x)) && t.slice(0, -3).every(x => !KE.TYPED_TYPES.includes(x)), 'phrase set: ≥3 typed, typed last ' + p.id);
+  ok(ids.length === 8 && t.join() === 'listen-choose,zh2en,en2zh,phrase-fill,zh2en-type,phrase-fill-type,phrase-dictation,zh2en-type', 'phrase set ' + p.id);
+  ok(t.slice(-4).every(x => KE.TYPED_TYPES.includes(x)) && t.slice(0, -4).every(x => !KE.TYPED_TYPES.includes(x)), 'phrase set: ≥3 typed, typed last ' + p.id);
   // 例句填空打字：答案在例句裡只出現一次（整個字比對）、挖空後只剩一個空格且例句不再含答案；填回去＝原例句；答案（不分大小寫）和縮寫展開都收
   const hit = KE.phraseInEx(p), ft = E.get(`ph:${p.id}:filltype`);
   ok(hit && ft && ft.answer === hit.answer && ft.input === 'type' && !ft.options && !ft.play, 'phrase fill-type exists ' + p.id);
@@ -324,7 +324,7 @@ PH.forEach(p => {
   const ty = E.get(`ph:${p.id}:type`);
   ok(E.check(ty, p.p).ok && (!p.form || E.check(ty, p.form).ok) && E.check(ty, p.p.toUpperCase() + '.').ok, 'phrase typed accepts base/form ' + p.id);
   const g = E.gate(id, new Set(ids));
-  ok(g && g.need === 3 && g.qs.map(q => q.type).join() === 'zh2en,phrase-fill,zh2en-type', 'phrase mini quiz ' + p.id);
+  ok(g && g.need === 3 && g.qs.map(q => q.type).join() === 'phrase-dictation,zh2en-type,zh2en-type', 'phrase mini quiz (3 typed, 2 zh→en) ' + p.id);
   ok(E.gate(id, new Set()) === null, 'locked phrase cannot open mini quiz ' + p.id);
 });
 { // 片語也走同一套同步：作答與學會紀錄合併後，題組解鎖狀態一致
@@ -359,8 +359,8 @@ const unique = a => new Set(a).size === a.length;
 // 單字題組（2026-10-09 起）：選、選、填空拼字（約 1/3）、填空拼字（約 1/2）、看中文打字；只有 1 個字母的字（a、I）沒有填空 → 3 題
 W.forEach(w => {
   const ids = E.itemSet(KE.wordItemId(w)), t = typesOfIds(ids), one = w.w.replace(/[^A-Za-z]/g, '').length < 2;
-  ok(unique(ids) && t.join() === (one ? 'listen-choose,zh2en,zh2en-type' : 'listen-choose,zh2en,word-gap,word-gap,zh2en-type'), 'word set ' + w.w + ' ' + t);
-  ok(E.get(ids[ids.length - 1]).answer === w.w && E.get(ids[ids.length - 1]).input === 'type', 'word typed answer ' + w.w);
+  ok(unique(ids) && t.join() === (one ? 'listen-choose,zh2en,spell,zh2en-type,zh2en-type' : 'listen-choose,zh2en,word-gap,word-gap,zh2en-type,zh2en-type'), 'word set ' + w.w + ' ' + t);
+  ok(E.get(ids[ids.length - 2]).answer === w.w && E.get(ids[ids.length - 2]).input === 'type', 'word typed answer ' + w.w);
   ok(ids.filter(id => /:gap[12]$/.test(id)).every(id => { const q = E.get(id); return q.input === 'gap' && q.answer === w.w && q.play && E.check(q, w.w).ok && E.check(q, w.w.toUpperCase()).ok; }), 'word gap self-check ' + w.w);
 });
 ok(W.filter(w => w.w.replace(/[^A-Za-z]/g, '').length < 2).map(w => w.w).sort().join() === 'I,a', 'only a / I have no gap questions');
@@ -384,8 +384,8 @@ ok(E.check(qg, fill(qg, c => c.toUpperCase())).ok && !E.check(qg, fill(qg, (c, i
 ok(E.check(qg, qg.gaps.map(p => qg.answer[p])).ok && E.check(qg, fill(qg, (c, i) => (i === qg.gaps[0] ? 'z' : c))).wrong.join() === '0', 'gap grade: array input / wrong boxes');
 R.forEach(r => {
   const ids = E.itemSet(KE.rootItemId(r)), n = r.words.length, k = Math.max(n, 3), t = typesOfIds(ids);
-  ok(ids.length === 1 + n + k && unique(ids) && t[0] === 'root-meaning' && t.slice(1, 1 + n).every(x => x === 'root-word') && t.slice(-k).every(x => x === 'root-type'), 'root set ' + r.p);
-  const t1 = ids.slice(ids.length - k, ids.length - k + n);
+  ok(ids.length === 1 + n + k + 2 && unique(ids) && t[0] === 'root-meaning' && t.slice(1, 1 + n).every(x => x === 'root-word') && t.slice(-k - 2, -2).every(x => x === 'root-type') && t.slice(-2).join() === 'zh2en-type,zh2en-type', 'root set ' + r.p);
+  const t1 = ids.slice(ids.length - 2 - k, ids.length - 2 - k + n);
   ok(t1.map(id => E.get(id).answer).join() === r.words.map(x => x.w).join(), 'root typed answers ' + r.p);
   t1.forEach((id, i) => { const q = E.get(id); ok(q.prompt.includes('___') && q.prompt.includes(r.words[i].zh), 'root-type hint ' + id); });
   // 2026-10-23：練習這組至少 3 題打字、全部排最後；補的 :type2 是例字換一種藏法（跟原本那題提示不同），只在題組出
@@ -419,20 +419,20 @@ ok(allItems.every(id => E.itemSet(id).every(q => E.byId[q] && E.byId[q].type !==
 // ---- 🎤 練習這組一律有口說題（2026-10-09 起不看家長同意、不看裝置支援）；解鎖只在裝置支援時算口說 ----
 ok(allItems.filter(id => !/^root:/.test(id)).every(id => E.drill(id, new Set()).some(q => q.type === 'speak')) && allItems.filter(id => /^root:/.test(id)).every(id => E.drill(id, new Set()).every(q => q.type !== 'speak')), 'drill always has speak (speak off too); roots never');
 ok(allItems.every(id => E.drillIds(id).join() === E.drillIds(id, { speak: true }).join() && E.itemSet(id).join() === E.drillIds(id).filter(q => E.byId[q].type !== 'speak').join() && E.itemSet(id, { speak: true }).join() === E.drillIds(id).join()), 'unlock set = drill set (speak on) / drill set minus speak (speak off)');
-const wOff = E.drill('word:apple', new Set()).map(q => q.type).join(); ok(wOff === 'listen-choose,zh2en,speak,word-gap,word-gap,zh2en-type', 'word drill speak off: 6 with speak 3rd ' + wOff);
+const wOff = E.drill('word:apple', new Set()).map(q => q.type).join(); ok(wOff === 'listen-choose,zh2en,speak,word-gap,word-gap,zh2en-type,zh2en-type', 'word drill speak off: 7 with speak 3rd ' + wOff);
 const wOk5 = new Set(E.drillIds('word:apple').filter(q => !/:speak$/.test(q))); ok(E.progress('word:apple', wOk5).complete && E.drill('word:apple', wOk5).map(q => q.id).join() === 'w:apple:speak' && !E.progress('word:apple', wOk5, { speak: true }).complete, 'speak off: other 5 right → unlocked; drill still offers speak');
-const wv1 = { waive: new Set(['w:apple:speak']) }; ok(E.drill('word:apple', new Set(), wv1).length === 5 && E.progress('word:apple', wOk5, Object.assign({ speak: true }, wv1)).complete, 'waived speak: not re-offered this round, not counted');
+const wv1 = { waive: new Set(['w:apple:speak']) }; ok(E.drill('word:apple', new Set(), wv1).length === 6 && E.progress('word:apple', wOk5, Object.assign({ speak: true }, wv1)).complete, 'waived speak: not re-offered this round, not counted');
 const gOff = E.drill('grammar:be', new Set()).map(q => q.type); ok(gOff.length === 15 && gOff.slice(0, 10).filter(x => x === 'speak').length === 2 && E.itemSet('grammar:be').length === 13, 'grammar drill speak off: 15 with 2 speak; unlock 13');
 const SON = { speak: true }, tOf = (id, o) => E.itemSet(id, o).map(q => E.byId[q].type);
 W.forEach(w => { const one = w.w.replace(/[^A-Za-z]/g, '').length < 2, id = KE.wordItemId(w);
-  ok(tOf(id, SON).join() === (one ? 'listen-choose,zh2en,speak,zh2en-type' : 'listen-choose,zh2en,speak,word-gap,word-gap,zh2en-type'), 'word speak set ' + w.w);
+  ok(tOf(id, SON).join() === (one ? 'listen-choose,zh2en,speak,spell,zh2en-type,zh2en-type' : 'listen-choose,zh2en,speak,word-gap,word-gap,zh2en-type,zh2en-type'), 'word speak set ' + w.w);
   ok(E.drill(id, new Set(), SON).map(q => q.type).join() === tOf(id, SON).join(), 'word speak drill fixed order ' + w.w); });
 PH.forEach(p => { const id = KE.phraseItemId(p);
-  ok(tOf(id, SON).join() === 'listen-choose,zh2en,en2zh,phrase-fill,speak,zh2en-type,phrase-fill-type,phrase-dictation', 'phrase speak set ' + p.id);
-  const d = E.drill(id, new Set(), SON).map(q => q.type); ok(d.length === 8 && d[4] === 'speak' && d.slice(5).join() === 'zh2en-type,phrase-fill-type,phrase-dictation', 'phrase drill: speak last of non-typed, 3 typed last ' + p.id); });
+  ok(tOf(id, SON).join() === 'listen-choose,zh2en,en2zh,phrase-fill,speak,zh2en-type,phrase-fill-type,phrase-dictation,zh2en-type', 'phrase speak set ' + p.id);
+  const d = E.drill(id, new Set(), SON).map(q => q.type); ok(d.length === 9 && d[4] === 'speak' && d.slice(5).join() === 'zh2en-type,phrase-fill-type,phrase-dictation,zh2en-type', 'phrase drill: speak last of non-typed, 4 typed last ' + p.id); });
 // 舊進度：以前答對過舊 5 題（＋🎤）的片語，新 2 題還沒答 → 練習這組只出新的 2 題（打字介面）；學會紀錄不受影響
 { const old = new Set(['listen', 'zh2en', 'en2zh', 'fill', 'speak', 'type'].map(t => 'ph:get-up:' + t)), d = E.drill('phrase:get-up', old, SON);
-  ok(d.map(q => q.id).join() === 'ph:get-up:filltype,ph:get-up:dict' && d.every(q => q.input === 'type') && !E.progress('phrase:get-up', old, SON).complete, 'old phrase progress kept: only 2 new typed left');
+  ok(d.map(q => q.id).join() === 'ph:get-up:filltype,ph:get-up:dict,ph:get-up:extype' && d.every(q => q.input === 'type') && !E.progress('phrase:get-up', old, SON).complete, 'old phrase progress kept: only 3 new typed left');
   const L = KE.setLearned({}, 'phrase:get-up', '2026-10-06T00:00:00Z', '3/3'); ok(L['phrase:get-up'].at && E.learnedRows(L)[0].type === '片語', 'learned phrase record untouched by new set');
   const ft = E.get('ph:get-up:filltype'), ra = E.get('ph:run-away:filltype'), bg = E.get('ph:be-good-at:filltype');
   ok(ft.prompt === 'I ___ at six thirty every day.' && E.check(ft, 'Get up').ok && !E.check(ft, 'got up').ok, 'get up fill-type');
@@ -453,8 +453,8 @@ const baseAll = new Set(E.itemSet('word:apple'));
 ok(E.progress('word:apple', baseAll).complete && !E.progress('word:apple', baseAll, SON).complete && E.progress('word:apple', baseAll, SON).missing.join() === 'w:apple:speak', 'unlock: speak required only when on');
 ok(E.progress('word:apple', baseAll, { speak: true, waive: new Set(['w:apple:speak']) }).complete && E.gate('word:apple', baseAll, { speak: true, waive: new Set(['w:apple:speak']) }), 'unlock: waived speak (device trouble) not counted this time');
 const gAll = new Set(E.itemSet('grammar:be')); ok(E.progress('grammar:be', gAll, SON).missing.every(q => /:speak$/.test(q)) && E.progress('grammar:be', gAll, SON).missing.length === 2, 'unlock: grammar old progress → only the 2 speak missing');
-E.speakOn = true; ok(E.itemSet('word:apple').length === 6 && E.gate('word:apple', baseAll) === null, 'speakOn default applies to itemSet / gate'); E.speakOn = false;
-ok(E.itemSet('word:apple').length === 5 && E.gate('word:apple', baseAll) !== null, 'speakOn off again');
+E.speakOn = true; ok(E.itemSet('word:apple').length === 7 && E.gate('word:apple', baseAll) === null, 'speakOn default applies to itemSet / gate'); E.speakOn = false;
+ok(E.itemSet('word:apple').length === 6 && E.gate('word:apple', baseAll) !== null, 'speakOn off again');
 ok(E.list({ modules: ['grammar'], types: ['speak'], allowSpeak: true }).every(m => /:ex\d+:speak$/.test(m.id)), 'grammar set-only speak stays out of normal practice');
 ok(KE.typedRank({ type: 'reorder' }) === 0 && KE.typedRank({ type: 'speak' }) === 1 && KE.typedRank({ type: 'word-gap' }) === 2 && KE.typedRank({ type: 'zh2en-type' }) === 3, 'rank: choice < speak < gap < typing');
 P.forEach(p => E.itemSet(KE.patternItemId(p)).map(id => E.get(id)).filter(q => q.type === 'reorder').forEach(q => ok(q.options.slice().sort().join('|') === q.answer.split(/\s+/).sort().join('|') && E.check(q, q.answer).ok, 'chips rebuild ' + q.id)));
@@ -465,7 +465,7 @@ const C14 = new Set(gset.slice(0, 14)); ok(E.progress('grammar:be', C14, SON).do
 ok(E.progress('grammar:be', new Set(gset), SON).complete, 'grammar 15/15 unlocked');
 const wset = E.itemSet('word:apple'), now = Date.now();
 const log1 = wset.map((id, i) => ({ t: now + i, id, ok: i === 4 ? 0 : 1 }));
-ok(E.progress('word:apple', KE.correctIds(log1)).done === 4 && !E.progress('word:apple', KE.correctIds(log1)).complete, 'word 4/5 locked');
+ok(E.progress('word:apple', KE.correctIds(log1)).done === wset.length - 1 && !E.progress('word:apple', KE.correctIds(log1)).complete, 'word 5/6 locked');
 const log2 = log1.concat([{ t: now + 9, id: wset[4], ok: 1 }]);
 ok(E.progress('word:apple', KE.correctIds(log2)).complete, 'wrong-then-right counts');
 ok(E.progress('word:apple', KE.correctIds([{ id: wset[0], ok: 0 }])).done === 0, 'wrong only does not count');
@@ -475,17 +475,17 @@ ok(E.progress('pattern:lets', KE.correctIds(oldPractice)).done === E.itemSet('pa
 const drill = E.drill('grammar:be', new Set());
 ok(drill.length === 15 && drill.slice(-5).every(KE.isTyped) && drill.slice(0, 10).every(q => !KE.isTyped(q)), 'drill: 10 non-typed then 5 typed (grammar)');
 const pdr = E.drill('pattern:lets', new Set()); ok(pdr.length === 15 && pdr.slice(-5).every(q => q.type === 'zh2en-type') && pdr.slice(0, 10).every(q => !KE.isTyped(q)), 'drill: 10 non-typed then 5 typed (pattern)');
-ok(E.drill('word:apple', new Set()).map(q => q.id.split(':')[2]).join() === 'listen,zh2en,speak,gap1,gap2,type', 'drill: word set in fixed order (word, with speak)');
+ok(E.drill('word:apple', new Set()).map(q => q.id.split(':')[2]).join() === 'listen,zh2en,speak,gap1,gap2,type,extype', 'drill: word set in fixed order (word, with speak)');
 const WV = { waive: new Set(['w:apple:speak']) }; // 以下重排測試用不含口說的 5 題
-const wd = E.drill('word:apple', new Set(), WV); ok(wd.map(q => q.type).join() === 'listen-choose,zh2en,word-gap,word-gap,zh2en-type' && wd.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,type', 'drill: word set in fixed order (speak waived)');
-ok(E.drill('word:apple', new Set(['w:apple:zh2en'])).map(q => q.id.split(':')[2]).join() === 'listen,speak,gap1,gap2,type', 'drill: word fixed order keeps order when some answered');
+const wd = E.drill('word:apple', new Set(), WV); ok(wd.map(q => q.type).join() === 'listen-choose,zh2en,word-gap,word-gap,zh2en-type,zh2en-type' && wd.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,type,extype', 'drill: word set in fixed order (speak waived)');
+ok(E.drill('word:apple', new Set(['w:apple:zh2en'])).map(q => q.id.split(':')[2]).join() === 'listen,speak,gap1,gap2,type,extype', 'drill: word fixed order keeps order when some answered');
 // 答錯重排：選擇題插在填空拼字前、填空拼字插在完整打字前、打字放最後
-const wq = KE.requeue(wd, 0, wd[0]); ok(wq.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,listen,gap1,gap2,type', 'word requeue choice before gaps');
-const wg = KE.requeue(wd, 2, wd[2]); ok(wg.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,gap1,type', 'word requeue gap before final typing');
-const wt = KE.requeue(wd, 4, wd[4]); ok(wt.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,type,type', 'word requeue typing at end');
+const wq = KE.requeue(wd, 0, wd[0]); ok(wq.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,listen,gap1,gap2,type,extype', 'word requeue choice before gaps');
+const wg = KE.requeue(wd, 2, wd[2]); ok(wg.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,gap1,type,extype', 'word requeue gap before final typing');
+const wt = KE.requeue(wd, 4, wd[4]); ok(wt.map(q => q.id.split(':')[2]).join() === 'listen,zh2en,gap1,gap2,type,extype,type', 'word requeue typing at end');
 // 舊進度：以前的 5 題（listen、zh2en、en2zh、spell、type）→ 新組合裡仍算 3 題；學會標記不受影響
 const oldW = new Set(['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(s => 'w:apple:' + s));
-ok(E.progress('word:apple', oldW).done === 3 && E.progress('word:apple', oldW).missing.join() === 'w:apple:gap1,w:apple:gap2', 'old word progress kept 3/5, gaps to redo');
+ok(E.progress('word:apple', oldW).done === 3 && E.progress('word:apple', oldW).missing.join() === 'w:apple:gap1,w:apple:gap2,w:apple:extype', 'old word progress kept 3/6, gaps + new extype to redo');
 const rq = KE.requeue(drill, 0, drill[0]);
 ok(rq.length === 16 && rq.slice(-5).every(KE.isTyped) && rq[drill.findIndex(q => KE.typedRank(q) > 0)].id === drill[0].id, 'requeue choice before speak/typed');
 // 舊進度：以前答對過的 15 題（13 題選擇＋2 題中翻英打字）換新題組後，仍算的有 12 題（不歸零）；換進來的 3 題打字題要再答對
@@ -503,15 +503,17 @@ ok(!tg('Hello.', [], '') && KE.typeGrade('I am a student.', [], 'I is a student'
 // ---- 「學會了」小測驗（981d094 的門檻與題型，題組完成後才開得了）----
 const typesOf = g => g.qs.map(q => q.type).sort().join(',');
 const fullSet = id => new Set(E.itemSet(id));
-W.forEach(w => { const g = E.gate(KE.wordItemId(w), fullSet(KE.wordItemId(w))); ok(g && g.total === 3 && g.need === 3 && typesOf(g) === 'listen-choose,spell,zh2en', 'gate word ' + w.w); });
+// 2026-10-25：單字、片語、字根、句型 3 題全打字（≥2 中翻英）、全對；文法 5 題（打字 3、其中中翻英 2）、對 4 題；打字排最後
+const gateRule = (g, nT, nZ) => { const t = g.qs.map(q => KE.isTyped(q)), z = g.qs.filter(q => q.type === 'zh2en-type').length; return t.filter(Boolean).length >= nT && z >= nZ && t.every((x, i) => !i || x || !t[i - 1]); };
+W.forEach(w => { const g = E.gate(KE.wordItemId(w), fullSet(KE.wordItemId(w))); ok(g && g.total === 3 && g.need === 3 && typesOf(g) === 'spell,zh2en-type,zh2en-type' && gateRule(g, 3, 2), 'gate word ' + w.w); });
+PH.forEach(p => { const g = E.gate(KE.phraseItemId(p), fullSet(KE.phraseItemId(p))); ok(g && g.total === 3 && g.need === 3 && gateRule(g, 3, 2), 'gate phrase ' + p.id); });
 R.forEach(r => {
   const g = E.gate(KE.rootItemId(r), fullSet(KE.rootItemId(r)));
-  ok(g && g.total === 3 && g.need === 3 && typesOf(g) === 'root-meaning,root-word,root-word', 'gate root ' + r.p);
-  const wids = g.qs.filter(q => q.type === 'root-word').map(q => q.id);
-  ok(new Set(wids).size === 2 && wids.every(id => r.words.some(x => id === `r:${KE.slug(x.w)}:word`)), 'gate root words belong to ' + r.p);
+  ok(g && g.total === 3 && g.need === 3 && typesOf(g) === 'root-type,zh2en-type,zh2en-type' && gateRule(g, 3, 2), 'gate root ' + r.p);
+  ok(g.qs.every(q => r.words.some(x => x.w === q.answer)) && new Set(g.ids).size === 3, 'gate root answers are its example words ' + r.p);
 });
-G.forEach(gr => { const g = E.gate(KE.grammarItemId(gr), fullSet(KE.grammarItemId(gr))); ok(g && g.total === 5 && g.need === 4 && new Set(g.ids).size === 5 && g.qs.every(q => ['grammar-fill', 'grammar-fix'].includes(q.type) && q.topic === gr.id), 'gate grammar ' + gr.id); });
-P.forEach(p => { const g = E.gate(KE.patternItemId(p), fullSet(KE.patternItemId(p))); ok(g && g.total === 3 && g.need === 3 && new Set(g.ids).size === 3 && typesOf(g) === 'pattern-choose,reorder,reorder' && g.qs.every(q => q.topic === p.id), 'gate pattern ' + p.id); });
+G.forEach(gr => { const g = E.gate(KE.grammarItemId(gr), fullSet(KE.grammarItemId(gr))); ok(g && g.total === 5 && g.need === 4 && new Set(g.ids).size === 5 && g.qs.every(q => q.topic === gr.id) && gateRule(g, 3, 2) && g.qs.filter(q => ['grammar-fill', 'grammar-fix'].includes(q.type)).length === 2, 'gate grammar ' + gr.id); });
+P.forEach(p => { const g = E.gate(KE.patternItemId(p), fullSet(KE.patternItemId(p))); ok(g && g.total === 3 && g.need === 3 && new Set(g.ids).size === 3 && typesOf(g) === 'zh2en-type,zh2en-type,zh2en-type' && g.qs.every(q => q.topic === p.id), 'gate pattern ' + p.id); });
 ok(allItems.every(id => E.gate(id, fullSet(id)).qs.every(q => q.type !== 'speak')), 'gate never uses speak');
 ok(E.gate('word:nope') === null, 'gate unknown item');
 // 鎖住的項目（題組沒全部答對過）開不了小測驗
@@ -912,7 +914,73 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
   require('./completion.test.js');
 }
 
-ok(E.itemSet('word:may-month').length === 5 && E.itemSet('word:may').length === 5 && E.get('w:may-month:zh2en').answer === 'May' && E.get('w:may:zh2en').answer === 'may', 'May / may keep separate ids');
+ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 6 && E.get('w:may-month:zh2en').answer === 'May' && E.get('w:may:zh2en').answer === 'may', 'May / may keep separate ids');
+
+// ---- 2026-10-25 打字保底：每一組／小測驗／課本專屬練習與考試／一般練習回合都要「打字 ≥ 3、中翻英打字 ≥ 2、打字排最後」（全部逐一跑）----
+{
+  const isZ = q => q.type === 'zh2en-type', TL = qs => { const t = qs.map(q => KE.isTyped(q)); return t.every((x, i) => !i || x || !t[i - 1]); };
+  const rule = (qs, nT, nZ) => qs.filter(q => KE.isTyped(q)).length >= nT && qs.filter(isZ).length >= nZ && TL(qs);
+  const stat = { set: 0, tb: 0, round: 0 };
+  // 1) 練習這組：單字、片語、字根、句型、文法（含口說的完整組＋口說關掉時的解鎖組）
+  allItems.forEach(id => {
+    const full = E.drill(id, new Set()), un = E.itemSet(id).map(q => E.get(q));
+    ok(rule(full, 3, 2) && rule(un, 3, 2), 'set typed≥3 zh≥2 typed last: ' + id + ' ' + full.map(q => q.type));
+    stat.set++;
+  });
+  // 新題：答案自己判對、alts 都收；舊進度、學會紀錄不受影響（新 id 都是 setOnly，一般練習不出）
+  const NEW = E.meta.filter(m => /:(extype|zh[12])$/.test(m.id) && /^(w|ph|r):/.test(m.id));
+  ok(NEW.length === W.length + PH.length + R.length * 2 && NEW.every(m => m.setOnly && m.type === 'zh2en-type'), 'new zh→en typed: one per word / phrase, two per root, set-only: ' + NEW.length);
+  NEW.forEach(m => { const q = m.make(); ok(q.prompt && q.input === 'type' && !q.options && E.check(q, q.answer).ok && E.check(q, q.answer.toUpperCase() + '.').ok && (q.alts || []).every(a => E.check(q, a).ok) && /[一-鿿]/.test(q.prompt), 'new typed self-check (Chinese prompt) ' + m.id); });
+  W.forEach(w => { const q = E.get(`w:${KE.wordKey(w)}:extype`);
+    if (q.prompt === w.exZh) ok((q.sub.match(/___/g) || []).length === 1 && q.sub.split('（打出空格')[0].replace('___', q.answer) === w.ex && q.sub.includes(w.zh), 'word ex-typing: blank once, refills the example ' + w.w);
+    else ok(q.prompt === w.zh && q.answer === w.w && q.sub.includes(`第一個字母是 ${w.w[0]}`) && q.sub.includes(KE.POS[w.pos]), 'word typing fallback: zh + pos + first letter ' + w.w); });
+  const wFall = W.filter(w => E.get(`w:${KE.wordKey(w)}:extype`).prompt !== w.exZh).map(w => w.w);
+  ok(wFall.join() === 'as,do,hide,bless', 'words without a usable example blank (twice in the sentence; bless is inside quotes): ' + wFall);
+  ok(E.get('w:banana:extype').answer === 'bananas' && E.get('w:banana:extype').sub.includes('改形式') && E.get('w:apple:extype').sub.startsWith(W.find(w => w.w === 'apple').ex.replace(/apple/i, '___').slice(0, 3)), 'word ex-typing: inflected form + hint');
+  PH.forEach(p => { const q = E.get(`ph:${p.id}:extype`), long = p.ex.trim().split(/\s+/).length > 10;
+    ok(q.prompt === p.exZh && (long ? q.sub.includes('那半句') && q.sub.includes('___') && q.sub.split('：').pop().replace('___', q.answer) === p.ex && q.answer.toLowerCase().includes((p.form || p.p).toLowerCase()) && q.answer.split(/\s+/).length <= 10 : q.answer === p.ex), 'phrase ex-typing (half when > 10 words) ' + p.id);
+    ok(!/,/.test(q.answer) || E.check(q, q.answer.replace(/,/g, '')).ok, 'phrase ex-typing: commas optional ' + p.id); });
+  ok(E.get('ph:on-the-other-hand:extype').answer === 'On the other hand, it is not very good.' && E.check(E.get('ph:on-the-other-hand:extype'), 'on the other hand it is not very good').ok, 'long phrase example → half sentence');
+  R.forEach(r => [1, 2].forEach(i => { const q = E.get(`r:${KE.slug(r.p)}:zh${i}`); ok(r.words.some(x => x.w === q.answer) && q.sub.includes(r.p) && (q.alts || []).every(a => r.words.some(x => x.w === a)), 'root zh→en: answer is its example word ' + r.p + i); }));
+  ok(R.every(r => E.get(`r:${KE.slug(r.p)}:zh1`).answer !== E.get(`r:${KE.slug(r.p)}:zh2`).answer), 'root zh1 / zh2 are different words (every root has ≥ 2)');
+  // 2) 「學會了」小測驗：每一類、每個項目、隨機抽 5 次
+  for (let k = 0; k < 5; k++) allItems.forEach(id => { const g = E.gate(id, new Set(E.itemSet(id))), gr = /^grammar:/.test(id);
+    ok(g && g.total === (gr ? 5 : 3) && g.need === (gr ? 4 : 3) && rule(g.qs, 3, 2) && (gr || g.qs.every(q => KE.isTyped(q))) && new Set(g.ids).size === g.ids.length, 'gate typed rule ' + id); });
+  // 3) 課本單元：專屬練習（含／不含 🎤）與考試，每個單元各跑 30 次
+  TBK.forEach(u => { for (let k = 0; k < 30; k++) {
+    const a = E.tbPractice(u.id, { speak: true }), b = E.tbPractice(u.id, { speak: false }), ex = E.tbExam(u.id);
+    ok(a.length === 13 && b.length === 12 && rule(a, 3, 2) && rule(b, 3, 2), 'tb practice typed≥3 zh≥2 typed last ' + u.id);
+    ok(ex.length === 20 && ex.reduce((s, q) => s + q.pts, 0) === 100 && ex.filter(q => KE.isTyped(q)).length >= 3 && ex.filter(isZ).length >= 2, 'tb exam typed≥3 zh≥2, 100 pts ' + u.id);
+  } stat.tb++; });
+  // 4) 一般練習回合：各種勾選組合各 50 回
+  const NT = t => !KE.TYPED_TYPES.includes(t) && t !== 'speak' && !KE.SET_ONLY_TYPES.includes(t);
+  const choiceT = m => KE.MOD_TYPES[m].filter(NT), mids1 = E.list({ modules: ['words'], types: ['listen-choose'] }).slice(0, 1).map(m => m.id);
+  const cfgs = [];
+  Object.keys(KE.MODULES).forEach(m => [10, 20, 30].forEach(count => cfgs.push({ modules: [m], types: choiceT(m), count })));
+  cfgs.push({ modules: Object.keys(KE.MODULES), types: [...new Set(Object.values(KE.MOD_TYPES).flat().filter(NT))], count: 10 });
+  cfgs.push({ modules: Object.keys(KE.MODULES), types: ['speak'], allowSpeak: true, count: 10, mode: 'speak' });
+  cfgs.push({ modules: ['grammar'], topics: ['grammar:be'], count: 10, allowSpeak: true, mode: 'grammar' });
+  cfgs.push({ modules: ['patterns'], topics: ['patterns:lets'], count: 10, allowSpeak: true, mode: 'patterns' });
+  cfgs.push({ modules: ['roots'], count: 10, mode: 'roots' });
+  cfgs.push({ modules: ['words', 'phrases'], types: ['zh2en'], count: 10, mistakeRatio: 0.3, mistakes: E.list({ modules: ['words'], types: ['en2zh'] }).slice(0, 20).map(m => m.id) });
+  [1, 2, 5].forEach(n => cfgs.push({ count: 10, mistakeRatio: 1, mistakes: E.list({ modules: ['patterns'], types: ['reorder'] }).slice(0, n).map(m => m.id) }));
+  [1, 2, 3, 12].forEach(n => cfgs.push({ ids: E.list({ modules: ['grammar'], types: ['grammar-fill'] }).slice(0, n).map(m => m.id), count: 30, mode: 'mistakes' }));
+  cfgs.push({ ids: W.slice(0, 5).flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)), count: 10, mode: 'words' });
+  cfgs.push({ ids: E.list({ modules: ['phrases'], types: ['en2zh'] }).slice(0, 40).map(m => m.id), count: 30, mode: 'bank' });
+  cfgs.push({ ids: E.tbExam('hanlin-5-u2').filter(q => !KE.isTyped(q)).map(q => q.id), mode: 'redo' });
+  cfgs.push({ ids: mids1, mode: 'redo' });
+  cfgs.forEach(cfg => { for (let k = 0; k < 50; k++) {
+    const qs = E.round(cfg), n = qs.length, want = cfg.ids ? Math.min(cfg.count || 30, cfg.ids.length) : E.buildQuiz(cfg).length;
+    ok(n === want && n > 0 && rule(qs, Math.min(3, n), Math.min(2, n)) && new Set(qs.map(q => q.id)).size === n, 'round typed≥3 zh≥2 typed last, count kept: ' + JSON.stringify(cfg).slice(0, 120) + ' → ' + qs.map(q => q.type));
+  } stat.round++; });
+  // 一回少於 3 題：全用打字（1 題＝中翻英；2 題＝2 題中翻英）
+  ok(E.round({ ids: mids1, mode: 'redo' }).every(isZ) && E.round({ ids: mids1.concat('g:be:0'), mode: 'redo' }).every(isZ), 'round with 1–2 questions → all zh→en typed');
+  // 單字頁「🎤 說說看」（只出口說）不加打字
+  ok(E.round({ ids: W.slice(0, 12).map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true }).every(q => q.type === 'speak'), 'word-page speak-only round untouched');
+  const appSrc = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+  ok(appSrc.includes('const list = E.round(cfg);') && appSrc.includes('每回最後至少 3 題打字（含 2 題中翻英）'), 'app.js: every round goes through E.round + settings note');
+  console.log(`typed rule: ${stat.set} item sets, ${stat.tb} textbook units (practice+exam ×30), ${stat.round} round configs ×50 — all pass`);
+}
 console.log(`bank build: engine ${msEngine.toFixed(0)} ms, all ${allQs.length} questions ${msBank.toFixed(0)} ms`);
 console.log(`OK  ${checks} checks | words ${W.length} (lv ${lvCount.join('/')}/${W800.length}) | phrases ${PH.length} (${[1, 2, 3].map(l => PH.filter(p => p.lv === l).length).join('/')}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
 console.log('pool per type:', JSON.stringify(counts));

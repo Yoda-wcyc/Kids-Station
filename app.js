@@ -258,7 +258,7 @@
   function startQuiz(cfg) {
     if (cfg && cfg.tb) return startTb(cfg.tb, cfg.mode, cfg.back); // 課本專屬題／考試「再一次」：重新隨機組題
     if (!authOK('practice')) return;
-    const list = cfg.ids ? KE.shuffle(cfg.ids).slice(0, cfg.count || 30).map(id => E.get(id)).filter(Boolean) : E.buildQuiz(cfg);
+    const list = E.round(cfg); // 抽題＋打字保底（每回最後至少 3 題打字、含 2 題中翻英；2026-10-25）
     if (!list.length) { alert('沒有符合條件的題目，換個選擇試試看！'); return; }
     if (!quotaOK('english', () => startQuiz(cfg))) return;
     Q = { list, i: 0, answers: [], answered: false, cfg, graduated: 0, result: null };
@@ -471,7 +471,7 @@
       <section class="card"><h2>1. 選單元</h2>${mods.map(m => `<div class="mod"><label class="ck"><input type="checkbox" name="mod" value="${m}" ${L.mods.includes(m) ? 'checked' : ''}> ${KE.MODULES[m]}</label><details><summary>選主題</summary>${topicChecks(m, L)}</details></div>`).join('')}</section>
       <section class="card"><h2>2. 選題型</h2><div class="wrap">${types.map(y => `<label class="ck"><input type="checkbox" name="typ" value="${y}" ${L.offY.includes(y) ? '' : 'checked'}> ${KE.TYPES[y]}</label>`).join('')}<label class="ck${canSpeak ? '' : ' off'}"><input type="checkbox" name="typ" value="speak" ${canSpeak && L.speak ? 'checked' : ''} ${canSpeak ? '' : 'disabled'}> ${KE.TYPES.speak}</label></div><p class="muted" id="spnote">${canSpeak ? '🎤 說說看：可以只選它，也可以跟其他題型一起練（單字、片語、文法、句型都有）。要用麥克風，第一次會請爸爸媽媽同意。' : '🎤 ' + NO_SPEAK_MSG}</p></section>
       <section class="card"><h2>3. 單字範圍</h2>${radios('lv', [['', '全部等級（1～3）'], ['1', '等級 1'], ['2', '等級 2'], ['3', '等級 3'], ['4', '進階（國中）']], L.lv)}<p class="muted">進階（國中）的字要選「進階（國中）」才會出現</p>${srcs.length > 1 ? radios('src', [['', '全部來源']].concat(srcs.map(s => [s, srcLabel(s)])), L.src) : ''}</section>
-      <section class="card"><h2>4. 題數和錯題</h2>${radios('count', [['10', '10 題'], ['20', '20 題'], ['30', '30 題']], L.count)}${radios('ratio', [['0', '不加錯題'], ['0.3', '加 30% 錯題'], ['1', '只練錯題']], L.ratio)}<p class="muted">錯題庫目前有 ${mistakeIds().length} 題</p></section>
+      <section class="card"><h2>4. 題數和錯題</h2>${radios('count', [['10', '10 題'], ['20', '20 題'], ['30', '30 題']], L.count)}${radios('ratio', [['0', '不加錯題'], ['0.3', '加 30% 錯題'], ['1', '只練錯題']], L.ratio)}<p class="muted">錯題庫目前有 ${mistakeIds().length} 題</p><p class="muted" id="typednote">每回最後至少 3 題打字（含 2 題中翻英）</p></section>
       ${voiceCard()}<button class="btn primary big wide" id="start">開始 🚀</button>`;
     bindVoice();
     $('#start').onclick = () => {
