@@ -653,9 +653,9 @@
     buildQuiz(cfg) {
       cfg = cfg || {};
       const count = cfg.count || 10, ratio = cfg.mistakeRatio || 0, mset = new Set(cfg.mistakes || []);
-      // 單字「全部等級」不含 lv4（進階・國中）：要明確選第 4 級（lv 4），或來源明確選 moe800，才出 lv4（2026-10-18）
+      // 單字「全部等級＋全部來源」不含 lv4（進階・國中）：明確選第 4 級（lv 4），或明確選了任何一個來源（如 gept1、moe800），才出 lv4（2026-10-25）
       const src = cfg.src && cfg.src.length ? [].concat(cfg.src) : [];
-      const lvOk = m => m.module !== 'words' || m.lv !== 4 || !!cfg.lv || src.includes('moe800');
+      const lvOk = m => m.module !== 'words' || m.lv !== 4 || !!cfg.lv || src.length > 0;
       const pool = this.list(cfg).filter(lvOk);
       let mpool = pool.filter(m => mset.has(m.id));
       if (ratio >= 1 && !mpool.length) mpool = [...mset].map(id => this.byId[id]).filter(m => m && lvOk(m) && (cfg.allowSpeak || m.type !== 'speak'));

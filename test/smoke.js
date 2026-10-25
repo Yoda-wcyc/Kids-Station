@@ -3,7 +3,7 @@
 const vm = require('vm'), fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
 const ctx = { window: {} }; vm.createContext(ctx);
-['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'phrases', 'roots', 'grammar', 'patterns', 'textbook'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
+['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'phrases', 'roots', 'grammar', 'patterns', 'textbook'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
 const W = ctx.window.DATA_WORDS, PH = ctx.window.DATA_PHRASES, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS, TBK = ctx.window.DATA_TEXTBOOK;
 const KE = require(path.join(root, 'engine.js'));
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
@@ -11,11 +11,13 @@ let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 // ---- 資料格式 ----
 // 2026-10-18：words-5.js 加入教育部表二「其他常用 800 字」（lv 4，src moe800）
 // 2026-10-25：words-6.js 加入全民英檢字表的補充字（src geptkids 小學英檢 16 字、gept1 初級 115 字，lv 1–3）
+// 2026-10-25：words-7.js 第 4 批（節日／地名 12 字 lv2–3；初級「國一以上」抽象字 102 字 lv4、src gept1）
 const GEPT = W.filter(w => /^gept/.test(w.src)), W1200 = W.filter(w => w.lv <= 3 && !GEPT.includes(w)), W800 = W.filter(w => w.lv === 4);
-ok(W1200.length >= 1200 && W1200.length <= 1230, 'words lv1-3 ≈ 1200: ' + W1200.length);
-ok(W800.length >= 780 && W800.length <= 800, 'words lv4 ≈ 800: ' + W800.length);
-ok(GEPT.length === 131 && GEPT.filter(w => w.src === 'geptkids').length === 16 && GEPT.every(w => w.lv <= 3), 'GEPT words: 131 (geptkids 16 / gept1 115), all lv1-3: ' + GEPT.length);
-ok(W800.every(w => w.src === 'moe800'), 'lv4 → src moe800');
+ok(W1200.length >= 1200 && W1200.length <= 1230, 'words lv1-3 (教育部) ≈ 1200: ' + W1200.length);
+ok(W.filter(w => w.lv <= 3).length === 1364, 'words lv1-3 total (含英檢補充字) = 1364: ' + W.filter(w => w.lv <= 3).length);
+ok(W800.length === 893 && W800.filter(w => w.src === 'moe800').length === 791 && W800.filter(w => w.src === 'gept1').length === 102, 'words lv4 = 893 (moe800 791 + gept1 102): ' + W800.length);
+ok(GEPT.length === 245 && GEPT.filter(w => w.src === 'geptkids').length === 19 && GEPT.filter(w => w.lv === 4).length === 102, 'GEPT words: 245 (geptkids 19; lv4 102): ' + GEPT.length);
+ok(W800.every(w => w.src === 'moe800' || w.src === 'gept1'), 'lv4 → src moe800 or gept1');
 // 10-18 校對：dumpling、kangaroo、panda 在官方表二（800 字），來源改 moe800，但等級維持 2（不動孩子既有進度）
 ok(W1200.filter(w => w.src === 'moe800').map(w => w.w + ':' + w.lv).sort().join() === 'dumpling:2,kangaroo:2,panda:2', 'lv1-3 裡標 moe800 的只有 dumpling/kangaroo/panda（lv 2）');
 const seenW = new Set();
@@ -35,10 +37,13 @@ ok(W.filter(w => w.src === 'extra').map(w => w.w).sort().join() === 'giraffe', '
 W.forEach(w => ok(!W.some(x => x !== w && x.pos === w.pos && x.zh === w.zh), 'zh unique within pos (all levels): ' + w.w + ' ' + w.zh));
 // 同義字 alts：指到存在、同詞性的字；看中文打字兩個都收（見下方引擎檢查）
 W.filter(w => w.alts).forEach(w => w.alts.forEach(a => { const x = W.find(y => y.w === a); ok(x && x !== w && x.pos === w.pos, 'word alt is a same-pos word: ' + w.w + ' → ' + a); }));
-ok(W.filter(w => w.alts).length === 29, 'words with alts: 14 對互收＋soccer→football = 29: ' + W.filter(w => w.alts).length);
+// 10-25 第 4 批校對：新抽象字與既有字近義的 15 對互收（stress／pressure、occur／happen、rapid／quick、rapid／fast…），
+// 4 個單向（brief→short、simply→just、fries→French fries、R.O.C.→Republic of China）
+ok(W.filter(w => w.alts).length === 62, 'words with alts: 14 對互收＋soccer→football＋第 4 批 33 字 = 62: ' + W.filter(w => w.alts).length);
+ok(W.find(w => w.w === 'stress').alts.includes('pressure') && W.find(w => w.w === 'pressure').alts.includes('stress') && W.find(w => w.w === 'happen').alts.includes('occur'), '10-25 校對：stress／pressure、occur／happen 互收');
 ok(W.find(w => w.w === 'football').zh === '美式足球；（英國）足球', 'football zh');
 const lvCount = [1, 2, 3].map(l => W.filter(w => w.lv === l).length);
-ok(lvCount.every(n => n >= 350 && n <= 500), 'levels 350–500 each (含英檢補充字 400/469/483): ' + lvCount);
+ok(lvCount.join() === '400,476,488', 'levels (含英檢補充字) 400/476/488: ' + lvCount);
 ['cat', 'apple', 'happy', 'Monday', 'noodles'].forEach(w => ok(W.find(x => x.w === w && x.src === 'moe1200'), 'original word kept: ' + w));
 const seenM = new Set();
 R.forEach(r => {
@@ -79,8 +84,9 @@ P.forEach(p => ok(p.extra.length === 3 && p.extra.every(e => e.en && e.zh) && p.
 
 // ---- 引擎 ----
 // ---- 片語資料 ----
-const PH_TAGS = ['動詞片語', '介系詞片語', '時間', '地點', '日常用語', '形容詞片語'];
-ok(PH.length >= 500 && PH.length <= 520, 'phrases ~510（10-25 擴充第 1 批 +148）: ' + PH.length);
+const PH_TAGS = ['動詞片語', '介系詞片語', '時間', '地點', '日常用語', '形容詞片語', '名詞片語'];
+ok(PH.length >= 500 && PH.length <= 520, 'phrases ~517（10-25 擴充第 1 批 +148、第 4 批名詞片語 +7）: ' + PH.length);
+ok(PH.filter(p => p.tag === '名詞片語').map(p => p.id).join() === 'bus-stop,police-station,fire-station,movie-theater,police-officer,mail-carrier,roller-blade', '名詞片語 7 個');
 ok(new Set(PH.map(p => p.id)).size === PH.length, 'phrase ids unique');
 ok(new Set(PH.map(p => p.p.toLowerCase())).size === PH.length, 'phrases unique');
 ok(new Set(PH.map(p => p.zh)).size === PH.length, 'phrase zh unique (en2zh options never ambiguous)');
@@ -155,7 +161,7 @@ const mixed = E.buildQuiz({ modules: ['words'], count: 10, mistakeRatio: 0.3, mi
 ok(mixed.length === 10 && mixed.filter(q => mids.includes(q.id)).length >= 3, 'mix 30% (at least 3 mistakes; random fill may add more)');
 ok(E.buildQuiz({ modules: ['words'], src: 'textbook-x', count: 10 }).length === 0, 'src filter');
 // ---- 2026-10-18 舊資料同類修正 ----
-// (a) 全部等級不含 lv4：只有明確選 lv 4（或來源選 moe800）才出 lv4；例題庫（list）照舊全部列
+// (a) 全部等級＋全部來源不含 lv4：只有明確選 lv 4（或明確選了某個來源，10-25 起不限 moe800）才出 lv4；例題庫（list）照舊全部列
 {
   const lvOf = q => (W.find(w => KE.wordKey(w) === q.id.split(':')[1]) || {}).lv;
   for (let k = 0; k < 5; k++) ok(E.buildQuiz({ modules: ['words'], count: 300 }).every(q => lvOf(q) !== 4), 'all-levels quiz has no lv4');
@@ -163,6 +169,12 @@ ok(E.buildQuiz({ modules: ['words'], src: 'textbook-x', count: 10 }).length === 
   ok(E.buildQuiz({ modules: ['words'], lv: '', src: '', count: 200 }).every(q => lvOf(q) !== 4), 'practice page default (lv "") has no lv4');
   const q4 = E.buildQuiz({ modules: ['words'], lv: '4', count: 50 }); ok(q4.length === 50 && q4.every(q => lvOf(q) === 4), 'lv 4 chosen → only lv4');
   ok(E.buildQuiz({ modules: ['words'], src: 'moe800', count: 50 }).some(q => lvOf(q) === 4), 'src moe800 chosen → lv4 allowed');
+  // 2026-10-25（Yoda 定）：明確選了任何一個來源，那個來源的字全部會出（含 lv4）；「全部等級＋全部來源」仍不出 lv4
+  const srcOf = q => (W.find(w => KE.wordKey(w) === q.id.split(':')[1]) || {}).src;
+  const qg = E.buildQuiz({ modules: ['words'], lv: '', src: 'gept1', count: 300 });
+  ok(qg.length === 300 && qg.some(q => lvOf(q) === 4) && qg.some(q => lvOf(q) <= 3) && qg.every(q => srcOf(q) === 'gept1'), 'src gept1 chosen → gept1 words incl. lv4');
+  const m7 = E.list({ modules: ['words'], lv: 4, src: 'gept1' }).slice(0, 3).map(m => m.id);
+  ok(m7.length === 3 && E.buildQuiz({ src: 'gept1', count: 10, mistakeRatio: 1, mistakes: m7 }).length === 3 && E.buildQuiz({ count: 10, mistakeRatio: 1, mistakes: m7 }).length === 0, 'only-mistakes: gept1 lv4 mistakes when src gept1 chosen, not in all-levels/all-sources');
   ok(E.list({ modules: ['words'] }).some(m => m.lv === 4), 'bank list still has lv4');
   const m4 = E.list({ modules: ['words'], lv: 4 }).slice(0, 3).map(m => m.id);
   ok(E.buildQuiz({ count: 10, mistakeRatio: 1, mistakes: m4 }).length === 0 && E.buildQuiz({ lv: '4', count: 10, mistakeRatio: 1, mistakes: m4 }).length === 3, 'only-mistakes: lv4 mistakes only when lv 4 chosen');

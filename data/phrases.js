@@ -1,4 +1,4 @@
-/* 片語：lv 1＝必會、2＝基本、3＝進階。tag：動詞片語／介系詞片語／時間／地點／日常用語／形容詞片語。
+/* 片語：lv 1＝必會、2＝基本、3＝進階。tag：動詞片語／介系詞片語／時間／地點／日常用語／形容詞片語／名詞片語。
    ex 一定要包含片語 p（不分大小寫）；如果句子裡用的是變化形（例如 brushes、my），寫在 form，打字題兩種都算對。
    id 由 p 自動產生（小寫、非英數字換成 -）。 */
 (function () {
@@ -575,4 +575,14 @@
     'this-weekend': ['on the weekend'], 'get-out-of-bed': ['get up'], 'take-a-test': ['have a test'], 'in-class': ['in the classroom'], 'in-the-classroom': ['in class']
   });
   window.DATA_PHRASES.forEach(p => { if (FILL_HINT[p.id]) p.fillHint = FILL_HINT[p.id]; if (FILL_ALTS[p.id]) p.fillAlts = FILL_ALTS[p.id].slice(); });
+  // ---- 2026-10-25 第 4 批：全民英檢字表的複合名詞（地點／職業／東西），tag 名詞片語 ----
+  [
+    [1, P('bus stop', '公車站', '名詞片語', 'The bus stop is near my home.', '公車站在我家附近。')],
+    [1, P('police station', '警察局', '名詞片語', 'The police station is next to the park.', '警察局在公園旁邊。')],
+    [2, P('fire station', '消防局', '名詞片語', 'There are two fire trucks at the fire station.', '消防局裡有兩輛消防車。')],
+    [2, P('movie theater', '電影院', '名詞片語', "Let's meet at the movie theater at two.", '我們兩點在電影院碰面吧。')],
+    [2, P('police officer', '警察（不分男女）', '名詞片語', 'The police officer helped me find my mom.', '警察幫我找到了媽媽。')],
+    [3, P('mail carrier', '郵差（不分男女）', '名詞片語', 'The mail carrier brings letters every day.', '郵差每天送信來。')],
+    [3, Object.assign(P('roller blade', '直排輪（鞋）', '名詞片語', 'My sister can skate on roller blades.', '我姊姊會溜直排輪。', 'roller blades'), { alts: ['rollerblade'] })]
+  ].forEach(([lv, x]) => window.DATA_PHRASES.push(Object.assign({ id: slug(x.p), lv }, x)));
 })();
