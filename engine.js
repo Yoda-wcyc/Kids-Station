@@ -532,20 +532,20 @@
       return { zh: has(zh), typed: has(typed) };
     },
     // 一般練習回合的打字保底：至少 3 題打字、其中至少 2 題中翻英（一回不到 3 題就盡量全用打字／中翻英），打字排最後；
-    // 不夠就從後面換掉選擇題（再不夠換掉非中翻英的打字題），換上「同一批題目的項目」的打字題，總題數不變
-    withTyped(qs) {
-      const out = qs.slice(), has = new Set(out.map(q => q.id)), isZ = q => q.type === TYPED;
-      const needT = Math.min(3, out.length), needZ = Math.min(2, out.length);
+    // 不夠就從後面換掉選擇題（再不夠換掉非中翻英的打字題），換上「同一批題目的項目」的打字題，總題數不變；
+    // keep(q) 為真的題（錯題、練答錯的題、說說看回合的口說題）不換，沒得換就追加在後面（總題數因此變多）
+    withTyped(qs, keep) {
+      const out = qs.slice(), has = new Set(out.map(q => q.id)), isZ = q => q.type === TYPED, free = q => !(keep && keep(q));
+      const n = out.every(free) ? out.length : 3, needT = Math.min(3, n), needZ = Math.min(2, n); // 有保留題＝可以追加 → 一律補到 3／2
       const swap = wantZ => {
         let vi = -1;
-        for (let i = out.length - 1; i >= 0 && vi < 0; i--) if (!isTyped(out[i])) vi = i;
-        for (let i = out.length - 1; wantZ && i >= 0 && vi < 0; i--) if (!isZ(out[i])) vi = i;
-        if (vi < 0) return false;
-        const items = [...new Set([out[vi]].concat(out.slice().reverse()).map(q => this.itemOfQ(q.id)).filter(Boolean))], vm = this.byId[out[vi].id], vc = vm && vm.card;
+        for (let i = out.length - 1; i >= 0 && vi < 0; i--) if (!isTyped(out[i]) && free(out[i])) vi = i;
+        for (let i = out.length - 1; wantZ && i >= 0 && vi < 0; i--) if (!isZ(out[i]) && free(out[i])) vi = i;
+        const items = [...new Set((vi < 0 ? [] : [out[vi]]).concat(out.slice().reverse()).map(q => this.itemOfQ(q.id)).filter(Boolean))], vm = vi < 0 ? null : this.byId[out[vi].id], vc = vm && vm.card;
         for (const it of items) {
           const pool = this.typedPool(it), cs = shuffle(pool.zh).concat(wantZ ? [] : shuffle(pool.typed)).filter(x => !has.has(x)); // 中翻英優先
           const id = (vc != null && cs.find(x => this.byId[x].card === vc)) || cs[0]; // 課本題：先挑同一句的打字題
-          if (id) { has.add(id); out[vi] = this.get(id); return true; }
+          if (id) { has.add(id); if (vi < 0) out.push(this.get(id)); else out[vi] = this.get(id); return true; }
         }
         return false;
       };
@@ -553,11 +553,13 @@
       while (out.filter(isTyped).length < needT && swap(false));
       return [0, 1, 2, 3].flatMap(r => out.filter(q => typedRank(q) === r));
     },
-    // 一般練習一回（練習設定、各頁 🎯、錯題庫、例題庫、結果頁再練）：照舊抽題再做打字保底；單字頁「🎤 說說看」（只出口說題）不加
+    // 一般練習一回（練習設定、各頁 🎯、錯題庫、例題庫、結果頁再練、說說看）：照舊抽題再做打字保底（2026-10-25）
+    // 錯題庫的錯題、「練答錯的題目」的題、說說看回合的口說題不換掉，打字不足的部分追加到最後
     round(cfg) {
       cfg = cfg || {};
       const qs = cfg.ids ? shuffle(cfg.ids).slice(0, cfg.count || 30).map(id => this.get(id)).filter(Boolean) : this.buildQuiz(cfg);
-      return cfg.ids && cfg.mode === 'speak' ? qs : this.withTyped(qs);
+      const all = cfg.ids && (cfg.mode === 'mistakes' || cfg.mode === 'redo'), ms = new Set(cfg.mistakes || []);
+      return this.withTyped(qs, q => all || ms.has(q.id) || (cfg.mode === 'speak' && q.type === 'speak'));
     },
     sources() { return [...new Set(this.D.words.map(w => w.src || 'moe'))]; },
     topics(module) {

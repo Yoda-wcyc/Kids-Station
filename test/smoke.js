@@ -963,20 +963,27 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
   cfgs.push({ modules: ['patterns'], topics: ['patterns:lets'], count: 10, allowSpeak: true, mode: 'patterns' });
   cfgs.push({ modules: ['roots'], count: 10, mode: 'roots' });
   cfgs.push({ modules: ['words', 'phrases'], types: ['zh2en'], count: 10, mistakeRatio: 0.3, mistakes: E.list({ modules: ['words'], types: ['en2zh'] }).slice(0, 20).map(m => m.id) });
-  [1, 2, 5].forEach(n => cfgs.push({ count: 10, mistakeRatio: 1, mistakes: E.list({ modules: ['patterns'], types: ['reorder'] }).slice(0, n).map(m => m.id) }));
+  [1, 2, 3, 5].forEach(n => cfgs.push({ count: 10, mistakeRatio: 1, mistakes: E.list({ modules: ['patterns'], types: ['reorder'] }).slice(0, n).map(m => m.id) }));
   [1, 2, 3, 12].forEach(n => cfgs.push({ ids: E.list({ modules: ['grammar'], types: ['grammar-fill'] }).slice(0, n).map(m => m.id), count: 30, mode: 'mistakes' }));
+  [1, 2, 3].forEach(n => cfgs.push({ ids: E.list({ modules: ['words'], types: ['listen-choose'] }).slice(0, n).map(m => m.id), count: 30, mode: 'redo' }));
+  cfgs.push({ ids: W.slice(0, 12).map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true });
   cfgs.push({ ids: W.slice(0, 5).flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)), count: 10, mode: 'words' });
   cfgs.push({ ids: E.list({ modules: ['phrases'], types: ['en2zh'] }).slice(0, 40).map(m => m.id), count: 30, mode: 'bank' });
   cfgs.push({ ids: E.tbExam('hanlin-5-u2').filter(q => !KE.isTyped(q)).map(q => q.id), mode: 'redo' });
   cfgs.push({ ids: mids1, mode: 'redo' });
+  // 錯題庫（mistakes）、練答錯的題目（redo）、只練錯題（mistakeRatio 1）：原題全部都在、打字只追加；說說看：口說題全在、打字追加在後；其他回合題數不變
   cfgs.forEach(cfg => { for (let k = 0; k < 50; k++) {
-    const qs = E.round(cfg), n = qs.length, want = cfg.ids ? Math.min(cfg.count || 30, cfg.ids.length) : E.buildQuiz(cfg).length;
-    ok(n === want && n > 0 && rule(qs, Math.min(3, n), Math.min(2, n)) && new Set(qs.map(q => q.id)).size === n, 'round typed≥3 zh≥2 typed last, count kept: ' + JSON.stringify(cfg).slice(0, 120) + ' → ' + qs.map(q => q.type));
+    const qs = E.round(cfg), n = qs.length, want = cfg.ids ? Math.min(cfg.count || 30, cfg.ids.length) : E.buildQuiz(cfg).length, got = new Set(qs.map(q => q.id));
+    const orig = cfg.ids && /^(mistakes|redo)$/.test(cfg.mode) ? cfg.ids : cfg.mistakeRatio >= 1 ? cfg.mistakes : null, sp = cfg.mode === 'speak';
+    const kept = orig ? orig.every(id => got.has(id)) && n >= want : sp ? qs.filter(q => q.type === 'speak').length === want && n >= want : n === want;
+    ok(kept && n > 0 && rule(qs, 3, 2) && got.size === n, 'round typed≥3 zh≥2 typed last, originals kept: ' + JSON.stringify(cfg).slice(0, 120) + ' → ' + qs.map(q => q.type));
   } stat.round++; });
-  // 一回少於 3 題：全用打字（1 題＝中翻英；2 題＝2 題中翻英）
-  ok(E.round({ ids: mids1, mode: 'redo' }).every(isZ) && E.round({ ids: mids1.concat('g:be:0'), mode: 'redo' }).every(isZ), 'round with 1–2 questions → all zh→en typed');
-  // 單字頁「🎤 說說看」（只出口說）不加打字
-  ok(E.round({ ids: W.slice(0, 12).map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true }).every(q => q.type === 'speak'), 'word-page speak-only round untouched');
+  // 錯題只有 1 題：那題還在＋追加 3 題打字（2 題中翻英）
+  const r1 = E.round({ ids: mids1, mode: 'mistakes' }), r1b = E.round({ ids: mids1, mode: 'redo' });
+  ok([r1, r1b].every(r => r.some(q => q.id === mids1[0]) && r.length === 4 && r.slice(1).every(q => KE.isTyped(q)) && r.filter(isZ).length >= 2), 'one mistake → kept + 3 typed appended: ' + r1.map(q => q.id));
+  // 單字頁「🎤 說說看」：10 題口說都在，最後補 3 題打字
+  const rs = E.round({ ids: W.slice(0, 12).map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true });
+  ok(rs.length === 13 && rs.slice(0, 10).every(q => q.type === 'speak') && rs.slice(10).every(q => KE.isTyped(q)) && rs.filter(isZ).length >= 2, 'word-page speak round: 10 speak + 3 typed last: ' + rs.map(q => q.type));
   const appSrc = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
   ok(appSrc.includes('const list = E.round(cfg);') && appSrc.includes('每回最後至少 3 題打字（含 2 題中翻英）'), 'app.js: every round goes through E.round + settings note');
   console.log(`typed rule: ${stat.set} item sets, ${stat.tb} textbook units (practice+exam ×30), ${stat.round} round configs ×50 — all pass`);
