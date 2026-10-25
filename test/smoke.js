@@ -75,7 +75,7 @@ P.forEach(p => ok(p.extra.length === 3 && p.extra.every(e => e.en && e.zh) && p.
 // ---- 引擎 ----
 // ---- 片語資料 ----
 const PH_TAGS = ['動詞片語', '介系詞片語', '時間', '地點', '日常用語', '形容詞片語'];
-ok(PH.length >= 340 && PH.length <= 370, 'phrases ~350（+6 課本日常用語）: ' + PH.length);
+ok(PH.length >= 500 && PH.length <= 520, 'phrases ~510（10-25 擴充第 1 批 +148）: ' + PH.length);
 ok(new Set(PH.map(p => p.id)).size === PH.length, 'phrase ids unique');
 ok(new Set(PH.map(p => p.p.toLowerCase())).size === PH.length, 'phrases unique');
 ok(new Set(PH.map(p => p.zh)).size === PH.length, 'phrase zh unique (en2zh options never ambiguous)');
@@ -297,6 +297,10 @@ ok(KE.fmtTaipei('2026-10-05T12:31:09Z') === '10/05 20:31' && KE.fmtTaipei('2026-
 ok(KE.fmtTaipei('') === '' && KE.fmtTaipei('bad') === '', 'taipei time empty/bad');
 const allItems = W.map(KE.wordItemId).concat(PH.map(KE.phraseItemId), R.map(KE.rootItemId), G.map(KE.grammarItemId), P.map(KE.patternItemId));
 // 片語：題組 7 題（2026-10-23 起選 4＋打字 3）、打字最後；填空題干擾選項不等於答案、空格只有一個；小測驗＝看中文選＋填空＋打字，3/3
+const PH_ADV = ['時間', '地點', '介系詞片語'], PH_BY_OPT = {};
+PH.forEach(x => [...new Set([x.p, x.form].filter(Boolean))].forEach(s => (PH_BY_OPT[s] = PH_BY_OPT[s] || []).push(x)));
+const phAlt = (a, b) => [[a, b], [b, a]].some(([u, v]) => (u.fillAlts || []).some(s => [v.p, v.form].some(t => t && t.toLowerCase() === s.toLowerCase())));
+ok(!(PH.find(p => p.id === 'take-your-time').fillAlts || []).length && !(PH.find(p => p.id === 'day-and-night').fillAlts || []).length, '10-25 校對：take your time≠take it easy、day and night≠all the time，不互收');
 ok(!E.list({ modules: ['phrases'], types: ['phrase-fill-type', 'phrase-dictation'] }).length && E.list({ modules: ['phrases'], types: ['phrase-fill-type', 'phrase-dictation'], withSetOnly: true }).length === PH.length * 2, 'new phrase typed types are set-only (one each per phrase)');
 PH.forEach(p => {
   const id = KE.phraseItemId(p), ids = E.itemSet(id), t = ids.map(q => E.byId[q].type);
@@ -320,6 +324,9 @@ PH.forEach(p => {
   for (let k = 0; k < 3; k++) {
     const f = E.get(`ph:${p.id}:fill`);
     ok((f.prompt.match(/___/g) || []).length === 1 && f.options.length === 4 && f.options.includes(f.answer) && new Set(f.options).size === 4 && f.options.filter(o => o === f.answer).length === 1, 'phrase fill options ' + p.id + ' ' + f.options);
+    // 2026-10-25：填空干擾不可也通順——時間／地點／介系詞片語互不當干擾；互收（fillAlts）的片語不當干擾（填空、看中文選都是）
+    f.options.filter(o => o !== f.answer).forEach(o => (PH_BY_OPT[o] || []).forEach(x => ok(!(PH_ADV.includes(p.tag) && PH_ADV.includes(x.tag)) && !phAlt(p, x), `phrase fill distractor plausible: ${p.id} ← ${o}`)));
+    const z = E.get(`ph:${p.id}:zh2en`); z.options.filter(o => o !== z.answer).forEach(o => (PH_BY_OPT[o] || []).forEach(x => ok(!phAlt(p, x), `phrase zh2en distractor is an alt: ${p.id} ← ${o}`)));
   }
   const ty = E.get(`ph:${p.id}:type`);
   ok(E.check(ty, p.p).ok && (!p.form || E.check(ty, p.form).ok) && E.check(ty, p.p.toUpperCase() + '.').ok, 'phrase typed accepts base/form ' + p.id);

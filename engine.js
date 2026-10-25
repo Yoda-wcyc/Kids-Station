@@ -230,12 +230,16 @@
     });
 
     // ---- 片語：聽音選、看中文選、看英文選、例句填空、中翻英打字 ----
+    // 填空題的「不同類別」：時間／地點／介系詞片語算同一家（放進彼此的例句常常也通順，如 by car ↔ in summer），互相不當干擾（2026-10-25）
+    const phFam = t => (['時間', '地點', '介系詞片語'].includes(t) ? '副詞性' : t);
     D.phrases.forEach(ph => {
       const topic = ph.lv + '|' + ph.tag, ans = ph.form || ph.p, key = ph.id, why = `${ph.p} ＝ ${ph.zh}`;
+      // 互收（fillAlts，任一方向）的片語意思相近，所有選擇題都不拿來當干擾
+      const isAlt = x => [x.p, x.form].some(s => s && (ph.fillAlts || []).some(a => norm(a) === norm(s))) || (x.fillAlts || []).some(a => norm(a) === norm(ph.p) || norm(a) === norm(ans));
       // 選擇題：同等級同類別優先（比較難）；填空題：用「不同類別」的片語當干擾，避免干擾選項也剛好通順
       const tiers = (f, sameTag) => {
-        const others = D.phrases.filter(x => x !== ph), lv = others.filter(x => x.lv === ph.lv);
-        return sameTag ? [lv.filter(x => x.tag === ph.tag).map(f), lv.map(f), others.map(f)] : [lv.filter(x => x.tag !== ph.tag).map(f), others.filter(x => x.tag !== ph.tag).map(f)];
+        const others = D.phrases.filter(x => x !== ph && !isAlt(x)), lv = others.filter(x => x.lv === ph.lv), far = x => phFam(x.tag) !== phFam(ph.tag);
+        return sameTag ? [lv.filter(x => x.tag === ph.tag).map(f), lv.map(f), others.map(f)] : [lv.filter(far).map(f), others.filter(far).map(f)];
       };
       const base = { module: 'phrases', topic, lv: ph.lv, title: `${ph.p}　${ph.zh}` };
       add(Object.assign({ id: `ph:${key}:listen`, type: 'listen-choose' }, base), () => ({ prompt: '聽聽看，是哪一個片語？', options: choice(ph.p, tiers(x => x.p, true)), answer: ph.p, speakText: ph.p, auto: true, play: true, why }));
