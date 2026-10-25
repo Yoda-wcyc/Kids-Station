@@ -1,4 +1,4 @@
-/* 文法：16 個主題。q 題型：fill（填空，a 一定要在 opts 裡）、fix（挑出正確的句子）。
+/* 文法：19 個主題。q 題型：fill（填空，a 一定要在 opts 裡）、fix（挑出正確的句子）。
    題組會把幾題填空改成「打字」（看不到選項）：答案不唯一時加 hint（原形字或中文意思，顯示在打字題提示裡），
    或把其他也對的答案放 alts（不可出現在 opts 裡，選擇題才不會兩個都對）。2026-10-18 */
 window.DATA_GRAMMAR = [
@@ -318,5 +318,45 @@ window.DATA_GRAMMAR = [
  {type:"fill",s:"Does he ___ art class on Tuesday?",a:"have",hint:"have 或 has",opts:["have","has","having","haves"],why:"用了 Does，後面的動詞要還原成原形 have。"},
  {type:"fill",s:"___ he have music class on Wednesday?",a:"Does",hint:"Do 或 Does",opts:["Do","Does","Is","Are"],why:"he 是一個人，問句用 Does。"},
  {type:"fill",s:"Does she have PE class ___ Thursday?",a:"on",hint:"星期幾前面的介系詞",opts:["on","in","at","of"],why:"星期幾前面用 on：on Thursday。"}],
- typed:[{"zh":"你星期一有數學課嗎？","en":"Do you have math class on Monday?","alts":["Do you have math on Monday?"]},{"zh":"他星期三沒有音樂課。","en":"He doesn't have music class on Wednesday.","alts":["He does not have music class on Wednesday.","He doesn't have music on Wednesday.","He does not have music on Wednesday."]}]}
+ typed:[{"zh":"你星期一有數學課嗎？","en":"Do you have math class on Monday?","alts":["Do you have math on Monday?"]},{"zh":"他星期三沒有音樂課。","en":"He doesn't have music class on Wednesday.","alts":["He does not have music class on Wednesday.","He doesn't have music on Wednesday.","He does not have music on Wednesday."]}]},
+{id:"place",title:"方位介系詞 in front of / behind / next to / between",
+ rules:["in front of（在…前面）、behind（在…後面）、next to（在…旁邊）、between A and B（在 A 和 B 中間）、under（在…下面）、near（在…附近）。","in front of、next to 是一組字，不能少字：in front of the school、next to the bank。","between 後面一定是兩樣東西，中間用 and 連接：between the bank and the park。","behind 後面直接接名詞，不加 of：behind the door。","主詞是一個東西用 is，兩個以上用 are：The shoes are under the bed."],
+ ex:[{"en":"The ball is under the chair.","zh":"球在椅子下面。"},{"en":"It's next to the post office.","zh":"它在郵局旁邊。"},{"en":"My seat is between Amy and Ben.","zh":"我的座位在艾咪和班中間。"}],
+ q:[
+ {"type":"fill","s":"The bus stop is in ___ of the school.","a":"front","opts":["front","behind","next","between"],"why":"「在…前面」是 in front of，三個字一組。"},
+ {"type":"fill","s":"The bank is next ___ the park.","a":"to","opts":["to","of","at","by"],"why":"「在…旁邊」是 next to。"},
+ {"type":"fill","s":"The library is between the school ___ the park.","a":"and","opts":["and","or","to","with"],"why":"between A and B：兩樣東西中間用 and。"},
+ {"type":"fill","s":"Tom sits ___ Amy and Ben.","a":"between","opts":["between","next","front","on"],"why":"後面是 Amy and Ben 兩個人 → between（在…中間）。"},
+ {"type":"fill","s":"The books ___ under the desk.","a":"are","opts":["is","are","am","be"],"why":"主詞 The books 是複數，用 are。"},
+ {"type":"fill","s":"Where ___ the post office? It's next to the bank.","a":"is","opts":["is","are","am","do"],"why":"the post office 是一個地方，用 is。"},
+ {"type":"fill","s":"My house is ___ the school. I can walk there in two minutes.","a":"near","opts":["near","far","under","between"],"why":"走兩分鐘就到 → near（在…附近）。far 要說 far from；between 後面要有兩樣東西。"},
+ {"type":"fix","wrong":"The bus stop is in front the school.","right":"The bus stop is in front of the school.","why":"in front of 不能少 of。"},
+ {"type":"fix","wrong":"The bank is next the park.","right":"The bank is next to the park.","why":"next to 不能少 to。"},
+ {"type":"fix","wrong":"My seat is between Amy or Ben.","right":"My seat is between Amy and Ben.","why":"between 的兩樣東西中間用 and，不用 or。"},
+ {"type":"fix","wrong":"The shoes is under the bed.","right":"The shoes are under the bed.","why":"The shoes 是複數，be 動詞用 are。"},
+ {"type":"fix","wrong":"The cat is behind of the sofa.","right":"The cat is behind the sofa.","why":"behind 後面直接接名詞，不加 of。"},
+ {"type":"fill","s":"The cat is sitting in front ___ the TV.","a":"of","hint":"in front ___（一組字的最後一個）","opts":["of","to","at","from"],"why":"in front of 三個字一組。"},
+ {"type":"fill","s":"The park is ___ the bank and the school.","a":"between","hint":"在…中間","opts":["between","next","front","to"],"why":"後面有 the bank and the school 兩個地方 → between。"},
+ {"type":"fill","s":"The bakery is ___ to the bookstore.","a":"next","hint":"在…旁邊","opts":["next","front","between","under"],"why":"「在…旁邊」是 next to。"}],
+ typed:[{"zh":"郵局在銀行旁邊。","en":"The post office is next to the bank.","alts":["The post office is beside the bank."]},{"zh":"貓在椅子下面。","en":"The cat is under the chair."}]},
+{id:"suggest",title:"邀約與建議：Let's／How about／Why don't we／Shall we／Would you like to",
+ rules:["Let's 後面接原形動詞：Let's go to the park.","How about／What about 後面接名詞或 V-ing：How about some juice?、How about going swimming?","Why don't we …? 和 Shall we …? 後面接原形動詞：Why don't we take a break?","Would you like to …? 後面接原形動詞；Would you like …? 後面直接接東西：Would you like some tea?","回應：答應用 Sure.／Good idea.／I'd love to.；拒絕用 Sorry, I can't."],
+ ex:[{"en":"Let's go to the zoo.","zh":"我們去動物園吧。"},{"en":"How about having pizza tonight?","zh":"今晚吃披薩怎麼樣？"},{"en":"Why don't we ask Mom?","zh":"我們何不問問媽媽？"}],
+ q:[
+ {"type":"fill","s":"Let's ___ soccer after school.","a":"play","opts":["play","plays","playing","to play"],"why":"Let's 後面接原形動詞 play。"},
+ {"type":"fill","s":"How about ___ to the movies?","a":"going","opts":["go","goes","going","went"],"why":"How about 後面的動詞要用 V-ing：going。"},
+ {"type":"fill","s":"Why don't we ___ a cake for Mom?","a":"make","opts":["make","makes","making","made"],"why":"Why don't we 後面接原形動詞 make。"},
+ {"type":"fill","s":"Would you like ___ come to my party?","a":"to","opts":["to","for","and","of"],"why":"Would you like to + 原形動詞：Would you like to come…?"},
+ {"type":"fill","s":"___ we go now? Yes, let's.","a":"Shall","opts":["Shall","Do","Are","Did"],"why":"提議「我們…好嗎？」用 Shall we…?，回答 Yes, let's."},
+ {"type":"fill","s":"How about ___ some ice cream?","a":"eating","opts":["eat","eats","eating","ate"],"why":"How about 後面的動詞要用 V-ing：eating。"},
+ {"type":"fill","s":"Would you like to go hiking? Sorry, I ___. I have to study.","a":"can't","opts":["can't","don't","am not","isn't"],"why":"拒絕邀約說 Sorry, I can't.（我不行）。"},
+ {"type":"fix","wrong":"Let's to go home.","right":"Let's go home.","why":"Let's 後面直接接原形動詞，不加 to。"},
+ {"type":"fix","wrong":"How about go to the park?","right":"How about going to the park?","why":"How about 後面的動詞要用 V-ing。"},
+ {"type":"fix","wrong":"Why don't we going swimming?","right":"Why don't we go swimming?","why":"Why don't we 後面接原形動詞 go。"},
+ {"type":"fix","wrong":"Would you like come with us?","right":"Would you like to come with us?","why":"Would you like 後面要接 to + 原形動詞。"},
+ {"type":"fix","wrong":"Let's plays a game.","right":"Let's play a game.","why":"Let's 後面接原形動詞 play，不加 s。"},
+ {"type":"fill","s":"Let's ___ to the beach this weekend.","a":"go","hint":"去","opts":["go","goes","going","went"],"why":"Let's 後面接原形動詞 go。"},
+ {"type":"fill","s":"How about ___ basketball after lunch?","a":"playing","hint":"play","opts":["play","plays","playing","played"],"why":"How about 後面的動詞用 V-ing：playing。"},
+ {"type":"fill","s":"Why don't we ___ the bus?","a":"take","hint":"搭（車）","alts":["catch","ride"],"opts":["take","takes","taking","took"],"why":"Why don't we 後面接原形動詞；「搭公車」是 take the bus。"}],
+ typed:[{"zh":"我們去公園吧。","en":"Let's go to the park."},{"zh":"去游泳怎麼樣？","en":"How about going swimming?","alts":["What about going swimming?","How about swimming?","What about swimming?"]}]}
 ];

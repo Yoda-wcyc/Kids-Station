@@ -30,7 +30,7 @@
     return choiceIds.slice(0, kc).concat(typedIds.slice(0, kt));
   }
   const isTyped = q => TYPED_TYPES.includes(q && q.type);
-  const SRC_LABEL = { moe: '教育部基本字彙', moe1200: '教育部 1200 字', moe800: '教育部 800 字（國中進階）', extra: '補充字', textbook: '課本補充字' };
+  const SRC_LABEL = { moe: '教育部基本字彙', moe1200: '教育部 1200 字', moe800: '教育部 800 字（國中進階）', extra: '補充字', textbook: '課本補充字', geptkids: '小學英檢', gept1: '全民英檢初級' };
   const PATTERN_LV = { 1: '簡單', 2: '基本', 3: '進階' };
   const POS = { n: '名詞', v: '動詞', adj: '形容詞', adv: '副詞', num: '數字', pron: '代名詞', prep: '介系詞', conj: '連接詞', art: '冠詞', int: '感嘆詞', aux: '助動詞' };
   // 單字的題號：通常是 slug(w)；跟別的字撞名（May／may、Miss／miss）時用資料裡的 id
@@ -234,6 +234,8 @@
     const phFam = t => (['時間', '地點', '介系詞片語'].includes(t) ? '副詞性' : t);
     D.phrases.forEach(ph => {
       const topic = ph.lv + '|' + ph.tag, ans = ph.form || ph.p, key = ph.id, why = `${ph.p} ＝ ${ph.zh}`;
+      // ph.alts（2026-10-25）：片語本身的其他寫法（如 hide and seek 不打連字號），所有打字題都收；例句打字把句中的片語換成 alts 也收
+      const pAlts = ph.alts || [], exAlts = s => pAlts.map(a => s.split(ph.p).join(a)).filter(x => x !== s);
       // 互收（fillAlts，任一方向）的片語意思相近，所有選擇題都不拿來當干擾
       const isAlt = x => [x.p, x.form].some(s => s && (ph.fillAlts || []).some(a => norm(a) === norm(s))) || (x.fillAlts || []).some(a => norm(a) === norm(ph.p) || norm(a) === norm(ans));
       // 選擇題：同等級同類別優先（比較難）；填空題：用「不同類別」的片語當干擾，避免干擾選項也剛好通順
@@ -249,22 +251,22 @@
         prompt: ph.ex.replace(new RegExp(escRe(ans), 'i'), '___'), sub: '選出放進空格的片語', options: choice(ans, tiers(x => x.form || x.p, false)),
         answer: ans, speakText: ph.ex, why: `${ph.p}（${ph.zh}）：${ph.exZh}`
       }));
-      add(Object.assign({ id: `ph:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: ph.zh, sub: '打出這個英文片語', input: 'type', options: null, answer: ph.p, alts: ph.form ? [ph.form] : [], speakText: ph.p, why }));
+      add(Object.assign({ id: `ph:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: ph.zh, sub: '打出這個英文片語', input: 'type', options: null, answer: ph.p, alts: (ph.form ? [ph.form] : []).concat(pAlts), speakText: ph.p, why }));
       add(Object.assign({ id: `ph:${key}:speak`, type: 'speak' }, base), () => ({ prompt: ph.p, en: true, sub: ph.zh, input: 'mic', play: true, options: null, answer: ph.p, alts: ph.form ? [ph.form] : [], speakMode: 'sentence', speakText: ph.p, why }));
       // 打字 2 題（2026-10-23，只在「練習這組」出）：
       // 例句填空打字：例句挖掉整個片語（照例句裡的寫法，如 ran away、is good at），給中文＋時態提示（fillHint）；fillAlts＝放進句子也對的片語
       const fm = phraseInEx(ph);
       if (fm) add(Object.assign({ id: `ph:${key}:filltype`, type: 'phrase-fill-type', setOnly: true }, base), () => ({
         prompt: fm.prompt, sub: `打出空格裡的片語（提示：${ph.zh}${ph.fillHint ? '，' + ph.fillHint : ''}）${ph.form ? '　要配合句子改形式' : ''}`, input: 'type', options: null,
-        answer: fm.answer, alts: (ph.fillAlts || []).slice(), speakText: ph.ex, why: `${ph.p}（${ph.zh}）：${ph.ex}　${ph.exZh}`
+        answer: fm.answer, alts: (ph.fillAlts || []).concat(exAlts(fm.answer)), speakText: ph.ex, why: `${ph.p}（${ph.zh}）：${ph.ex}　${ph.exZh}`
       }));
       // 聽寫片語：播放片語，打出來（提示中文意思和字數）
-      add(Object.assign({ id: `ph:${key}:dict`, type: 'phrase-dictation', setOnly: true }, base), () => ({ prompt: '聽寫：把聽到的片語打出來', sub: `提示：${ph.zh}（${ph.p.trim().split(/\s+/).length} 個字）`, input: 'type', options: null, answer: ph.p, alts: [], speakText: ph.p, auto: true, play: true, why }));
+      add(Object.assign({ id: `ph:${key}:dict`, type: 'phrase-dictation', setOnly: true }, base), () => ({ prompt: '聽寫：把聽到的片語打出來', sub: `提示：${ph.zh}（${ph.p.trim().split(/\s+/).length} 個字）`, input: 'type', options: null, answer: ph.p, alts: pAlts.slice(), speakText: ph.p, auto: true, play: true, why }));
       // 中翻英第 2 題（2026-10-25，只在「練習這組」出）：看例句中文，打出整句英文；例句超過 10 個字只打含片語的那半句（另半句照常顯示）
       const hx = phraseHalf(ph);
       add(Object.assign({ id: `ph:${key}:extype`, type: 'zh2en-type', setOnly: true }, base), () => ({
         prompt: ph.exZh, sub: hx ? `例句比較長，只要打出含「${ph.p}」的那半句：${hx.prompt}` : `用鍵盤打出整句英文（要用到「${ph.p}」）`, input: 'type', options: null,
-        answer: hx ? hx.answer : ph.ex, alts: noComma(hx ? hx.answer : ph.ex), speakText: ph.ex, why: `${ph.p}（${ph.zh}）：${ph.ex}　${ph.exZh}`
+        answer: hx ? hx.answer : ph.ex, alts: noComma(hx ? hx.answer : ph.ex).concat(exAlts(hx ? hx.answer : ph.ex)), speakText: ph.ex, why: `${ph.p}（${ph.zh}）：${ph.ex}　${ph.exZh}`
       }));
     });
 

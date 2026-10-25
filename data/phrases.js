@@ -164,7 +164,7 @@
     P('go to the beach', '去海邊', '動詞片語', 'We go to the beach in summer.', '我們夏天去海邊。'),
     P('play outside', '在外面玩', '動詞片語', 'The kids play outside on sunny days.', '孩子們晴天時在外面玩。'),
     P('go upstairs', '上樓', '動詞片語', 'Go upstairs and wash your hands.', '上樓去洗手。'),
-    P('play hide-and-seek', '玩捉迷藏', '動詞片語', "Let's play hide-and-seek in the park.", '我們去公園玩捉迷藏吧。'),
+    Object.assign(P('play hide-and-seek', '玩捉迷藏', '動詞片語', "Let's play hide-and-seek in the park.", '我們去公園玩捉迷藏吧。'), { alts: ['play hide and seek'] }), // alts＝打字題也算對的寫法（不打連字號）
     P('say goodbye', '說再見', '動詞片語', "Let's say goodbye to Grandpa.", '我們跟爺爺說再見吧。'),
     P('stay home', '待在家裡', '動詞片語', "I stay home when I'm sick.", '我生病時待在家裡。'),
     P('work hard', '努力；用功', '動詞片語', 'My sister works hard at school.', '我姊姊在學校很用功。', 'works hard'),

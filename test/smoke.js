@@ -3,16 +3,18 @@
 const vm = require('vm'), fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
 const ctx = { window: {} }; vm.createContext(ctx);
-['words', 'words-2', 'words-3', 'words-4', 'words-5', 'phrases', 'roots', 'grammar', 'patterns', 'textbook'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
+['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'phrases', 'roots', 'grammar', 'patterns', 'textbook'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
 const W = ctx.window.DATA_WORDS, PH = ctx.window.DATA_PHRASES, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS, TBK = ctx.window.DATA_TEXTBOOK;
 const KE = require(path.join(root, 'engine.js'));
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 
 // ---- 資料格式 ----
 // 2026-10-18：words-5.js 加入教育部表二「其他常用 800 字」（lv 4，src moe800）
-const W1200 = W.filter(w => w.lv <= 3), W800 = W.filter(w => w.lv === 4);
+// 2026-10-25：words-6.js 加入全民英檢字表的補充字（src geptkids 小學英檢 16 字、gept1 初級 115 字，lv 1–3）
+const GEPT = W.filter(w => /^gept/.test(w.src)), W1200 = W.filter(w => w.lv <= 3 && !GEPT.includes(w)), W800 = W.filter(w => w.lv === 4);
 ok(W1200.length >= 1200 && W1200.length <= 1230, 'words lv1-3 ≈ 1200: ' + W1200.length);
 ok(W800.length >= 780 && W800.length <= 800, 'words lv4 ≈ 800: ' + W800.length);
+ok(GEPT.length === 131 && GEPT.filter(w => w.src === 'geptkids').length === 16 && GEPT.every(w => w.lv <= 3), 'GEPT words: 131 (geptkids 16 / gept1 115), all lv1-3: ' + GEPT.length);
 ok(W800.every(w => w.src === 'moe800'), 'lv4 → src moe800');
 // 10-18 校對：dumpling、kangaroo、panda 在官方表二（800 字），來源改 moe800，但等級維持 2（不動孩子既有進度）
 ok(W1200.filter(w => w.src === 'moe800').map(w => w.w + ':' + w.lv).sort().join() === 'dumpling:2,kangaroo:2,panda:2', 'lv1-3 裡標 moe800 的只有 dumpling/kangaroo/panda（lv 2）');
@@ -22,7 +24,7 @@ W.forEach(w => {
   ok(/^\/.+\/$/.test(w.ipa), 'ipa ' + w.w);
   ok([1, 2, 3, 4].includes(w.lv), 'lv ' + w.w);
   ok(KE.POS[w.pos], 'pos ' + w.w + ' ' + w.pos);
-  ok(['moe1200', 'moe800', 'extra', 'textbook'].includes(w.src), 'src ' + w.w + ' ' + w.src); // textbook＝課本補充字（2026-10-18 social studies）
+  ok(['moe1200', 'moe800', 'extra', 'textbook', 'geptkids', 'gept1'].includes(w.src), 'src ' + w.w + ' ' + w.src); // textbook＝課本補充字（2026-10-18 social studies）
   ok(Array.isArray(w.tags) && w.tags.length && w.tags.every(t => KE.TAGS[t]), 'tags ' + w.w);
   ok(w.ex.toLowerCase().includes((w.form || w.w).toLowerCase()), `example contains word/form: ${w.w} → ${w.ex}`);
   const key = KE.wordKey(w); ok(!seenW.has(key), 'duplicate word key ' + key); seenW.add(key);
@@ -36,7 +38,7 @@ W.filter(w => w.alts).forEach(w => w.alts.forEach(a => { const x = W.find(y => y
 ok(W.filter(w => w.alts).length === 29, 'words with alts: 14 對互收＋soccer→football = 29: ' + W.filter(w => w.alts).length);
 ok(W.find(w => w.w === 'football').zh === '美式足球；（英國）足球', 'football zh');
 const lvCount = [1, 2, 3].map(l => W.filter(w => w.lv === l).length);
-ok(lvCount.every(n => n >= 350 && n <= 450), 'levels ≈ 400 each: ' + lvCount);
+ok(lvCount.every(n => n >= 350 && n <= 500), 'levels 350–500 each (含英檢補充字 400/469/483): ' + lvCount);
 ['cat', 'apple', 'happy', 'Monday', 'noodles'].forEach(w => ok(W.find(x => x.w === w && x.src === 'moe1200'), 'original word kept: ' + w));
 const seenM = new Set();
 R.forEach(r => {
@@ -45,7 +47,7 @@ R.forEach(r => {
   ok(r.words.length >= 2 && r.words.length <= 4, 'root words ' + r.p);
   r.words.forEach(w => ok(w.zh && w.parts.join('') === w.w, 'parts ' + w.w));
 });
-ok(G.length === 17, 'grammar topics'); // 2026-10-18 +do-does-on（翰林五 Unit 2）
+ok(G.length === 19, 'grammar topics'); // 2026-10-18 +do-does-on（翰林五 Unit 2）；2026-10-25 第 2 批 +place、suggest
 G.forEach(g => {
   ok(g.id && g.title && g.rules.length && g.ex.length >= 2, 'grammar ' + g.id);
   ok(G.indexOf(g) < 12 ? g.q.length === 13 : g.q.length >= 15, 'grammar q count ' + g.id); // 原 12 個主題 13 題；10-18 新增主題至少 15 題
@@ -56,9 +58,9 @@ G.forEach(g => {
     else { ok(q.type === 'fix' && q.wrong && q.right && q.wrong !== q.right, 'fix ' + q.right); }
   });
 });
-ok(P.length === 105 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 105 with 5 examples each'); // 2026-10-18 +2（翰林五上 Unit 2）＋13（翰林五上 U1/U3/U4、五下 U1–U4）
-ok(new Set(P.map(p => p.id)).size === 105, 'pattern ids unique');
-ok(P.filter(p => p.lv === 1).length === 50 && P.filter(p => p.lv === 2).length === 33 && P.filter(p => p.lv === 3).length === 22, 'pattern levels 50/33/22');
+ok(P.length === 145 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 145 with 5 examples each'); // 2026-10-25 第 2 批 +40 // 2026-10-18 +2（翰林五上 Unit 2）＋13（翰林五上 U1/U3/U4、五下 U1–U4）
+ok(new Set(P.map(p => p.id)).size === 145, 'pattern ids unique');
+ok(P.filter(p => p.lv === 1).length === 63 && P.filter(p => p.lv === 2).length === 50 && P.filter(p => p.lv === 3).length === 32, 'pattern levels 63/50/32');
 // 課本句型：同一個句型裡的中文不重複（看中文選句子才不會兩個都對）
 P.filter(p => p.tb).forEach(p => { const z = p.ex.concat(p.extra).map(e => e.zh); ok(new Set(z).size === z.length, 'textbook pattern zh unique: ' + p.id); });
 ['there-is', 'want-to', 'like-ing', 'time-to', 'how-many', 'can-you', 'lets', 'have-to', 'it-is-to', 'what-do', 'i-think', 'dont'].forEach(id => ok(P.find(p => p.id === id && p.lv === 2), 'original pattern kept as 基本: ' + id));
@@ -67,7 +69,10 @@ P.forEach(p => p.typed.concat(p.extra).forEach(t => (t.alts || []).forEach(a => 
 G.forEach(g => (g.typed || []).forEach(t => (t.alts || []).forEach(a => ok(a !== t.en && /^[A-Z]/.test(a), 'grammar alt ok ' + a))));
 // 10-18 校對：新句型的打字題（typed＋extra）有縮寫就要收展開版（反之亦然）
 const EXPAND = [[/\bI'm\b/g, 'I am'], [/\bIt's\b/g, 'It is'], [/\bWhat's\b/g, 'What is'], [/\bdon't\b/g, 'do not'], [/\bdoesn't\b/g, 'does not'], [/\bdidn't\b/g, 'did not'], [/\bshouldn't\b/g, 'should not'], [/\bI'll\b/g, 'I will'], [/\b(I|We)'d like\b/g, '$1 would like']];
-P.slice(48).forEach(p => p.typed.concat(p.extra).forEach(t => { const full = EXPAND.reduce((s, [r, v]) => s.replace(r, v), t.en); if (full !== t.en) ok((t.alts || []).includes(full), 'contraction alts: ' + t.en + ' → ' + full); }));
+// 2026-10-25 豁免白名單：Why don't we …? 展開成「Why do not we」不合文法，不要求收（只限這 4 句，其他句照舊檢查）
+const NO_EXPAND = ["Why don't we eat out tonight?", "Why don't we play a game?", "Why don't we go to the movies?", "Why don't we take the bus?"];
+NO_EXPAND.forEach(en => ok(P.some(p => p.typed.concat(p.extra).some(t => t.en === en)), 'NO_EXPAND sentence exists: ' + en));
+P.slice(48).forEach(p => p.typed.concat(p.extra).forEach(t => { if (NO_EXPAND.includes(t.en)) return; const full = EXPAND.reduce((s, [r, v]) => s.replace(r, v), t.en); if (full !== t.en) ok((t.alts || []).includes(full), 'contraction alts: ' + t.en + ' → ' + full); }));
 // 10-18 校對：新文法主題的題組會把最後 3 題填空改成打字（沒有選項、alts 為空）→ 答案不可是縮寫
 G.slice(12).forEach(g => g.q.filter(q => q.type === 'fill').slice(-3).forEach(q => ok(!/'/.test(q.a), 'typed fill answer not a contraction: ' + g.id + ' ' + q.s)));
 P.forEach(p => ok(p.extra.length === 3 && p.extra.every(e => e.en && e.zh) && p.typed.length === 2 && p.typed.every(t => t.zh && t.en), 'pattern extra/typed ' + p.id));
@@ -206,7 +211,7 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
       if (q.hint) ok(E.get(id).sub.includes(q.hint), 'hint shown in typed sub: ' + id);
     });
   });
-  ok(nTyped === 51, 'typed fills in grammar sets: ' + nTyped);
+  ok(nTyped === 57, 'typed fills in grammar sets: ' + nTyped);
   const cm = E.get('g:modal:11:type'); ok(cm.prompt === '___ I use your pen?' && E.check(cm, 'Can').ok && E.check(cm, 'May').ok && E.check(cm, 'could').ok && !E.check(cm, 'Do').ok, 'Can / May / Could all correct (typed)');
   ok(E.check(E.get('g:modal:11:speak'), ['May I use your pen']).ok && E.get('g:modal:11').options.filter(o => ['Can', 'May', 'Could'].includes(o)).length === 1, 'Can/May: speak accepts May; choice version has one correct option');
   ok(E.get('g:plural:11:type').sub === '打出空格裡的字（提示：toy）' && E.get('g:pronoun:8:type').sub.includes('我們') && E.get('g:modal:10:type').sub.includes('必須'), 'hints: Many ___ are in the box (toy) / ___ are playing (我們) / ___ be quiet (必須)');
@@ -300,6 +305,7 @@ const allItems = W.map(KE.wordItemId).concat(PH.map(KE.phraseItemId), R.map(KE.r
 const PH_ADV = ['時間', '地點', '介系詞片語'], PH_BY_OPT = {};
 PH.forEach(x => [...new Set([x.p, x.form].filter(Boolean))].forEach(s => (PH_BY_OPT[s] = PH_BY_OPT[s] || []).push(x)));
 const phAlt = (a, b) => [[a, b], [b, a]].some(([u, v]) => (u.fillAlts || []).some(s => [v.p, v.form].some(t => t && t.toLowerCase() === s.toLowerCase())));
+{ const hs = t => E.get('ph:play-hide-and-seek:' + t); ok(['type', 'dict', 'filltype'].every(t => E.check(hs(t), 'play hide and seek').ok && E.check(hs(t), 'play hide-and-seek').ok) && E.check(hs('extype'), "Let's play hide and seek in the park.").ok && E.check(hs('extype'), "Let's play hide-and-seek in the park.").ok && !E.check(hs('type'), 'play hide').ok, '10-25 校對：hide-and-seek 不打連字號也算對（打字、聽寫、例句填空、例句中翻英）'); }
 ok(!(PH.find(p => p.id === 'take-your-time').fillAlts || []).length && !(PH.find(p => p.id === 'day-and-night').fillAlts || []).length, '10-25 校對：take your time≠take it easy、day and night≠all the time，不互收');
 ok(!E.list({ modules: ['phrases'], types: ['phrase-fill-type', 'phrase-dictation'] }).length && E.list({ modules: ['phrases'], types: ['phrase-fill-type', 'phrase-dictation'], withSetOnly: true }).length === PH.length * 2, 'new phrase typed types are set-only (one each per phrase)');
 PH.forEach(p => {
