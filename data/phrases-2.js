@@ -160,4 +160,12 @@
     if (ALTS[o.id]) o.fillAlts = ALTS[o.id].slice();
     window.DATA_PHRASES.push(o);
   });
+  // 近義片語（2026-10-26，全庫 651 筆掃過）：看中文打字打哪一個都算對（p.syn，engine 只收進看中文打字；聽寫不收）。
+  // 要放在最後：成對的片語分在 phrases.js 和這一檔。只收真同義；right away／in a minute、get up／get out of bed、in class／in the classroom 這類不收
+  const byId = id => window.DATA_PHRASES.find(p => p.id === id) || (() => { throw new Error('syn: no phrase ' + id); })();
+  const addSyn = (a, b) => { const p = byId(a); p.syn = (p.syn || []).concat(byId(b).p); };
+  [['a-lot-of', 'lots-of'], ['what-s-the-matter', 'what-s-wrong'], ['too-bad', 'what-a-pity'], ['go-to-bed', 'go-to-sleep'],
+    ['a-long-time-ago', 'once-upon-a-time'], ['have-fun', 'have-a-good-time'], ['look-out', 'be-careful'], ['never-mind', 'it-doesn-t-matter'],
+    ['you-re-welcome', 'my-pleasure'], ['hold-on', 'wait-a-minute'], ['right-now', 'right-away']].forEach(([a, b]) => { addSyn(a, b); addSyn(b, a); });
+  addSyn('after-you', 'go-ahead'); // 單向：「你先請」打 go ahead 對；go ahead 意思比較廣（請便；儘管做吧）
 })();

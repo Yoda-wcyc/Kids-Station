@@ -102,7 +102,7 @@ window.DATA_WORDS = (window.DATA_WORDS || []).concat([
 {w:"simply",ipa:"/ˈsɪmpli/",pos:"adv",zh:"只不過；簡單地",alts:["just"],lv:4,tags:["function"],ex:"I simply want to help you.",exZh:"我只是想幫你。",src:"gept1"},
 {w:"slip",ipa:"/slɪp/",pos:"v",zh:"滑倒；滑",lv:4,tags:["verb"],ex:"Be careful! Don't slip on the wet floor.",exZh:"小心！別在濕地板上滑倒。",src:"gept1"},
 {w:"solution",ipa:"/səˈluʃən/",pos:"n",zh:"解決辦法",lv:4,tags:["thing"],ex:"We found a solution to the problem.",exZh:"我們找到了解決問題的辦法。",src:"gept1"},
-{w:"sort",ipa:"/sɔrt/",pos:"n",zh:"種類；類型",lv:4,tags:["thing"],ex:"What sort of music do you like?",exZh:"你喜歡哪一類的音樂？",src:"gept1"},
+{w:"sort",ipa:"/sɔrt/",pos:"n",zh:"種類；類型",alts:["kind"],lv:4,tags:["thing"],ex:"What sort of music do you like?",exZh:"你喜歡哪一類的音樂？",src:"gept1"},
 {w:"source",ipa:"/sɔrs/",pos:"n",zh:"來源；源頭",lv:4,tags:["thing"],ex:"Fruit is a good source of vitamins.",exZh:"水果是維他命的好來源。",src:"gept1"},
 {w:"standard",ipa:"/ˈstændɚd/",pos:"n",zh:"標準；規格",lv:4,tags:["thing"],ex:"This school bag meets the safety standard.",exZh:"這個書包符合安全標準。",src:"gept1"},
 {w:"stick",ipa:"/stɪk/",pos:"v",zh:"（用膠）黏；黏住",lv:4,tags:["verb"],ex:"Stick the stamp on the envelope.",exZh:"把郵票貼在信封上。",src:"gept1"},

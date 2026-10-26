@@ -14,7 +14,7 @@ let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 // 2026-10-25：words-7.js 第 4 批（節日／地名 12 字 lv2–3；初級「國一以上」抽象字 102 字 lv4、src gept1）
 const GEPT = W.filter(w => /^gept/.test(w.src)), W1200 = W.filter(w => w.lv <= 3 && !GEPT.includes(w)), W800 = W.filter(w => w.lv === 4);
 ok(W1200.length >= 1200 && W1200.length <= 1230, 'words lv1-3 (教育部) ≈ 1200: ' + W1200.length);
-ok(W.filter(w => w.lv <= 3).length === 1364, 'words lv1-3 total (含英檢補充字) = 1364: ' + W.filter(w => w.lv <= 3).length);
+ok(W.filter(w => w.lv <= 3).length === 1368, 'words lv1-3 total (含英檢補充字) = 1364＋10-26 補 4 名詞詞條（fall 秋天、watch 手錶、kind 種類、second 秒）= 1368: ' + W.filter(w => w.lv <= 3).length);
 ok(W800.length === 893 && W800.filter(w => w.src === 'moe800').length === 791 && W800.filter(w => w.src === 'gept1').length === 102, 'words lv4 = 893 (moe800 791 + gept1 102): ' + W800.length);
 ok(GEPT.length === 245 && GEPT.filter(w => w.src === 'geptkids').length === 19 && GEPT.filter(w => w.lv === 4).length === 102, 'GEPT words: 245 (geptkids 19; lv4 102): ' + GEPT.length);
 ok(W800.every(w => w.src === 'moe800' || w.src === 'gept1'), 'lv4 → src moe800 or gept1');
@@ -36,10 +36,11 @@ ok(W.filter(w => w.src === 'extra').map(w => w.w).sort().join() === 'giraffe', '
 // 10-18 舊資料同類修正：擴大到全部單字（lv1-3 原有 16 對，如 store／shop、big／large）——同詞性同中文不得無區辨
 W.forEach(w => ok(!W.some(x => x !== w && x.pos === w.pos && x.zh === w.zh), 'zh unique within pos (all levels): ' + w.w + ' ' + w.zh));
 // 同義字 alts：指到存在、同詞性的字；看中文打字兩個都收（見下方引擎檢查）
-W.filter(w => w.alts).forEach(w => w.alts.forEach(a => { const x = W.find(y => y.w === a); ok(x && x !== w && x.pos === w.pos, 'word alt is a same-pos word: ' + w.w + ' → ' + a); }));
+// 同拼字可能有好幾個詞條（fall v／n、kind adj／n），找同詞性那個（2026-10-26）
+W.filter(w => w.alts).forEach(w => w.alts.forEach(a => ok(W.some(y => y.w === a && y !== w && y.pos === w.pos), 'word alt is a same-pos word: ' + w.w + ' → ' + a)));
 // 10-25 第 4 批校對：新抽象字與既有字近義的 15 對互收（stress／pressure、occur／happen、rapid／quick、rapid／fast…），
 // 4 個單向（brief→short、simply→just、fries→French fries、R.O.C.→Republic of China）
-ok(W.filter(w => w.alts).length === 185, 'words with alts: 14 對互收＋soccer→football＋第 4 批 33 字＋第 5 批全庫近義字 123 字 = 185: ' + W.filter(w => w.alts).length);
+ok(W.filter(w => w.alts).length === 199, 'words with alts: 14 對互收＋soccer→football＋第 4 批 33 字＋第 5 批全庫近義字 123 字＋10-25 舊字校對 10 字＋10-26 autumn／fall、kind／sort 互收 4 字 = 199: ' + W.filter(w => w.alts).length);
 // 10-25 第 5 批校對 B：全庫近義字互收（anybody／anyone、bike／bicycle、mom／mother、TV／television…67 對互收＋11 個單向）；中文不再寫「（＝anyone）」
 const altBoth = (a, b) => [[a, b], [b, a]].every(([x, y]) => (W.find(w => w.w === x).alts || []).includes(y));
 ok([['anybody', 'anyone'], ['bike', 'bicycle'], ['mom', 'mother'], ['dad', 'father'], ['TV', 'television'], ['plane', 'airplane'], ['phone', 'telephone'], ['fast', 'quick']].every(([a, b]) => altBoth(a, b)), '10-25 第 5 批：近義字互收');
@@ -47,7 +48,7 @@ ok(!W.some(w => /（＝[A-Za-z]/.test(w.zh) && w.w !== "let's"), '中文不寫�
 ok(W.find(w => w.w === 'stress').alts.includes('pressure') && W.find(w => w.w === 'pressure').alts.includes('stress') && W.find(w => w.w === 'happen').alts.includes('occur'), '10-25 校對：stress／pressure、occur／happen 互收');
 ok(W.find(w => w.w === 'football').zh === '美式足球；（英國）足球', 'football zh');
 const lvCount = [1, 2, 3].map(l => W.filter(w => w.lv === l).length);
-ok(lvCount.join() === '400,476,488', 'levels (含英檢補充字) 400/476/488: ' + lvCount);
+ok(lvCount.join() === '401,479,488', 'levels (含英檢補充字) 401/479/488（10-26 +fall 秋天 lv1、watch／kind／second 名詞 lv2）: ' + lvCount);
 ['cat', 'apple', 'happy', 'Monday', 'noodles'].forEach(w => ok(W.find(x => x.w === w && x.src === 'moe1200'), 'original word kept: ' + w));
 const seenM = new Set();
 R.forEach(r => {
@@ -322,9 +323,26 @@ const allItems = W.map(KE.wordItemId).concat(PH.map(KE.phraseItemId), R.map(KE.r
 // 片語：題組 7 題（2026-10-23 起選 4＋打字 3）、打字最後；填空題干擾選項不等於答案、空格只有一個；小測驗＝看中文選＋填空＋打字，3/3
 const PH_ADV = ['時間', '地點', '介系詞片語'], PH_VERB = ['動詞片語', '日常用語'], PH_BY_OPT = {}; // 10-25 第 5 批：動詞片語／日常用語（多是祈使句）也互不當填空干擾
 PH.forEach(x => [...new Set([x.p, x.form].filter(Boolean))].forEach(s => (PH_BY_OPT[s] = PH_BY_OPT[s] || []).push(x)));
-const phAlt = (a, b) => [[a, b], [b, a]].some(([u, v]) => (u.fillAlts || []).some(s => [v.p, v.form].some(t => t && t.toLowerCase() === s.toLowerCase())));
+// 10-25 舊片語校對：a little／too much 也算副詞性（放句尾當程度副詞也通）、one more time 也算動詞性（能單獨當一句話）；兩邊的家有交集就不當填空干擾
+const PH_FAM2 = { 'a-little': 'ADV', 'too-much': 'ADV', 'one-more-time': 'VERB' };
+const PH_FAMS = x => [PH_ADV.includes(x.tag) ? 'ADV' : PH_VERB.includes(x.tag) ? 'VERB' : x.tag].concat(PH_FAM2[x.id] || []);
+{ const opts = id => { const o = new Set(); for (let k = 0; k < 300; k++) E.get(`ph:${id}:fill`).options.forEach(v => o.add(v)); return o; };
+  const ed = opts('every-day'), ob = opts('on-the-bus'), gm = opts('good-morning'), al = opts('a-little'), om = opts('one-more-time');
+  ok(!ed.has('a little') && !ed.has('too much') && !ob.has('too much'), '10-25 校對：a little／too much 不當時間、地點片語的填空干擾（I study English ___.／Don\'t eat ___.）');
+  ok(!gm.has('one more time'), '10-25 校對：one more time 不當日常用語的填空干擾（___, Ms. Lin!）');
+  ok([...al].every(o => o === 'a little' || (PH_BY_OPT[o] || []).every(x => !PH_ADV.includes(x.tag) && x.tag !== '形容詞片語')) && [...om].every(o => o === 'one more time' || (PH_BY_OPT[o] || []).every(x => !PH_ADV.includes(x.tag) && !PH_VERB.includes(x.tag))), '10-25 校對：兩家都算的片語，自己的填空干擾也避開兩家');
+  ok([...ed].some(o => (PH_BY_OPT[o] || []).some(x => x.tag === '形容詞片語')), '10-25 校對：其他形容詞片語照舊可當時間片語的干擾'); }
+const phAlt = (a, b) =>[[a, b], [b, a]].some(([u, v]) => (u.fillAlts || []).some(s => [v.p, v.form].some(t => t && t.toLowerCase() === s.toLowerCase())));
 { const hs = t => E.get('ph:play-hide-and-seek:' + t); ok(['type', 'dict', 'filltype'].every(t => E.check(hs(t), 'play hide and seek').ok && E.check(hs(t), 'play hide-and-seek').ok) && E.check(hs('extype'), "Let's play hide and seek in the park.").ok && E.check(hs('extype'), "Let's play hide-and-seek in the park.").ok && !E.check(hs('type'), 'play hide').ok, '10-25 校對：hide-and-seek 不打連字號也算對（打字、聽寫、例句填空、例句中翻英）'); }
 ok(!(PH.find(p => p.id === 'take-your-time').fillAlts || []).length && !(PH.find(p => p.id === 'day-and-night').fillAlts || []).length, '10-25 校對：take your time≠take it easy、day and night≠all the time，不互收');
+// 2026-10-26：近義片語看中文打字互收（p.syn；11 對互收＋after you→go ahead 單向）；聽寫不收
+{
+  const SY = PH.filter(p => p.syn);
+  ok(SY.length === 23 && SY.every(p => p.syn.every(a => PH.some(x => x !== p && x.p === a))), 'phrase syn: 23 phrases, each points to another phrase: ' + SY.length);
+  ok(SY.every(p => p.syn.every(a => p.id === 'after-you' || PH.find(x => x.p === a).syn.includes(p.p))) && !PH.find(p => p.id === 'go-ahead').syn, 'phrase syn mutual except after you → go ahead');
+  SY.forEach(p => p.syn.forEach(a => ok(E.check(E.get('ph:' + p.id + ':type'), a).ok && !E.check(E.get('ph:' + p.id + ':dict'), a).ok, 'phrase syn: zh typing accepts, dictation rejects ' + p.id + ' → ' + a)));
+  ok(E.check(E.get('ph:a-lot-of:type'), 'Lots of').ok && E.check(E.get('ph:lots-of:type'), 'a lot of').ok && !E.check(E.get('ph:a-lot-of:type'), 'a few').ok, 'a lot of ↔ lots of');
+}
 ok(!E.list({ modules: ['phrases'], types: ['phrase-fill-type', 'phrase-dictation'] }).length && E.list({ modules: ['phrases'], types: ['phrase-fill-type', 'phrase-dictation'], withSetOnly: true }).length === PH.length * 2, 'new phrase typed types are set-only (one each per phrase)');
 PH.forEach(p => {
   const id = KE.phraseItemId(p), ids = E.itemSet(id), t = ids.map(q => E.byId[q].type);
@@ -349,7 +367,7 @@ PH.forEach(p => {
     const f = E.get(`ph:${p.id}:fill`);
     ok((f.prompt.match(/___/g) || []).length === 1 && f.options.length === 4 && f.options.includes(f.answer) && new Set(f.options).size === 4 && f.options.filter(o => o === f.answer).length === 1, 'phrase fill options ' + p.id + ' ' + f.options);
     // 2026-10-25：填空干擾不可也通順——時間／地點／介系詞片語互不當干擾；互收（fillAlts）的片語不當干擾（填空、看中文選都是）
-    f.options.filter(o => o !== f.answer).forEach(o => (PH_BY_OPT[o] || []).forEach(x => ok(!(PH_ADV.includes(p.tag) && PH_ADV.includes(x.tag)) && !(PH_VERB.includes(p.tag) && PH_VERB.includes(x.tag)) && !phAlt(p, x), `phrase fill distractor plausible: ${p.id} ← ${o}`)));
+    f.options.filter(o => o !== f.answer).forEach(o => (PH_BY_OPT[o] || []).forEach(x => ok(!PH_FAMS(p).some(k => PH_FAMS(x).includes(k)) && !phAlt(p, x), `phrase fill distractor plausible: ${p.id} ← ${o}`)));
     const z = E.get(`ph:${p.id}:zh2en`); z.options.filter(o => o !== z.answer).forEach(o => (PH_BY_OPT[o] || []).forEach(x => ok(!phAlt(p, x), `phrase zh2en distractor is an alt: ${p.id} ← ${o}`)));
   }
   const ty = E.get(`ph:${p.id}:type`);
@@ -946,6 +964,19 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
 }
 
 ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 6 && E.get('w:may-month:zh2en').answer === 'May' && E.get('w:may:zh2en').answer === 'may', 'May / may keep separate ids');
+// 2026-10-26：補 4 個名詞詞條（同拼字、不同 id）——中文跟同字其他詞條分得開；fall／autumn、kind／sort 互收；同拼字不互當干擾
+{
+  const NN = { 'fall-season': ['fall', '秋天（美式說法）'], 'watch-wrist': ['watch', '手錶'], 'kind-type': ['kind', '種類'], 'second-time': ['second', '秒（時間單位）'] };
+  Object.entries(NN).forEach(([id, [sp, zh]]) => { const w = W.find(x => x.id === id), sib = W.filter(x => x.w === sp && x !== w);
+    ok(w && w.pos === 'n' && w.zh === zh && w.src === 'moe1200' && sib.length === 1 && sib[0].pos !== 'n' && sib[0].zh !== zh && E.get('w:' + id + ':zh2en').answer === sp && E.get('w:' + KE.wordKey(sib[0]) + ':zh2en').answer === sp, 'noun entry beside same-spelling word: ' + id); });
+  const ty = id => E.get('w:' + id + ':type'), xt = id => E.get('w:' + id + ':extype');
+  ok(E.check(ty('fall-season'), 'autumn').ok && E.check(ty('autumn'), 'fall').ok && E.check(ty('kind-type'), 'sort').ok && E.check(ty('sort'), 'kind').ok && !E.check(ty('fall'), 'autumn').ok && !E.check(ty('kind'), 'sort').ok, 'fall↔autumn, kind(n)↔sort typed both ways; verb fall / adj kind do not take them');
+  ok(xt('fall-season').answer === 'fall' && E.check(xt('fall-season'), 'autumn').ok && xt('second-time').answer === 'seconds' && xt('watch-wrist').prompt === '爸爸送我一支新手錶當生日禮物。' && xt('kind-type').sub.startsWith('What ___ of fruit'), 'new noun ex-typing blanks');
+  const same = W.filter(w => W.some(x => x !== w && x.w.toLowerCase() === w.w.toLowerCase()));
+  for (let i = 0; i < 40; i++) same.forEach(w => { const k = KE.wordKey(w), o = same.filter(x => x !== w && x.w.toLowerCase() === w.w.toLowerCase());
+    const e2z = E.get('w:' + k + ':en2zh'), li = E.get('w:' + k + ':listen'), z2e = E.get('w:' + k + ':zh2en');
+    ok(!e2z.options.some(z => o.some(x => x.zh === z)) && li.options.filter(x => x.toLowerCase() === w.w.toLowerCase()).length === 1 && z2e.options.filter(x => x.toLowerCase() === w.w.toLowerCase()).length === 1, 'same-spelling entries never distract each other: ' + k); });
+}
 
 // ---- 2026-10-25 打字保底：每一組／小測驗／課本專屬練習與考試／一般練習回合都要「打字 ≥ 3、中翻英打字 ≥ 2、打字排最後」（全部逐一跑）----
 {

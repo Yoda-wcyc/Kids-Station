@@ -233,15 +233,20 @@
     // 填空題的「不同類別」：時間／地點／介系詞片語算同一家（放進彼此的例句常常也通順，如 by car ↔ in summer），互相不當干擾（2026-10-25）
     // 動詞片語／日常用語也算同一家：日常用語很多是祈使句（be quiet、hold on、take care），放進 Can you ___? / Let's ___ 也通（2026-10-25 第 5 批校對）
     const phFam = t => (['時間', '地點', '介系詞片語'].includes(t) ? '副詞性' : ['動詞片語', '日常用語'].includes(t) ? '動詞性' : t);
+    // 兩家都算（2026-10-25 舊片語校對）：a little／too much 也能當程度副詞放句尾（I drink milk ___.、Don't eat ___.）；
+    // one more time 標時間，但也能單獨當一句話（___, Ms. Lin!、___! One, two, three!）。互不當干擾＝兩邊的家有交集就算同家
+    const PH_FAM2 = { 'a-little': '副詞性', 'too-much': '副詞性', 'one-more-time': '動詞性' };
+    const phFams = x => [phFam(x.tag)].concat(PH_FAM2[x.id] || []);
     D.phrases.forEach(ph => {
       const topic = ph.lv + '|' + ph.tag, ans = ph.form || ph.p, key = ph.id, why = `${ph.p} ＝ ${ph.zh}`;
       // ph.alts（2026-10-25）：片語本身的其他寫法（如 hide and seek 不打連字號），所有打字題都收；例句打字把句中的片語換成 alts 也收
-      const pAlts = ph.alts || [], exAlts = s => pAlts.map(a => s.split(ph.p).join(a)).filter(x => x !== s);
+      // ph.syn（2026-10-26）：真同義的別的片語（a lot of／lots of），跟單字 alts 一樣只在看中文打字收（聽寫不收）
+      const pAlts = ph.alts || [], tAlts = pAlts.concat(ph.syn || []), exAlts = s => tAlts.map(a => s.split(ph.p).join(a)).filter(x => x !== s);
       // 互收（fillAlts，任一方向）的片語意思相近，所有選擇題都不拿來當干擾
       const isAlt = x => [x.p, x.form].some(s => s && (ph.fillAlts || []).some(a => norm(a) === norm(s))) || (x.fillAlts || []).some(a => norm(a) === norm(ph.p) || norm(a) === norm(ans));
       // 選擇題：同等級同類別優先（比較難）；填空題：用「不同類別」的片語當干擾，避免干擾選項也剛好通順
       const tiers = (f, sameTag) => {
-        const others = D.phrases.filter(x => x !== ph && !isAlt(x)), lv = others.filter(x => x.lv === ph.lv), far = x => phFam(x.tag) !== phFam(ph.tag);
+        const others = D.phrases.filter(x => x !== ph && !isAlt(x)), lv = others.filter(x => x.lv === ph.lv), myFams = phFams(ph), far = x => !phFams(x).some(f => myFams.includes(f));
         return sameTag ? [lv.filter(x => x.tag === ph.tag).map(f), lv.map(f), others.map(f)] : [lv.filter(far).map(f), others.filter(far).map(f)];
       };
       const base = { module: 'phrases', topic, lv: ph.lv, title: `${ph.p}　${ph.zh}` };
@@ -252,7 +257,7 @@
         prompt: ph.ex.replace(new RegExp(escRe(ans), 'i'), '___'), sub: '選出放進空格的片語', options: choice(ans, tiers(x => x.form || x.p, false)),
         answer: ans, speakText: ph.ex, why: `${ph.p}（${ph.zh}）：${ph.exZh}`
       }));
-      add(Object.assign({ id: `ph:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: ph.zh, sub: '打出這個英文片語', input: 'type', options: null, answer: ph.p, alts: (ph.form ? [ph.form] : []).concat(pAlts), speakText: ph.p, why }));
+      add(Object.assign({ id: `ph:${key}:type`, type: 'zh2en-type' }, base), () => ({ prompt: ph.zh, sub: '打出這個英文片語', input: 'type', options: null, answer: ph.p, alts: (ph.form ? [ph.form] : []).concat(tAlts), speakText: ph.p, why }));
       add(Object.assign({ id: `ph:${key}:speak`, type: 'speak' }, base), () => ({ prompt: ph.p, en: true, sub: ph.zh, input: 'mic', play: true, options: null, answer: ph.p, alts: ph.form ? [ph.form] : [], speakMode: 'sentence', speakText: ph.p, why }));
       // 打字 2 題（2026-10-23，只在「練習這組」出）：
       // 例句填空打字：例句挖掉整個片語（照例句裡的寫法，如 ran away、is good at），給中文＋時態提示（fillHint）；fillAlts＝放進句子也對的片語
