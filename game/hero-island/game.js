@@ -28,12 +28,14 @@
 
   // ---- 職業：每個職業練不同單元（題目來自學習站 engine.js） ----
   L.CLASSES = {
-    mage: { name: '法師', en: 'MAGE', skill: '單字', line: '抱著一本超大的字典。打字題的魔法最痛！', quiz: { modules: ['words'], lv: 1, types: ['zh2en', 'en2zh', 'zh2en-type'] } },
+    mage: { name: '法師', en: 'MAGE', skill: '單字', line: '抱著一本超大的字典。打字題的魔法最痛！', quiz: { modules: ['words'], types: ['zh2en', 'en2zh', 'zh2en-type'] } },
     sword: { name: '劍士', en: 'SWORDSMAN', skill: '文法', line: '拖著一把大劍。文法句子砍得最準！', quiz: { modules: ['grammar'], types: ['grammar-fill', 'grammar-fix'] } },
-    archer: { name: '射手', en: 'ARCHER', skill: '聽力', line: '靠著一把高高的弓。耳朵最靈，聽音就射中！', quiz: { modules: ['words'], lv: 1, types: ['listen-choose'] } },
+    archer: { name: '射手', en: 'ARCHER', skill: '聽力', line: '靠著一把高高的弓。耳朵最靈，聽音就射中！', quiz: { modules: ['words'], types: ['listen-choose'] } },
     guard: { name: '守護者', en: 'GUARDIAN', skill: '句型', line: '躲在大盾牌後面。句型排得穩，誰都打不倒！', quiz: { modules: ['patterns'], types: ['pattern-choose', 'reorder'], patLv: 1 } }
   };
-  L.FALLBACK_QUIZ = { modules: ['words'], lv: 1, types: ['zh2en', 'en2zh', 'listen-choose'] };
+  L.FALLBACK_QUIZ = { modules: ['words'], types: ['zh2en', 'en2zh', 'listen-choose'] };
+  // 遊戲單字範圍：基本字只出第 1 級；英檢字（geptkids／gept1，含節慶地點字）也出第 2–3 級；第 4 級（國中字）一律不出（2026-10-27）
+  L.wordOk = w => w.lv === 1 || (/^gept/.test(w.src || '') && w.lv !== 4);
 
   // ---- 戰鬥 ----
   L.BASE_DMG = 10; L.PLAYER_HP = 100; L.HIT_BACK = 12;
@@ -506,7 +508,7 @@
 
   // ---- 題目（學習站 engine.js） ----
   let E = null;
-  try { if (KE && root.DATA_WORDS) E = new KE.Engine({ words: root.DATA_WORDS || [], phrases: root.DATA_PHRASES || [], roots: root.DATA_ROOTS || [], grammar: root.DATA_GRAMMAR || [], patterns: root.DATA_PATTERNS || [] }); }
+  try { if (KE && root.DATA_WORDS) E = new KE.Engine({ words: (root.DATA_WORDS || []).filter(L.wordOk), phrases: root.DATA_PHRASES || [], roots: root.DATA_ROOTS || [], grammar: root.DATA_GRAMMAR || [], patterns: root.DATA_PATTERNS || [] }); }
   catch (e) { console.warn('engine', e); }
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const SAMPLE = [
@@ -515,7 +517,7 @@
     { id: 's:3', type: 'zh2en', prompt: '狗', options: ['dog', 'pig', 'cow', 'hen'], answer: 'dog', speakText: 'dog', why: 'dog ＝ 狗' }
   ];
   function sampleQs(n) {
-    if (E) { const qs = E.buildQuiz({ modules: ['words'], lv: 1, types: ['zh2en', 'en2zh'], count: n }); if (qs.length) return qs; }
+    if (E) { const qs = E.buildQuiz({ modules: ['words'], types: ['zh2en', 'en2zh'], count: n }); if (qs.length) return qs; }
     return shuffle(SAMPLE).slice(0, n).map(q => Object.assign({}, q, { options: shuffle(q.options) }));
   }
   function quizFor(cls, n) {

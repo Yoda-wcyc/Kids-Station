@@ -407,4 +407,10 @@ t('mute + volume persistence', () => {
   assert(store.dump().includes('hi_audio'));
 });
 
+t('word pool: lv1 + GEPT lv1-3, never lv4', () => {
+  assert(L.wordOk({ lv: 1, src: 'moe1200' })); assert(!L.wordOk({ lv: 2, src: 'moe1200' }));
+  assert(L.wordOk({ lv: 3, src: 'gept1' })); assert(L.wordOk({ lv: 2, src: 'geptkids' }));
+  assert(!L.wordOk({ lv: 4, src: 'gept1' })); assert(!L.wordOk({ lv: 4, src: 'moe800' }));
+});
+
 console.log(`hero-island test: ${n} groups passed`);
