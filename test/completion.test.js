@@ -129,6 +129,17 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   ok(r.status === 'doing' && !r.checklist[6].ok && /最高 79 分/.test(r.checklist[6].detail), 'mul: 三份都 <80 → 未達成: ' + r.checklist[6].detail);
   s = KC.record({}, 'mp', 'p1', 90, 1); s = KC.record(s, 'mp', 'p1', 70, 2); s = KC.record(s, 'mp', 'p2', 65, 3);
   ok(same(s.mp, { p1: 90, p2: 65 }) && same(SM.mergeDone({ mp: { p1: 90 } }, { mp: { p1: 95, p2: 40 } }).mp, { p1: 95, p2: 40 }), 'record/merge mp p1, p2: best kept');
+  // 分數比較大小（2026-10-27）：五種題型練習各一輪 ≥80% ＋ 考試 ≥80；fr 跟著同步（各項取大）
+  const fr = o => ({ fr: Object.assign({ basic: 80, bench: 80, lcd: 80, red: 80, mix: 80, test: 80 }, o || {}) });
+  ok(ev('math:frc', {}).status === 'todo' && ev('math:frc', {}).checklist.length === 6, 'frc: empty → todo, 6 checks (5 題型＋考試)');
+  ok(ev('math:frc', { done: fr() }).status === 'done', 'frc: all 80 + test 80 → done');
+  r = ev('math:frc', { done: fr({ red: 79 }) });
+  ok(r.status === 'doing' && r.pct === Math.round(5 / 6 * 100) && !r.checklist[3].ok && /先約分/.test(r.checklist[3].label) && /最佳一輪 79%/.test(r.checklist[3].detail), 'frc: 先約分 79 → doing: ' + r.pct);
+  r = ev('math:frc', { done: fr({ test: 70 }) });
+  ok(r.status === 'doing' && !r.checklist[5].ok && /最高 70 分/.test(r.checklist[5].detail), 'frc: test 70 → not done');
+  ok(KC.FR_G.map(x => x[0]).join() === require(path.join(root, 'math', 'fraction.js')).GROUPS.map(x => x[0]).join(), 'frc: 題型 list matches math/fraction.js GROUPS');
+  s = KC.record({}, 'fr', 'lcd', 60, 1); s = KC.record(s, 'fr', 'lcd', 100, 2); s = KC.record(s, 'fr', 'lcd', 40, 3); s = KC.record(s, 'fr', 'test', 88, 4); s = KC.record(s, 'fr', 'zz', 100, 5);
+  ok(same(s.fr, { lcd: 100, test: 88 }) && same(SM.mergeDone({ fr: { lcd: 60, test: 90 } }, { fr: { lcd: 80, mix: 0 } }).fr, { lcd: 80, mix: 0, test: 90 }) && SM.FR_K.length === 6, 'record/merge fr: best kept, unknown dropped: ' + C(s.fr));
   // 乘法快算：二位×一位（≤10 秒）、二位×二位（≤20 秒，2026-10-21 放寬）挑戰各一輪 ≥90% 且平均在秒數內（同一輪）
   ok(ev('math:mx', {}).status === 'todo' && ev('math:mx', {}).checklist.length === 2, 'mx: empty → todo, 2 checks');
   s = KC.record({}, 'mx', 'd21', { acc: 90, sec: 10 }, 7);
@@ -167,11 +178,11 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
 // ---------- 地圖：目錄、整體完成率、題庫 ----------
 {
   const M = KC.build(DATA, {});
-  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:8,social:4,science:4,math:5,ai:3,scratch:7' && M.total === 31 && M.done === 0 && M.pct === 0, 'map: 31 judgeable units: ' + M.subjects.map(s => s.k + ':' + s.total).join());
+  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:8,social:4,science:4,math:6,ai:3,scratch:7' && M.total === 32 && M.done === 0 && M.pct === 0, 'map: 32 judgeable units: ' + M.subjects.map(s => s.k + ':' + s.total).join());
   ok(M.subjects.every(s => s.units.every(u => u.href && u.title && ['done', 'doing', 'todo'].includes(u.status))), 'map: every cell has href, title, status');
   const ctx = { learned: Object.fromEntries(KC.tbItems(DATA, 'hanlin-5-u2', KE).map(x => [x.id, { at: '2026-10-20T01:00:00Z' }])), done: { tb: { 'hanlin-5-u2': { best: 85, last: 85, at: T0 } }, ai: { secrets: T0 } } };
   const M2 = KC.build(DATA, ctx);
-  ok(M2.done === 2 && M2.subjects[0].done === 1 && M2.subjects[0].units.find(u => u.key === 'tb:hanlin-5-u2').status === 'done' && M2.subjects[4].done === 1, 'map: one textbook unit + one AI page done → 2/31');
+  ok(M2.done === 2 && M2.subjects[0].done === 1 && M2.subjects[0].units.find(u => u.key === 'tb:hanlin-5-u2').status === 'done' && M2.subjects[4].done === 1, 'map: one textbook unit + one AI page done → 2/32');
   const bw = M2.bank.find(b => b.k === 'words');
   ok(M2.bank.map(b => b.k).join() === 'words,phrases,roots,grammar,patterns' && bw.total === W.DATA_WORDS.length && bw.levels.map(l => l.lv).join() === '1,2,3,4' && bw.learned >= 15, 'bank: categories + word levels 1–4, learned counted: ' + bw.learned + '/' + bw.total);
   ok(M2.bank.find(b => b.k === 'patterns').levels.length === 3 && M2.bank.find(b => b.k === 'roots').levels.length === 0, 'bank: pattern levels 簡單／基本／進階, roots no levels');
@@ -192,6 +203,7 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   ok(sj.includes("src: 'math/short-division.html?tab=word', hidden: true") && M.subjects[3].units[2].href === 'index.html#s/math/short-division-word', 'gcd-word map link opens the 應用題 tab');
   // 新單元（2026-10-21）：地圖連到首頁數學卡（subjects.js 的 id／dk 要一致）
   ok(M.subjects[3].units[3].href === 'index.html#s/math/multiples' && sj.includes("id: 'multiples'") && sj.includes("src: 'math/multiples.html', dk: 'math:mul'"), 'multiples: map link + home card dk');
+  ok(M.subjects[3].units[5].href === 'index.html#s/math/fraction' && M.subjects[3].units[5].key === 'math:frc' && sj.includes("id: 'fraction'") && sj.includes("src: 'math/fraction.html', dk: 'math:frc'"), 'fraction: map link + home card dk');
   ok(M.subjects[3].units[4].href === 'index.html#s/math/multiply' && sj.includes("id: 'multiply'") && sj.includes("src: 'math/multiply.html', dk: 'math:mx'"), 'multiply: map link + home card dk');
 }
 
@@ -204,13 +216,13 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   };
   ok(SM.VERSION === 6, 'sync doc version 6');
   const v4 = SM.normalize({ v: 4, log: [], learned: {}, mistakes: {}, mk: {} });
-  ok(v4.v === 6 && same(v4.done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: {}, mx: {} }), 'v4 doc → v6 with empty done');
+  ok(v4.v === 6 && same(v4.done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: {}, mx: {}, fr: {} }), 'v4 doc → v6 with empty done');
   // v6：mp 取大、mx acc 取大／sp 取小／ok 取最早；壞資料不會壞
   const P1 = { done: { mp: { circle: 60, test: 85 }, mx: { d21: { acc: 80, sp: 70 }, d22: { acc: 95, sp: 95, ok: 900 } } } }, P2 = { done: { mp: { circle: 90, word: 0 }, mx: { d21: { acc: 95, sp: 120, ok: 500 }, d22: { acc: 70, sp: 60, ok: 700 } } } }, P3 = { done: { mp: { lit: 100 }, mx: { nn: { acc: 100, sp: 20 } } } };
   const P12 = SM.merge(P1, P2).done;
   ok(same(P12.mp, { circle: 90, test: 85, word: 0 }) && same(P12.mx.d21, { acc: 95, sp: 70, ok: 500 }) && same(P12.mx.d22, { acc: 95, sp: 60, ok: 700 }), 'done.mp／mx merge: ' + C(P12.mp) + ' ' + C(P12.mx));
   props(P1, P2, P3, 'done v6 mp/mx');
-  ok(same(SM.normalize({ done: { mp: { circle: 150, zz: 5, test: 'x' }, mx: { d21: { acc: 'abc' }, d22: { acc: 50, sp: -3, ok: 'y' }, qq: { acc: 1 } } } }).done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: { circle: 100 }, mx: { d22: { acc: 50 } } }), 'garbage mp／mx: clamps, drops unknown');
+  ok(same(SM.normalize({ done: { mp: { circle: 150, zz: 5, test: 'x' }, mx: { d21: { acc: 'abc' }, d22: { acc: 50, sp: -3, ok: 'y' }, qq: { acc: 1 } } } }).done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: { circle: 100 }, mx: { d22: { acc: 50 } }, fr: {} }), 'garbage mp／mx: clamps, drops unknown');
   const strip5 = d => { const n = SM.normalize(d); delete n.done.mp; delete n.done.mx; n.v = 5; return n; }, full6 = SM.merge(SM.merge(P1, P2), P3);
   ok(same(SM.merge(full6, strip5(full6)), full6), 'v5 device drops mp/mx → v6 merge restores them from local');
   ok(same(SM.normalize({ done: 'x' }).done, SM.normDone(null)) && same(SM.normalize({ done: { tb: [1], sd: { l20: 'abc', l100: 150, zz: 5 }, ai: { '': 5, ok: -1 } } }).done.sd, { l100: 100 }), 'garbage done does not throw, clamps %, drops unknown');

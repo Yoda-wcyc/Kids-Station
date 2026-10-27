@@ -15,6 +15,7 @@
    - 短除法應用題（math:gw）：基本、進階各有一輪 ≥ 80%。
    - 倍數與公倍數（math:mul，2026-10-21）：✏️ 練習六種題型（圈圈看、想一想、填填看、最小公倍數、應用題、素養題）各有一輪 ≥ 80%（第一次就答對的題數／題數）＋📝 考試最高分 ≥ 80
      （隨機考卷 test、練習卷第一回 p1、第二回 p2，任何一份 ≥ 80 都算）。
+   - 分數比較大小（math:frc，2026-10-27）：✏️ 練習五種題型（同分母・同分子、跟 1 跟一半比、通分再比、先約分再比、假分數・帶分數）各有一輪 ≥ 80%＋📝 考試（固定一份）≥ 80。
    - 乘法快算（math:mx，2026-10-21）：⏱️ 挑戰「二位數×一位數」「二位數×二位數」各有一輪（20 題）答對 ≥ 90% 而且平均每題在秒數內（同一輪兩個都要到；記在 mx.<題型>.ok）：
      二位數×一位數 ≤ 10 秒、二位數×二位數 ≤ 20 秒（Yoda 2026-10-21 由 10 秒放寬）；其他題型（九九、整十、三位×一位）不算完成，達標記號照 10 秒。
    - AI 三頁（ai:<頁>）：各玩完一次（看到結果頁）。
@@ -24,7 +25,7 @@
    新補存的紀錄 kids_done（統一一個 key；格式與合併規則在 syncmerge.js 的 normDone／mergeDone，跟著同步文件 v5 的 done 欄位）：
      {tb:{'<課本單元>':{best,last,at}}, mm:{'<科>:<單元>':{cz,czFirst,qz}}, bal:{b1…b8:第一次算對的時間}, sd:{l20,l100,l3d,tri:最佳 %},
       gw:{basic,adv:最佳 %}, ai:{'<頁>':第一次玩完的時間},
-      mp:{circle,both,fill,lcm,word,lit:最佳 %, test:隨機考卷最高分, p1,p2:練習卷第一回／第二回最高分}, mx:{'<題型>':{acc:最佳 %, sp:最快平均秒數×10, ok:第一次達標的時間}}}
+      mp:{circle,both,fill,lcm,word,lit:最佳 %, test:隨機考卷最高分, p1,p2:練習卷第一回／第二回最高分}, fr:{basic,bench,lcd,red,mix:最佳 %, test:考試最高分}, mx:{'<題型>':{acc:最佳 %, sp:最快平均秒數×10, ok:第一次達標的時間}}}
    以前沒存的分數（舊的考試、考考自己、練習題、短除法、AI）回推不了，照實顯示「還沒有紀錄」。 */
 (function (root) {
   'use strict';
@@ -44,6 +45,8 @@
   const GW_LV = [['basic', '基本'], ['adv', '進階']];
   // 倍數與公倍數：練習題型（要跟 math/multiples.js 的 GROUPS 一樣，test 會對）；乘法快算：要達標的挑戰題型與門檻
   const MP_G = [['circle', '圈圈看'], ['both', '想一想'], ['fill', '填填看'], ['lcm', '最小公倍數'], ['word', '應用題'], ['lit', '素養題']];
+  // 分數比較大小：練習題型（要跟 math/fraction.js 的 GROUPS 一樣，test 會對）
+  const FR_G = [['basic', '同分母・同分子'], ['bench', '跟 1、跟一半比'], ['lcd', '通分再比'], ['red', '先約分再比'], ['mix', '假分數・帶分數']];
   // MX_SEC：各題型「平均每題秒數」門檻（沒列的題型用 MX_SEC0）；二位×二位 20 秒（Yoda 2026-10-21）
   const MX_REQ = [['d21', '二位數×一位數'], ['d22', '二位數×二位數']], MX_ACC = 90, MX_SEC = { d21: 10, d22: 20 }, MX_SEC0 = 10, MX_N = 20;
   const mxSec = lv => MX_SEC[lv] || MX_SEC0;
@@ -78,6 +81,7 @@
     else if (sec === 'cz' || sec === 'czFirst' || sec === 'qz') { const p = Object.assign({}, s.mm[key]); p[sec] = Math.max(p[sec] == null ? 0 : p[sec], v); s.mm[key] = p; }
     else if (sec === 'sd' || sec === 'gw') s[sec][key] = Math.max(s[sec][key] == null ? 0 : s[sec][key], v);
     else if (sec === 'bal' || sec === 'ai') { if (!s[sec][key]) s[sec][key] = t; }
+    else if (sec === 'fr') s.fr[key] = Math.max(s.fr[key] == null ? 0 : s.fr[key], v);
     else if (sec === 'mp') s.mp[key] = Math.max(s.mp[key] == null ? 0 : s.mp[key], v);
     else if (sec === 'mx') {   // val＝{acc:%, sec:平均每題秒數}；同一輪 acc ≥ 90 且 sec ≤ 該題型門檻（mxSec）才記 ok
       const o = val && typeof val === 'object' ? val : {}, acc = Math.max(0, Math.min(100, Math.round(+o.acc || 0))), sp = Math.max(1, Math.round((+o.sec || 0) * 10)), p = s.mx[key] || {};
@@ -163,6 +167,12 @@
       : t >= PASS ? { label, ok: true, p: 1, detail: `最高 ${t} 分${each}` } : { label, ok: false, p: 0, detail: `最高 ${t} 分${each}，任何一份要考到 ${PASS} 分以上` });
     return result(checks, Object.keys(s).length > 0);
   }
+  function fraction(ctx) {
+    const s = SM.normDone(ctx.done).fr, t = num(s.test), label = `📝 考試 ${PASS} 分以上`;
+    const checks = FR_G.map(([k, n]) => scoreCheck(`✏️ 練習「${n}」一輪 ${PASS}% 以上`, s[k], `「${n}」練習`));
+    checks.push(t == null ? { label, ok: false, p: 0, detail: '還沒有考試紀錄：到 📝 考試考一次' } : t >= PASS ? { label, ok: true, p: 1, detail: `最高 ${t} 分` } : { label, ok: false, p: 0, detail: `最高 ${t} 分，要考到 ${PASS} 分以上` });
+    return result(checks, Object.keys(s).length > 0);
+  }
   function multiply(ctx) {
     const s = SM.normDone(ctx.done).mx;
     const checks = MX_REQ.map(([k, n]) => {
@@ -197,6 +207,7 @@
     if (key === 'math:gw') return gcdWord(ctx);
     if (key === 'math:mul') return multiples(ctx);
     if (key === 'math:mx') return multiply(ctx);
+    if (key === 'math:frc') return fraction(ctx);
     if ((m = /^ai:(.+)$/.exec(key))) return aiPage(m[1], ctx);
     if ((m = /^scratch:(\d)$/.exec(key))) return scratchLesson(+m[1], ctx);
     return null;
@@ -214,7 +225,8 @@
         { key: 'math:sd', title: '短除法：換你算', href: 'index.html#s/math/short-division' },
         { key: 'math:gw', title: '短除法：應用題', href: 'index.html#s/math/short-division-word' },
         { key: 'math:mul', title: '倍數與公倍數', href: 'index.html#s/math/multiples' },
-        { key: 'math:mx', title: '乘法快算', href: 'index.html#s/math/multiply' }] },
+        { key: 'math:mx', title: '乘法快算', href: 'index.html#s/math/multiply' },
+        { key: 'math:frc', title: '分數比較大小', href: 'index.html#s/math/fraction' }] },
       { k: 'ai', name: 'AI', icon: '🤖', units: AI.map(([id, t, i]) => ({ key: 'ai:' + id, title: `${i} ${t}`, href: `index.html#s/ai/${id}` })) },
       { k: 'scratch', name: 'Scratch 塔防', icon: '🏰', units: SCRATCH.map((t, i) => ({ key: 'scratch:' + (i + 1), title: `第 ${i + 1} 堂　${t}`, href: `game/scratch-td/web/lesson${i + 1}.html` })) }
     ];
@@ -245,7 +257,7 @@
   const STATUS_TEXT = { done: '✅ 已完成', doing: '🟡 進行中', todo: '⚪ 還沒開始' };
   const statusText = r => (r.status === 'doing' ? `${STATUS_TEXT.doing} ${r.pct}%` : STATUS_TEXT[r.status]);
 
-  const KC = { PASS, MM_UNITS, BAL, SD_LV, GW_LV, MP_G, MX_REQ, MX_ACC, MX_SEC, MX_SEC0, MX_N, mxSec, mxPass, AI, SCRATCH, record, tbItems, evaluate, catalog, bank, build, statusText, STATUS_TEXT, _: { tbUnit, mmUnit, balance, shortDiv, gcdWord, multiples, multiply, aiPage, scratchLesson, result } };
+  const KC = { PASS, MM_UNITS, BAL, SD_LV, GW_LV, MP_G, FR_G, MX_REQ, MX_ACC, MX_SEC, MX_SEC0, MX_N, mxSec, mxPass, AI, SCRATCH, record, tbItems, evaluate, catalog, bank, build, statusText, STATUS_TEXT, _: { tbUnit, mmUnit, balance, shortDiv, gcdWord, multiples, multiply, fraction, aiPage, scratchLesson, result } };
   if (typeof module !== 'undefined' && module.exports) module.exports = KC;
   root.KidsCompletion = KC;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -826,7 +826,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 頁面：每科頁有 📕 錯題庫卡、各頁載入 kids-mistakes.js、練錯題送 practice_round <科>:mistakes
   const sjm = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
   ok(/MK_SUBJ = \['social', 'science', 'math', 'ai'\]/.test(sjm) && sjm.includes("icon: '📕'") && sjm.includes('mistakes-go') && sjm.includes('math/balance.html?mistakes=1') && sjm.includes('?mistakes=1'), 'subjects.js: 錯題庫 tiles + routes');
-  [['index.html', 'kids-mistakes.js'], ['mindmap/social.html', '../kids-mistakes.js'], ['mindmap/science.html', '../kids-mistakes.js'], ['math/balance.html', '../kids-mistakes.js'], ['math/short-division.html', '../kids-mistakes.js'], ['math/multiples.html', '../kids-mistakes.js'], ['math/multiply.html', '../kids-mistakes.js'], ['ai/ask-well.html', '../kids-mistakes.js'], ['ai/hallucinate.html', '../kids-mistakes.js'], ['ai/secrets.html', '../kids-mistakes.js']]
+  [['index.html', 'kids-mistakes.js'], ['mindmap/social.html', '../kids-mistakes.js'], ['mindmap/science.html', '../kids-mistakes.js'], ['math/balance.html', '../kids-mistakes.js'], ['math/short-division.html', '../kids-mistakes.js'], ['math/multiples.html', '../kids-mistakes.js'], ['math/multiply.html', '../kids-mistakes.js'], ['math/fraction.html', '../kids-mistakes.js'], ['ai/ask-well.html', '../kids-mistakes.js'], ['ai/hallucinate.html', '../kids-mistakes.js'], ['ai/secrets.html', '../kids-mistakes.js']]
     .forEach(([f, s]) => ok(new RegExp('<script src="' + s.replace(/[.]/g, '\\.') + '(\\?v=[0-9a-f]+)?"></script>').test(fs.readFileSync(path.join(root, f), 'utf8')), f + ' loads kids-mistakes.js'));   // 部署夾有 ?v=<雜湊>（deploy_copy 防快取）
   const idxh = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   ok(idxh.indexOf('kids-mistakes.js') < idxh.indexOf('subjects.js'), 'index: kids-mistakes.js before subjects.js');
@@ -854,7 +854,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
       muh.includes("doneRec('mp', P.group") && muh.includes("doneRec('mp', 'test'") && muh.includes("KidsDone.mount(el, 'math:mul'"), 'multiples.html: coins / auth / done wiring');
     ok(/<script src="multiply\.js(\?v=[0-9a-f]+)?"><\/script>\s*<script src="multiples\.js(\?v=[0-9a-f]+)?"><\/script>/.test(muh) && /<script src="short-division\.js(\?v=[0-9a-f]+)?"><\/script>/.test(muh), 'multiples.html loads short-division.js, multiply.js → multiples.js');
     ok(mxh.includes("coinReport(R.mk ? 'math:mistakes' : 'math:multiply'") && mxh.includes("KidsCoins.answer(!!ok, 'math')") && mxh.includes("KidsAuth.startActivity('math'") && mxh.includes('requireLogin') && mxh.includes("KidsDone.record('mx', R.lv") && mxh.includes("KidsDone.mount(el, 'math:mx'") && mxh.includes("type: 'multiply'") && /<script src="multiply\.js(\?v=[0-9a-f]+)?"><\/script>/.test(mxh), 'multiply.html: coins / auth / done / mistakes wiring');
-    ok(sjm.includes('math/multiples.html?mistakes=1') && sjm.includes('math/multiply.html?mistakes=1') && kmj.includes("p.type === 'multiples' ? '倍數'") && kmj.includes("p.type === 'multiply' ? '乘法'") && kmj.includes('function mathMore(') && balh.includes("KidsMistakes.mathMore(['multiples', 'multiply'])") && sdh.includes("t !== 'multiples' && t !== 'multiply'"), 'multiples／multiply mistakes: routes + badges + 接著練 links; 天平 count excludes them');
+    ok(sjm.includes('math/multiples.html?mistakes=1') && sjm.includes('math/multiply.html?mistakes=1') && kmj.includes("p.type === 'multiples' ? '倍數'") && kmj.includes("p.type === 'multiply' ? '乘法'") && kmj.includes('function mathMore(') && balh.includes("KidsMistakes.mathMore(['multiples', 'multiply', 'fraction'])") && sdh.includes("t !== 'multiples' && t !== 'multiply'"), 'multiples／multiply mistakes: routes + badges + 接著練 links; 天平 count excludes them');
     const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
     ok(['math:multiples', 'math:multiples-test', 'math:multiply'].every(it => CK.validEvent(ev(it))) && ['math:multiple', 'math:multiples-tests', 'math:multiply:x', 'math:test', 'english:multiply'].every(it => !CK.validEvent(ev(it))), 'kids-coins: math:multiples／multiples-test／multiply valid, look-alikes not');
     // 練習卷第一回、第二回線上考試（2026-10-21）：multiples-papers.js 接在 multiples.js 後面；考試選單三選一；練習卷分數記 mp.p1／p2；錯題先用原卷題目重做
@@ -862,6 +862,19 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
       muh.includes("doneRec('mp', E.mode, R.total)") && muh.includes('MULP.fromMistake(e.p)) || M.fromMistake(e.p)') && muh.includes('常見錯誤提醒'), 'multiples.html: 考試三選一（隨機／第一回／第二回）＋練習卷分數＋錯題原卷重做');
     ok(SM.MP_K.includes('p1') && SM.MP_K.includes('p2'), 'syncmerge: done.mp 收 p1、p2（練習卷各回最高分）');
     require('./multiples.test.js'); require('./multiply.test.js'); require('./multiples-papers.test.js');
+  }
+  // 分數比較大小（2026-10-27）：送 practice_round math:fraction／math:fraction-test、錯題 type 'fraction'（清單畫上下排）、錯題庫路由、各數學頁「接著練分數錯題」、前端白名單、完成判定 math:frc；
+  // 出題正確性（每種題型 3000 題對獨立的交叉相乘、答案唯一）見 test/fraction.test.js
+  {
+    const frh = fs.readFileSync(path.join(root, 'math', 'fraction.html'), 'utf8'), kmj = fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8'), muh = fs.readFileSync(path.join(root, 'math', 'multiples.html'), 'utf8'), mxh = fs.readFileSync(path.join(root, 'math', 'multiply.html'), 'utf8');
+    ok(frh.includes("coinReport(P.mk ? 'math:mistakes' : 'math:fraction'") && frh.includes("coinReport('math:fraction-test'") && frh.includes("KidsCoins.answer(!!ok, 'math')") && frh.includes("KidsAuth.startActivity('math'") && frh.includes('requireLogin') &&
+      frh.includes("doneRec('fr', P.group") && frh.includes("doneRec('fr', 'test'") && frh.includes("KidsDone.mount(el, 'math:frc'") && /<script src="fraction\.js(\?v=[0-9a-f]+)?"><\/script>/.test(frh), 'fraction.html: coins / auth / done wiring');
+    ok(frh.includes('inputmode="numeric"') && frh.includes('class="signs') && !/\d\/\d/.test(frh.replace(/<script[\s\S]*?<\/script>/g, '')), 'fraction.html: 數字鍵盤＋＞＜＝大按鈕；頁面沒有寫死的斜線分數');
+    ok(sjm.includes('math/fraction.html?mistakes=1') && kmj.includes("p.type === 'fraction' ? '分數'") && kmj.includes("['fraction', '分數', 'fraction.html?mistakes=1']") && kmj.includes("t === 'multiply' || t === 'fraction' ? t : 'eq'") && kmj.includes('function frItem(') &&
+      sdh.includes("t !== 'multiply' && t !== 'fraction'") && muh.includes("'multiply', 'fraction'])") && mxh.includes("'multiples', 'fraction'])"), 'fraction mistakes: route + badge + stacked list + 接著練 links; 天平／短除法 count excludes them');
+    const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
+    ok(['math:fraction', 'math:fraction-test'].every(it => CK.validEvent(ev(it))) && ['math:fractions', 'math:fraction-tests', 'math:fraction:x', 'english:fraction'].every(it => !CK.validEvent(ev(it))), 'kids-coins: math:fraction／fraction-test valid, look-alikes not');
+    require('./fraction.test.js');
   }
   ok(!/['"]ke_mistakes['"]/.test(fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8')) && fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("KEY = 'kids_mistakes'"), 'kids_ prefix key; English ke_mistakes untouched');
 }
@@ -885,7 +898,7 @@ const idx = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 ok(/<title>小朋友學習站<\/title>/.test(idx), 'site title');
 ok(idx.indexOf('subjects.js') < idx.indexOf('app.js'), 'subjects.js loads before app.js');
 ok(idx.indexOf('syncmerge.js') < idx.indexOf('syncauto.js') && idx.indexOf('syncauto.js') < idx.indexOf('sync.js') && idx.indexOf('sync.js') < idx.indexOf('app.js'), 'syncmerge.js → syncauto.js → sync.js → app.js (sync card renders on first paint)');
-['account.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/short-division.html', 'math/multiples.html', 'math/multiply.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'), a = h.search(/src="(\.\.\/)?syncauto\.js(\?v=[0-9a-f]+)?"/), s = h.search(/src="(\.\.\/)?sync\.js(\?v=[0-9a-f]+)?"/); ok(h.search(/src="(\.\.\/)?syncmerge\.js(\?v=[0-9a-f]+)?"/) < a && a >= 0 && a < s, f + ' loads syncmerge.js → syncauto.js → sync.js'); });
+['account.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/short-division.html', 'math/multiples.html', 'math/multiply.html', 'math/fraction.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'), a = h.search(/src="(\.\.\/)?syncauto\.js(\?v=[0-9a-f]+)?"/), s = h.search(/src="(\.\.\/)?sync\.js(\?v=[0-9a-f]+)?"/); ok(h.search(/src="(\.\.\/)?syncmerge\.js(\?v=[0-9a-f]+)?"/) < a && a >= 0 && a < s, f + ' loads syncmerge.js → syncauto.js → sync.js'); });
 const sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
 ['國語', '數學', '社會', '自然', '英文', "n: 'AI'", '遊戲', '#s/', 'math/balance.html', '準備中，敬請期待', '← 回'].forEach(t => ok(sj.includes(t), 'subjects.js has ' + t));
 ok((sj.match(/\{ k: '[a-z]+', n: /g) || []).length === 7, '7 subject tabs');
@@ -899,7 +912,8 @@ const nonEmpty = rel => { const p = path.join(root, rel); return fs.existsSync(p
 const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 // ＋1 張不列卡片的 hidden 入口（2026-10-20 課程地圖「短除法：應用題」→ math/short-division.html?tab=word）
 // 2026-10-21：數學多 2 張卡（倍數與公倍數 math/multiples.html、乘法快算 math/multiply.html）→ 8 張卡＋1 個 hidden 入口＝9 個 src
-ok(srcs.length === 9 && (sj.match(/hidden: true/g) || []).length === 1, 'activity cards: ' + srcs.length);
+// 2026-10-27：數學多 1 張卡（分數比較大小 math/fraction.html）→ 10 個 src
+ok(srcs.length === 10 && (sj.match(/hidden: true/g) || []).length === 1, 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----
@@ -949,7 +963,7 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
   ['completion.js', 'kids-done.js', 'map.html'].forEach(f => ok(nonEmpty(f), f + ' exists'));
   const loads = (f, pre) => { const h = fs.readFileSync(path.join(root, f), 'utf8'), at = s => h.search(new RegExp('<script src="' + (pre + s).replace(/[.]/g, '\\.') + '(\\?v=[0-9a-f]+)?"></script>'));
     return at('syncmerge.js') >= 0 && at('syncmerge.js') < at('completion.js') && at('completion.js') < at('kids-done.js'); };
-  [['index.html', ''], ['map.html', ''], ['mindmap/social.html', '../'], ['mindmap/science.html', '../'], ['math/balance.html', '../'], ['math/short-division.html', '../'], ['math/multiples.html', '../'], ['math/multiply.html', '../'], ['ai/hallucinate.html', '../'], ['ai/ask-well.html', '../'], ['ai/secrets.html', '../']]
+  [['index.html', ''], ['map.html', ''], ['mindmap/social.html', '../'], ['mindmap/science.html', '../'], ['math/balance.html', '../'], ['math/short-division.html', '../'], ['math/multiples.html', '../'], ['math/multiply.html', '../'], ['math/fraction.html', '../'], ['ai/hallucinate.html', '../'], ['ai/ask-well.html', '../'], ['ai/secrets.html', '../']]
     .forEach(([f, pre]) => ok(loads(f, pre), f + ' loads syncmerge.js → completion.js → kids-done.js'));
   ['ai/hallucinate.html', 'ai/ask-well.html', 'ai/secrets.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'); ok(h.includes("KidsDone.record('ai'") && h.includes('KidsDone.mount(') && h.includes('id="kdone"'), f + ': records 玩完 + banner'); });
   const appJs = fs.readFileSync(path.join(root, 'app.js'), 'utf8'), mmJs2 = fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8'), sdH = fs.readFileSync(path.join(root, 'math', 'short-division.html'), 'utf8'), balH = fs.readFileSync(path.join(root, 'math', 'balance.html'), 'utf8');

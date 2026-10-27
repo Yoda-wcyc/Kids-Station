@@ -182,7 +182,7 @@ body{background:var(--bg)}
   </section>
 </main>
 
-<script src="../kids-mistakes.js?v=ad913ae20a"></script>
+<script src="../kids-mistakes.js?v=3b9606d6df"></script>
 <script src="short-division.js?v=17afc65cb7"></script>
 <script src="gcd-word.js?v=ad02b84034"></script>
 <script>
@@ -576,10 +576,10 @@ var WS = { lv: 'basic', cat: 'mix' };   // 開始畫面的選擇
 var W = null;                           // 這一輪
 window.SDPage.W = function () { return W; };
 window.SDPage.wQ = function () { wQ(); };   // 測試用：換掉 W.items 後重畫目前這一題
-function mkLeft(type) {   // 數學錯題庫裡還有幾題：'gcd'＝短除法、'gcdword'＝應用題、'eq'＝天平（其他；倍數 'multiples'、乘法 'multiply' 不算）
-  try { return KidsMistakes.list('math').filter(function (e) { var t = e.p && e.p.type; return type === 'eq' ? (t !== 'gcd' && t !== 'gcdword' && t !== 'multiples' && t !== 'multiply') : t === type; }).length; } catch (e) { return 0; }
+function mkLeft(type) {   // 數學錯題庫裡還有幾題：'gcd'＝短除法、'gcdword'＝應用題、'eq'＝天平（其他；倍數 'multiples'、乘法 'multiply'、分數 'fraction' 不算）
+  try { return KidsMistakes.list('math').filter(function (e) { var t = e.p && e.p.type; return type === 'eq' ? (t !== 'gcd' && t !== 'gcdword' && t !== 'multiples' && t !== 'multiply' && t !== 'fraction') : t === type; }).length; } catch (e) { return 0; }
 }
-function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['multiples', 'multiply']) : ''; } catch (e) { return ''; } }
+function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['multiples', 'multiply', 'fraction']) : ''; } catch (e) { return ''; } }
 function wMsg(t, kind) { var m = $('w-msg'); m.innerHTML = t || ''; m.className = 'sd-msg' + (kind ? ' ' + kind : ''); }
 function wAuth() {   // 作答要登入；這一輪第一次作答時 startActivity('math')
   if (!authOK()) return false;
@@ -966,9 +966,9 @@ if (MK) {
 })();
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
-<script src="../kids-coins.js?v=e1a8c7b5ad"></script>
-<script src="../syncmerge.js?v=6b0cc80b23"></script>
-<script src="../completion.js?v=97da5fff3c"></script>
+<script src="../kids-coins.js?v=a6b187b16e"></script>
+<script src="../syncmerge.js?v=61f4f637a7"></script>
+<script src="../completion.js?v=a70ec426fd"></script>
 <script src="../kids-done.js?v=877f66af0a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
 <script src="../sync.js?v=cbdd56da2a"></script>

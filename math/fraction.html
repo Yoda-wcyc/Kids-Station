@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>分數比較大小</title>
+<link rel="stylesheet" href="../style.css?v=d8aed364d6">
+<style>
+:root{--a:#2477c9;--a-bg:#d6ecff;--b:#d2601a;--b-bg:#ffe1c4}
+body{background:var(--bg)}
+[hidden]{display:none!important}
+.fc{max-width:1000px;margin:0 auto;padding:12px 16px calc(48px + env(safe-area-inset-bottom))}
+.fc-head h1{font-size:clamp(1.35rem,1rem + 1.4vw,1.8rem);margin:4px 0 2px}
+.fc-head p{margin:0 0 10px}
+@media (max-width:600px){.fc-head{padding-right:84px}}
+.btn[aria-pressed="true"],.btn[aria-selected="true"]{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 3px 0 #d96a22}
+.btn.sm{min-height:44px;padding:6px 14px;font-size:.95rem}
+.fc-tabs{display:flex;gap:10px;margin:10px 0 14px}
+.fc-tabs .btn{flex:1 1 0;min-height:56px;font-size:1.15rem}
+.selbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.selbar .lab{font-weight:700;color:var(--muted);font-size:.95rem;margin-right:2px}
+.selbar.c{justify-content:center}
+/* 分數：上下排（分子／分母疊起來） */
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.15;margin:0 .12em;font-variant-numeric:tabular-nums;font-weight:800}
+.fr>span{padding:0 .18em;min-width:.9em;text-align:center}
+.fr .fr-n{border-bottom:.1em solid currentColor}
+.frm{display:inline-flex;align-items:center;white-space:nowrap;vertical-align:middle}
+.frm .fr-w{font-weight:800;margin-right:.04em}
+.duel{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;font-size:clamp(2rem,1.4rem + 2.6vw,2.8rem);margin:6px 0}
+.duel .slot{display:inline-flex;align-items:center;justify-content:center;width:1.5em;height:1.5em;border:3px dashed var(--line);border-radius:14px;color:var(--muted);font-weight:900}
+.duel .slot.on{border-style:solid;border-color:var(--ok);color:var(--ok)}
+.signs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:10px 0}
+.signs .btn{min-height:78px;font-size:2.4rem;font-weight:900;line-height:1}
+.signs.sm .btn{min-height:60px;font-size:1.9rem}
+.signs.bad .btn[aria-pressed="true"]{outline:3px solid var(--no)}
+.num-in{width:3.2em;min-height:52px;font:inherit;font-size:1.35rem;font-weight:700;text-align:center;border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-variant-numeric:tabular-nums}
+.num-in:focus{outline:none;border-color:var(--pri)}
+.num-in.bad{border-color:var(--no);background:var(--no-bg)}
+.fr.fr-in{gap:4px}
+.fr.fr-in .fr-n{border-bottom-width:4px;padding-bottom:4px}
+.fr.fr-in .fr-d{padding-top:2px}
+.fr .fixd{font-size:1.35rem;min-height:52px;display:flex;align-items:center;justify-content:center}
+.frow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:1.6rem;margin:8px 0}
+.frow .eqs{font-weight:800}
+.msg{min-height:1.6em;margin:10px 0 0;font-size:1.12rem;font-weight:700;line-height:1.7}
+.msg.bad{color:var(--no)}
+.msg.good{color:var(--ok)}
+.prog{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-weight:700;margin:4px 0 10px}
+.q-text{font-size:clamp(1.1rem,1rem + .5vw,1.3rem);line-height:1.7;font-weight:700;margin:0 0 4px}
+.act p{margin:0 0 8px;font-size:1.08rem;line-height:1.6}
+.act .row,.row.w{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0 0}
+.log{list-style:none;padding:0;margin:0 0 8px}
+.log li{background:var(--ok-bg);color:#145c38;border-radius:10px;padding:6px 10px;margin:4px 0;font-weight:700;line-height:1.9}
+.steps{margin:8px 0;padding-left:1.3em;line-height:2.1}
+.mk-mark{border:3px solid var(--pri);background:#fff6ec}
+.end .big{font-size:3rem;margin:0}
+.end .score{font-size:2rem;font-weight:800}
+.end .row{justify-content:center;flex-wrap:wrap;display:flex;gap:10px}
+/* 📖 教學 */
+.learn h2{font-size:1.25rem;margin:0 0 8px}
+.learn p{line-height:1.9;margin:6px 0}
+.learn .ex{background:#fff8ec;border-left:6px solid var(--pri);border-radius:10px;padding:8px 12px;margin:8px 0;line-height:2.1;font-weight:600}
+.learn .warn{background:var(--no-bg);border-radius:10px;padding:8px 12px;margin:8px 0;line-height:1.9;font-weight:700;color:#8a1f22}
+.bars{display:grid;gap:8px;margin:8px 0}
+.bar-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bar-row .lbl{min-width:3.6em;font-size:1.3rem;text-align:center}
+.bar-row svg{max-width:100%;height:auto;flex:1 1 260px}
+.nl{max-width:100%;height:auto;display:block;margin:6px 0}
+.order{margin:6px 0;padding-left:1.4em;line-height:1.9}
+.order li{margin:2px 0}
+.tester{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;font-size:1.5rem;margin:8px 0}
+.tester .num-in{width:2.8em}
+.tester .num-in.w{width:2.4em}
+.tres{line-height:2.1}
+/* 📝 考試 */
+.ex-sec h3{margin:0 0 10px;font-size:1.15rem}
+.ex-sec h3 small{font-weight:600;color:var(--muted);font-size:.85rem}
+.ex-item{border-top:2px dashed var(--line);padding:10px 0}
+.ex-item:first-of-type{border-top:0}
+.ex-item .duel{justify-content:flex-start;font-size:2rem}
+.res-tot{font-size:2.6rem;font-weight:900;margin:0}
+.res-sec{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
+.res-sec span{background:#fff;border:2px solid var(--line);border-radius:12px;padding:4px 10px;font-weight:700}
+.ri{border-top:2px dashed var(--line);padding:8px 0;line-height:2.1}
+.ri .mk{font-weight:900;margin-right:6px}
+.ri.ok .mk{color:var(--ok)}.ri.no .mk{color:var(--no)}
+.ri .yours{color:var(--muted)}
+.ri .right{font-weight:800;color:#145c38}
+.ri ol{margin:4px 0;padding-left:1.4em;color:#4d3800}
+</style>
+</head>
+<body>
+<main class="fc">
+  <div id="kdone" hidden></div>
+  <header class="fc-head">
+    <h1 id="title">🍰 分數比較大小</h1>
+    <p class="muted" id="lede">五上分數。先看教學（分數條、數線），再分五種題型練習，最後考一份 100 分的考卷。</p>
+  </header>
+
+  <div class="fc-tabs" role="tablist" id="tabs">
+    <button type="button" class="btn" role="tab" id="tab-learn" aria-selected="true" aria-controls="learn">📖 教學</button>
+    <button type="button" class="btn" role="tab" id="tab-prac" aria-selected="false" aria-controls="prac">✏️ 練習</button>
+    <button type="button" class="btn" role="tab" id="tab-exam" aria-selected="false" aria-controls="exam">📝 考試</button>
+  </div>
+
+  <!-- ================= 📖 教學（免登入） ================= -->
+  <section id="learn" class="learn" role="tabpanel" aria-labelledby="tab-learn">
+    <div class="card">
+      <h2>① 分數條：比大小就是比「誰比較長」</h2>
+      <p>把 1 條蛋糕切成 <b>分母</b> 那麼多份，拿走 <b>分子</b> 那麼多份。塗色的部分越長，分數越大。</p>
+      <div class="bars" id="b1"></div>
+    </div>
+
+    <div class="card">
+      <h2>② 分母一樣：比分子</h2>
+      <p>分母一樣＝每一份一樣大，<b>份數多的比較大</b>。</p>
+      <div class="bars" id="b2"></div>
+      <p class="ex" id="s2"></p>
+    </div>
+
+    <div class="card">
+      <h2>③ 分子一樣：分母越大，一份越小</h2>
+      <p>一樣拿幾份，但分母越大，代表切得越碎，<b>每一份越小</b>。分子是 1 的叫<b>單位分數</b>，最好比。</p>
+      <div class="bars" id="b3"></div>
+      <p class="ex" id="s3"></p>
+      <div class="warn">⚠️ 不要看到分母大就說它大！分子一樣的時候，分母大的反而小。</div>
+    </div>
+
+    <div class="card">
+      <h2>④ 不用通分的妙招：跟 1 比、跟一半比</h2>
+      <p><b>分子比分母少 1</b>（像 <span id="i4a"></span>）：看它<b>離 1 還差多少</b>，差得越少越大。</p>
+      <div class="bars" id="b4"></div>
+      <p class="ex" id="s4"></p>
+      <p><b>一個比一半大、一個比一半小</b>：分子 ×2 跟分母比。分子×2 比分母大 → 超過一半。</p>
+      <svg class="nl" id="nl" viewBox="0 0 640 110" role="img" aria-label="數線：0 到 1，中間是一半"></svg>
+      <p class="ex" id="s4b"></p>
+    </div>
+
+    <div class="card">
+      <h2>⑤ 分母、分子都不一樣：通分</h2>
+      <p>找兩個分母的<b>最小公倍數</b>（從分母大的那個的倍數找起），把兩個分數的分母變成一樣，再比分子。<b>分母乘幾，分子也要乘幾。</b></p>
+      <p class="ex" id="s5"></p>
+      <div class="bars" id="b5"></div>
+    </div>
+
+    <div class="card">
+      <h2>⑥ 可以約分的，先約分再比</h2>
+      <p>數字很大不好通分？先把兩個分數<b>約成最簡分數</b>，數字變小了再比。約完一模一樣，就是<b>一樣大</b>。</p>
+      <p class="ex" id="s6"></p>
+    </div>
+
+    <div class="card">
+      <h2>⑦ 假分數：先化成帶分數，先比整數</h2>
+      <p>分子 ÷ 分母 ＝ 商 … 餘數：<b>商是整數</b>、<b>餘數是旁邊分數的分子</b>（分母不變）。整數大的就大；整數一樣，再比旁邊的分數。</p>
+      <div class="bars" id="b7"></div>
+      <p class="ex" id="s7"></p>
+      <div class="warn">⚠️ 分子剛好是分母的倍數（像 <span id="i7"></span>），整除了，它就是整數！看起來很大的假分數，常常一秒就比完。</div>
+    </div>
+
+    <div class="card">
+      <h2>⑧ 先選方法，再動手</h2>
+      <ol class="order">
+        <li>有假分數、帶分數 → <b>先化成帶分數，比整數</b></li>
+        <li>分母一樣 → <b>比分子</b>；分子一樣 → <b>分母大的反而小</b></li>
+        <li>分子都比分母少 1 → <b>跟 1 比</b>；一個超過一半、一個不到 → <b>跟一半比</b></li>
+        <li>能約分 → <b>先約分</b></li>
+        <li>都不行 → <b>通分</b>（用最小公倍數）</li>
+      </ol>
+      <p><b>自己出題比比看：</b>（整數可以空著）</p>
+      <div class="tester" id="tester">
+        <span class="frm"><input class="num-in w" id="t-aw" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="第一個的整數" placeholder="整"><span class="fr fr-in"><span class="fr-n"><input class="num-in" id="t-an" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" value="7" aria-label="第一個的分子"></span><span class="fr-d"><input class="num-in" id="t-ad" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" value="12" aria-label="第一個的分母"></span></span></span>
+        <b>和</b>
+        <span class="frm"><input class="num-in w" id="t-bw" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="第二個的整數" placeholder="整"><span class="fr fr-in"><span class="fr-n"><input class="num-in" id="t-bn" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" value="5" aria-label="第二個的分子"></span><span class="fr-d"><input class="num-in" id="t-bd" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" value="8" aria-label="第二個的分母"></span></span></span>
+      </div>
+      <div class="bars" id="t-bars"></div>
+      <div class="tres ex" id="t-res" aria-live="polite"></div>
+      <p class="center"><button type="button" class="btn primary big" id="go-prac">✏️ 去練習 ▶</button></p>
+    </div>
+  </section>
+
+  <!-- ================= ✏️ 練習（要登入） ================= -->
+  <section id="prac" role="tabpanel" aria-labelledby="tab-prac" hidden>
+    <div class="card center" id="p-start"></div>
+    <div id="p-q" hidden>
+      <div class="prog" id="p-prog"></div>
+      <div class="card"><p class="q-text" id="p-text"></p><div class="duel" id="p-duel"></div></div>
+      <div class="card act" id="p-act"></div>
+      <p class="msg" id="p-msg" role="status" aria-live="polite"></p>
+    </div>
+    <div class="card center end" id="p-end" hidden></div>
+  </section>
+
+  <!-- ================= 📝 考試（要登入） ================= -->
+  <section id="exam" role="tabpanel" aria-labelledby="tab-exam" hidden>
+    <div class="card center" id="e-start"></div>
+    <div id="e-paper" hidden></div>
+    <div id="e-result" hidden></div>
+  </section>
+</main>
+
+<script src="../kids-mistakes.js?v=3b9606d6df"></script>
+<script src="fraction.js?v=52f625594e"></script>
+<script>
+(function () {
+'use strict';
+/* 〈分數比較大小〉頁面（2026-10-27）。出題、判分、說明（純函式）在 fraction.js（window.FRC）；比大小一律交叉相乘的整數。
+   📖 教學：免登入；分數條、數線用 SVG 現畫；分數一律上下排（FRC.fh）。
+   ✏️ 練習：要登入（requireLogin＋一輪開始時 startActivity('math')）。五種題型（同分母・同分子、跟 1 跟一半比、通分再比、先約分再比、假分數・帶分數），一輪 5 題；
+     通分／約分／假分數題先用數字鍵盤填（通分、約分、化帶分數），再按 ＞＜＝ 大按鈕；每次作答 KidsCoins.answer(ok,'math')；答錯給方法提示（不給答案）。
+     一輪結束送 practice_round 'math:fraction'（correct＝第一次就答對的題數）、KidsDone.record('fr', 題型, %)。
+   📝 考試：要登入。固定一份（FRC.PAPER，題目數字自編）：①–⑤ 比大小、⑥ 填填看，配分 15／15／20／20／20／10；交卷才看分數、每題對錯、正解、說明。
+     送 practice_round 'math:fraction-test'（correct＝答對題數）、KidsDone.record('fr', 'test', 分數)。
+   錯題：收進數學錯題庫 id 'frc:<題型>:<數字>'，p＝{type:'fraction', k, v, q}；?mistakes=1 用 FRC.fromMistake 原題重做，做完送 'math:mistakes'。 */
+var $ = function (id) { return document.getElementById(id); };
+var F = window.FRC;
+var MK = /[?&]mistakes=1(?:&|$)/.test(location.search);
+var ROUND = 5, CIRC = ['①', '②', '③', '④', '⑤', '⑥'];
+var GNAME = {}; F.GROUPS.forEach(function (g) { GNAME[g[0]] = g[1]; });
+var S = { tab: 'learn', group: 'basic' };
+var P = null, E = null;
+window.FRCPage = { S: S, P: function () { return P; }, E: function () { return E; } };   // 測試用
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'math'); } catch (e) { } }
+function coinReport(item, c, n) { try { if (window.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); } catch (e) { } }
+function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
+function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
+function doneRec(sec, key, v) { try { if (window.KidsDone) KidsDone.record(sec, key, v); } catch (e) { } }
+function mkRec(Q, ok) { try { if (!window.KidsMistakes) return null; var m = F.mkEntry(Q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e) { return null; } }
+function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['eq', 'gcd', 'gcdword', 'multiples', 'multiply']) : ''; } catch (e) { return ''; } }
+function inp(f, lab, ml) { return '<input class="num-in" data-f="' + f + '" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="' + (ml || 3) + '" aria-label="' + esc(lab) + '">'; }
+function frIn(fn, fd, d) { return '<span class="fr fr-in"><span class="fr-n">' + inp(fn, '分子') + '</span><span class="fr-d">' + (d ? '<span class="fixd">' + d + '</span>' : inp(fd, '分母')) + '</span></span>'; }
+function fval(el, f) { var x = el.querySelector('[data-f="' + f + '"]'); return x ? x.value : ''; }
+
+/* ================= 📖 教學：分數條、數線 ================= */
+// 分數條：n/d（n 可以 > d：畫好幾條）；color＝塗色
+function barSVG(n, d, color) {
+  var W = 320, H = 30, rows = Math.max(1, Math.ceil(n / d)), h = '';
+  for (var r = 0; r < rows; r++) {
+    var y = r * (H + 6);
+    for (var i = 0; i < d; i++) { var on = r * d + i < n, x = 1 + i * (W - 2) / d; h += '<rect x="' + x.toFixed(2) + '" y="' + (y + 1) + '" width="' + ((W - 2) / d).toFixed(2) + '" height="' + H + '" fill="' + (on ? color : '#fff') + '" stroke="#263445" stroke-width="1.5"/>'; }
+  }
+  var TH = rows * (H + 6);
+  return '<svg viewBox="0 0 ' + W + ' ' + TH + '" width="' + W + '" height="' + TH + '" role="img" aria-label="分數條：' + d + ' 份塗 ' + n + ' 份">' + h + '</svg>';
+}
+function barRow(Fx, color) { return '<div class="bar-row"><span class="lbl">' + F.fh(Fx) + '</span>' + barSVG(F.top(Fx), Fx[2], color) + '</div>'; }
+var CA = 'var(--a)', CB = 'var(--b)';
+function cmpLine(A, B) { return F.fh(A) + ' ' + F.SIGN[F.cmp(A, B)] + ' ' + F.fh(B); }
+(function () {
+  $('b1').innerHTML = barRow([0, 3, 4], CA) + barRow([0, 2, 3], CB);
+  $('b1').insertAdjacentHTML('afterend', '<p class="ex">' + F.fh([0, 3, 4]) + '：切 4 份拿 3 份；' + F.fh([0, 2, 3]) + '：切 3 份拿 2 份。上面那條比較長 → ' + cmpLine([0, 3, 4], [0, 2, 3]) + '</p>');
+  $('b2').innerHTML = barRow([0, 5, 9], CA) + barRow([0, 7, 9], CB);
+  $('s2').innerHTML = '每一份都是 ' + F.fr(1, 9) + '，5 份比 7 份少 → ' + cmpLine([0, 5, 9], [0, 7, 9]);
+  $('b3').innerHTML = barRow([0, 1, 4], CA) + barRow([0, 1, 6], CB) + barRow([0, 3, 5], CA) + barRow([0, 3, 8], CB);
+  $('s3').innerHTML = cmpLine([0, 1, 4], [0, 1, 6]) + '（切 4 份的一份比切 6 份的一份大）<br>' + cmpLine([0, 3, 5], [0, 3, 8]) + '（一樣拿 3 份，' + F.fr(1, 5) + ' 那種一份比較大）';
+  $('i4a').innerHTML = F.fh([0, 5, 6]) + '、' + F.fh([0, 8, 9]);
+  $('b4').innerHTML = barRow([0, 5, 6], CA) + barRow([0, 8, 9], CB);
+  $('s4').innerHTML = F.fh([0, 5, 6]) + ' 離 1 差 ' + F.fr(1, 6) + '，' + F.fh([0, 8, 9]) + ' 離 1 差 ' + F.fr(1, 9) + '；' + F.fr(1, 9) + ' 比較少 → 更接近 1 → ' + cmpLine([0, 5, 6], [0, 8, 9]) +
+    '<br>反過來，' + F.fh([0, 7, 6]) + ' 比 1 多 ' + F.fr(1, 6) + '、' + F.fh([0, 10, 9]) + ' 比 1 多 ' + F.fr(1, 9) + ' → 多得多的大：' + cmpLine([0, 7, 6], [0, 10, 9]);
+  // 數線：0、一半、1；A＝7/12、B＝4/9
+  var X0 = 40, X1 = 600, px = function (n, d) { return X0 + (X1 - X0) * n / d; }, A = [7, 12], B = [4, 9];
+  var h = '<line x1="' + X0 + '" y1="60" x2="' + X1 + '" y2="60" stroke="#263445" stroke-width="3"/>';
+  [[0, '0'], [0.5, ''], [1, '1']].forEach(function (t) { var x = X0 + (X1 - X0) * t[0]; h += '<line x1="' + x + '" y1="48" x2="' + x + '" y2="72" stroke="#263445" stroke-width="3"/>' + (t[1] ? '<text x="' + x + '" y="98" text-anchor="middle" font-size="22" font-weight="700">' + t[1] + '</text>' : ''); });
+  var xm = (X0 + X1) / 2;   // 一半：上下排畫出來
+  h += '<text x="' + xm + '" y="92" text-anchor="middle" font-size="18" font-weight="700">1</text><line x1="' + (xm - 9) + '" y1="97" x2="' + (xm + 9) + '" y2="97" stroke="#263445" stroke-width="2"/><text x="' + xm + '" y="114" text-anchor="middle" font-size="18" font-weight="700">2</text>';
+  h += '<circle cx="' + px(A[0], A[1]) + '" cy="60" r="10" fill="#2477c9"/><text x="' + px(A[0], A[1]) + '" y="34" text-anchor="middle" font-size="20" font-weight="800" fill="#2477c9">A</text>';
+  h += '<circle cx="' + px(B[0], B[1]) + '" cy="60" r="10" fill="#d2601a"/><text x="' + px(B[0], B[1]) + '" y="34" text-anchor="middle" font-size="20" font-weight="800" fill="#d2601a">B</text>';
+  $('nl').setAttribute('viewBox', '0 0 640 122'); $('nl').innerHTML = h;
+  $('s4b').innerHTML = 'A＝' + F.fh([0, 7, 12]) + '：7×2＝14 ＞ 12 → 比一半大；B＝' + F.fh([0, 4, 9]) + '：4×2＝8 ＜ 9 → 比一半小 → ' + cmpLine([0, 7, 12], [0, 4, 9]);
+  $('s5').innerHTML = '比 ' + F.fh([0, 5, 6]) + ' 和 ' + F.fh([0, 7, 9]) + '：9 的倍數 9、<b>18</b>，18 也是 6 的倍數 → 最小公倍數 18<br>' +
+    F.fh([0, 5, 6]) + '＝' + F.fr(15, 18) + '（分子分母都 ×3）、' + F.fh([0, 7, 9]) + '＝' + F.fr(14, 18) + '（都 ×2）→ 15 ＞ 14 → ' + cmpLine([0, 5, 6], [0, 7, 9]);
+  $('b5').innerHTML = barRow([0, 15, 18], CA) + barRow([0, 14, 18], CB);
+  $('s6').innerHTML = '比 ' + F.fh([0, 12, 18]) + ' 和 ' + F.fh([0, 15, 27]) + '：<br>先約分：' + F.fh([0, 12, 18]) + '＝' + F.fr(2, 3) + '（÷6）、' + F.fh([0, 15, 27]) + '＝' + F.fr(5, 9) + '（÷3）<br>再通分：' + F.fr(2, 3) + '＝' + F.fr(6, 9) + ' → 6 ＞ 5 → ' + cmpLine([0, 12, 18], [0, 15, 27]) +
+    '<br>約完一模一樣的例子：' + F.fh([0, 9, 15]) + '＝' + F.fr(3, 5) + '、' + F.fh([0, 12, 20]) + '＝' + F.fr(3, 5) + ' → ' + cmpLine([0, 9, 15], [0, 12, 20]);
+  $('b7').innerHTML = barRow([0, 17, 5], CA) + barRow([0, 11, 4], CB);
+  $('s7').innerHTML = F.fh([0, 17, 5]) + '：17 ÷ 5 ＝ 3 … 2 → ' + F.fh([3, 2, 5]) + '；' + F.fh([0, 11, 4]) + '：11 ÷ 4 ＝ 2 … 3 → ' + F.fh([2, 3, 4]) + '<br>整數 3 ＞ 2 → ' + cmpLine([0, 17, 5], [0, 11, 4]) +
+    '<br>整數一樣的：' + F.fh([0, 13, 6]) + '＝' + F.fh([2, 1, 6]) + '、' + F.fh([0, 9, 4]) + '＝' + F.fh([2, 1, 4]) + ' → 都是 2，比旁邊：' + F.fr(1, 6) + ' ＜ ' + F.fr(1, 4) + ' → ' + cmpLine([0, 13, 6], [0, 9, 4]);
+  $('i7').innerHTML = F.fh([0, 36, 12]) + '＝3、' + F.fh([0, 45, 15]) + '＝3';
+})();
+// 自己出題比比看
+function tval(id) { return F.num($(id).value); }
+function testerDraw() {
+  var aw = tval('t-aw') || 0, an = tval('t-an'), ad = tval('t-ad'), bw = tval('t-bw') || 0, bn = tval('t-bn'), bd = tval('t-bd');
+  var A = [aw, an, ad], B = [bw, bn, bd];
+  var bad = function (X) { return X[1] == null || X[2] == null || X[2] < 2 || X[2] > 24 || X[1] < 1 || X[1] > 99 || (X[0] && X[1] >= X[2]) || F.top(X) / X[2] > 4; };
+  if (bad(A) || bad(B)) { $('t-bars').innerHTML = ''; $('t-res').innerHTML = '分母 2～24、分子至少 1；有整數的話，分子要比分母小；最大到 4。'; return; }
+  $('t-bars').innerHTML = barRow(A, CA) + barRow(B, CB);
+  var Q = guessQ(A, B);
+  $('t-res').innerHTML = Q ? F.steps(Q).join('<br>') : cmpLine(A, B) + '（看分數條，比比看誰比較長）';
+}
+// 依「⑧ 先選方法」的順序挑一種題型來說明（挑得到的第一種）
+function guessQ(A, B) {
+  var v = A.concat(B), order = ['mixw', 'mixs', 'mixm', 'sd', 'sn', 'one', 'half', 'red', 'lcd'];
+  for (var i = 0; i < order.length; i++) { var Q = F.build(order[i], v); if (Q) return Q; }
+  return null;
+}
+['t-aw', 't-an', 't-ad', 't-bw', 't-bn', 't-bd'].forEach(function (id) { $(id).addEventListener('input', testerDraw); });
+
+/* ================= ✏️ 練習 ================= */
+function msg(t, kind) { var m = $('p-msg'); m.innerHTML = t || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); }
+var DESC = { basic: '分母一樣比分子；分子一樣，分母大的反而小。直接按 ＞＜＝。', bench: '分子比分母少 1（或多 1）→ 跟 1 比；一個超過一半、一個不到 → 跟一半比。',
+  lcd: '先用最小公倍數通分（數字鍵盤填分子、分母），再按 ＞＜＝。', red: '先約成最簡分數（數字鍵盤填），再按 ＞＜＝；有時候會一樣大。', mix: '先把假分數化成帶分數（填整數、分子），先比整數，再按 ＞＜＝。' };
+function pStartHTML() {
+  var g = '<div class="selbar c" id="p-groups" role="group" aria-label="題型"><span class="lab">題型</span>' + F.GROUPS.map(function (x, i) { return '<button type="button" class="btn sm" data-g="' + x[0] + '" aria-pressed="' + (x[0] === S.group) + '">' + CIRC[i] + ' ' + x[1] + '</button>'; }).join('') + '</div>';
+  return '<h2>✏️ 練習</h2>' + g + '<p>' + DESC[S.group] + '<br>一輪 ' + ROUND + ' 題，第一次就答對才算分；答錯的題會收進 📕 錯題庫。</p><button type="button" class="btn primary big" id="p-go">開始這一輪 ▶</button>';
+}
+function pHome() { P = null; $('p-start').hidden = false; $('p-q').hidden = true; $('p-end').hidden = true; $('p-start').className = 'card center'; $('p-start').innerHTML = pStartHTML(); }
+function pStart() {
+  if (!authOK()) return;
+  if (!startAct(pStart)) return;
+  P = { items: F.round(S.group, ROUND), idx: 0, ok: 0, grad: 0, sent: false, mk: false, group: S.group };
+  pQ();
+}
+function pQ() {
+  var Q = P.items[P.idx];
+  Q.st = { wrong: false, recorded: false, done: false, filled: !Q.fill, log: [], pick: '' };
+  P.Q = Q;
+  $('p-start').hidden = true; $('p-end').hidden = true; $('p-q').hidden = false;
+  msg(''); pRender(true);
+}
+// 先填的格子（練習、考試共用）；lab＝要不要寫「① 通分…」的標題
+function fillHTML(Q, lab) {
+  var f = Q.fill, A = Q.A, B = Q.B, h = '';
+  if (f.t === 'lcd') {
+    var pa = [0, A[1], A[2]], pb = [0, B[1], B[2]];
+    h += lab ? '<p><b>① 通分：</b>用 ' + A[2] + ' 和 ' + B[2] + ' 的<b>最小公倍數</b>當分母' + (A[0] ? '（整數一樣都是 ' + A[0] + '，把旁邊的分數通分）' : '') + '</p>' : '';
+    h += '<div class="frow">' + F.fh(pa) + '<span class="eqs">＝</span>' + frIn('an', 'ad') + '</div><div class="frow">' + F.fh(pb) + '<span class="eqs">＝</span>' + frIn('bn', 'bd') + '</div>';
+  } else if (f.t === 'red') {
+    h += lab ? '<p><b>① 先約分：</b>約成<b>最簡分數</b>（分子、分母除以最大公因數）</p>' : '';
+    h += '<div class="frow">' + F.fh(A) + '<span class="eqs">＝</span>' + frIn('an', 'ad') + '</div><div class="frow">' + F.fh(B) + '<span class="eqs">＝</span>' + frIn('bn', 'bd') + '</div>';
+  } else {
+    h += lab ? '<p><b>① 化成帶分數：</b>分子 ÷ 分母，商是整數、餘數是分子（整除的話就是整數）</p>' : '';
+    [['a', A, f.a], ['b', B, f.b]].forEach(function (x) {
+      if (!x[2]) return;
+      h += '<div class="frow">' + F.fh(x[1]) + '<span class="eqs">＝</span><span class="frm">' + inp(x[0] + 'w', '整數', 2) + (x[2].r ? frIn(x[0] + 'r', '', x[2].d) : '') + '</span></div>';
+    });
+  }
+  return h;
+}
+function readFill(Q, el) { var o = {}; ['an', 'ad', 'bn', 'bd', 'aw', 'ar', 'bw', 'br'].forEach(function (k) { var x = el.querySelector('[data-f="' + k + '"]'); if (x) o[k] = x.value; }); return o; }
+function signsHTML(sm, picked) { return '<div class="signs' + (sm ? ' sm' : '') + '" data-f="s" role="group" aria-label="比大小">' + F.SIGNS.map(function (s) { return '<button type="button" class="btn" data-s="' + s + '" aria-pressed="' + (picked === s) + '" aria-label="' + { '>': '大於', '<': '小於', '=': '等於' }[s] + '">' + F.SIGN[s] + '</button>'; }).join('') + '</div>'; }
+function duelHTML(Q, s) { return F.fh(Q.A) + '<span class="slot' + (s ? ' on' : '') + '">' + (s ? F.SIGN[s] : '○') + '</span>' + F.fh(Q.B); }
+function pRender(focus) {
+  var Q = P.Q, st = Q.st;
+  $('p-prog').innerHTML = (P.mk ? '📕 錯題練習　' : '') + '<span>第 ' + (P.idx + 1) + ' / ' + P.items.length + ' 題</span><span class="muted">第一次就答對 ' + P.ok + ' 題</span><span class="muted">' + esc(GNAME[Q.group]) + '</span>';
+  $('p-text').textContent = st.done ? '答案：' : (st.filled ? '○ 裡要放 ＞、＜ 還是 ＝？' : '先填好下面的格子，再比大小。');
+  $('p-duel').innerHTML = duelHTML(Q, st.done ? Q.ans : '');
+  var a = '';
+  if (st.log.length) a += '<ul class="log">' + st.log.map(function (s) { return '<li>✔ ' + s + '</li>'; }).join('') + '</ul>';
+  if (st.done) {
+    var more = P.idx + 1 < P.items.length;
+    a += '<p>' + (st.wrong ? '💪 完成了！這題有答錯的地方，已經收進 📕 錯題庫。' : '🎉 第一次就答對！') + '</p><ol class="steps">' + F.steps(Q).map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>' +
+      '<div class="row"><button type="button" class="btn primary big" id="p-next">' + (more ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
+  } else if (!st.filled) a += fillHTML(Q, true) + '<div class="row"><button type="button" class="btn primary big" id="p-fill">確定</button></div>';
+  else a += (Q.fill ? '<p><b>② 比大小：</b></p>' : '') + signsHTML(false, '');
+  $('p-act').innerHTML = a;
+  if (focus) { var f = $('p-act').querySelector('input'); if (f) try { f.focus({ preventScroll: true }); } catch (e) { } }
+}
+function wrongQ() { var st = P.Q.st; st.wrong = true; if (!st.recorded) { st.recorded = true; mkRec(P.Q, false); } }
+function badF(fs) { var el = $('p-act'); Array.prototype.forEach.call(el.querySelectorAll('.bad'), function (x) { x.classList.remove('bad'); }); fs.forEach(function (f) { var x = el.querySelector('[data-f="' + f + '"]'); if (x) x.classList.add('bad'); }); }
+function pFill() {
+  var Q = P.Q, r = F.checkFill(Q, readFill(Q, $('p-act')));
+  coinAnswer(r.ok);
+  if (!r.ok) { wrongQ(); badF(r.bad); msg('再想想 👀 ' + r.hint, 'bad'); return; }
+  Q.st.filled = true; Q.st.log.push(F.fillHTML(Q)); msg(''); pRender(false);
+}
+function pPick(s) {
+  var Q = P.Q, r = F.checkCmp(Q, s);
+  coinAnswer(r.ok);
+  if (!r.ok) {
+    wrongQ(); msg('再想想 👀 ' + r.hint, 'bad');
+    var g = $('p-act').querySelector('.signs'); Array.prototype.forEach.call(g.querySelectorAll('[data-s]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-s') === s)); }); g.classList.add('bad');
+    return;
+  }
+  Q.st.done = true;
+  if (!Q.st.wrong) { P.ok++; if (mkRec(Q, true) === 'graduated') P.grad++; }
+  msg(Q.st.wrong ? '' : '答對了！🎉', Q.st.wrong ? '' : 'good');
+  pRender(false);
+}
+function pEnd() {
+  var n = P.items.length, pct = n ? Math.round(P.ok / n * 100) : 0;
+  if (!P.sent) {
+    P.sent = true;
+    coinReport(P.mk ? 'math:mistakes' : 'math:fraction', P.ok, n);
+    if (!P.mk && n) doneRec('fr', P.group, pct);   // 單元完成：這個題型最佳一輪（第一次就答對的題數／題數）
+  }
+  $('p-q').hidden = true; $('p-end').hidden = false;
+  $('p-end').innerHTML = '<p class="big">' + (P.ok === n ? '🏆' : '💪') + '</p><p class="score" id="p-score">' + P.ok + ' / ' + n + '</p><p>第一次就答對 ' + P.ok + ' 題（' + pct + '%）' +
+    (P.grad ? '，🎓 有 ' + P.grad + ' 題錯題畢業了！' : P.ok < n ? '；答錯的題在 📕 錯題庫等你復仇。' : '！') + '</p><div class="row">' +
+    (P.mk ? '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + mkMore()
+      : '<button type="button" class="btn primary big" id="p-again">再來一輪 ▶</button><button type="button" class="btn" id="p-home">換題型</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a>') + '</div>';
+  window.scrollTo(0, 0);
+}
+$('prac').addEventListener('click', function (e) {
+  var t = e.target, b;
+  if ((b = t.closest('[data-g]'))) { S.group = b.getAttribute('data-g'); pHome(); return; }
+  if (t.id === 'p-go' || t.id === 'p-again') { pStart(); return; }
+  if (t.id === 'p-home') { pHome(); return; }
+  if (!P || !P.Q) return;
+  if ((b = t.closest('[data-s]')) && !P.Q.st.done) { pPick(b.getAttribute('data-s')); return; }
+  if (t.id === 'p-fill') pFill();
+  else if (t.id === 'p-next') { P.idx++; if (P.idx >= P.items.length) pEnd(); else { pQ(); window.scrollTo(0, 0); } }
+});
+$('prac').addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' || !P || !P.Q || e.target.tagName !== 'INPUT') return;
+  e.preventDefault();
+  var ins = Array.prototype.slice.call($('p-act').querySelectorAll('input')), i = ins.indexOf(e.target);
+  if (i >= 0 && i < ins.length - 1 && !String(ins[i + 1].value).trim()) { ins[i + 1].focus(); return; }
+  if ($('p-fill')) $('p-fill').click();
+});
+$('prac').addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('bad')) e.target.classList.remove('bad'); });
+
+/* ================= 📝 考試（固定一份）================= */
+function bestOf(k) { try { var d = JSON.parse(localStorage.getItem('kids_done') || 'null'), v = d && d.fr && d.fr[k]; return typeof v === 'number' ? v : null; } catch (e) { return null; } }
+var FILL_ASK = { lcd: '通分（用最小公倍數當分母）', red: '約成最簡分數', mix: '化成帶分數（整除的寫整數）' };
+function eStartHTML() {
+  var b = bestOf('test');
+  return '<h2>📝 考試（100 分）</h2>' + (b != null ? '<p><b>最高 ' + b + ' 分</b>' + (b >= 80 ? ' ✅' : '') + '</p>' : '') + '<p class="muted" style="font-size:1rem;line-height:1.7">' +
+    F.PAPER.map(function (s) { return CIRC[s.no - 1] + ' ' + esc(s.title) + '（' + s.items.length + ' 題，' + esc(s.note) + '）'; }).join('<br>') +
+    '</p><p>寫完按「交卷」才會看到分數、每題對錯和正解。答錯的題會收進 📕 錯題庫。<b>考到 80 分以上，就算考試過關。</b></p><button type="button" class="btn primary big" id="e-go">開始考試 ▶</button>';
+}
+function eHome() { E = null; $('e-start').hidden = false; $('e-paper').hidden = true; $('e-result').hidden = true; $('e-start').innerHTML = eStartHTML(); window.scrollTo(0, 0); }
+function eStart() {
+  if (!authOK()) return;
+  if (!startAct(eStart)) return;
+  E = { secs: F.exam(), sent: false, confirm: false };
+  var h = '';
+  E.secs.forEach(function (s) {
+    h += '<div class="card ex-sec" data-sec="' + s.no + '"><h3>' + CIRC[s.no - 1] + ' ' + esc(s.title) + ' <small>（' + esc(s.note) + '）</small></h3>';
+    s.items.forEach(function (Q, j) {
+      h += '<div class="ex-item" data-id="' + esc(Q.id) + '" data-mode="' + s.mode + '">' + (s.mode === 'fill'
+        ? '<p class="q-text">(' + (j + 1) + ') ' + FILL_ASK[Q.fill.t] + '：</p>' + fillHTML(Q, false)
+        : '<p class="q-text">(' + (j + 1) + ')</p><div class="duel">' + duelHTML(Q, '') + '</div>' + signsHTML(true, '')) + '</div>';
+    });
+    h += '</div>';
+  });
+  h += '<div class="card center"><p class="msg" id="e-msg" role="status" aria-live="polite"></p><button type="button" class="btn primary big" id="e-submit">交卷 📝</button></div>';
+  $('e-start').hidden = true; $('e-result').hidden = true; $('e-paper').hidden = false; $('e-paper').innerHTML = h;
+  window.scrollTo(0, 0);
+}
+function eRead(el, Q, mode) { if (mode === 'fill') return readFill(Q, el); var b = el.querySelector('[data-s][aria-pressed="true"]'); return b ? b.getAttribute('data-s') : ''; }
+function eBlank(a, mode) { return mode === 'fill' ? !Object.keys(a).some(function (k) { return String(a[k]).trim(); }) : !a; }
+function yoursHTML(Q, a, mode) {
+  if (mode !== 'fill') return a ? F.fh(Q.A) + ' ' + F.SIGN[a] + ' ' + F.fh(Q.B) : '（沒寫）';
+  var v = function (k) { var x = String(a[k] == null ? '' : a[k]).trim(); return x ? esc(x) : '—'; };
+  if (Q.fill.t !== 'mix') return F.fr(v('an'), v('ad')) + '、' + F.fr(v('bn'), v('bd'));
+  return ['a', 'b'].filter(function (s) { return Q.fill[s]; }).map(function (s) { return v(s + 'w') + (Q.fill[s].r ? ' ' + F.fr(v(s + 'r'), Q.fill[s].d) : ''); }).join('、');
+}
+function eSubmit() {
+  var answers = {}, modes = {}, blanks = 0;
+  Array.prototype.forEach.call($('e-paper').querySelectorAll('.ex-item'), function (el) {
+    var id = el.getAttribute('data-id'), mode = el.getAttribute('data-mode'), Q = null;
+    E.secs.forEach(function (s) { s.items.forEach(function (x) { if (x.id === id && s.mode === mode) Q = x; }); });
+    var a = eRead(el, Q, mode); answers[id] = a; modes[id] = mode; if (eBlank(a, mode)) blanks++;
+  });
+  if (blanks && !E.confirm) { E.confirm = true; $('e-msg').className = 'msg bad'; $('e-msg').textContent = '還有 ' + blanks + ' 題沒有寫，確定要交卷嗎？再按一次「交卷」就交出去。'; return; }
+  var R = F.examScore(E.secs, answers), right = 0, n = 0;
+  R.secs.forEach(function (s) { s.items.forEach(function (it) { n++; coinAnswer(it.r.ok); if (it.r.ok) right++; mkRec(it.Q, it.r.ok); }); });
+  if (!E.sent) { E.sent = true; coinReport('math:fraction-test', right, n); doneRec('fr', 'test', R.total); }
+  var h = '<div class="card center"><p class="res-tot" id="e-score">' + R.total + ' 分</p><p>' + (R.total >= 80 ? '🎉 80 分以上，過關！' : '💪 再練一下，80 分就過關') + '　答對 ' + right + ' / ' + n + ' 題</p><div class="res-sec">' +
+    R.secs.map(function (s) { return '<span>' + CIRC[s.no - 1] + ' ' + s.got + '／' + s.max + '</span>'; }).join('') + '</div>' +
+    '<div class="row" style="justify-content:center;display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn primary big" id="e-again">再考一次 ▶</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a></div></div>';
+  R.secs.forEach(function (s) {
+    h += '<div class="card ex-sec"><h3>' + CIRC[s.no - 1] + ' ' + esc(s.title) + ' <small>' + s.got + '／' + s.max + ' 分</small></h3>';
+    s.items.forEach(function (it, j) {
+      var Q = it.Q, r = it.r, fill = s.mode === 'fill';
+      h += '<div class="ri ' + (r.ok ? 'ok' : 'no') + '" data-ok="' + r.ok + '" data-id="' + esc(Q.id) + '"><span class="mk">' + (r.ok ? '✔' : '✘') + '</span><b>(' + (j + 1) + ')</b> ' + (fill ? FILL_ASK[Q.fill.t] : '') + '　<small>' + r.got + '／' + r.max + ' 分</small><br>' +
+        '<span class="yours">你的答案：' + yoursHTML(Q, answers[Q.id], s.mode) + '</span><br><span class="right">正解：' + (fill ? F.fillHTML(Q) : F.answerHTML(Q)) + '</span>' +
+        (!r.ok && !fill ? '<ol>' + F.steps(Q).map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>' : '') + '</div>';
+    });
+    h += '</div>';
+  });
+  $('e-paper').hidden = true; $('e-result').hidden = false; $('e-result').innerHTML = h;
+  window.scrollTo(0, 0);
+}
+$('exam').addEventListener('click', function (e) {
+  var t = e.target, b;
+  if (t.id === 'e-go' || t.id === 'e-again') { eStart(); return; }
+  if (t.id === 'e-submit') { eSubmit(); return; }
+  if ((b = t.closest('.signs [data-s]'))) {   // 單選：再按一次取消
+    var on = b.getAttribute('aria-pressed') !== 'true', it = b.closest('.ex-item');
+    Array.prototype.forEach.call(b.parentNode.querySelectorAll('[data-s]'), function (x) { x.setAttribute('aria-pressed', String(on && x === b)); });
+    var sl = it.querySelector('.slot'); sl.textContent = on ? F.SIGN[b.getAttribute('data-s')] : '○'; sl.classList.toggle('on', on);
+    if (E) E.confirm = false;
+  }
+});
+$('exam').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.preventDefault(); });
+$('exam').addEventListener('input', function () { if (E) E.confirm = false; });
+
+/* ================= 分頁 ================= */
+function setTab(k) {
+  if ((k === 'prac' || k === 'exam') && !authOK()) return;   // 練習、考試要登入（教學免登入）
+  S.tab = k;
+  ['learn', 'prac', 'exam'].forEach(function (x) { $('tab-' + x).setAttribute('aria-selected', String(x === k)); $(x).hidden = x !== k; });
+  if (k === 'prac' && !P) pHome();
+  if (k === 'exam' && !E) eHome();
+  window.scrollTo(0, 0);
+}
+function paintDone() {
+  try { var el = $('kdone'); if (!el || !window.KidsDone) return; if (MK) { el.hidden = true; return; } KidsDone.mount(el, 'math:frc', { title: '分數比較大小' }); } catch (e) { }
+}
+window.FRCPage.paintDone = paintDone;
+$('tab-learn').onclick = function () { setTab('learn'); };
+$('tab-prac').onclick = function () { setTab('prac'); };
+$('tab-exam').onclick = function () { setTab('exam'); };
+$('go-prac').onclick = function () { setTab('prac'); };
+
+/* ================= 啟動 ================= */
+testerDraw();
+if (/[?&]tab=prac(?:&|$)/.test(location.search)) setTab('prac');
+if (MK) {
+  /* 錯題練習：type 'fraction' 的數學錯題，用同樣的題型＋數字原題重做（最多 30 題、最近答錯的先；考試填填看那題也照練習的做法：先填再比） */
+  var items = [], seen = {};
+  try { KidsMistakes.list('math').forEach(function (e) { if (items.length >= 30) return; var Q = F.fromMistake(e.p); if (Q && !seen[Q.id]) { seen[Q.id] = 1; items.push(Q); } }); } catch (e) { }
+  document.title = '分數錯題練習';
+  $('title').textContent = '📕 分數比較大小錯題練習';
+  $('lede').textContent = '答錯過的題目，用一樣的數字再做一次。同一題連續答對 3 次就會畢業 🎓';
+  $('tabs').hidden = true; $('learn').hidden = true; $('exam').hidden = true; $('prac').hidden = false; S.tab = 'prac';
+  P = { items: items, idx: 0, ok: 0, grad: 0, sent: false, mk: true, group: 'mk' };   // 練習額度在錯題庫按「只練錯題」時已經算過
+  if (items.length) pQ();
+  else {
+    $('p-q').hidden = true; $('p-start').className = 'card center mk-mark';
+    $('p-start').innerHTML = '<p id="mk-empty">目前沒有分數錯題 🎉</p><a class="btn primary" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + mkMore();
+  }
+}
+})();
+</script>
+<script src="../kids-auth.js?v=42d7c72a13"></script>
+<script src="../kids-coins.js?v=a6b187b16e"></script>
+<script src="../syncmerge.js?v=61f4f637a7"></script>
+<script src="../completion.js?v=a70ec426fd"></script>
+<script src="../kids-done.js?v=877f66af0a"></script>
+<script src="../syncauto.js?v=d7ed49f73e"></script>
+<script src="../sync.js?v=cbdd56da2a"></script>
+<script>if (window.FRCPage && FRCPage.paintDone) FRCPage.paintDone();</script>
+</body>
+</html>

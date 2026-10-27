@@ -32,6 +32,7 @@
 | 天平解方程式 | `math\balance.html` | 同一支 |
 | 短除法：最大公因數・最小公倍數 | `math\short-division.html`（畫面：📖 看步驟／✏️ 換你算／📝 應用題）＋`math\short-division.js`（純函式，`node test/short-division.test.js`）＋`math\gcd-word.js`（應用題 13 個模板，`node test/gcd-word.test.js`）；瀏覽器實測 kids-member `tests\short-division-browser.js`、`tests\gcd-word-browser.js` | 同一批 |
 | 倍數與公倍數（五上單元三，2026-10-21） | `math\multiples.html`（📖 教學免登入／✏️ 練習六種題型／📝 考試照原卷 9・9・16・20・36・10 配分：隨機考卷或紙本練習卷第一回、第二回）＋`math\multiples.js`（純函式，`node test/multiples.test.js`）＋`math\multiples-papers.js`（練習卷固定題目＋分步判分，`node test/multiples-papers.test.js`）；瀏覽器實測 kids-member `tests\multiples-browser.js` | 同一批 |
+| 分數比較大小（五上，2026-10-27） | `math\fraction.html`（📖 教學免登入：分數條、數線、自己出題比比看／✏️ 練習五種題型：同分母・同分子、跟 1 跟一半比、通分再比、先約分再比、假分數・帶分數；＞＜＝ 大按鈕＋數字鍵盤／📝 考試固定一份 30 題 100 分）＋`math\fraction.js`（純函式，交叉相乘整數比，`node test/fraction.test.js`）；瀏覽器實測 kids-member `tests\fraction-browser.js` | 同一批 |
 | 乘法快算（2026-10-21） | `math\multiply.html`（✏️ 練習含拆解提示與直式格子／⏱️ 挑戰 20 題計時／📕 錯題重練）＋`math\multiply.js`（純函式，`node test/multiply.test.js`） | 同一批 |
 | 社會／自然心智圖 | `mindmap\`：`social.html`、`science.html`、`mindmap.js`／`.css`（兩科共用引擎）、`blanks.js`、`data\social\`、`data\science\`；`test\`、`_demo\`、`.md` 只留本機 | 同一批（不含 test、_demo、.md） |
 | AI 三頁 | `ai\hallucinate.html`、`ai\ask-well.html`、`ai\secrets.html` | 同一支 |

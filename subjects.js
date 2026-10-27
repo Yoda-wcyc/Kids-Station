@@ -11,7 +11,9 @@
       { id: 'short-division-word', title: '短除法：應用題', icon: '🧮', src: 'math/short-division.html?tab=word', hidden: true },
       // 2026-10-21：五上單元三〈倍數與公倍數〉（教學／練習／考試）＋〈乘法快算〉（考卷上算錯最多的乘法）
       { id: 'multiples', title: '倍數與公倍數', desc: '五上單元三：倍數判斷、範圍內的倍數、最小公倍數、四種應用題判斷（不超過／比它多／剛好／最少幾包），考試可選隨機考卷或紙本練習卷第一回、第二回（照原卷配分）', icon: '✖️', src: 'math/multiples.html', dk: 'math:mul' },
-      { id: 'multiply', title: '乘法快算', desc: '九九、二位數×一位數、二位數×二位數、三位數×一位數：練習有拆解提示和直式格子，挑戰一輪 20 題計時', icon: '⚡', src: 'math/multiply.html', dk: 'math:mx' }],
+      { id: 'multiply', title: '乘法快算', desc: '九九、二位數×一位數、二位數×二位數、三位數×一位數：練習有拆解提示和直式格子，挑戰一輪 20 題計時', icon: '⚡', src: 'math/multiply.html', dk: 'math:mx' },
+      // 2026-10-27：五上〈分數比較大小〉（教學／練習／考試）
+      { id: 'fraction', title: '分數比較大小', desc: '分數條、數線看懂比大小：同分母、同分子、跟 1 跟一半比、通分、先約分、假分數化帶分數；按 ＞＜＝ 大按鈕，考試一份 100 分', icon: '🍰', src: 'math/fraction.html', dk: 'math:frc' }],
     ai: [
       { id: 'hallucinate', title: 'AI 會唬爛', desc: 'AI 有時會很有自信地說錯。學會三招不被騙：自己查、問大人、多找一個地方對答案。', icon: '🤥', src: 'ai/hallucinate.html', dk: 'ai:hallucinate' },
       { id: 'ask-well', title: '怎麼問得好', desc: '同一件事，問法不同答案就差很多。練習講清楚、給背景、說形式，讓 AI 真的幫得上忙。', icon: '💬', src: 'ai/ask-well.html', dk: 'ai:ask-well' },
@@ -41,13 +43,13 @@
   //   社會／自然 → iframe mindmap/<科>.html?mistakes=1[&u=單元]；數學 → iframe math/balance.html?mistakes=1（錯題全是短除法 p.type 'gcd'／應用題 'gcdword' 時改開
   //   math/short-division.html?mistakes=1（只有應用題時 ?mistakes=word）；都有時天平做完有「接著練短除法錯題」，短除法做完有「接著練應用題錯題」）；AI → 在這頁重答（KidsMistakes.aiPlay）
   //   2026-10-21：倍數（p.type 'multiples'）→ math/multiples.html?mistakes=1、乘法（'multiply'）→ math/multiply.html?mistakes=1；順序＝天平 → 短除法 → 應用題 → 倍數 → 乘法，
-  //   每一頁做完都有「接著練…錯題」（KidsMistakes.mathMore）
+  //   每一頁做完都有「接著練…錯題」（KidsMistakes.mathMore）；2026-10-27：分數（'fraction'）→ math/fraction.html?mistakes=1，排在乘法後面
   const MK_SUBJ = ['social', 'science', 'math', 'ai'];
   const KM = () => window.KidsMistakes;
   const mathMkSrc = () => {
     let l = []; try { l = KM().list('math'); } catch (e) { }
-    const n = t => l.filter(e => e.p && e.p.type === t).length, g = n('gcd'), w = n('gcdword'), m = n('multiples'), x = n('multiply');
-    return !l.length || g + w + m + x < l.length ? 'math/balance.html?mistakes=1' : g ? 'math/short-division.html?mistakes=1' : w ? 'math/short-division.html?mistakes=word' : m ? 'math/multiples.html?mistakes=1' : 'math/multiply.html?mistakes=1';
+    const n = t => l.filter(e => e.p && e.p.type === t).length, g = n('gcd'), w = n('gcdword'), m = n('multiples'), x = n('multiply'), f = n('fraction');
+    return !l.length || g + w + m + x + f < l.length ? 'math/balance.html?mistakes=1' : g ? 'math/short-division.html?mistakes=1' : w ? 'math/short-division.html?mistakes=word' : m ? 'math/multiples.html?mistakes=1' : x ? 'math/multiply.html?mistakes=1' : 'math/fraction.html?mistakes=1';
   };
   const mkDesc = k => { let n = 0; try { n = KM() ? KM().count(k) : 0; } catch (e) { } return n ? `有 ${n} 題等你復仇` : '目前沒有錯題 🎉'; };
   MK_SUBJ.forEach(k => { if (ACTS[k]) ACTS[k].push({ id: 'mistakes', title: '錯題庫', desc: () => mkDesc(k), icon: '📕', href: `#s/${k}/mistakes` }); });

@@ -11,7 +11,8 @@
      數學 id＝'eq:<方程式>'，p＝{q:方程式}（天平）；'gcd:<數字>[:gcd|lcm]'，p＝{type:'gcd', nums:[數字], mode:'both'|'gcd'|'lcm', q:顯示文字}（短除法）；
        'gcdword:<模板>:<數字>'，p＝{type:'gcdword', t:模板 id, v:[數字], q:顯示文字}（短除法應用題，math/gcd-word.js 用 t＋v 原題重做）；
        'mul:<題型>:<數字>'，p＝{type:'multiples', k:題型, v:[數字], q:顯示文字}（倍數與公倍數，math/multiples.js 用 k＋v 原題重做，2026-10-21）；
-       'mx:<a>x<b>'，p＝{type:'multiply', a, b, lv, q:'a×b'}（乘法快算，2026-10-21）
+       'mx:<a>x<b>'，p＝{type:'multiply', a, b, lv, q:'a×b'}（乘法快算，2026-10-21）；
+       'frc:<題型>:<數字>'，p＝{type:'fraction', k:題型, v:[aw,an,ad,bw,bn,bd], q:顯示文字}（分數比較大小，math/fraction.js 用 k＋v 原題重做；清單用 v 畫上下排的分數，2026-10-27）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
    同步（syncmerge v4 的 mk 欄位）：各科依題目 id 聯集；同一題 u 較新的勝（墓碑也是），答錯次數 w 取較大；墓碑每科最多留 300 筆（最新的）。
    _core 是純函式（不碰 DOM），Node 可以直接 require 來測；畫面（錯題清單、AI 重答）由首頁 subjects.js 呼叫 page()／aiPlay()。 */
@@ -113,13 +114,19 @@
   // ================= 瀏覽器：畫面（首頁 #s/<科>/mistakes） =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var KLABEL = { w: '考考自己', a: '背架構', q: '練習題' };
-  function badgeOf(subj, p) { if (subj === 'math') return p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
+  function badgeOf(subj, p) { if (subj === 'math') return p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
   function textOf(subj, p) {
     if (subj === 'math') return p.q || '';
     if (subj === 'ai') return (p.q || '') + (p.opts && p.opts[p.c] != null ? '　→ ' + p.opts[p.c] : '');
     if (p.k === 'w') return p.s && p.a ? p.s.split(p.a).join('＿＿') + '（' + p.a + '）' : (p.s || p.a || '');
     if (p.k === 'a') return (p.s || '') + (p.a ? '（' + p.a + '）' : '');
     return (p.s || '') + (p.a ? '　→ ' + p.a : '');
+  }
+  // 分數題（type 'fraction'）：v 是 6 個整數 → 畫成上下排（分子／分母疊起來），不寫斜線；v 不對就退回純文字
+  function frItem(v) {
+    if (!Array.isArray(v) || v.length !== 6 || !v.every(function (x) { return typeof x === 'number' && isFinite(x) && x >= 0 && Math.floor(x) === x; })) return '';
+    var f = function (w, n, d) { return (w ? '<b>' + w + '</b>' : '') + '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.1;margin:0 .15em;font-weight:700"><span style="border-bottom:2px solid currentColor;padding:0 .2em">' + n + '</span><span style="padding:0 .2em">' + d + '</span></span>'; };
+    return f(v[0], v[1], v[2]) + ' ○ ' + f(v[3], v[4], v[5]) + '　比大小';
   }
   function dots(c) { var s = ''; for (var i = 0; i < GRAD; i++) s += i < c ? '●' : '○'; return s; }
   function authOK(why) { try { return !window.KidsAuth || KidsAuth.requireLogin(why); } catch (e) { return true; } }
@@ -137,7 +144,7 @@
       })).join('') + '</div>' : '';
     var lis = items.map(function (e) {
       var u = e.p.u && ulab[e.p.u] ? '<small class="muted">' + ulab[e.p.u] + '</small> ' : '';
-      return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf(k, e.p)) + '</span> ' + u + '<span>' + esc(textOf(k, e.p)) + '</span> <span class="dots">' + dots(e.c) + '</span> <small class="muted">錯 ' + e.w + ' 次</small></li>';
+      return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf(k, e.p)) + '</span> ' + u + '<span>' + ((k === 'math' && e.p.type === 'fraction' && frItem(e.p.v)) || esc(textOf(k, e.p))) + '</span> <span class="dots">' + dots(e.c) + '</span> <small class="muted">錯 ' + e.w + ' 次</small></li>';
     }).join('');
     box.innerHTML = '<header class="top"><a class="btn" href="#s/' + k + '">← 回' + esc(o.n) + '</a><h1>📕 ' + esc(o.n) + '錯題庫</h1></header>' +
       '<div class="card"><p>答錯的題目會來這裡。同一題<b>連續答對 3 次</b>就會畢業離開 🎓</p>' + filt +
@@ -154,8 +161,8 @@
 
   /* 數學錯題分頁（2026-10-21）：type → 在哪一頁練。mathMore(types)＝「接著練…錯題」按鈕（math/ 底下的頁面用，href 相對於 math/）；eq＝天平（其他沒標 type 的） */
   var MATH_MK = [['eq', '天平', 'balance.html?mistakes=1'], ['gcd', '短除法', 'short-division.html?mistakes=1'], ['gcdword', '應用題', 'short-division.html?mistakes=word'],
-    ['multiples', '倍數', 'multiples.html?mistakes=1'], ['multiply', '乘法', 'multiply.html?mistakes=1']];
-  function mathType(p) { var t = p && p.type; return t === 'gcd' || t === 'gcdword' || t === 'multiples' || t === 'multiply' ? t : 'eq'; }
+    ['multiples', '倍數', 'multiples.html?mistakes=1'], ['multiply', '乘法', 'multiply.html?mistakes=1'], ['fraction', '分數', 'fraction.html?mistakes=1']];
+  function mathType(p) { var t = p && p.type; return t === 'gcd' || t === 'gcdword' || t === 'multiples' || t === 'multiply' || t === 'fraction' ? t : 'eq'; }
   function mathCount(type) { return list('math').filter(function (e) { return mathType(e.p) === type; }).length; }
   function mathMore(types) {
     return MATH_MK.filter(function (m) { return types.indexOf(m[0]) >= 0; }).map(function (m) {

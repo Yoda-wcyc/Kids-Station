@@ -219,7 +219,7 @@ body{background:var(--bg)}
   </section>
 </main>
 
-<script src="../kids-mistakes.js?v=ad913ae20a"></script>
+<script src="../kids-mistakes.js?v=3b9606d6df"></script>
 <script src="short-division.js?v=17afc65cb7"></script>
 <script src="multiply.js?v=002b1af76c"></script>
 <script src="multiples.js?v=57f6dab5a4"></script>
@@ -519,7 +519,7 @@ function pEnd() {
   $('p-q').hidden = true; $('p-end').hidden = false;
   $('p-end').innerHTML = '<p class="big">' + (P.ok === n ? '🏆' : '💪') + '</p><p class="score" id="p-score">' + P.ok + ' / ' + n + '</p><p>第一次就答對 ' + P.ok + ' 題（' + pct + '%）' +
     (P.grad ? '，🎓 有 ' + P.grad + ' 題錯題畢業了！' : P.ok < n ? '；答錯的題在 📕 錯題庫等你復仇。' : '！') + '</p><div class="row">' +
-    (P.mk ? '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + mkMore(['eq', 'gcd', 'gcdword', 'multiply'])
+    (P.mk ? '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + mkMore(['eq', 'gcd', 'gcdword', 'multiply', 'fraction'])
       : '<button type="button" class="btn primary big" id="p-again">再來一輪 ▶</button><button type="button" class="btn" id="p-home">換題型</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a>') + '</div>';
   window.scrollTo(0, 0);
 }
@@ -714,15 +714,15 @@ if (MK) {
   if (items.length) pQ();
   else {
     $('p-q').hidden = true; $('p-start').className = 'card center mk-mark';
-    $('p-start').innerHTML = '<p id="mk-empty">目前沒有倍數錯題 🎉</p><a class="btn primary" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + mkMore(['eq', 'gcd', 'gcdword', 'multiply']);
+    $('p-start').innerHTML = '<p id="mk-empty">目前沒有倍數錯題 🎉</p><a class="btn primary" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + mkMore(['eq', 'gcd', 'gcdword', 'multiply', 'fraction']);
   }
 }
 })();
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
-<script src="../kids-coins.js?v=e1a8c7b5ad"></script>
-<script src="../syncmerge.js?v=6b0cc80b23"></script>
-<script src="../completion.js?v=97da5fff3c"></script>
+<script src="../kids-coins.js?v=a6b187b16e"></script>
+<script src="../syncmerge.js?v=61f4f637a7"></script>
+<script src="../completion.js?v=a70ec426fd"></script>
 <script src="../kids-done.js?v=877f66af0a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
 <script src="../sync.js?v=cbdd56da2a"></script>
