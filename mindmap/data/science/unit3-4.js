@@ -2,6 +2,8 @@
  * 規則同 unit1-2.js；格式見 ../FORMAT.md。
  * - 單元四「摩擦力小時較省力」與「摩擦力大時較費力」兩格都連到「生活中摩擦力的應用」→ 用 links 畫第二條（多父節點）。
  * - verify:true＝講義原文看得清楚但字面可疑，等對照課本後拿掉（目前無；「相同單位時間的速度比較」已由 Yoda 2026-10-09 確認補上「間」、拿掉標記）。
+ * - 2026-10-28 併入講義「學習重點」（新超群 5上 p44–47、p62–65）：既有節點的 id／標題／層級不動，只在底下加子節點（新 id）與 points（改寫句）；
+ *   單元三沒有對應位置的 2-4、活動 3 的 LED／檢測裝置照原文加成小分支（n3-b4、n3-c2、n3-c3）。練習題只加不刪。
  */
 window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
 (function (S) {
@@ -15,29 +17,58 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
     "偏紅色": ["紅色", "偏紅"],
     "偏藍色": ["藍色", "偏藍"],
     "偏綠色": ["綠色", "偏綠"],
-    "不變": ["不會變", "沒有變", "不會改變"]
+    "不變": ["不會變", "沒有變", "不會改變"],
+    "接近中性": ["中性", "變中性"],
+    "愈快": ["越快"]
   });
 
   S.units.push({
     id: "n3", no: 3, title: "水溶液", keys: ["水溶液"],
     lessons: [
       { id: "n3-a", title: "溶解現象", keys: ["溶解"], children: [
-        { id: "n3-a1", rel: "操作", title: "物質溶解在水中", keys: ["溶解", "水"], children: [
+        { id: "n3-a1", rel: "操作", title: "物質溶解在水中", keys: ["溶解", "水"], points: [
+            { t: "先秤裝了30毫升水的燒杯加上食鹽的總重量，把食鹽攪拌到完全溶解，再秤一次。", cands: [{ w: "完全溶解", core: true }] },
+            { t: "食鹽溶解後看不到顆粒，但總重量沒有變，表示食鹽並沒有消失。", cands: [{ w: "沒有消失", core: true }] },
+            { t: "東西一直加進水裡，最後會溶解不完。", cands: [{ w: "溶解不完", core: true }] },
+            { t: "做水溶液時，砂糖、食鹽、檸檬酸、小蘇打粉各取半匙，加進20毫升純水攪拌；醋則取2毫升加進20毫升純水。", cands: [{ w: "半匙", core: true }, { w: "純水" }] },
+            { t: "自來水裡的其他物質可能影響酸鹼性，所以實驗常用中性的純水來配水溶液。", cands: [{ w: "純水", core: true }, { w: "自來水" }] }
+          ], children: [
           { id: "n3-a1a", rel: "發現", title: "溶解前和溶解後，總重量都不變", keys: ["總重量", "不變"],
             cands: [{ w: "總重量", core: true }, { w: "不變", core: true }], children: [
             { id: "n3-a1a1", title: "把水分蒸發掉，會變回原來的物質", keys: ["蒸發"],
-              cands: [{ w: "蒸發", core: true }, { w: "原來的物質" }] }
-          ] }
+              cands: [{ w: "蒸發", core: true }, { w: "原來的物質" }], points: [
+                { t: "把食鹽水倒進大大的平盤，放在通風的地方，水蒸發後盤子上又看得到食鹽。", cands: [{ w: "通風", core: true }] }
+              ], children: [
+              { id: "n3-a1a1a", title: "曬海水得到粗鹽，熬甘蔗汁得到紅糖", keys: ["粗鹽", "紅糖"], cands: [{ w: "粗鹽", core: true }, { w: "紅糖", core: true }] }
+            ] }
+          ] },
+          { id: "n3-a1b", title: "被溶解的是溶質，拿來溶解的是溶劑", keys: ["溶質", "溶劑"], cands: [{ w: "溶質", core: true }, { w: "溶劑", core: true }], points: [
+              { t: "食鹽溶在水裡，食鹽是溶質，水是溶劑。", cands: [{ w: "溶質", core: true }, { w: "溶劑", core: true }] }
+            ] }
         ] }
       ] },
       { id: "n3-b", title: "水溶液的酸鹼性", keys: ["酸鹼"], children: [
-        { id: "n3-b1", rel: "觀察", title: "各種水溶液不相同", keys: ["不相同"], children: [
+        { id: "n3-b1", rel: "觀察", title: "各種水溶液不相同", keys: ["不相同"], points: [
+            { t: "可以用眼睛看顏色、用手搧著聞氣味，或看包裝上的成分說明，來分辨水溶液。", cands: [{ w: "搧著聞", core: true }] }
+          ], children: [
           { id: "n3-b1a", rel: "發現", title: "由兩種以上的物質混合成的東西", keys: ["兩種以上", "混合"],
             cands: [{ w: "兩種以上", core: true }, { w: "混合" }], children: [
-            { id: "n3-b1a1", title: "混合物", keys: ["混合物"], cands: [{ w: "混合物", core: true }] }
-          ] }
+            { id: "n3-b1a1", title: "混合物", keys: ["混合物"], cands: [{ w: "混合物", core: true }], points: [
+                { t: "不鏽鋼是不同金屬混成的固態混合物，空氣是不同氣體混成的氣態混合物。", cands: [{ w: "不鏽鋼", core: true }, { w: "空氣", core: true }] }
+              ], children: [
+              { id: "n3-b1a1a", title: "混合物有固態、液態、氣態", keys: ["固態", "氣態"], cands: [{ w: "固態", core: true }, { w: "氣態", core: true }, { w: "液態" }] }
+            ] }
+          ] },
+          { id: "n3-b1b", title: "顏色、氣味、酸鹼性、導電性可能不同", keys: ["酸鹼性", "導電性"], cands: [{ w: "酸鹼性", core: true }, { w: "導電性", core: true }, { w: "氣味" }] }
         ] },
-        { id: "n3-b2", rel: "使用", title: "利用石蕊試紙檢驗", keys: ["石蕊"], children: [
+        { id: "n3-b2", rel: "使用", title: "利用石蕊試紙檢驗", keys: ["石蕊"], points: [
+            { t: "檢驗前，把水溶液倒進用純水洗過的平底試管。", cands: [{ w: "純水", core: true }] },
+            { t: "用乾淨的滴管吸水溶液，滴在紅色和藍色石蕊試紙上，看試紙顏色怎麼變。", cands: [{ w: "滴管", core: true }] },
+            { t: "拿試紙要用鑷子夾，不要用手碰，也不要把試紙直接伸進水溶液裡；剪一小段來用就夠了。", cands: [{ w: "鑷子", core: true }, { w: "一小段" }] },
+            { t: "醋、檸檬酸水會讓藍色石蕊試紙變紅色，是酸性。", cands: [{ w: "檸檬酸水", core: true }, { w: "酸性", core: true }] },
+            { t: "純水、糖水、食鹽水讓兩種試紙都不變色，是中性。", cands: [{ w: "糖水", core: true }, { w: "中性", core: true }] },
+            { t: "肥皂水、小蘇打水會讓紅色石蕊試紙變藍色，是鹼性。", cands: [{ w: "肥皂水", core: true }, { w: "鹼性", core: true }] }
+          ], children: [
           { id: "n3-b2a", rel: "觀察", title: "紅色、藍色石蕊試紙都不變色", keys: ["不變色"],
             cands: [{ w: "都不變色", core: true }], children: [
             { id: "n3-b2a1", rel: "發現", title: "中性", keys: ["中性"], cands: [{ w: "中性", core: true }] }
@@ -51,7 +82,12 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
             { id: "n3-b2c1", rel: "發現", title: "鹼性", keys: ["鹼性"], cands: [{ w: "鹼性", core: true }] }
           ] }
         ] },
-        { id: "n3-b3", rel: "使用", title: "利用紫色高麗菜汁檢驗", keys: ["高麗菜"], children: [
+        { id: "n3-b3", rel: "使用", title: "利用紫色高麗菜汁檢驗", keys: ["高麗菜"], points: [
+            { t: "紫色高麗菜、紅鳳菜、蝶豆花的汁液，碰到不同的水溶液會變色。", cands: [{ w: "蝶豆花", core: true }, { w: "紅鳳菜" }] },
+            { t: "把紫色高麗菜撕成小片，泡在熱的純水裡約10分鐘，過濾後就是紫色高麗菜汁。", cands: [{ w: "過濾", core: true }] },
+            { t: "醋、檸檬酸水加了以後偏紅色；食鹽水、糖水還是紫色；小蘇打水、肥皂水偏藍色或綠色。", cands: [{ w: "偏紅色", core: true }, { w: "偏藍色", core: true }] },
+            { t: "植物汁液遇到酸、鹼的顏色變化要有規律，才能拿來當指示劑。", cands: [{ w: "規律", core: true }] }
+          ], children: [
           { id: "n3-b3a", rel: "觀察", title: "加進水溶液後，顏色偏紫色", keys: ["紫"],
             cands: [{ w: "偏紫色", core: true }], children: [
             { id: "n3-b3a1", rel: "發現", title: "中性", keys: ["中性"], cands: [{ w: "中性", core: true }] }
@@ -63,12 +99,42 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
           { id: "n3-b3c", rel: "觀察", title: "加進水溶液後，顏色偏藍色或偏綠色", keys: ["藍", "綠"],
             cands: [{ w: "偏藍色", core: true }, { w: "偏綠色", core: true }], children: [
             { id: "n3-b3c1", rel: "發現", title: "鹼性", keys: ["鹼性"], cands: [{ w: "鹼性", core: true }] }
-          ] }
+          ] },
+          { id: "n3-b3d", title: "含花青素的植物汁液能當指示劑", keys: ["花青素"], cands: [{ w: "花青素", core: true }, { w: "指示劑", core: true }] }
+        ] },
+        { id: "n3-b4", title: "混合水溶液的酸鹼性", keys: ["混合"], points: [
+            { t: "想知道酸鹼混合以後是什麼性質，可以在混合液裡滴紫色高麗菜汁看顏色。", cands: [{ w: "紫色高麗菜汁", core: true }] },
+            { t: "胃酸太多時可以吃胃藥，因為胃藥裡常有鹼性的物質。", cands: [{ w: "鹼性", core: true }, { w: "胃藥" }] },
+            { t: "把檸檬酸倒進熱水瓶的水裡泡一陣子，可以去掉瓶裡的水垢。", cands: [{ w: "水垢", core: true }, { w: "檸檬酸" }] },
+            { t: "吃完東西用鹼性牙膏刷牙，可以中和嘴巴裡的酸。", cands: [{ w: "鹼性牙膏", core: true }] },
+            { t: "稀釋過的鹽酸可以洗掉馬桶裡鹼性的髒垢。", cands: [{ w: "鹽酸", core: true }] },
+            { t: "碰到強酸或強鹼，千萬不能用酸鹼混合的方法處理，以免受傷。", cands: [{ w: "酸鹼混合", core: true }] }
+          ], children: [
+          { id: "n3-b4a", title: "酸性加鹼性，可能變得接近中性", keys: ["中性"], cands: [{ w: "接近中性", core: true }] },
+          { id: "n3-b4b", title: "碰到強酸強鹼，用大量清水沖洗並送醫", keys: ["清水"], cands: [{ w: "大量清水", core: true }, { w: "送醫", core: true }] }
         ] }
       ] },
       { id: "n3-c", title: "水溶液的導電性", keys: ["導電"], children: [
         { id: "n3-c1", title: "有的水溶液容易導電，有的不容易導電", keys: ["導電"],
-          cands: [{ w: "容易導電", core: true }, { w: "不容易導電" }] }
+          cands: [{ w: "容易導電", core: true }, { w: "不容易導電" }], points: [
+            { t: "電路接上會導電的東西，像金屬，變成通路，燈泡就會亮。", cands: [{ w: "通路", core: true }, { w: "金屬" }] },
+            { t: "用 LED 代替燈泡來測試，LED 亮了就表示這杯水溶液容易導電。", cands: [{ w: "亮了", core: true }] }
+          ], children: [
+          { id: "n3-c1a", title: "容易導電：食鹽水、小蘇打水、醋", keys: ["容易導電"], cands: [{ w: "食鹽水", core: true }, { w: "小蘇打水" }, { w: "醋" }] },
+          { id: "n3-c1b", title: "不容易導電：糖水、純水", keys: ["不容易導電"], cands: [{ w: "糖水", core: true }, { w: "純水", core: true }] }
+        ] },
+        { id: "n3-c2", title: "發光二極體 LED", keys: ["LED"], points: [
+            { t: "LED 體積小、很省電、用得很久，手電筒、紅綠燈、螢幕的電源燈都用得到。", cands: [{ w: "省電", core: true }, { w: "體積小" }] }
+          ], children: [
+          { id: "n3-c2a", title: "長腳接正極，短腳接負極", keys: ["長腳", "正極"], cands: [{ w: "長腳", core: true }, { w: "正極", core: true }, { w: "負極" }] }
+        ] },
+        { id: "n3-c3", title: "檢測水溶液導電性裝置", keys: ["導電性", "裝置"], points: [
+            { t: "放進水溶液的兩條電線不能互相碰到。", cands: [{ w: "互相碰到", core: true }] },
+            { t: "LED 一亮就要馬上把電線拿出來，免得電流太強把 LED 燒壞。", cands: [{ w: "燒壞", core: true }] }
+          ], children: [
+          { id: "n3-c3a", title: "電線前端多露一些銅線，增加接觸面積", keys: ["銅線"], cands: [{ w: "接觸面積", core: true }, { w: "銅線" }] },
+          { id: "n3-c3b", title: "每測完一種，用純水沖洗、擦乾", keys: ["純水"], cands: [{ w: "純水", core: true }, { w: "擦乾" }] }
+        ] }
       ] }
     ],
     quiz: [
@@ -93,7 +159,18 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
       { type: "mc", q: "由兩種以上物質混合而成的東西叫做什麼？", opts: ["混合物", "指示劑", "介質", "養分"], a: 0,
         why: "兩種以上的物質混在一起，就是混合物。" },
       { type: "tf", q: "所有的水溶液都很容易導電。", a: false,
-        why: "有些水溶液容易導電，有些不容易導電。" }
+        why: "有些水溶液容易導電，有些不容易導電。" },
+      // 2026-10-28 學習重點：石蕊、LED 導電、酸鹼混合、安全的判斷題
+      { type: "mc", q: "把肥皂水滴在紅色石蕊試紙上，試紙會怎樣？", opts: ["變藍色", "變紅色", "不變色", "變紫色"], a: 0,
+        why: "肥皂水是鹼性，會讓紅色石蕊試紙變藍色。" },
+      { type: "mc", q: "用 LED 測導電性，下面哪一杯 LED 最可能不會亮？", opts: ["糖水", "食鹽水", "小蘇打水", "醋"], a: 0,
+        why: "糖水不容易導電；食鹽水、小蘇打水、醋都容易導電，LED 會亮。" },
+      { type: "mc", q: "在一杯酸性水溶液裡慢慢加入鹼性水溶液，酸鹼性可能會怎樣？", opts: ["變得接近中性", "變得更酸", "酸鹼性完全不會改變"], a: 0,
+        why: "酸性和鹼性混合會互相作用，可能變得接近中性。" },
+      { type: "mc", q: "做實驗時不小心碰到強酸，第一件事應該做什麼？", opts: ["用大量清水沖洗，再趕快送醫", "倒鹼性水溶液上去中和", "用衛生紙擦一擦就好", "塗上牙膏中和"], a: 0,
+        why: "碰到強酸強鹼要馬上用大量清水沖洗並送醫，千萬不能用酸鹼混合的方法。" },
+      { type: "mc", q: "把糖放進水裡溶解，糖是什麼？", opts: ["溶質", "溶劑", "指示劑", "混合物"], a: 0,
+        why: "被溶解的物質是溶質；水用來溶解別的東西，是溶劑；溶解後的糖水才是混合物。" }
     ]
   });
 
@@ -101,48 +178,102 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
     id: "n4", no: 4, title: "力與運動", keys: ["力", "運動"],
     lessons: [
       { id: "n4-a", title: "力的測量", keys: ["測量"], children: [
-        { id: "n4-a1", rel: "觀察", title: "生活中的力", keys: ["生活", "力"], children: [
+        { id: "n4-a1", rel: "觀察", title: "生活中的力", keys: ["生活", "力"], points: [
+            { t: "球彈起來又落下、用體重計量體重，都看得到力的作用。", cands: [{ w: "體重計", core: true }] },
+            { t: "推或拉手推車的力，要碰到車子才有作用，是接觸力。", cands: [{ w: "接觸力", core: true }] },
+            { t: "重力、磁力不用碰到物體就有作用，叫做超距力，也就是非接觸力。", cands: [{ w: "磁力", core: true }, { w: "超距力", core: true }] }
+          ], children: [
           { id: "n4-a1a", rel: "推論", title: "接觸力與非接觸力", keys: ["接觸力", "非接觸力"],
             cands: [{ w: "接觸力" }, { w: "非接觸力", core: true }], children: [
-            { id: "n4-a1a1", rel: "了解", title: "地球上有重力", keys: ["重力"], cands: [{ w: "重力", core: true }] }
+            { id: "n4-a1a1", rel: "了解", title: "地球上有重力", keys: ["重力"], cands: [{ w: "重力", core: true }], children: [
+              { id: "n4-a1a1a", title: "重力就是物體的重量，讓東西往下掉", keys: ["重量"], cands: [{ w: "重量", core: true }, { w: "往下掉" }] }
+            ] },
+            { id: "n4-a1a2", title: "接觸力：碰到物體才有作用", keys: ["接觸力"], cands: [{ w: "碰到", core: true }] },
+            { id: "n4-a1a3", title: "超距力：不用碰到也有作用，像磁力", keys: ["超距力"], cands: [{ w: "超距力", core: true, alts: ["非接觸力"] }, { w: "磁力", core: true }] }
           ] }
         ] },
-        { id: "n4-a2", rel: "觀察", title: "測量力的大小", keys: ["測量", "大小"], children: [
-          { id: "n4-a2a", rel: "使用", title: "用彈簧秤來測量", keys: ["彈簧秤"], cands: [{ w: "彈簧秤", core: true }], children: [
+        { id: "n4-a2", rel: "觀察", title: "測量力的大小", keys: ["測量", "大小"], points: [
+            { t: "拿來量力的材料，受力時形狀要有規律地改變，放開後又能變回原狀，像彈簧。", cands: [{ w: "彈簧", core: true }] },
+            { t: "物體能承受的最大力量叫做彈性限度，超過了就變不回原來的樣子。", cands: [{ w: "彈性限度", core: true }] },
+            { t: "砝碼實驗：把尺和彈簧固定在支架上，一次加一個砝碼，記錄彈簧的長度。", cands: [{ w: "一次加一個", core: true }] },
+            { t: "每量完一次，要取下砝碼，看看彈簧有沒有回到原來的長度。", cands: [{ w: "原來的長度", core: true }] }
+          ], children: [
+          { id: "n4-a2a", rel: "使用", title: "用彈簧秤來測量", keys: ["彈簧秤"], cands: [{ w: "彈簧秤", core: true }], points: [
+              { t: "彈簧秤上有刻度，受力時指針會動，指針最後停住的刻度就是力的大小。", cands: [{ w: "刻度", core: true }] },
+              { t: "讀刻度時，眼睛要和指針在同一個水平面上。", cands: [{ w: "水平面", core: true }] },
+              { t: "倒掛的彈簧秤沒辦法歸零，所以不能倒過來用。", cands: [{ w: "歸零", core: true }] }
+            ], children: [
             { id: "n4-a2a1", rel: "發現", title: "用的力量愈大，彈簧就被拉得愈長", keys: ["大", "長"],
-              cands: [{ w: "愈長", core: true }, { w: "愈大" }] }
-          ] }
+              cands: [{ w: "愈長", core: true }, { w: "愈大" }] },
+            { id: "n4-a2a2", title: "使用前先歸零，不能倒過來用", keys: ["歸零"], cands: [{ w: "歸零", core: true }, { w: "倒過來" }] }
+          ] },
+          { id: "n4-a2b", title: "彈簧受力會伸長，不受力會恢復原狀", keys: ["彈簧", "恢復"], cands: [{ w: "伸長", core: true }, { w: "恢復原狀", core: true }] },
+          { id: "n4-a2c", title: "超過彈性限度就無法恢復原狀", keys: ["彈性限度"], cands: [{ w: "彈性限度", core: true }] },
+          { id: "n4-a2d", title: "砝碼愈多，彈簧愈長，而且有規律", keys: ["砝碼", "規律"], cands: [{ w: "規律", core: true }, { w: "砝碼" }] }
         ] },
-        { id: "n4-a3", rel: "觀察", title: "力的平衡", keys: ["平衡"], children: [
+        { id: "n4-a3", rel: "觀察", title: "力的平衡", keys: ["平衡"], points: [
+            { t: "模擬拔河：迴紋針兩頭各用一個彈簧秤鉤住，平放在桌上，中間的記號對準桌面的中線。", cands: [{ w: "彈簧秤", core: true }, { w: "中線" }] },
+            { t: "甲用200公克重、乙用150公克重拉，迴紋針會往甲方移動。", cands: [{ w: "甲方", core: true }] },
+            { t: "兩邊都用150公克重拉，力量一樣大，迴紋針就停在中線不動。", cands: [{ w: "一樣大", core: true }, { w: "不動" }] }
+          ], children: [
           { id: "n4-a3a", rel: "驗證", title: "兩個力平衡的時候，物體會保持靜止", keys: ["平衡", "靜止"],
             cands: [{ w: "靜止", core: true }, { w: "平衡" }], children: [
             { id: "n4-a3a1", rel: "了解", title: "兩個力的大小相同", keys: ["大小相同"], cands: [{ w: "大小相同", core: true }] },
             { id: "n4-a3a2", rel: "了解", title: "兩個力的方向相反", keys: ["方向相反"], cands: [{ w: "方向相反", core: true }] }
-          ] }
+          ] },
+          { id: "n4-a3b", title: "拔河看紅布條往哪邊移動", keys: ["紅布條"], cands: [{ w: "紅布條", core: true }] },
+          { id: "n4-a3c", title: "哪一邊用力大，迴紋針就往哪一邊移", keys: ["迴紋針"], cands: [{ w: "用力大", core: true }] }
         ] }
       ] },
       { id: "n4-b", title: "摩擦力", keys: ["摩擦力"], children: [
-        { id: "n4-b1", rel: "發現", title: "摩擦力的大小", keys: ["摩擦力", "大小"], children: [
+        { id: "n4-b1", rel: "發現", title: "摩擦力的大小", keys: ["摩擦力", "大小"], points: [
+            { t: "兩個物體互相接觸又在移動時，會有一種阻止移動的力，叫做動摩擦力。", cands: [{ w: "動摩擦力", core: true }] },
+            { t: "摩擦力會擋住物體，或讓它慢下來。", cands: [{ w: "慢下來", core: true }] },
+            { t: "實驗只改變桌面材質（鋪不鋪砂紙），盒子重量、盒底材質、砝碼數量都保持不變。", cands: [{ w: "桌面材質", core: true }, { w: "砂紙" }] },
+            { t: "用彈簧秤量盒子剛開始移動時的拉力：鋪了砂紙的粗糙桌面拉力大，表示摩擦力大。", cands: [{ w: "拉力", core: true }] },
+            { t: "一樣重的東西，放在粗糙的面和光滑的面，摩擦力不一樣。", cands: [{ w: "一樣重", core: true }] }
+          ], children: [
           { id: "n4-b1a", rel: "驗證", title: "摩擦力大的時候，比較費力", keys: ["大", "費力"],
             cands: [{ w: "費力", core: true }], children: [
-            { id: "n4-b1a1", rel: "應用", title: "生活中摩擦力的應用", keys: ["摩擦力", "應用"] }
+            { id: "n4-b1a1", rel: "應用", title: "生活中摩擦力的應用", keys: ["摩擦力", "應用"], points: [
+                { t: "推車裝輪子、門軸加潤滑油，都能減少摩擦力。", cands: [{ w: "潤滑油", core: true }, { w: "輪子" }] },
+                { t: "增加摩擦力的東西用起來比較費力，但比較方便；減少摩擦力的東西用起來比較省力。", cands: [{ w: "方便", core: true }, { w: "省力" }] }
+              ], children: [
+              { id: "n4-b1a1a", title: "增加摩擦力：鞋底、瓶蓋上的紋路", keys: ["增加", "紋路"], cands: [{ w: "鞋底", core: true }, { w: "紋路", core: true }] },
+              { id: "n4-b1a1b", title: "減少摩擦力：塗油、裝滾輪", keys: ["減少"], cands: [{ w: "塗油", core: true }, { w: "滾輪", core: true }] }
+            ] }
           ] },
           { id: "n4-b1b", rel: "驗證", title: "摩擦力小的時候，比較省力", keys: ["小", "省力"],
-            cands: [{ w: "省力", core: true }] }
+            cands: [{ w: "省力", core: true }] },
+          { id: "n4-b1c", title: "接觸面粗糙，摩擦力比較大", keys: ["粗糙"], cands: [{ w: "粗糙", core: true }] },
+          { id: "n4-b1d", title: "接觸面光滑，摩擦力比較小", keys: ["光滑"], cands: [{ w: "光滑", core: true }] }
         ] }
       ] },
       { id: "n4-c", title: "運動狀態的快慢", keys: ["運動", "快慢"], children: [
         { id: "n4-c1", title: "速度的快慢", keys: ["速度", "快慢"], children: [
           { id: "n4-c1a", rel: "推論", title: "時間相同就比距離，距離相同就比時間", keys: ["比距離", "比時間"],
-            cands: [{ w: "比距離", core: true }, { w: "比時間", core: true }] }
+            cands: [{ w: "比距離", core: true }, { w: "比時間", core: true }], points: [
+              { t: "跑一樣的距離，花的時間愈短，速度愈快。", cands: [{ w: "愈短", core: true }] },
+              { t: "跑一樣久的時間，跑的距離愈長，速度愈快。", cands: [{ w: "愈長", core: true }] },
+              { t: "畫長條圖比快慢：固定時間就比橫軸上的距離（公尺），固定距離就比橫軸上的時間（秒）。", cands: [{ w: "長條圖", core: true }] }
+            ] }
         ] },
         { id: "n4-c2", title: "運動速度", keys: ["速度"], children: [
           { id: "n4-c2a", rel: "推論", title: "相同單位時間的速度比較", keys: ["相同單位時間"],
-            cands: [{ w: "相同單位時間", core: true }] }
+            cands: [{ w: "相同單位時間", core: true }], children: [
+            { id: "n4-c2a1", title: "速度＝距離÷時間", keys: ["距離", "時間"], cands: [{ w: "距離", core: true }, { w: "時間", core: true }] }
+          ] }
         ] },
-        { id: "n4-c3", rel: "觀察", title: "認識動能", keys: ["動能"], children: [
+        { id: "n4-c3", rel: "觀察", title: "認識動能", keys: ["動能"], points: [
+            { t: "爬上滑梯頂要一直出力，能量就存在高的位置，叫做位能。", cands: [{ w: "位能", core: true }] },
+            { t: "從滑梯往下滑，位能變成動能，愈滑愈快；算上摩擦力還會變出熱能，總能量都不變。", cands: [{ w: "熱能", core: true }] },
+            { t: "盪鞦韆盪到高處，位能比較多；盪到低處速度變快，動能比較多。", cands: [{ w: "位能", core: true }, { w: "動能", core: true }] },
+            { t: "電讓手電筒發光、讓電風扇轉動；冬天搓手會變熱；太陽能板把太陽光變成電。", cands: [{ w: "太陽能板", core: true }] }
+          ], children: [
           { id: "n4-c3a", rel: "推論", title: "同一個物體速度愈大，動能就愈大；能量可以互相轉換，總能量維持不變，叫做能量守恆", keys: ["動能", "守恆"],
-            cands: [{ w: "能量守恆", core: true }, { w: "動能", core: true }, { w: "轉換" }, { w: "總能量" }] }
+            cands: [{ w: "能量守恆", core: true }, { w: "動能", core: true }, { w: "轉換" }, { w: "總能量" }] },
+          { id: "n4-c3b", title: "位能：在高處具有的能量", keys: ["位能"], cands: [{ w: "位能", core: true }, { w: "高處", core: true }] },
+          { id: "n4-c3c", title: "溜滑梯：位能變成動能和熱能", keys: ["溜滑梯"], cands: [{ w: "熱能", core: true }, { w: "動能" }] }
         ] }
       ] }
     ],
@@ -169,7 +300,18 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
       { type: "tf", q: "能量可以互相轉換，但是總能量會保持不變。", a: true,
         why: "這就是能量守恆。" },
       { type: "tf", q: "同一個物體跑得愈快，動能就愈小。", a: false,
-        why: "同一物體速度愈大，動能愈大。" }
+        why: "同一物體速度愈大，動能愈大。" },
+      // 2026-10-28 學習重點：彈簧砝碼、模擬拔河、摩擦力實驗、彈簧秤、能量的判斷與預測題
+      { type: "mc", q: "彈簧掛 1 個砝碼伸長 2 公分、掛 2 個伸長 4 公分。在彈性限度內掛 3 個，最可能伸長多少？", opts: ["6 公分", "4 公分", "5 公分", "9 公分"], a: 0,
+        why: "砝碼一樣重時，每多掛一個，彈簧就多伸長一樣的長度（有規律）：2、4、6 公分。" },
+      { type: "mc", q: "模擬拔河：甲用 200 公克重、乙用 150 公克重拉迴紋針，迴紋針會怎樣？", opts: ["往甲那邊移動", "往乙那邊移動", "停在中線不動"], a: 0,
+        why: "哪一邊用力大，迴紋針就往哪一邊移動；兩邊一樣大才會不動。" },
+      { type: "mc", q: "做「鋪砂紙和沒鋪砂紙的桌面」摩擦力實驗時，下面哪一項是要改變的？", opts: ["桌面材質", "盒子重量", "盒子底部材質", "砝碼數量"], a: 0,
+        why: "只改變桌面材質，其他條件都不變，才知道摩擦力的差別是桌面造成的。" },
+      { type: "mc", q: "下面哪一種使用彈簧秤的方法是對的？", opts: ["測量前先歸零", "把彈簧秤倒過來掛著用", "從斜上方看指針讀刻度", "拉到超過最大刻度也沒關係"], a: 0,
+        why: "測量前要歸零；倒掛無法歸零；讀數時眼睛要和指針同高；超過彈性限度彈簧會壞掉。" },
+      { type: "mc", q: "盪鞦韆盪到最低點時，速度最快。這時候哪一種能量最多？", opts: ["動能", "位能", "電能", "光能"], a: 0,
+        why: "盪到低處速度變快，動能比較多；盪到高處位能比較多。" }
     ]
   });
 })(window.DATA_SCIENCE);
