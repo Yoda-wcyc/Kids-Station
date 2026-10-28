@@ -40,9 +40,9 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
           ] },
           { id: "n1-a1b", title: "觀測太陽", keys: ["觀測"], points: [
               { t: "先用指北針找出影子的方位，太陽就在影子相反的那一邊。", cands: [{ w: "指北針", core: true }, { w: "相反" }] },
-              { t: "太陽、吸管頂端、吸管影子的末端連成一直線，這條線和地面夾出來的角，就是太陽的高度角。", cands: [{ w: "地面", core: true }] },
+              { t: "太陽、吸管頂端、吸管影子的末端連成一直線，這條線和地面夾出來的角，就是太陽的高度角。", cands: [{ w: "地面", core: true }, { w: "吸管" }] },
               { t: "同一個時間、同一個地點，不同日子量到的太陽方位和高度角都不一樣。", cands: [{ w: "不一樣", core: true }] },
-              { t: "在操場的上午10點觀測：9月1日高度角58度、9月15日54度、9月30日53度，愈來愈小。", cands: [{ w: "愈來愈小", core: true }] },
+              { t: "在操場的上午10點觀測：9月1日高度角58度、9月15日54度、9月30日53度，愈來愈小。", cands: [{ w: "愈來愈小", core: true }, { w: "58" }] },
               { t: "手機、平板、電腦上的觀測太陽軟體，也能用來記錄太陽位置。", cands: [{ w: "軟體", core: true }] }
             ], children: [
             { id: "n1-a1b1", rel: "位置表示", title: "高度角和方位", keys: ["高度角", "方位"],
@@ -80,7 +80,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
         { id: "n1-b1", title: "光的折射", keys: ["折射"], points: [
             { t: "從斜上方看泳池裡的人，腳好像變短了；吸管斜插在水杯裡，看起來像折斷了。", cands: [{ w: "變短", core: true }, { w: "折斷" }] },
             { t: "光在同一種介質裡前進，路線不會轉彎。", cands: [{ w: "同一種", core: true }] },
-            { t: "光斜斜地從空氣進到水裡，或從水進到空氣，在兩種介質交界的地方會改變方向。", cands: [{ w: "交界", core: true }] },
+            { t: "光斜斜地從空氣進到水裡，或從水進到空氣，在兩種介質交界的地方會改變方向。", cands: [{ w: "交界", core: true }, { w: "斜斜" }] },
             { t: "因為折射，水底看起來比較淺、東西看起來比較近，到泳池或溪邊玩要特別注意水深。", cands: [{ w: "水深", core: true }, { w: "比較淺" }] }
           ], children: [
           { id: "n1-b1a", rel: "觀察", title: "光跑進不同的介質時，會發生折射", keys: ["介質", "折射"],
@@ -95,7 +95,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
         { id: "n1-b2", title: "美麗的彩虹", keys: ["彩虹"], points: [
             { t: "陽光照到飄在空氣裡的小水滴，發生折射和反射，就分散成不同顏色的光。", cands: [{ w: "小水滴", core: true }, { w: "反射", core: true }] },
             { t: "陽光用合適的角度進出水滴，路線改變，會出現紅、橙、黃、綠、藍、靛、紫這些顏色。", cands: [{ w: "靛", core: true }, { w: "角度" }] },
-            { t: "用噴霧器噴水霧時，要背對太陽、朝陰暗的地方噴，再移動自己的位置和角度找彩虹。", cands: [{ w: "陰暗", core: true }] }
+            { t: "用噴霧器噴水霧時，要背對太陽、朝陰暗的地方噴，再移動自己的位置和角度找彩虹。", cands: [{ w: "陰暗", core: true }, { w: "噴霧器" }] }
           ], children: [
           { id: "n1-b2a", rel: "觀察", title: "噴泉前方、瀑布旁邊看得到彩虹", keys: ["噴泉", "瀑布"],
             cands: [{ w: "噴泉" }, { w: "瀑布" }], children: [
@@ -107,9 +107,9 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
         ] },
         { id: "n1-b3", title: "放大鏡的聚光與成像", keys: ["放大鏡"], points: [
             { t: "直直前進的光穿過放大鏡會偏折，聚在一個點上；所以聚光也是光的折射。", cands: [{ w: "一個點", core: true }, { w: "折射", core: true }] },
-            { t: "讓陽光透過放大鏡照在黑色的紙上一段時間，紙會冒出白煙。", cands: [{ w: "白煙", core: true }] },
+            { t: "讓陽光透過放大鏡照在黑色的紙上一段時間，紙會冒出白煙。", cands: [{ w: "白煙", core: true }, { w: "黑色" }] },
             { t: "東西到放大鏡的距離、眼睛到放大鏡的距離不一樣，看到的像可能是正立，也可能是倒立。", cands: [{ w: "距離", core: true }] },
-            { t: "投影機的鏡頭裝了凸透鏡，能投出放大的影像；手電筒加上凸透鏡，光會聚在一起。", cands: [{ w: "凸透鏡", core: true }] }
+            { t: "投影機的鏡頭裝了凸透鏡，能投出放大的影像；手電筒加上凸透鏡，光會聚在一起。", cands: [{ w: "凸透鏡", core: true }, { w: "鏡頭" }] }
           ], children: [
           { id: "n1-b3a", rel: "觀察", title: "透過放大鏡看東西，東西看起來變大了", keys: ["放大鏡", "大"],
             cands: [{ w: "放大鏡" }, { w: "變大" }], children: [
@@ -182,7 +182,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
         ] },
         { id: "n2-a3", rel: "包含", title: "葉", keys: ["葉"], points: [
             { t: "聖誕紅紅色的葉子能吸引昆蟲來幫忙傳播花粉。", cands: [{ w: "聖誕紅", core: true }] },
-            { t: "石蓮的葉子肥厚，能存水分和養分，適應乾燥的地方。", cands: [{ w: "石蓮", core: true }] },
+            { t: "石蓮的葉子肥厚，能存水分和養分，適應乾燥的地方。", cands: [{ w: "石蓮", core: true }, { w: "肥厚" }] },
             { t: "毛氈苔長在沼澤，葉上的觸毛會分泌黏液捕捉昆蟲。", cands: [{ w: "毛氈苔", core: true }, { w: "黏液" }] },
             { t: "仙人掌的葉長成針狀，可以減少水分散失，也能保護自己不被動物吃掉。", cands: [{ w: "針狀", core: true }, { w: "仙人掌" }] },
             { t: "捕蠅草像夾子的葉子會抓昆蟲；有些樹冬天會落葉，減少水分和養分散失。", cands: [{ w: "捕蠅草", core: true }, { w: "落葉" }] },
@@ -193,7 +193,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
         ] },
         { id: "n2-a4", title: "植物體內水的運輸", keys: ["運輸"], points: [
             { t: "把植物插在染紅的水裡，可以看到水從根進入，送到整株植物。", cands: [{ w: "根", core: true }] },
-            { t: "切開莖，橫切面的紅點、縱切面的紅絲，都是紅色的水走過的地方。", cands: [{ w: "紅點", core: true }] },
+            { t: "切開莖，橫切面的紅點、縱切面的紅絲，都是紅色的水走過的地方。", cands: [{ w: "紅點", core: true }, { w: "縱切面" }] },
             { t: "想看清楚葉子的構造，可以用眼睛、放大鏡或顯微鏡。", cands: [{ w: "顯微鏡", core: true }] }
           ], children: [
           { id: "n2-a4a", title: "莖負責輸送水分和養分", keys: ["莖", "輸送"], cands: [{ w: "輸送", core: true }] },
@@ -214,7 +214,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
         { id: "n2-b1", rel: "包含", title: "花", keys: ["花"], points: [
             { t: "雄蕊的花粉傳到雌蕊的柱頭上，就叫做授粉。", cands: [{ w: "柱頭", core: true }, { w: "授粉", core: true }] },
             { t: "每種花的構造、顏色、形狀、氣味都不同，有的吸引動物來傳花粉，有的靠風傳花粉。", cands: [{ w: "動物", core: true }, { w: "風" }] },
-            { t: "花萼由很多萼片組成，長在花的最外圈。", cands: [{ w: "最外圈", core: true }] },
+            { t: "花萼由很多萼片組成，長在花的最外圈。", cands: [{ w: "最外圈", core: true }, { w: "萼片" }] },
             { t: "果實長大的時候，雄蕊和花瓣會慢慢凋謝或掉落。", cands: [{ w: "凋謝", core: true }] }
           ], children: [
           { id: "n2-b1a", rel: "功能", title: "開花→結果→結種子→繁殖", keys: ["開花", "結果", "種子"],
@@ -252,7 +252,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
           { id: "n2-c1a", title: "保持好的品質，還要做品種改良", keys: ["品質", "品種改良"],
             cands: [{ w: "品種改良", core: true }, { w: "品質" }], points: [
               { t: "有經濟價值的植物，人們會大量繁殖、改良品種再拿去賣。", cands: [{ w: "大量繁殖", core: true }] },
-              { t: "人們喜歡挑容易種、長得快、能大量繁殖的植物，再用各種栽培方法保持好品質。", cands: [{ w: "長得快", core: true }] }
+              { t: "人們喜歡挑容易種、長得快、能大量繁殖的植物，再用各種栽培方法保持好品質。", cands: [{ w: "長得快", core: true }, { w: "栽培" }] }
             ] },
           { id: "n2-c1b", rel: "例如", title: "蘭花、鳳梨釋迦、芒果", keys: ["蘭花", "芒果"], cands: [{ w: "鳳梨釋迦", core: true }, { w: "蘭花" }] }
         ] },

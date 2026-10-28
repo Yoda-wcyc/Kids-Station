@@ -27,7 +27,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
     lessons: [
       { id: "n3-a", title: "溶解現象", keys: ["溶解"], children: [
         { id: "n3-a1", rel: "操作", title: "物質溶解在水中", keys: ["溶解", "水"], points: [
-            { t: "先秤裝了30毫升水的燒杯加上食鹽的總重量，把食鹽攪拌到完全溶解，再秤一次。", cands: [{ w: "完全溶解", core: true }] },
+            { t: "先秤裝了30毫升水的燒杯加上食鹽的總重量，把食鹽攪拌到完全溶解，再秤一次。", cands: [{ w: "完全溶解", core: true }, { w: "30" }] },
             { t: "食鹽溶解後看不到顆粒，但總重量沒有變，表示食鹽並沒有消失。", cands: [{ w: "沒有消失", core: true }] },
             { t: "東西一直加進水裡，最後會溶解不完。", cands: [{ w: "溶解不完", core: true }] },
             { t: "做水溶液時，砂糖、食鹽、檸檬酸、小蘇打粉各取半匙，加進20毫升純水攪拌；醋則取2毫升加進20毫升純水。", cands: [{ w: "半匙", core: true }, { w: "純水" }] },
@@ -37,7 +37,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
             cands: [{ w: "總重量", core: true }, { w: "不變", core: true }], children: [
             { id: "n3-a1a1", title: "把水分蒸發掉，會變回原來的物質", keys: ["蒸發"],
               cands: [{ w: "蒸發", core: true }, { w: "原來的物質" }], points: [
-                { t: "把食鹽水倒進大大的平盤，放在通風的地方，水蒸發後盤子上又看得到食鹽。", cands: [{ w: "通風", core: true }] }
+                { t: "把食鹽水倒進大大的平盤，放在通風的地方，水蒸發後盤子上又看得到食鹽。", cands: [{ w: "通風", core: true }, { w: "平盤" }] }
               ], children: [
               { id: "n3-a1a1a", title: "曬海水得到粗鹽，熬甘蔗汁得到紅糖", keys: ["粗鹽", "紅糖"], cands: [{ w: "粗鹽", core: true }, { w: "紅糖", core: true }] }
             ] }
@@ -49,7 +49,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
       ] },
       { id: "n3-b", title: "水溶液的酸鹼性", keys: ["酸鹼"], children: [
         { id: "n3-b1", rel: "觀察", title: "各種水溶液不相同", keys: ["不相同"], points: [
-            { t: "可以用眼睛看顏色、用手搧著聞氣味，或看包裝上的成分說明，來分辨水溶液。", cands: [{ w: "搧著聞", core: true }] }
+            { t: "可以用眼睛看顏色、用手搧著聞氣味，或看包裝上的成分說明，來分辨水溶液。", cands: [{ w: "搧著聞", core: true }, { w: "成分" }] }
           ], children: [
           { id: "n3-b1a", rel: "發現", title: "由兩種以上的物質混合成的東西", keys: ["兩種以上", "混合"],
             cands: [{ w: "兩種以上", core: true }, { w: "混合" }], children: [
@@ -84,7 +84,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
         ] },
         { id: "n3-b3", rel: "使用", title: "利用紫色高麗菜汁檢驗", keys: ["高麗菜"], points: [
             { t: "紫色高麗菜、紅鳳菜、蝶豆花的汁液，碰到不同的水溶液會變色。", cands: [{ w: "蝶豆花", core: true }, { w: "紅鳳菜" }] },
-            { t: "把紫色高麗菜撕成小片，泡在熱的純水裡約10分鐘，過濾後就是紫色高麗菜汁。", cands: [{ w: "過濾", core: true }] },
+            { t: "把紫色高麗菜撕成小片，泡在熱的純水裡約10分鐘，過濾後就是紫色高麗菜汁。", cands: [{ w: "過濾", core: true }, { w: "10分鐘" }] },
             { t: "醋、檸檬酸水加了以後偏紅色；食鹽水、糖水還是紫色；小蘇打水、肥皂水偏藍色或綠色。", cands: [{ w: "偏紅色", core: true }, { w: "偏藍色", core: true }] },
             { t: "植物汁液遇到酸、鹼的顏色變化要有規律，才能拿來當指示劑。", cands: [{ w: "規律", core: true }] }
           ], children: [
@@ -195,7 +195,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
         { id: "n4-a2", rel: "觀察", title: "測量力的大小", keys: ["測量", "大小"], points: [
             { t: "拿來量力的材料，受力時形狀要有規律地改變，放開後又能變回原狀，像彈簧。", cands: [{ w: "彈簧", core: true }] },
             { t: "物體能承受的最大力量叫做彈性限度，超過了就變不回原來的樣子。", cands: [{ w: "彈性限度", core: true }] },
-            { t: "砝碼實驗：把尺和彈簧固定在支架上，一次加一個砝碼，記錄彈簧的長度。", cands: [{ w: "一次加一個", core: true }] },
+            { t: "砝碼實驗：把尺和彈簧固定在支架上，一次加一個砝碼，記錄彈簧的長度。", cands: [{ w: "一次加一個", core: true }, { w: "支架" }] },
             { t: "每量完一次，要取下砝碼，看看彈簧有沒有回到原來的長度。", cands: [{ w: "原來的長度", core: true }] }
           ], children: [
           { id: "n4-a2a", rel: "使用", title: "用彈簧秤來測量", keys: ["彈簧秤"], cands: [{ w: "彈簧秤", core: true }], points: [
@@ -255,7 +255,7 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
             cands: [{ w: "比距離", core: true }, { w: "比時間", core: true }], points: [
               { t: "跑一樣的距離，花的時間愈短，速度愈快。", cands: [{ w: "愈短", core: true }] },
               { t: "跑一樣久的時間，跑的距離愈長，速度愈快。", cands: [{ w: "愈長", core: true }] },
-              { t: "畫長條圖比快慢：固定時間就比橫軸上的距離（公尺），固定距離就比橫軸上的時間（秒）。", cands: [{ w: "長條圖", core: true }] }
+              { t: "畫長條圖比快慢：固定時間就比橫軸上的距離（公尺），固定距離就比橫軸上的時間（秒）。", cands: [{ w: "長條圖", core: true }, { w: "橫軸" }] }
             ] }
         ] },
         { id: "n4-c2", title: "運動速度", keys: ["速度"], children: [
@@ -266,9 +266,9 @@ window.DATA_SCIENCE = window.DATA_SCIENCE || { units: [], alts: {} };
         ] },
         { id: "n4-c3", rel: "觀察", title: "認識動能", keys: ["動能"], points: [
             { t: "爬上滑梯頂要一直出力，能量就存在高的位置，叫做位能。", cands: [{ w: "位能", core: true }] },
-            { t: "從滑梯往下滑，位能變成動能，愈滑愈快；算上摩擦力還會變出熱能，總能量都不變。", cands: [{ w: "熱能", core: true }] },
+            { t: "從滑梯往下滑，位能變成動能，愈滑愈快；算上摩擦力還會變出熱能，總能量都不變。", cands: [{ w: "熱能", core: true }, { w: "愈滑愈快" }] },
             { t: "盪鞦韆盪到高處，位能比較多；盪到低處速度變快，動能比較多。", cands: [{ w: "位能", core: true }, { w: "動能", core: true }] },
-            { t: "電讓手電筒發光、讓電風扇轉動；冬天搓手會變熱；太陽能板把太陽光變成電。", cands: [{ w: "太陽能板", core: true }] }
+            { t: "電讓手電筒發光、讓電風扇轉動；冬天搓手會變熱；太陽能板把太陽光變成電。", cands: [{ w: "太陽能板", core: true }, { w: "搓手" }] }
           ], children: [
           { id: "n4-c3a", rel: "推論", title: "同一個物體速度愈大，動能就愈大；能量可以互相轉換，總能量維持不變，叫做能量守恆", keys: ["動能", "守恆"],
             cands: [{ w: "能量守恆", core: true }, { w: "動能", core: true }, { w: "轉換" }, { w: "總能量" }] },

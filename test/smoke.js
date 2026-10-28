@@ -746,6 +746,11 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     ok(r.ok && !x.calls.length, 'push with nothing new → no request at all');
   })().catch(e => { console.error(e); process.exit(1); });
   // 文件大小：英文作答壓縮到 500KB 以內時，新欄位照留；新欄位全部塞滿也只有幾十 KB
+  // 真正的上限（2026-10-28 查證）：kids-sync PUT 1MB（超過回 413）；前端 compact 壓到 SM.MAX_BYTES＝500KB，但只能壓英文 log，
+  // 心智圖／天平等欄位壓不掉 → 這些欄位塞滿時要留大部分空間給英文 log（預算＝MAX_BYTES 的 1/4）。
+  // 以前這裡用 64KB：那不是伺服器限制，是 fetch keepalive（只在關頁面時用）的上限；整份文件連英文 log 本來就常超過，
+  // 超過時 sync.js 改用一般 PUT、沒送到就留「待上傳」下次開網站補送，紀錄不會掉。mmBlanks 是每個挖空詞的作答統計（不是題目內容），
+  // 下面的「塞滿」假設題庫每個候選詞都答過 999 次，所以會跟著題庫變大。
   const mmData = { window: {} }; vm.createContext(mmData);
   ['social/unit1-2.js', 'social/unit3-4.js', 'science/unit1-2.js', 'science/unit3-4.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f), 'utf8'), mmData));
   const SBk = require(path.join(root, 'mindmap', 'blanks.js')), kidsOf = d => d.lessons || d.topics || d.children || [];
@@ -764,7 +769,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   for (let d = 0; d < 5; d++) maxDoc.ctr['d' + d + 'mgk2x9abc'] = { stars: 99999, quizzes: 9999 };
   maxDoc.eq = { at: 1.8e12, items: many(30).map(it => Object.assign({ t: 1.8e12 }, it)), del: Object.fromEntries(Array.from({ length: 150 }, (_, i) => ['(x+' + i + ')−(' + i + '−2)=' + (i + 100), 1.7e12])) };
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
-  ok(secBytes < 64 * 1024 && Object.keys(sec.eq.del).length === 100, 'v3 sections at maximum stay small: ' + secBytes + ' bytes');
+  ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === 100, 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
   const bigAll = SM.compact(Object.assign({}, maxDoc, { log: big.log.concat(big.log.map(e => Object.assign({}, e, { t: e.t + 1e7, a: e.a + '-again' }))) }));
   ok(SM.bytes(bigAll) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq), 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(bigAll));
   console.log('sync v3 doc size: sections max ' + secBytes + ' B; 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
