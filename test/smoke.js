@@ -645,6 +645,10 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   ok(SM.merge(SM.merge(bAB && bA, bB), bB).mmBlanks['social:u1'].w['臺南'].ok === 4, 'mmBlanks: syncing again does not add up counts');
   ok(SM.merge(bB, bC).mmBlanks['social:u1'].w['荷蘭'].lastShown === 9, 'mmBlanks: tie on answers → newer lastShown');
   props(bA, bB, bC, 'mmBlanks');
+  // 練習題答對過（kids_mm_blanks[單元].q，2026-10-29）：聯集；沒有 q 的舊紀錄形狀不變
+  const qA = { mmBlanks: { 'science:n4': { sess: 1, w: {}, a: {}, q: { h1: 1, h2: 1 } } } }, qB = { mmBlanks: { 'science:n4': { sess: 2, w: {}, a: {}, q: { h3: 1, _x: 1 } } } }, qC = { mmBlanks: { 'science:n4': { sess: 0, w: {}, a: {} } } };
+  ok(same(SM.merge(qA, qB).mmBlanks['science:n4'].q, { h1: 1, h2: 1, h3: 1 }) && same(SM.merge(qA, qC).mmBlanks['science:n4'].q, { h1: 1, h2: 1 }) && !('q' in SM.merge(bA, bB).mmBlanks['social:u1']), 'mmBlanks.q: answered-right quiz hashes union, absent when empty');
+  props(qA, qB, qC, 'mmBlanks');
   // 數學天平題目清單（tianping-eq-list-v2）：依題目聯集、刪除墓碑、順序跟較新的那台、最多 30 題
   const B8 = ['x+5=12', 'x−3=9', '12+x=20', 'x+8−2=15', '(x+3)−2=10', '(x−5)+4=12', 'x−(6−2)=7', 'x+(10−4)=15'].map(q => ({ q, own: false }));
   const eA = SM.eqFromLocal(B8.concat([{ q: 'x+7=20', own: true }]), null, 100);
@@ -762,6 +766,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
       if (d !== u) { st.a[d.id] = { ok: 999, wrong: 999, streak: 999, last: 'wrong', lastShown: 9999 }; if (d.rel) st.a['rel:' + d.id] = { ok: 999, wrong: 999, streak: 999, last: 'ok' }; }
       kidsOf(d).forEach(walk);
     })(u);
+    st.q = Object.fromEntries((u.quiz || []).map(q => [require(path.join(root, 'kids-mistakes.js'))._core.hash(q.q), 1]));   // 練習題全部答對過
     maxDoc.mmBlanks[s + ':' + u.id] = st;
     maxDoc.mm[s + ':' + u.id] = { unlocked: 5, best: { 1: 100, 2: 100, 3: 100, 4: 100 }, passedAt: { 1: 1.8e12, 2: 1.8e12, 3: 1.8e12, 4: 1.8e12 }, lastPassAt: 1.8e12, reviewStep: 3 };
   }));
@@ -938,6 +943,29 @@ ok(mmUnits.social.join() === 'u1,u2,u3,u4' && mmUnits.science.join() === 'n1,n2,
 });
 const mmJs = fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8');
 ['requireLogin', 'startActivity(SUBJ', "KidsCoins.answer(!!ok, SUBJ)", "type:'practice_round', item:SUBJ + ':' + mode", 'kids_mm_progress', 'kids_social_progress'].forEach(t => ok(mmJs.includes(t), 'mindmap.js has ' + t));
+// 練習題一輪抽 15 題（SB.pickQuiz，2026-10-29）：沒答對過 → 錯題庫 → 其他；不重複；不到 15 題全出
+{
+  const SBq = require(path.join(root, 'mindmap', 'blanks.js')), hq = s => s, qs = Array.from({ length: 40 }, (_, i) => ({ q: 'q' + i }));
+  ok(mmJs.includes('QN = 15') && mmJs.includes('SB.pickQuiz(u.quiz || [], QN, qHash, bstore(u.id).q || {}, mk, R)') && mmJs.includes('if(right) qzOk(it.q)'), 'mindmap.js startQuiz draws 15 via pickQuiz, records answered-right');
+  for (let seed = 1; seed <= 30; seed++) {
+    const R = SBq.rng(seed), okS = {}, mkS = {};
+    qs.forEach((q, i) => { if (i >= 8) okS[q.q] = 1; if (i >= 8 && i < 20) mkS[q.q] = 1; });   // q0–q7 沒答對過、q8–q19 答對過但在錯題庫、q20–q39 其他
+    const p = SBq.pickQuiz(qs, 15, hq, okS, mkS, R), ids = p.map(q => +q.q.slice(1));
+    ok(p.length === 15 && new Set(ids).size === 15, 'pickQuiz: 15 questions, no repeats (seed ' + seed + ')');
+    ok(ids.filter(i => i < 8).length === 8 && ids.filter(i => i >= 8 && i < 20).length === 7 && !ids.some(i => i >= 20), 'pickQuiz: not-yet-right first, then mistakes, then others (seed ' + seed + ')');
+    const p2 = SBq.pickQuiz(qs, 15, hq, Object.fromEntries(qs.map(q => [q.q, 1])), { q30: 1, q31: 1 }, R).map(q => q.q);
+    ok(p2.includes('q30') && p2.includes('q31') && new Set(p2).size === 15, 'pickQuiz: all answered right → mistakes first, rest random');
+  }
+  const small = qs.slice(0, 9).concat([{ q: 'q0' }]);
+  ok(SBq.pickQuiz(small, 15, hq, {}, {}, SBq.rng(3)).map(q => q.q).sort().join() === qs.slice(0, 9).map(q => q.q).sort().join(), 'pickQuiz: unit with < 15 questions → all of them once');
+  const mmQ = { window: {} }; vm.createContext(mmQ);
+  ['social/unit1-2.js', 'social/unit3-4.js', 'science/unit1-2.js', 'science/unit3-4.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f), 'utf8'), mmQ));
+  const KMh = require(path.join(root, 'kids-mistakes.js'))._core.hash;
+  mmQ.window.DATA_SOCIAL.units.concat(mmQ.window.DATA_SCIENCE.units).forEach(u => {
+    ok(new Set(u.quiz.map(q => KMh(q.q))).size === u.quiz.length, u.id + ': quiz texts hash-unique (' + u.quiz.length + ')');
+    ok(SBq.pickQuiz(u.quiz, 15, KMh, {}, {}, SBq.rng(7)).length === Math.min(15, u.quiz.length), u.id + ': one round = ' + Math.min(15, u.quiz.length) + ' questions');
+  });
+}
 ok(!fs.existsSync(path.join(root, 'social')) || fs.readdirSync(path.join(root, 'social'), { recursive: true }).every(f => fs.statSync(path.join(root, 'social', f)).isDirectory()), 'old social/ folder has no files (moved to mindmap/)');
 // 部署排除：demo、測試、.md 不上線
 {

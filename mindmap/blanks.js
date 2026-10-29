@@ -60,6 +60,17 @@
     return a;
   }
 
+  /* 練習題一輪抽 n 題（2026-10-29）：先出還沒答對過的（okSet 沒有）→ 錯題庫裡的（mkSet 有）→ 其他；同一層內隨機，
+   * 同一題（題目文字雜湊一樣）一輪只出一次；抽完再整輪打亂。題數不到 n 就全出。hashOf＝題目文字 → 雜湊。 */
+  function pickQuiz(qs, n, hashOf, okSet, mkSet, rand) {
+    var tiers = [[], [], []], seen = {};
+    (qs || []).forEach(function (q) {
+      var h = hashOf(q.q); if (seen[h]) return; seen[h] = 1;
+      tiers[!okSet[h] ? 0 : mkSet[h] ? 1 : 2].push(q);
+    });
+    return shuffle(tiers.reduce(function (a, t) { return a.concat(shuffle(t, rand)); }, []).slice(0, n), rand);
+  }
+
   /* 重點可以是：
    *   物件（正式格式）：{ t: "整句", cands: [{ w: "臺南", core: true }, { w: "1624" }] }
    *   字串（簡寫）    ："……【核心詞】……〔補充詞〕……"   【】＝core、〔〕＝非 core 候選
@@ -259,6 +270,6 @@
     return out;
   }
 
-  return { RELS: RELS, GENERIC: GENERIC, isRel: isRel, isNoQuiz: isNoQuiz, candOk: candOk, normW: normW, archNodes: archNodes, rng: rng, shuffle: shuffle, normPoint: normPoint, segments: segments, weight: weight, wsample: wsample,
+  return { RELS: RELS, GENERIC: GENERIC, isRel: isRel, isNoQuiz: isNoQuiz, candOk: candOk, normW: normW, archNodes: archNodes, rng: rng, shuffle: shuffle, pickQuiz: pickQuiz, normPoint: normPoint, segments: segments, weight: weight, wsample: wsample,
     drawCloze: drawCloze, drawArch: drawArch, commitSession: commitSession, recordAnswer: recordAnswer, archBoard: archBoard, pairBlocks: pairBlocks };
 });

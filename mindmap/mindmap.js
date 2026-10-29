@@ -695,7 +695,13 @@ function l4grade(){
 
 /* ---------- 練習題 ---------- */
 var QTYPE = {mc:'選擇題', tf:'是非題', order:'排順序', match:'配對題'};
-function startQuiz(){ var qs = unit().quiz || []; QZ = {i:0, ok:0, items:shuffle(qs).map(prepQ)}; renderQuiz(); }
+/* 一輪抽 QN 題（SB.pickQuiz）：還沒答對過 → 錯題庫裡的 → 其他。答對過的題存在 kids_mm_blanks[單元].q（題目雜湊 → 1，會同步） */
+var QN = 15;
+function qHash(s){ var K = KMx(); return K ? K.hash(s) : String(s); }
+function startQuiz(){ var u = unit(), K = KMx(), mk = {};
+  if(K) try{ K.list(SUBJ, u.id).forEach(function(e){ var h = e.id.split('|q|')[1]; if(h) mk[h] = 1; }); }catch(e){}
+  QZ = {i:0, ok:0, items:SB.pickQuiz(u.quiz || [], QN, qHash, bstore(u.id).q || {}, mk, R).map(prepQ)}; renderQuiz(); }
+function qzOk(q){ var uid = unit().id, st = bstore(uid), h = qHash(q.q); if((st.q || {})[h]) return; (st.q = st.q || {})[h] = 1; bsave(uid, st); }
 function prepQ(q){ var o = {q:q, done:false, right:false};
   if(q.type === 'mc') o.ord = shuffle(q.opts.map(function(_, i){ return i; }));
   if(q.type === 'order'){ o.pool = shuffle(q.items.map(function(_, i){ return i; })); o.placed = []; if(o.pool.every(function(v, i){ return v === i; })) o.pool.reverse(); }
@@ -752,7 +758,7 @@ function renderQuiz(){
 }
 function quizDone(right){ var it = QZ.items[QZ.i]; it.done = true; it.right = right; if(right) QZ.ok++; coinAnswer(right);
   if(QZ.mk){ try{ if(KMx().record(SUBJ, it.mk, right) === 'graduated') QZ.grad++; }catch(e){} }
-  else mkQuiz(it.q, right);
+  else { mkQuiz(it.q, right); if(right) qzOk(it.q); }
   if(QZ.items.every(function(x){ return x.done; }) && !QZ.reported){ QZ.reported = true; coinRound(QZ.mk ? 'mistakes' : 'quiz', QZ.ok, QZ.items.length); if(!QZ.mk) doneRec('qz', Math.round(QZ.ok / QZ.items.length * 100)); }
   renderQuiz(); }
 

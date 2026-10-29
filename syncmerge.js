@@ -16,7 +16,7 @@
    文件格式 v3（2026-10-09 起；v2 欄位完全不變，只多下面五個欄位，舊文件少了它們就當空的）：
    {v:3, cut, log:[{r,t,id,m,k,y,ok,a}], agg:{qid:{fc,n,k}}, learned:{id:{at,score}|{removedAt}}, mistakes:{qid:{c,w,t,u,d?}},
     mm:{'<科>:<單元>':{unlocked,best:{關:%},passedAt:{關:ms},lastPassAt,reviewStep}},      ← kids_mm_progress（社會／自然心智圖）
-    mmBlanks:{'<科>:<單元>':{sess,w:{詞:{ok,wrong,streak,last?,lastShown?}},a:{節點:{…}}}},  ← kids_mm_blanks（挖空／背架構加權）
+    mmBlanks:{'<科>:<單元>':{sess,w:{詞:{ok,wrong,streak,last?,lastShown?}},a:{節點:{…}},q?:{題目雜湊:1}}},  ← kids_mm_blanks（挖空／背架構加權；q＝練習題答對過）
     eq:{at,items:[{q,own,t}],del:{q:ms}},                                                  ← tianping-eq-list-v2（數學天平題目清單）
     scratch:{'<會員>|<堂>':iso},                                                            ← kids_scratch_done（Scratch 我完成了）
     ctr:{<裝置id>:{stars,quizzes}}}                                                         ← ke_progress（英文星星、完成回數）
@@ -27,6 +27,7 @@
    - mm：每單元 unlocked／best／passedAt 各關取最大（＝過關聯集＋最佳成績＋最新過關時間）；複習：lastPassAt 取最新，
      reviewStep 跟著 lastPassAt 較新的那份走（一樣新取大的）。'_' 開頭的 key（示範時鐘）不同步。
    - mmBlanks：sess 取大；每個詞／節點取「答題次數（ok+wrong）較多」的那份（一樣多取 lastShown 大的）。
+     q（2026-10-29 加，練習題答對過的題目雜湊 → 1）：聯集。跟 p1／p2 一樣不升版：舊版裝置的 normBl 會丟掉 q，新版下次同步從本機補回。
      不用加總：同一份紀錄每次同步都會再碰到，加總會一直重複累加（不冪等）；取較多的那份每次結果都一樣。
    - eq：依題目字串聯集＋刪除墓碑（del 比 t 新＝刪掉），順序跟 at（最後在哪台改清單）較新的那份，最多 30 題、墓碑最多 100 筆。
    - scratch：聯集，同一堂留最早的完成時間。
@@ -98,8 +99,10 @@
     const la = a.lastShown || 0, lb = b.lastShown || 0; if (la !== lb) return la > lb ? a : b;
     return canon(a) >= canon(b) ? a : b;
   }
-  function normBl(s) { if (!s || typeof s !== 'object' || Array.isArray(s)) return null; return { sess: int0(s.sess), w: section(s.w, normRec), a: section(s.a, normRec) }; }
-  const mergeBl = (a, b) => ({ sess: Math.max(a.sess, b.sess), w: mergeSection(a.w, b.w, pickRec), a: mergeSection(a.a, b.a, pickRec) });
+  // q：練習題答對過的題（題目雜湊 → 1，2026-10-29）；聯集。空的不寫出來（舊文件、舊測試的形狀不變）
+  const withQ = (o, q) => { if (Object.keys(q).length) o.q = q; return o; };
+  function normBl(s) { if (!s || typeof s !== 'object' || Array.isArray(s)) return null; return withQ({ sess: int0(s.sess), w: section(s.w, normRec), a: section(s.a, normRec) }, section(s.q, v => (v ? 1 : null))); }
+  const mergeBl = (a, b) => withQ({ sess: Math.max(a.sess, b.sess), w: mergeSection(a.w, b.w, pickRec), a: mergeSection(a.a, b.a, pickRec) }, section(Object.assign({}, a.q, b.q), () => 1));
   // ---- eq：數學天平題目清單（聯集＋刪除墓碑）----
   function finishEq(at, items, del) {
     const alive = items.filter(it => !(it.q in del) || it.t > del[it.q]).slice(0, MAX_EQ), live = new Set(alive.map(it => it.q)), d2 = {};
