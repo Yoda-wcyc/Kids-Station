@@ -887,6 +887,131 @@
       note: '六下兩課都是依學校公開的課程計畫（翰林 Here We Go 8）整理，還沒拿課本核對；課程計畫沒有列日常用語和對話，所以題目只考單字和句型。' });
   })();
 
+  // ================= 六下 U3–U4（How Much Is the T-shirt? ／ What's Your Favorite Season?；依學校課程計畫整理，待課本核對）=================
+  (() => {
+    // 價錢：說出任一個數字就算（辨識常把 three hundred 寫成 300，數字照收）
+    const PRICE = 'hundred|ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|100|200|300|400|500|600|700|800|900|1000';
+    const SEASON = 'spring|summer|fall|autumn|winter';
+    const IT = ['Yes, it is.', "No, it isn't."], ITK = ["Yes, it is|No, it isn't"], THEY = ['Yes, they are.', "No, they aren't."], THEYK = ["Yes, they are|No, they aren't"];
+    const n = (w, d) => w + '|' + d;   // 數字＋阿拉伯數字
+    const L1 = [
+      // ---- Unit 3：衣物、How much …? ----
+      { u: 1, q: 'How much is the T-shirt?', a: ["It's ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'How much is the coat?', a: ["It's ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'How much is the dress?', a: ["It's ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'How much is the hat?', a: ["It's ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'How much is the jacket?', a: ["It's ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'How much is the skirt?', a: ["It's ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'How much are the pants?', a: ["They're ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'How much are the jeans?', a: ["They're ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'How much are the shorts?', a: ["They're ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'How much is it?', a: ["It's ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'How much are they?', a: ["They're ___ dollars.", '___ dollars.'], k: [PRICE] },
+      { u: 1, q: 'Is the T-shirt ten dollars?', a: IT, k: ITK },
+      { u: 1, q: 'Is the hat fifty dollars?', a: IT, k: ITK },
+      { u: 1, q: 'Is the jacket five hundred dollars?', a: IT, k: ITK },
+      { u: 1, q: 'Is the T-shirt one hundred dollars?', a: IT, k: ITK },
+      { u: 1, q: 'Are the jeans two hundred dollars?', a: THEY, k: THEYK },
+      { u: 1, q: 'Are the shorts one hundred dollars?', a: THEY, k: THEYK },
+      { u: 1, q: 'Are the pants three hundred dollars?', a: THEY, k: THEYK },
+      { u: 1, q: 'Is the dress three hundred or five hundred dollars?', a: ["It's three hundred dollars.", "It's five hundred dollars.", 'Three hundred dollars.', 'Five hundred dollars.'], k: ['three hundred|five hundred|300|500'] },
+      { u: 1, q: 'Is the skirt ten or fifty dollars?', a: ["It's ten dollars.", "It's fifty dollars.", 'Ten dollars.', 'Fifty dollars.'], k: ['ten|fifty|10|50'] },
+      // ---- Unit 4：季節、天氣 ----
+      { u: 2, q: "What's your favorite season?", a: ['My favorite season is ___.', '___.'], k: [SEASON] },
+      { u: 2, q: "What's his favorite season?", a: ['His favorite season is ___.', '___.'], k: [SEASON] },
+      { u: 2, q: "What's her favorite season?", a: ['Her favorite season is ___.', '___.'], k: [SEASON] },
+      { u: 2, q: "What's Amy's favorite season?", a: ['Her favorite season is ___.', '___.'], k: [SEASON] },
+      { u: 2, q: "What's Ben's favorite season?", a: ['His favorite season is ___.', '___.'], k: [SEASON] },
+      { u: 2, q: 'Is it cold in winter?', a: IT, k: ITK },
+      { u: 2, q: 'Is it hot in summer?', a: IT, k: ITK },
+      { u: 2, q: 'Is it cool in fall?', a: IT, k: ITK },
+      { u: 2, q: 'Is it snowy in winter?', a: IT, k: ITK },
+      { u: 2, q: 'Is it foggy in spring?', a: IT, k: ITK },
+      { u: 2, q: 'Is it dry in fall?', a: IT, k: ITK },
+      { u: 2, q: 'Is it wet in spring?', a: IT, k: ITK },
+      { u: 2, q: 'Is your favorite season spring or fall?', a: ['My favorite season is spring.', 'My favorite season is fall.', 'Spring.', 'Fall.'], k: ['spring|fall|autumn'] },
+      { u: 2, q: 'Is his favorite season summer or winter?', a: ['His favorite season is summer.', 'His favorite season is winter.', 'Summer.', 'Winter.'], k: ['summer|winter'] },
+      { u: 2, q: 'Is it hot or cold in summer?', a: ["It's hot.", "It's cold.", 'Hot.', 'Cold.'], k: ['hot|cold'] },
+      { u: 2, q: 'Is it dry or wet in fall?', a: ["It's dry.", "It's wet.", 'Dry.', 'Wet.'], k: ['dry|wet'] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'Is the jacket for fall?', a: IT, k: ITK },
+      { u: 12, q: 'Are the shorts for summer?', a: THEY, k: THEYK },
+      { u: 12, q: 'Is the coat for winter?', a: IT, k: ITK },
+      { u: 12, q: 'Is the dress for spring?', a: IT, k: ITK }
+    ];
+    const L2 = [
+      // ---- Unit 3 ----
+      { u: 1, q: 'How much is the T-shirt?', zh: '標價：十元。', a: ["It's ten dollars.", 'Ten dollars.'], k: [n('ten', '10')] },
+      { u: 1, q: 'How much is the coat?', zh: '標價：五百元。', a: ["It's five hundred dollars.", 'Five hundred dollars.'], k: [n('five hundred', '500')] },
+      { u: 1, q: 'How much is the dress?', zh: '標價：三百元。', a: ["It's three hundred dollars.", 'Three hundred dollars.'], k: [n('three hundred', '300')] },
+      { u: 1, q: 'How much is the hat?', zh: '標價：五十元。', a: ["It's fifty dollars.", 'Fifty dollars.'], k: [n('fifty', '50')] },
+      { u: 1, q: 'How much is the jacket?', zh: '標價：兩百元。', a: ["It's two hundred dollars.", 'Two hundred dollars.'], k: [n('two hundred', '200')] },
+      { u: 1, q: 'How much is the skirt?', zh: '標價：一百元。', a: ["It's one hundred dollars.", 'One hundred dollars.'], k: [n('one hundred', '100')] },
+      { u: 1, q: 'How much are the pants?', zh: '標價：一百元。', a: ["They're one hundred dollars.", 'One hundred dollars.'], k: [n('one hundred', '100')] },
+      { u: 1, q: 'How much are the jeans?', zh: '標價：三百元。', a: ["They're three hundred dollars.", 'Three hundred dollars.'], k: [n('three hundred', '300')] },
+      { u: 1, q: 'How much are the shorts?', zh: '標價：五十元。', a: ["They're fifty dollars.", 'Fifty dollars.'], k: [n('fifty', '50')] },
+      { u: 1, q: 'Is the T-shirt fifty dollars?', zh: '不是，標價十元。', a: ["No, it isn't. It's ten dollars.", 'No. Ten dollars.'], k: ['No', n('ten', '10')] },
+      { u: 1, q: 'Is the hat fifty dollars?', zh: '對，五十元。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      { u: 1, q: 'Are the jeans two hundred dollars?', zh: '不是，標價三百元。', a: ["No, they aren't. They're three hundred dollars.", 'No. Three hundred dollars.'], k: ['No', n('three hundred', '300')] },
+      { u: 1, q: 'Are the shorts fifty dollars?', zh: '對，五十元。', a: ['Yes, they are.'], k: ['Yes, they are'] },
+      { u: 1, q: 'Is the dress three hundred or five hundred dollars?', zh: '五百元。', a: ["It's five hundred dollars.", 'Five hundred dollars.'], k: [n('five hundred', '500')] },
+      { u: 1, q: 'How much is it?', zh: '（指著帽子）標價十元。', a: ["It's ten dollars.", 'Ten dollars.'], k: [n('ten', '10')] },
+      { u: 1, q: 'How much are they?', zh: '（指著長褲）標價兩百元。', a: ["They're two hundred dollars.", 'Two hundred dollars.'], k: [n('two hundred', '200')] },
+      { u: 1, q: 'Is the jacket five hundred dollars?', zh: '不是，標價兩百元。', a: ["No, it isn't. It's two hundred dollars.", 'No. Two hundred dollars.'], k: ['No', n('two hundred', '200')] },
+      { u: 1, q: 'Is the coat one hundred dollars?', zh: '對，一百元。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      // ---- Unit 4 ----
+      { u: 2, q: "What's your favorite season?", zh: '你最喜歡秋天。', a: ['My favorite season is fall.', 'Fall.'], k: ['fall|autumn'] },
+      { u: 2, q: "What's his favorite season?", zh: '他最喜歡冬天。', a: ['His favorite season is winter.', 'Winter.'], k: ['winter'] },
+      { u: 2, q: "What's her favorite season?", zh: '她最喜歡春天。', a: ['Her favorite season is spring.', 'Spring.'], k: ['spring'] },
+      { u: 2, q: "What's Amy's favorite season?", zh: 'Amy 最喜歡夏天。', a: ['Her favorite season is summer.', 'Summer.'], k: ['summer'] },
+      { u: 2, q: "What's Ben's favorite season?", zh: 'Ben 最喜歡冬天。', a: ['His favorite season is winter.', 'Winter.'], k: ['winter'] },
+      { u: 2, q: 'Is it cold in winter?', zh: '對，冬天很冷。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      { u: 2, q: 'Is it hot in fall?', zh: '不是；秋天涼爽又乾燥。', a: ["No, it isn't. It's cool and dry in fall.", "No. It's cool and dry."], k: ['No', 'cool', 'dry'] },
+      { u: 2, q: 'Is it snowy in summer?', zh: '不是；夏天又熱又潮濕。', a: ["No, it isn't. It's hot and wet in summer.", "No. It's hot and wet."], k: ['No', 'hot', 'wet'] },
+      { u: 2, q: 'Is it foggy in spring?', zh: '對，春天會起霧。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      { u: 2, q: 'Is your favorite season spring or fall?', zh: '你最喜歡秋天。', a: ['My favorite season is fall.', 'Fall.'], k: ['fall|autumn'] },
+      { u: 2, q: 'Is it hot or cold in summer?', zh: '夏天很熱。', a: ["It's hot.", "It's hot in summer.", 'Hot.'], k: ['hot'] },
+      { u: 2, q: 'Is it dry or wet in fall?', zh: '秋天很乾燥。', a: ["It's dry.", "It's dry in fall.", 'Dry.'], k: ['dry'] },
+      { u: 2, q: 'Is it cool in fall?', zh: '對，秋天很涼爽。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      { u: 2, q: 'Is it wet in winter?', zh: '不是；冬天寒冷又下雪。', a: ["No, it isn't. It's cold and snowy in winter.", "No. It's cold and snowy."], k: ['No', 'cold', 'snowy'] },
+      { u: 2, q: 'Is his favorite season summer?', zh: '不是；他最喜歡春天。', a: ["No, it isn't. His favorite season is spring.", 'No. Spring.'], k: ['No', 'spring'] },
+      { u: 2, q: 'Is her favorite season winter?', zh: '對，她最喜歡冬天。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'Are the shorts for summer?', zh: '對，短褲是夏天穿的。', a: ['Yes, they are.'], k: ['Yes, they are'] },
+      { u: 12, q: 'Is the coat for winter?', zh: '對，外套是冬天穿的。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      { u: 12, q: "How much is the jacket? It's for fall.", zh: '標價三百元。', a: ["It's three hundred dollars.", 'Three hundred dollars.'], k: [n('three hundred', '300')] },
+      { u: 12, q: 'How much are the jeans? They are for winter.', zh: '標價兩百元。', a: ["They're two hundred dollars.", 'Two hundred dollars.'], k: [n('two hundred', '200')] },
+      { u: 12, q: 'Is the hat for summer?', zh: '對，帽子是夏天戴的。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      { u: 12, q: 'Is the dress for spring?', zh: '不是；洋裝是夏天穿的。', a: ["No, it isn't. It's for summer.", 'No. For summer.'], k: ['No', 'summer'] }
+    ];
+    const L3 = [
+      { u: 1, q: 'How much is the T-shirt?', zh: '十元；再問考官：長褲多少錢？', a: ["It's ten dollars. How much are the pants?"], k: [n('ten', '10'), 'How much are the pants'], f: "They're one hundred dollars." },
+      { u: 1, q: 'The hat is fifty dollars.', zh: '換你問考官：這件夾克多少錢？', a: ['How much is the jacket?'], k: ['How much is', 'jacket'], f: "It's two hundred dollars." },
+      { u: 1, q: 'The coat is five hundred dollars.', zh: '換你問考官：這件短褲多少錢？', a: ['How much are the shorts?'], k: ['How much are', 'shorts'], f: "They're fifty dollars." },
+      { u: 1, q: 'Is the dress one hundred dollars?', zh: '不是，三百元；再問考官：裙子多少錢？', a: ["No, it isn't. It's three hundred dollars. How much is the skirt?"], k: ['No', n('three hundred', '300'), 'How much is the skirt'], f: "It's one hundred dollars." },
+      { u: 1, q: 'Are the jeans three hundred dollars?', zh: '對；再說 T 恤十元。', a: ['Yes, they are. The T-shirt is ten dollars.'], k: ['Yes, they are', n('ten', '10')] },
+      { u: 1, q: 'How much are the pants?', zh: '長褲一百元；再說短褲五十元。', a: ["They're one hundred dollars. The shorts are fifty dollars."], k: [n('one hundred', '100'), 'shorts', n('fifty', '50')] },
+      { u: 1, q: "It's hot in summer.", zh: '換你問考官：這件 T 恤多少錢？', a: ['How much is the T-shirt?'], k: ['How much is', 'T-shirt'], f: "It's ten dollars." },
+      { u: 2, q: "What's your favorite season?", zh: '秋天；說完後，反問考官最喜歡哪個季節。', a: ["My favorite season is fall. What's your favorite season?"], k: ['fall|autumn', "What's your favorite season"], f: 'My favorite season is spring.' },
+      { u: 2, q: 'My favorite season is winter.', zh: '換你問考官：她最喜歡哪個季節？', a: ["What's her favorite season?"], k: ["What's her", 'season'], f: 'Her favorite season is summer.' },
+      { u: 2, q: "It's cold in winter.", zh: '換你問考官：秋天乾燥嗎？', a: ['Is it dry in fall?'], k: ['Is it dry', 'fall|autumn'], f: 'Yes, it is.' },
+      { u: 2, q: "What's your favorite season?", zh: '你最喜歡夏天；再說夏天又熱又潮濕。', a: ["My favorite season is summer. It's hot and wet in summer."], k: ['summer', 'hot', 'wet'] },
+      { u: 2, q: 'Is it snowy in fall?', zh: '不是；秋天涼爽又乾燥，你最喜歡秋天。', a: ["No, it isn't. It's cool and dry in fall. My favorite season is fall."], k: ['No', 'cool', 'dry', 'favorite season is fall|favorite season is autumn'] },
+      { u: 2, q: "What's his favorite season?", zh: '他最喜歡冬天；再說冬天寒冷又下雪。', a: ["His favorite season is winter. It's cold and snowy in winter."], k: ['winter', 'cold', 'snowy'] },
+      { u: 2, q: 'Is it foggy in spring?', zh: '對；再問考官：夏天也會起霧嗎？', a: ['Yes, it is. Is it foggy in summer?'], k: ['Yes, it is', 'Is it foggy in summer'], f: "No, it isn't." },
+      { u: 2, q: 'Is her favorite season spring?', zh: '不是；她最喜歡秋天。', a: ["No, it isn't. Her favorite season is fall."], k: ['No', 'Her favorite season', 'fall|autumn'] },
+      { u: 2, q: "What's Amy's favorite season?", zh: '她最喜歡春天；再說春天溫暖又潮濕。', a: ["Her favorite season is spring. It's warm and wet in spring."], k: ['spring', 'warm', 'wet'] },
+      { u: 12, q: 'Are the shorts for winter?', zh: '不是；短褲是夏天穿的，五十元。', a: ["No, they aren't. They're for summer. They're fifty dollars."], k: ['No', 'summer', n('fifty', '50')] },
+      { u: 12, q: 'How much is the coat?', zh: '五百元；外套是冬天穿的。', a: ["It's five hundred dollars. It's for winter."], k: [n('five hundred', '500'), 'winter'] },
+      { u: 12, q: 'How much is the hat?', zh: '五十元；帽子是夏天戴的。', a: ["It's fifty dollars. It's for summer."], k: [n('fifty', '50'), 'summer'] },
+      { u: 12, q: 'Is the jacket for fall?', zh: '對；夾克兩百元。再問考官最喜歡哪個季節。', a: ["Yes, it is. It's two hundred dollars. What's your favorite season?"], k: ['Yes, it is', n('two hundred', '200'), "What's your favorite season"], f: 'My favorite season is fall.' }
+    ];
+    build({ key: '8-u34', title: '六下 U3–U4 口語對話考試', file: '六下U3-U4', units: ['hanlin-8-u3', 'hanlin-8-u4'], labels: ['U3', 'U4'],
+      cls: { [PRICE]: '說出價錢（任一個數字）', [SEASON]: '任一個季節' }, L: [L1, L2, L3],
+      scope: "Unit 3 How Much Is the T-shirt?（coat、dress、hat、jacket、skirt、T-shirt、jeans、pants、shorts；How much is the ___? It's ___ dollars.、How much are the ___? They're ___ dollars.）；Unit 4 What's Your Favorite Season?（spring、summer、fall、winter、dry、wet、foggy、snowy；What's your favorite season? My favorite season is ___.、It's cool and dry in fall.）",
+      note: '六下兩課都是依學校公開的課程計畫（翰林 Here We Go 8）整理，還沒拿課本核對；課程計畫沒有列日常用語和對話，所以題目只考單字和句型。季節天氣的搭配（春天溫暖潮濕…）是出題時設的情境，以中文提示為準。' });
+  })();
+
   window.DATA_ORALS = BANKS;
   BANKS.forEach(b => (window.DATA_TEXTBOOK || []).forEach(u => { if (b.units.includes(u.id)) u.oral = b; }));
 })();

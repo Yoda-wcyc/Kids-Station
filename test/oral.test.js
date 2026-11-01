@@ -15,10 +15,10 @@ const E = new KE.Engine({ words: Wd.DATA_WORDS, phrases: Wd.DATA_PHRASES, roots:
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 const BANKS = Wd.DATA_ORALS;
 // 基礎字：代名詞、指示詞、be／do 動詞、冠詞、連接詞、介系詞、疑問詞、yes／no、too、課本人物名 Amy／Ben（五年級前就會的）
-const BASIC = 'i you he she it we they me my your his her a an the cannot this that these those and or not no yes too is are am do does have on in at to of with what when who where how can let s please amy ben one two three four five six seven eight nine ten eleven twelve thirty'.split(' '); // 數字一～十二、thirty：三、四年級就學過（時間題要用）
+const BASIC = 'i you he she it we they me my your his her a an the cannot this that these those and or not no yes too is are am do does have on in at to of with what when who where how can let s please amy ben one two three four five six seven eight nine ten eleven twelve twenty thirty forty fifty sixty seventy eighty ninety hundred for'.split(' '); // 數字（一～十二、整十、hundred）三、四年級就學過，時間、價錢題要用；for 是介系詞
 // 課本例句以外、逐一確認過可以用的字（理由）。has 在五上 U2 文法重點「不能用 has」裡、算範圍內；
 // 出自本課單字例句的字（favorite、like、bye…）跑的時候會列出備查
-const OK_EXTRA = { metro: '六上 U2：學校課程計畫寫「by metro / MRT」（捷運），只是多收的說法', thanks: '「No, thank you.」的口語說法（五下 U3 課本也有 No, thanks.）；只是多收的答法，孩子說 No, thank you. 就對' };
+const OK_EXTRA = { autumn: '六下 U4：fall（秋天）的另一種說法，單字庫 fall 已收 autumn 為同義字；只是多收', metro: '六上 U2：學校課程計畫寫「by metro / MRT」（捷運），只是多收的說法', thanks: '「No, thank you.」的口語說法（五下 U3 課本也有 No, thanks.）；只是多收的答法，孩子說 No, thank you. 就對' };
 const toks = s => KE.expandContr(String(s)).toLowerCase().replace(/_+/g, ' ').split(/[^a-z]+/).filter(Boolean);
 const ok20 = {};
 
@@ -33,7 +33,7 @@ BANKS.forEach(B => {
   const sig = QS.map(o => o.q + '｜' + (o.zh || ''));
   ok(new Set(sig).size === 100, 'no duplicate question (examiner line + hint): ' + sig.filter((s, i) => sig.indexOf(s) !== i) + tag);
   ok(QS.every(o => o.lv === 1 ? !o.zh : o.zh && /[一-鿿]/.test(o.zh)), 'lv1 no hint; lv2/3 Chinese hint' + tag);
-  ok(QS.every(o => !o.zh || !/[A-Za-z]/.test(o.zh.replace(/\b(Amy|Ben|Tony)\b/g, ''))), 'hints never contain English (except the names Amy, Ben, Tony)' + tag);
+  ok(QS.every(o => !o.zh || !/[A-Za-z]/.test(o.zh.replace(/\b(Amy|Ben|Tony)\b/g, '').replace(/T ?恤/g, ''))), 'hints never contain English (except the names Amy, Ben, Tony and「T恤」)' + tag);
   ok(QS.every(o => o.a.length && o.k.length && o.k.every(k => k && !k.includes('___')) && [1, 2, 12].includes(o.u) && UNITS.includes(o.tb)), 'answers / keys / unit shape' + tag);
   ok(QS.filter(o => o.lv === 1).every(o => o.a.some(a => /___/.test(a)) || o.a.length >= 2), 'lv1: fixed pattern with open blank, choices or yes/no pair' + tag);
   ok(QS.filter(o => o.lv === 3).every(o => o.k.length >= 2), 'lv3: at least two key points (two parts / own question)' + tag);
@@ -121,6 +121,10 @@ BANKS.forEach(B => {
   if (B.key === '8-u12') {
     [[19, 'I play basketball.'], [19, 'I watch videos last night.'], [41, 'At the mall.'], [8, 'Yes, I did.']].forEach(([n, a]) => NO(n, a)); // 昨晚做的事要用過去式
     [[19, 'I watched videos.'], [41, 'The zoo.'], [57, 'I watched videos.'], [1, 'At the movie theater.'], [8, 'No, I was not.']].forEach(([n, a]) => YES(n, a));
+  }
+  if (B.key === '8-u34') {
+    [[1, "It's dollars."], [41, "It's fifty dollars."], [12, 'Yes, they are.'], [59, 'Winter.']].forEach(([n, a]) => NO(n, a));
+    [[1, 'Ten dollars.'], [1, 'It is 300 dollars.'], [41, '10 dollars.'], [59, 'Autumn.'], [7, "They're two hundred dollars."]].forEach(([n, a]) => YES(n, a));
   }
   // ---- 4. 線上一次 20 題（兩個單元都有入口、抽同一份題庫）----
   const seen = new Set();
