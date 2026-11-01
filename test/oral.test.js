@@ -15,7 +15,7 @@ const E = new KE.Engine({ words: Wd.DATA_WORDS, phrases: Wd.DATA_PHRASES, roots:
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 const BANKS = Wd.DATA_ORALS;
 // 基礎字：代名詞、指示詞、be／do 動詞、冠詞、連接詞、介系詞、疑問詞、yes／no、too、課本人物名 Amy／Ben（五年級前就會的）
-const BASIC = 'i you he she it we they me my your his her a an the cannot this that these those and or not no yes too is are am do does have on in at to of with what when who where how can let s please amy ben'.split(' ');
+const BASIC = 'i you he she it we they me my your his her a an the cannot this that these those and or not no yes too is are am do does have on in at to of with what when who where how can let s please amy ben one two three four five six seven eight nine ten eleven twelve thirty'.split(' '); // 數字一～十二、thirty：三、四年級就學過（時間題要用）
 // 課本例句以外、逐一確認過可以用的字（理由）。has 在五上 U2 文法重點「不能用 has」裡、算範圍內；
 // 出自本課單字例句的字（favorite、like、bye…）跑的時候會列出備查
 const OK_EXTRA = { metro: '六上 U2：學校課程計畫寫「by metro / MRT」（捷運），只是多收的說法', thanks: '「No, thank you.」的口語說法（五下 U3 課本也有 No, thanks.）；只是多收的答法，孩子說 No, thank you. 就對' };
@@ -113,6 +113,10 @@ BANKS.forEach(B => {
   if (B.key === '7-u12') {
     [[41, 'Japan.'], [8, 'Yes, he does.'], [18, 'I go to school.'], [57, 'By bike.'], [64, 'No, he does not. He goes to school by bus.']].forEach(([n, a]) => NO(n, a));
     [[1, 'I am from the U.K.'], [1, 'Japan.'], [18, 'On foot.'], [18, 'I go to school by metro.'], [59, 'By M.R.T.'], [45, 'The U.S.A.'], [64, "No, he doesn't. He goes to school by scooter."]].forEach(([n, a]) => YES(n, a));
+  }
+  if (B.key === '7-u34') {
+    [[41, 'I play baseball.'], [57, 'At seven.'], [10, 'Yes, he do.'], [76, 'I watch TV.']].forEach(([n, a]) => NO(n, a));
+    [[19, 'At 6:30.'], [57, 'I get up at 6:30.'], [1, 'I watch TV.'], [42, 'He watches TV.'], [76, 'Go home.'], [76, 'I go home at 4.']].forEach(([n, a]) => YES(n, a));
   }
   // ---- 4. 線上一次 20 題（兩個單元都有入口、抽同一份題庫）----
   const seen = new Set();

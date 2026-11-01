@@ -641,6 +641,128 @@
       note: '六上兩課都是依學校公開的課程計畫（翰林 Here We Go 7）整理，還沒拿課本核對；課程計畫沒有列日常用語和對話，所以題目只考單字和句型。' });
   })();
 
+  // ================= 六上 U3–U4（What Do You Do on Weekends? ／ What Time Do You Get Up?；依學校課程計畫整理，待課本核對）=================
+  (() => {
+    const ACT = 'jogging|baseball|basketball|bike|music|English|Internet|TV', DO = ACT + '|home|homework|shower|bed|lunch|get up|school';
+    const TIME = 'one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve';
+    const L1 = [
+      // ---- Unit 3：休閒活動 ----
+      { u: 1, q: 'What do you do on weekends?', a: ['I ___ on weekends.', 'I ___.', '___.'], k: [ACT] },
+      { u: 1, q: 'What does he do in his free time?', a: ['He ___ in his free time.', 'He ___.', '___.'], k: [ACT] },
+      { u: 1, q: 'What does she do in her free time?', a: ['She ___ in her free time.', 'She ___.', '___.'], k: [ACT] },
+      { u: 1, q: 'What do they do on weekends?', a: ['They ___ on weekends.', 'They ___.', '___.'], k: [ACT] },
+      { u: 1, q: 'What does Amy do on weekends?', a: ['She ___ on weekends.', 'She ___.', '___.'], k: [ACT] },
+      { u: 1, q: 'What do you do in your free time?', a: ['I ___ in my free time.', 'I ___.', '___.'], k: [ACT] },
+      { u: 1, q: 'Do you watch TV on weekends?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 1, q: 'Do you play baseball on weekends?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 1, q: 'Do you study English in your free time?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 1, q: 'Does he go jogging on weekends?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 1, q: 'Does she listen to music in her free time?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 1, q: 'Does Ben surf the Internet in his free time?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 1, q: 'Does Amy study English on weekends?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 1, q: 'Do they ride a bike on weekends?', a: Y('they', 'do'), k: YK('they', 'do') },
+      { u: 1, q: 'Do you and Ben play basketball on weekends?', a: Y('we', 'do'), k: YK('we', 'do') },
+      { u: 1, q: 'Do you watch TV or listen to music on weekends?', a: ['I watch TV.', 'I listen to music.', 'Watch TV.', 'Listen to music.'], k: ['TV|music'] },
+      { u: 1, q: 'Does he play baseball or basketball?', a: ['He plays baseball.', 'He plays basketball.', 'Baseball.', 'Basketball.'], k: ['baseball|basketball'] },
+      { u: 1, q: 'Does she go jogging or ride a bike?', a: ['She goes jogging.', 'She rides a bike.', 'Go jogging.', 'Ride a bike.'], k: ['jogging|bike'] },
+      // ---- Unit 4：作息時間 ----
+      { u: 2, q: 'What time do you get up?', a: ['I get up at ___.', 'At ___.', '___.'], k: [TIME] },
+      { u: 2, q: 'What time do you go to school?', a: ['I go to school at ___.', 'At ___.', '___.'], k: [TIME] },
+      { u: 2, q: 'What time do you go to bed?', a: ['I go to bed at ___.', 'At ___.', '___.'], k: [TIME] },
+      { u: 2, q: 'What time does he have lunch?', a: ['He has lunch at ___.', 'At ___.', '___.'], k: [TIME] },
+      { u: 2, q: 'What time does she go home?', a: ['She goes home at ___.', 'At ___.', '___.'], k: [TIME] },
+      { u: 2, q: 'What time does Ben take a shower?', a: ['He takes a shower at ___.', 'At ___.', '___.'], k: [TIME] },
+      { u: 2, q: 'What time does Amy do her homework?', a: ['She does her homework at ___.', 'At ___.', '___.'], k: [TIME] },
+      { u: 2, q: 'Do you get up at six?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Do you go to bed at nine?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Do you do your homework at five?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Does he have lunch at twelve?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 2, q: 'Does she go home at four?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 2, q: 'Does Ben take a shower at eight?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 2, q: 'Do they go to school at seven thirty?', a: Y('they', 'do'), k: YK('they', 'do') },
+      { u: 2, q: 'Do you get up at six or at seven?', a: ['I get up at six.', 'I get up at seven.', 'At six.', 'At seven.'], k: ['six|seven'] },
+      { u: 2, q: 'Does she go to bed at nine or at ten?', a: ['She goes to bed at nine.', 'She goes to bed at ten.', 'At nine.', 'At ten.'], k: ['nine|ten'] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'What time do you watch TV?', a: ['I watch TV at ___.', 'At ___.', '___.'], k: [TIME] },
+      { u: 12, q: 'What time does he play basketball?', a: ['He plays basketball at ___.', 'At ___.', '___.'], k: [TIME] },
+      { u: 12, q: 'Do you listen to music at nine?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 12, q: 'What do you do at four?', a: ['I ___ at four.', 'I ___.', '___.'], k: [DO] },
+      { u: 12, q: 'Does Amy watch TV at eight?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 12, q: 'What does he do at five?', a: ['He ___ at five.', 'He ___.', '___.'], k: [DO] }
+    ];
+    const L2 = [
+      // ---- Unit 3 ----
+      { u: 1, q: 'What do you do on weekends?', zh: '你週末去慢跑。', a: ['I go jogging on weekends.', 'I go jogging.', 'Go jogging.'], k: ['jogging'] },
+      { u: 1, q: 'What does he do in his free time?', zh: '他看電視。', a: ['He watches TV in his free time.', 'He watches TV.', 'Watch TV.'], k: ['TV'] },
+      { u: 1, q: 'What does she do in her free time?', zh: '她讀英文。', a: ['She studies English in her free time.', 'She studies English.', 'Study English.'], k: ['English'] },
+      { u: 1, q: 'What do they do on weekends?', zh: '他們打棒球。', a: ['They play baseball on weekends.', 'They play baseball.', 'Play baseball.'], k: ['baseball'] },
+      { u: 1, q: 'What does Amy do on weekends?', zh: 'Amy 騎腳踏車。', a: ['She rides a bike on weekends.', 'She rides a bike.', 'Ride a bike.'], k: ['bike'] },
+      { u: 1, q: 'What does Ben do in his free time?', zh: 'Ben 上網。', a: ['He surfs the Internet in his free time.', 'He surfs the Internet.', 'Surf the Internet.'], k: ['Internet'] },
+      { u: 1, q: 'What do you do in your free time?', zh: '你聽音樂。', a: ['I listen to music in my free time.', 'I listen to music.', 'Listen to music.'], k: ['music'] },
+      { u: 1, q: 'Do you play basketball on weekends?', zh: '對，你週末打籃球。', a: ['Yes, I do.'], k: ['Yes, I do'] },
+      { u: 1, q: 'Does he watch TV on weekends?', zh: '不是；他打籃球。', a: ["No, he doesn't. He plays basketball.", "No, he doesn't. He plays basketball on weekends."], k: ["No, he doesn't", 'basketball'] },
+      { u: 1, q: 'Does she go jogging on weekends?', zh: '對，她週末去慢跑。', a: ['Yes, she does.'], k: ['Yes, she does'] },
+      { u: 1, q: 'Does Ben study English in his free time?', zh: '不是；他上網。', a: ["No, he doesn't. He surfs the Internet."], k: ["No, he doesn't", 'Internet'] },
+      { u: 1, q: 'Do they ride a bike on weekends?', zh: '對，他們週末騎腳踏車。', a: ['Yes, they do.'], k: ['Yes, they do'] },
+      { u: 1, q: 'Do you watch TV or listen to music?', zh: '你聽音樂。', a: ['I listen to music.', 'Listen to music.'], k: ['music'] },
+      { u: 1, q: 'Does he play baseball or basketball?', zh: '他打棒球。', a: ['He plays baseball.', 'Baseball.'], k: ['baseball'] },
+      { u: 1, q: 'Do you and Amy go jogging on weekends?', zh: '不是，你們週末不去慢跑。', a: ["No, we don't."], k: ["No, we don't"] },
+      { u: 1, q: 'Does Amy surf the Internet on weekends?', zh: '對，Amy 週末上網。', a: ['Yes, she does.'], k: ['Yes, she does'] },
+      // ---- Unit 4 ----
+      { u: 2, q: 'What time do you get up?', zh: '你六點半起床。', a: ['I get up at six thirty.', 'At six thirty.'], k: ['six thirty'] },
+      { u: 2, q: 'What time do you go to school?', zh: '你七點半去上學。', a: ['I go to school at seven thirty.', 'At seven thirty.'], k: ['seven thirty'] },
+      { u: 2, q: 'What time does he have lunch?', zh: '他十二點吃午餐。', a: ['He has lunch at twelve.', 'At twelve.'], k: ['twelve'] },
+      { u: 2, q: 'What time does she go home?', zh: '她四點回家。', a: ['She goes home at four.', 'At four.'], k: ['four'] },
+      { u: 2, q: 'What time does Ben do his homework?', zh: 'Ben 五點寫功課。', a: ['He does his homework at five.', 'At five.'], k: ['five'] },
+      { u: 2, q: 'What time does Amy take a shower?', zh: 'Amy 八點洗澡。', a: ['She takes a shower at eight.', 'At eight.'], k: ['eight'] },
+      { u: 2, q: 'What time do you go to bed?', zh: '你九點半上床睡覺。', a: ['I go to bed at nine thirty.', 'At nine thirty.'], k: ['nine thirty'] },
+      { u: 2, q: 'Do you get up at six?', zh: '對，你六點起床。', a: ['Yes, I do.'], k: ['Yes, I do'] },
+      { u: 2, q: 'Does he go to bed at ten?', zh: '不是；他九點上床睡覺。', a: ["No, he doesn't. He goes to bed at nine."], k: ["No, he doesn't", 'nine'] },
+      { u: 2, q: 'Does she have lunch at twelve?', zh: '對，她十二點吃午餐。', a: ['Yes, she does.'], k: ['Yes, she does'] },
+      { u: 2, q: 'Does Ben go home at five?', zh: '不是；他四點回家。', a: ["No, he doesn't. He goes home at four."], k: ["No, he doesn't", 'four'] },
+      { u: 2, q: 'Do they go to school at seven?', zh: '對，他們七點去上學。', a: ['Yes, they do.'], k: ['Yes, they do'] },
+      { u: 2, q: 'Do you take a shower at eight or at nine?', zh: '你八點洗澡。', a: ['I take a shower at eight.', 'At eight.'], k: ['eight'] },
+      { u: 2, q: 'What time do you have lunch?', zh: '你十二點吃午餐。', a: ['I have lunch at twelve.', 'At twelve.'], k: ['twelve'] },
+      { u: 2, q: 'What time does she get up?', zh: '她六點起床。', a: ['She gets up at six.', 'At six.'], k: ['six'] },
+      { u: 2, q: 'Do you do your homework at five?', zh: '不是；你六點寫功課。', a: ["No, I don't. I do my homework at six."], k: ["No, I don't", 'six'] },
+      { u: 2, q: 'What time does he take a shower?', zh: '他七點洗澡。', a: ['He takes a shower at seven.', 'At seven.'], k: ['seven'] },
+      { u: 2, q: 'What time do Amy and Ben go to school?', zh: '他們七點半去上學。', a: ['They go to school at seven thirty.', 'At seven thirty.'], k: ['seven thirty'] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'What time do you watch TV?', zh: '你八點看電視。', a: ['I watch TV at eight.', 'At eight.'], k: ['eight'] },
+      { u: 12, q: 'What do you do at four?', zh: '你四點回家。', a: ['I go home at four.', 'I go home.', 'Go home.'], k: ['go home'] },
+      { u: 12, q: 'What does she do at five?', zh: '她五點寫功課。', a: ['She does her homework at five.', 'She does her homework.', 'Do her homework.'], k: ['homework'] },
+      { u: 12, q: 'Does he play basketball at four?', zh: '對，他四點打籃球。', a: ['Yes, he does.'], k: ['Yes, he does'] },
+      { u: 12, q: 'What time does Amy go jogging?', zh: 'Amy 六點去慢跑。', a: ['She goes jogging at six.', 'At six.'], k: ['six'] },
+      { u: 12, q: 'What does Ben do at nine?', zh: 'Ben 九點上床睡覺。', a: ['He goes to bed at nine.', 'He goes to bed.', 'Go to bed.'], k: ['bed'] }
+    ];
+    const L3 = [
+      { u: 1, q: 'What do you do on weekends?', zh: '你打籃球。說完後，反問考官週末做什麼。', a: ['I play basketball on weekends. What do you do on weekends?'], k: ['basketball', 'What do you do'], f: 'I go jogging on weekends.' },
+      { u: 1, q: 'I watch TV on weekends.', zh: '換你問考官：她空閒的時候做什麼？', a: ['What does she do in her free time?'], k: ['What does she do', 'free time'], f: 'She listens to music in her free time.' },
+      { u: 1, q: 'He plays baseball.', zh: '換你問考官：他週末去慢跑嗎？', a: ['Does he go jogging on weekends?'], k: ['Does he', 'jogging'], f: "No, he doesn't." },
+      { u: 1, q: 'Does she watch TV in her free time?', zh: '不是；她讀英文，也聽音樂。', a: ["No, she doesn't. She studies English. She listens to music, too."], k: ["No, she doesn't", 'English', 'music'] },
+      { u: 1, q: 'What does he do in his free time?', zh: '他上網；再說他週末騎腳踏車。', a: ['He surfs the Internet in his free time. He rides a bike on weekends.'], k: ['Internet', 'bike'] },
+      { u: 1, q: 'Do you play baseball on weekends?', zh: '對；再問考官：你也打棒球嗎？', a: ['Yes, I do. Do you play baseball?'], k: ['Yes, I do', 'Do you play baseball'], f: 'Yes, I do.' },
+      { u: 1, q: 'What do Amy and Ben do on weekends?', zh: 'Amy 看電視，Ben 打籃球。', a: ['Amy watches TV. Ben plays basketball.'], k: ['Amy', 'TV', 'Ben', 'basketball'] },
+      { u: 1, q: 'I go jogging at six.', zh: '換你問考官：她週末做什麼？', a: ['What does she do on weekends?'], k: ['What does she do', 'weekends'], f: 'She rides a bike on weekends.' },
+      { u: 2, q: 'What time do you get up?', zh: '你六點半起床。說完後，反問考官幾點起床。', a: ['I get up at six thirty. What time do you get up?'], k: ['six thirty', 'What time do you get up'], f: 'I get up at seven.' },
+      { u: 2, q: 'I go to bed at ten.', zh: '換你問考官：他幾點寫功課？', a: ['What time does he do his homework?'], k: ['What time does he', 'homework'], f: 'He does his homework at five.' },
+      { u: 2, q: 'She has lunch at twelve.', zh: '換你問考官：你幾點回家？', a: ['What time do you go home?'], k: ['What time do you', 'go home'], f: 'I go home at four.' },
+      { u: 2, q: 'Does he get up at seven?', zh: '不是；他六點起床，七點去上學。', a: ["No, he doesn't. He gets up at six. He goes to school at seven."], k: ["No, he doesn't", 'six', 'seven'] },
+      { u: 2, q: 'What time does Amy take a shower?', zh: '八點；再說她九點半上床睡覺。', a: ['She takes a shower at eight. She goes to bed at nine thirty.'], k: ['eight', 'nine thirty'] },
+      { u: 2, q: 'Do you do your homework at four?', zh: '不是；你四點回家，五點寫功課。', a: ["No, I don't. I go home at four. I do my homework at five."], k: ["No, I don't", 'go home', 'five'] },
+      { u: 2, q: 'What time do you go to school?', zh: '七點半；再問考官幾點去上學。', a: ['I go to school at seven thirty. What time do you go to school?'], k: ['seven thirty', 'What time do you go to school'], f: 'I go to school at seven.' },
+      { u: 2, q: 'What time do you have lunch?', zh: '十二點；再問考官：她幾點吃午餐？', a: ['I have lunch at twelve. What time does she have lunch?'], k: ['twelve', 'What time does she have lunch'], f: 'She has lunch at twelve thirty.' },
+      { u: 12, q: 'What do you do at five?', zh: '你五點寫功課，八點看電視。', a: ['I do my homework at five. I watch TV at eight.'], k: ['homework', 'TV', 'eight'] },
+      { u: 12, q: 'What time does he play basketball?', zh: '四點；再說他週末也打籃球。', a: ['He plays basketball at four. He plays basketball on weekends, too.'], k: ['four', 'weekends'] },
+      { u: 12, q: 'Does Ben watch TV at nine?', zh: '不是；他九點上床睡覺。', a: ["No, he doesn't. He goes to bed at nine."], k: ["No, he doesn't", 'bed'] },
+      { u: 12, q: 'What does she do in her free time?', zh: '她聽音樂；再說她八點洗澡。', a: ['She listens to music in her free time. She takes a shower at eight.'], k: ['music', 'shower', 'eight'] }
+    ];
+    build({ key: '7-u34', title: '六上 U3–U4 口語對話考試', file: '六上U3-U4', units: ['hanlin-7-u3', 'hanlin-7-u4'], labels: ['U3', 'U4'],
+      cls: { [ACT]: '任一種休閒活動', [DO]: '任一種活動或作息', [TIME]: '任一個時間（點鐘）' }, L: [L1, L2, L3],
+      scope: 'Unit 3 What Do You Do on Weekends?（go jogging、play baseball／basketball、ride a bike、listen to music、study English、surf the Internet、watch TV；What do you do on weekends?、What does he/she do in his/her free time?）；Unit 4 What Time Do You Get Up?（get up、go to school、have lunch、go home、do my homework、take a shower、go to bed；What time do you ___? I ___ at ___.、What time does he/she ___?）',
+      note: '六上兩課都是依學校公開的課程計畫（翰林 Here We Go 7）整理，還沒拿課本核對；課程計畫沒有列日常用語和對話，所以題目只考單字和句型。' });
+  })();
+
   window.DATA_ORALS = BANKS;
   BANKS.forEach(b => (window.DATA_TEXTBOOK || []).forEach(u => { if (b.units.includes(u.id)) u.oral = b; }));
 })();
