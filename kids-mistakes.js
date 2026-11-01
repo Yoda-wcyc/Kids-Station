@@ -6,8 +6,8 @@
    localStorage kids_mistakes = { social:{id:entry}, science:{…}, math:{…}, ai:{…} }
      entry＝{c, w, t, u, p}；墓碑＝{d:1, w, t, u}
      c＝在錯題庫裡連續答對幾次、w＝累計答錯次數、t＝最近一次答錯、u＝最後更新、p＝顯示／重練用的資料（各科不同，見下）
-     社會／自然 id＝'<單元>|w|<重點pid>|<詞>'（考考自己）、'<單元>|a|<節點id>'（背架構）、'<單元>|q|<題目雜湊>'（練習題）
-       p＝{u:單元, k:'w'|'a'|'q', s:那句重點／上層位置／題目, a:正確答案, pid?, ci?}
+     社會／自然 id＝'<單元>|w|<重點pid>|<詞>'（考考自己）、'<單元>|a|<節點id>'（背架構）、'<單元>|q|<題目雜湊>'（練習題）、'<單元>|L|<題組id>:<題id>'（素養題組，2026-11-01）
+       p＝{u:單元, k:'w'|'a'|'q'|'L', s:那句重點／上層位置／題目, a:正確答案, pid?, ci?}
      數學 id＝'eq:<方程式>'，p＝{q:方程式}（天平）；'gcd:<數字>[:gcd|lcm]'，p＝{type:'gcd', nums:[數字], mode:'both'|'gcd'|'lcm', q:顯示文字}（短除法）；
        'gcdword:<模板>:<數字>'，p＝{type:'gcdword', t:模板 id, v:[數字], q:顯示文字}（短除法應用題，math/gcd-word.js 用 t＋v 原題重做）；
        'mul:<題型>:<數字>'，p＝{type:'multiples', k:題型, v:[數字], q:顯示文字}（倍數與公倍數，math/multiples.js 用 k＋v 原題重做，2026-10-21）；
@@ -113,7 +113,7 @@
 
   // ================= 瀏覽器：畫面（首頁 #s/<科>/mistakes） =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  var KLABEL = { w: '考考自己', a: '背架構', q: '練習題' };
+  var KLABEL = { w: '考考自己', a: '背架構', q: '練習題', L: '素養題組' };
   function badgeOf(subj, p) { if (subj === 'chinese') return p.t || '閱讀'; if (subj === 'math') return p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
   function textOf(subj, p) {
     if (subj === 'math') return p.q || '';

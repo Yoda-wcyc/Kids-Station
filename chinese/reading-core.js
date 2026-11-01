@@ -5,6 +5,7 @@
    - validate(art, cat)：一篇的資料檢查（測試用；回傳錯誤字串陣列）。
    - unlocked(lv, arts, isDone)：第 lv 級開了沒（前一級完成 min(5, 前一級篇數) 篇）。
    - grade(states)：一輪的結果（自動判分題答對率 ≥ 70% 而且開放題都寫了＝完成這篇）。
+   - blockErr／openErr／blockHTML：一個內文區塊的檢查與畫面、開放題檢查（心智圖〈素養題組〉也用）。
    - mkId／mkP：錯題庫的題目 id（'<篇id>:<題id>'，不用題目文字雜湊）與顯示資料。 */
 (function (root) {
   'use strict';
@@ -75,6 +76,27 @@
     if (!str(q.ref)) e.push('開放題要有參考答案 ref');
     if (!Array.isArray(q.rubric) || q.rubric.length < 2 || q.rubric.length > 4 || !q.rubric.every(str)) e.push('開放題要有 2～4 條評分要點 rubric');
     return e;
+  }
+
+  // 一個內文區塊的畫面（reading.js 與心智圖〈素養題組〉共用；svg 已過 blockErr 檢查：沒有 script／事件／外部連結）
+  function blockHTML(b) {
+    var esc = QK.esc;
+    if (typeof b === 'string') return '<p data-say>' + esc(b) + '</p>';
+    if (b.h) return '<h3 data-say>' + esc(b.h) + '</h3>';
+    if (b.doc) return '<div class="zr-doc" data-say><b>' + esc(b.doc) + '</b>' + (b.from ? '<small>' + esc(b.from) + '</small>' : '') + '</div>';
+    if (b.poem) return '<div class="zr-poem" data-say>' + b.poem.map(function (l) { return l ? esc(l) : ''; }).join('<br>') + '</div>';
+    if (b.box) return '<div class="zr-box" data-say>' + (b.title ? '<b>' + esc(b.title) + '</b>' : '') + b.box.map(function (l) { return '<p>' + esc(l) + '</p>'; }).join('') + '</div>';
+    if (b.table) {
+      var t = b.table, say = t.cap + '。' + t.rows.map(function (r) { return r.map(function (c, i) { return t.head[i] + '：' + c; }).join('，'); }).join('。');
+      return '<figure class="zr-fig" data-say="' + esc(say) + '"><figcaption>' + esc(t.cap) + '</figcaption><div class="zr-tw"><table><thead><tr>' + t.head.map(function (c) { return '<th scope="col">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        t.rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div></figure>';
+    }
+    if (b.timeline) {
+      var tl = b.timeline;
+      return '<figure class="zr-fig" data-say="' + esc(tl.cap + '。' + tl.items.map(function (r) { return r[0] + '，' + r[1]; }).join('。')) + '"><figcaption>' + esc(tl.cap) + '</figcaption><ol class="zr-tl">' + tl.items.map(function (r) { return '<li><b>' + esc(r[0]) + '</b>' + esc(r[1]) + '</li>'; }).join('') + '</ol></figure>';
+    }
+    if (b.svg) return '<figure class="zr-fig" data-say="' + esc(b.cap + '。' + b.alt) + '"><div class="zr-svg" role="img" aria-label="' + esc(b.alt) + '">' + b.svg + '</div><figcaption>' + esc(b.cap) + '</figcaption></figure>';
+    return '';
   }
 
   // 一篇的資料檢查；cat＝目錄裡這一篇（chinese/data/catalog.js），有給就比對級別、文體、領域
@@ -158,7 +180,8 @@
 
   var ZR = { LV: LV, AUTO_MIN: AUTO_MIN, PASS: PASS, UNLOCK: UNLOCK, OPEN_MIN: OPEN_MIN, GENRES: GENRES, DOMAINS: DOMAINS, PIRLS: PIRLS,
     countText: countText, wordCount: wordCount, validate: validate, validateAll: validateAll, need: need, doneIn: doneIn, unlocked: unlocked, grade: grade,
-    isOpen: isOpen, autoQs: autoQs, mkId: mkId, mkP: mkP, find: find, qOf: qOf };
+    isOpen: isOpen, autoQs: autoQs, mkId: mkId, mkP: mkP, find: find, qOf: qOf,
+    blockErr: blockErr, openErr: openErr, blockHTML: blockHTML };   // 2026-11-01：心智圖〈素養題組〉共用區塊檢查與畫面
   if (typeof module !== 'undefined' && module.exports) module.exports = ZR;
   root.ZhReading = ZR;
 })(typeof window !== 'undefined' ? window : globalThis);

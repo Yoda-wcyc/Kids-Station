@@ -1094,6 +1094,8 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
   ok(kc.validEvent({ event_id: 'e-1', type: 'practice_round', item: 'chinese:reading', correct: 5, total: 6 }) && kc.validEvent({ event_id: 'e-2', type: 'practice_round', item: 'chinese:mistakes', correct: 5, total: 5 }) && !kc.validEvent({ event_id: 'e-3', type: 'practice_round', item: 'chinese:quiz', correct: 5, total: 5 }), 'kids-coins: chinese:reading／chinese:mistakes whitelisted');
   require('./chinese-reading.test.js');
 }
+// 社會、自然〈🧩 素養題組〉40 組 160 題（2026-11-01）：資料格式、題數、d 遞增、單選唯一正解、開放題要點、錯題 id、頁面接線 → test/mindmap-literacy.test.js
+require('./mindmap-literacy.test.js');
 
 ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 6 && E.get('w:may-month:zh2en').answer === 'May' && E.get('w:may:zh2en').answer === 'may', 'May / may keep separate ids');
 // 2026-10-26：補 4 個名詞詞條（同拼字、不同 id）——中文跟同字其他詞條分得開；fall／autumn、kind／sort 互收；同拼字不互當干擾

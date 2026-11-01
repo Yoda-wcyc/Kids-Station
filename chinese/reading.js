@@ -79,24 +79,7 @@
   }
 
   // ---------- 文章內容 ----------
-  function blockHTML(b) {
-    if (typeof b === 'string') return '<p data-say>' + esc(b) + '</p>';
-    if (b.h) return '<h3 data-say>' + esc(b.h) + '</h3>';
-    if (b.doc) return '<div class="zr-doc" data-say><b>' + esc(b.doc) + '</b>' + (b.from ? '<small>' + esc(b.from) + '</small>' : '') + '</div>';
-    if (b.poem) return '<div class="zr-poem" data-say>' + b.poem.map(function (l) { return l ? esc(l) : ''; }).join('<br>') + '</div>';
-    if (b.box) return '<div class="zr-box" data-say>' + (b.title ? '<b>' + esc(b.title) + '</b>' : '') + b.box.map(function (l) { return '<p>' + esc(l) + '</p>'; }).join('') + '</div>';
-    if (b.table) {
-      var t = b.table, say = t.cap + '。' + t.rows.map(function (r) { return r.map(function (c, i) { return t.head[i] + '：' + c; }).join('，'); }).join('。');
-      return '<figure class="zr-fig" data-say="' + esc(say) + '"><figcaption>' + esc(t.cap) + '</figcaption><div class="zr-tw"><table><thead><tr>' + t.head.map(function (c) { return '<th scope="col">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
-        t.rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div></figure>';
-    }
-    if (b.timeline) {
-      var tl = b.timeline;
-      return '<figure class="zr-fig" data-say="' + esc(tl.cap + '。' + tl.items.map(function (r) { return r[0] + '，' + r[1]; }).join('。')) + '"><figcaption>' + esc(tl.cap) + '</figcaption><ol class="zr-tl">' + tl.items.map(function (r) { return '<li><b>' + esc(r[0]) + '</b>' + esc(r[1]) + '</li>'; }).join('') + '</ol></figure>';
-    }
-    if (b.svg) return '<figure class="zr-fig" data-say="' + esc(b.cap + '。' + b.alt) + '"><div class="zr-svg" role="img" aria-label="' + esc(b.alt) + '">' + b.svg + '</div><figcaption>' + esc(b.cap) + '</figcaption></figure>';   // svg 已過 reading-core 檢查（沒有 script／事件／外部連結）
-    return '';
-  }
+  var blockHTML = ZR.blockHTML;   // 區塊畫面在 reading-core.js（心智圖〈素養題組〉共用）
   function articleHTML(a) { return '<h2 data-say>' + esc(a.title) + '</h2>' + a.body.map(blockHTML).join(''); }
 
   // ---------- 朗讀（瀏覽器內建語音 zh-TW；一段一段念、念到哪一段就標亮）----------
