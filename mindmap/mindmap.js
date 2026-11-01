@@ -695,7 +695,7 @@ function l4grade(){
 
 /* ---------- 練習題 ---------- */
 var QTYPE = {mc:'選擇題', tf:'是非題', order:'排順序', match:'配對題'};
-/* 一輪抽 QN 題（SB.pickQuiz）：還沒答對過 → 錯題庫裡的 → 其他。答對過的題存在 kids_mm_blanks[單元].q（題目雜湊 → 1，會同步） */
+/* 一輪抽 QN 題（SB.pickQuiz）：還沒答對過 → 錯題庫裡的 → 其他；各層內難度 d 由小到大，出題順序也照 d。答對過的題存在 kids_mm_blanks[單元].q（題目雜湊 → 1，會同步） */
 var QN = 15;
 function qHash(s){ var K = KMx(); return K ? K.hash(s) : String(s); }
 function startQuiz(){ var u = unit(), K = KMx(), mk = {};

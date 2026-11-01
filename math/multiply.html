@@ -77,7 +77,8 @@ body{background:var(--bg)}
 </main>
 
 <script src="../kids-mistakes.js?v=3b9606d6df"></script>
-<script src="multiply.js?v=002b1af76c"></script>
+<script src="multiply.js?v=8f29524857"></script>
+<script src="word-level.js?v=0dd1455f2c"></script>
 <script>
 (function () {
 'use strict';
@@ -86,12 +87,15 @@ body{background:var(--bg)}
      可開「📐 直式格子」逐位作答，哪一位、哪個進位錯就說哪一位。
    ⏱️ 挑戰：一輪 20 題、計時、不給提示；結束看答對率、平均每題秒數。一輪 ≥90% 且平均每題在秒數內＝達標：二位數×一位數 ≤10 秒、二位數×二位數 ≤20 秒（Yoda 2026-10-21），其他題型 ≤10 秒（completion.js 的 mxPass／mxSec 判定）。
    📕 錯題重練（?mistakes=1 也是）：數學錯題庫裡 type 'multiply' 的題（id 'mx:<a>x<b>'），做完送 practice_round 'math:mistakes'。
+   📝 應用題（2026-11-01，題型列最後一顆）：MX.WCTX 生活故事，寫答案（單位顯示在後面），不開直式格子；錯題 id 'mxw:<故事>:<a>x<b>'，p 多帶 c（故事）原題重做；
+     一樣送 practice_round 'math:multiply'，但挑戰不送 KidsDone（不算單元完成）。
    每次作答 KidsCoins.answer(ok,'math')；練習／挑戰一輪結束送 practice_round 'math:multiply'；挑戰結束 KidsDone.record('mx', 題型, {acc, sec})。 */
 var $ = function (id) { return document.getElementById(id); };
 var X = window.MX, MK = /[?&]mistakes=1(?:&|$)/.test(location.search);
 var N_PRAC = 10, N_CHAL = 20, UIK = 'kids_mx_ui';
 function ld() { try { return JSON.parse(localStorage.getItem(UIK)) || {}; } catch (e) { return {}; } }
-var S = { lv: X.LV.indexOf(ld().lv) >= 0 ? ld().lv : 'd21', mode: 'prac', grid: !!ld().grid };
+var LVS = X.LV.concat(['word']);   // 應用題（2026-11-01）：放在題型列最後；不算單元完成（挑戰也不記達標）
+var S = { lv: LVS.indexOf(ld().lv) >= 0 ? ld().lv : 'd21', mode: 'prac', grid: !!ld().grid };
 var R = null;
 window.MXPage = { S: S, R: function () { return R; } };   // 測試用
 function saveUI() { try { localStorage.setItem(UIK, JSON.stringify({ lv: S.lv, grid: S.grid })); } catch (e) { } }
@@ -100,18 +104,28 @@ function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'ma
 function coinReport(item, c, n) { try { if (window.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); } catch (e) { } }
 function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
 function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
-function mkRec(q, ok) { try { return window.KidsMistakes ? KidsMistakes.record('math', 'mx:' + q.a + 'x' + q.b, ok, { type: 'multiply', a: q.a, b: q.b, lv: q.lv || '', q: q.a + '×' + q.b }) : null; } catch (e) { return null; } }
+function mkRec(q, ok) {
+  try {
+    if (!window.KidsMistakes) return null;
+    if (q.c != null) return KidsMistakes.record('math', 'mxw:' + q.c + ':' + q.a + 'x' + q.b, ok, { type: 'multiply', a: q.a, b: q.b, lv: 'word', c: q.c, q: X.wordText(q) });   // 應用題：c＝故事，原題重做
+    return KidsMistakes.record('math', 'mx:' + q.a + 'x' + q.b, ok, { type: 'multiply', a: q.a, b: q.b, lv: q.lv || '', q: q.a + '×' + q.b });
+  } catch (e) { return null; }
+}
 function mkList() {
   var out = [];
-  try { KidsMistakes.list('math').forEach(function (e) { var p = e.p || {}; if (p.type === 'multiply' && X.valid(p.a, p.b) && out.length < 30) out.push({ a: p.a, b: p.b, lv: p.lv || '' }); }); } catch (e) { }
+  try { KidsMistakes.list('math').forEach(function (e) { var p = e.p || {}; if (p.type === 'multiply' && X.valid(p.a, p.b) && out.length < 30) out.push(p.c != null && X.validWord(p.c, p.a, p.b) ? { a: p.a, b: p.b, lv: 'word', c: p.c } : { a: p.a, b: p.b, lv: p.lv === 'word' ? '' : p.lv || '' }); }); } catch (e) { }
   return out;
 }
 function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['eq', 'gcd', 'gcdword', 'multiples', 'fraction']) : ''; } catch (e) { return ''; } }
+// 循序漸進（2026-11-01，math/word-level.js）：應用題先出難度 1，第一次就答對 3 題才混入難度 2，再來才是 3
+function wlLevel() { try { return window.WL ? WL.level('mx') : 3; } catch (e) { return 3; } }
+function wlNote() { try { return window.WL ? WL.note('mx') : ''; } catch (e) { return ''; } }
+function wlAdd(Q) { if (Q.c != null && !R.mk) try { if (window.WL) WL.add('mx', Q.d, true); } catch (e) { } }
 function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
 function msg(t, kind) { var m = $('msg'); m.innerHTML = t || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); }
 
 /* ---------- 題型、分頁 ---------- */
-$('lv').insertAdjacentHTML('beforeend', X.LV.map(function (k) { return '<button type="button" class="btn sm" data-lv="' + k + '" aria-pressed="' + (k === S.lv) + '">' + X.LV_NAME[k] + '<small style="opacity:.75">　' + X.LV_EG[k] + '</small></button>'; }).join(''));
+$('lv').insertAdjacentHTML('beforeend', LVS.map(function (k) { return '<button type="button" class="btn sm" data-lv="' + k + '" aria-pressed="' + (k === S.lv) + '">' + X.LV_NAME[k] + '<small style="opacity:.75">　' + X.LV_EG[k] + '</small></button>'; }).join(''));
 $('lv').addEventListener('click', function (e) {
   var b = e.target.closest('[data-lv]'); if (!b) return;
   S.lv = b.getAttribute('data-lv'); saveUI();
@@ -133,7 +147,9 @@ function home() {
   R = null; stopClock();
   $('start').hidden = false; $('q').hidden = true; $('end').hidden = true; $('start').className = 'card center';
   var h;
-  if (S.mode === 'prac') h = '<h2>✏️ 練習：' + X.LV_NAME[S.lv] + '</h2><p>一輪 ' + N_PRAC + ' 題。答錯會告訴你怎麼拆著算（例：' + esc(X.hint(15, 57)) + '）。</p>' +
+  if (S.mode === 'prac' && S.lv === 'word') h = '<h2>✏️ 練習：應用題</h2><p>一輪 ' + N_PRAC + ' 題生活故事（買東西、排座位、坐遊覽車…）。讀完想一想：一份有多少、有幾份 → 用乘法算，再寫答案。答錯會告訴你怎麼拆著算。</p>' +
+    '<p class="muted" id="lvnote">' + esc(wlNote()) + '</p><p class="muted">應用題是加強練習，不算在單元完成條件裡。</p><button type="button" class="btn primary big" id="go">開始這一輪 ▶</button>';
+  else if (S.mode === 'prac') h = '<h2>✏️ 練習：' + X.LV_NAME[S.lv] + '</h2><p>一輪 ' + N_PRAC + ' 題。答錯會告訴你怎麼拆著算（例：' + esc(X.hint(15, 57)) + '）。</p>' +
     '<div class="row"><button type="button" class="btn sm" id="grid-tg" aria-pressed="' + S.grid + '">📐 直式格子（一位一位寫，抓進位錯誤）</button></div>' +
     '<p class="muted">直式格子：從個位開始寫，寫完一格會自動跳到左邊那一格。</p><button type="button" class="btn primary big" id="go">開始這一輪 ▶</button>';
   else if (S.mode === 'chal') h = '<h2>⏱️ 挑戰：' + X.LV_NAME[S.lv] + '</h2><p>一輪 ' + N_CHAL + ' 題，計時、不給提示，打完按 Enter 或「確定」就換下一題。</p>' +
@@ -144,7 +160,7 @@ function home() {
 function go() {
   if (!authOK()) return;
   if (S.mode !== 'mk' && !startAct(go)) return;
-  var items = S.mode === 'mk' ? mkList() : X.round(S.lv, S.mode === 'chal' ? N_CHAL : N_PRAC);
+  var n = S.mode === 'chal' ? N_CHAL : N_PRAC, items = S.mode === 'mk' ? mkList() : S.lv === 'word' ? X.wordRound(n, null, wlLevel()) : X.round(S.lv, n);
   if (!items.length) { home(); return; }
   R = { mode: S.mode, lv: S.lv, items: items, idx: 0, ok: 0, grad: 0, secs: [], oks: [], sent: false, mk: S.mode === 'mk', wrongList: [] };
   ask();
@@ -161,7 +177,7 @@ document.addEventListener('visibilitychange', function () {   // 挑戰中切出
 });
 function ask() {
   var it = R.items[R.idx];
-  R.Q = { a: it.a, b: it.b, lv: it.lv || R.lv, tries: 0, wrong: false, done: false, showFull: false, t0: now(), paused: 0, V: X.vertical(it.a, it.b) };
+  R.Q = { a: it.a, b: it.b, lv: it.lv || R.lv, c: it.c, d: it.d || (it.c != null ? X.ctxD(it.c) : 0), tries: 0, wrong: false, done: false, showFull: false, t0: now(), paused: 0, V: it.c != null ? null : X.vertical(it.a, it.b) };   // 應用題不開直式格子（格子會直接露出算式）
   $('start').hidden = true; $('end').hidden = true; $('q').hidden = false;
   msg(''); draw();
   if (R.mode === 'chal' && !clock) clock = setInterval(tick, 200);
@@ -186,8 +202,15 @@ function draw() {
   var Q = R.Q, n = R.items.length;
   $('prog').innerHTML = (R.mk ? '📕 錯題重練　' : '') + '<span>第 ' + (R.idx + 1) + ' / ' + n + ' 題</span><span class="muted">' + (R.mode === 'chal' ? '答對 ' : '第一次就對 ') + R.ok + ' 題</span>' +
     (R.mode === 'chal' ? '<span class="timer" id="tmr">⏱ ' + totalSoFar().toFixed(1) + ' 秒</span>' : '') + (R.mk ? '' : '<span class="muted">' + X.LV_NAME[R.lv] + '</span>');
-  var h;
-  if (Q.done) {
+  var h, W = Q.c != null, story = W ? '<p class="wq" id="wq" style="font-size:1.25rem;line-height:1.75;font-weight:700;text-align:left;margin:0 0 10px">' + esc(X.wordText(Q)) + '</p>' : '', u = W ? ' ' + esc(X.wordUnit(Q)) : '';
+  if (W && Q.done) {
+    h = story + '<div class="qbig">' + Q.a + ' × ' + Q.b + ' ＝ ' + (Q.a * Q.b) + u + '</div><p class="full" id="full">' + esc(X.full(Q.a, Q.b)) + '</p>' +
+      '<p>' + (Q.wrong ? '💪 這題收進 📕 錯題庫了，之後再練一次。' : '🎉 第一次就答對！') + '</p><div class="row"><button type="button" class="btn primary big" id="next">' + (R.idx + 1 < n ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
+  } else if (W) {
+    h = story + '<div class="qbig"><span>答：</span><input class="ans-in" id="ans" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" aria-label="答案"><span>' + u + '</span></div>' +
+      (Q.showFull ? '<p class="full">' + esc(X.full(Q.a, Q.b)) + '</p>' : '') + '<div class="row"><button type="button" class="btn primary big" id="ok">確定</button>' +
+      (R.mode !== 'chal' ? '<button type="button" class="btn sm" id="tip">💡 看拆解</button>' : '') + '</div>';
+  } else if (Q.done) {
     var more = R.idx + 1 < n;
     h = '<div class="qbig">' + Q.a + ' × ' + Q.b + ' ＝ ' + (Q.a * Q.b) + '</div><p class="full" id="full">' + esc(X.full(Q.a, Q.b)) + '</p>' +
       '<p>' + (Q.wrong ? '💪 這題收進 📕 錯題庫了，之後再練一次。' : '🎉 第一次就答對！') + '</p><div class="row"><button type="button" class="btn primary big" id="next">' + (more ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
@@ -221,7 +244,7 @@ function submit() {
     var v = X.parseNum($('ans').value); if (v == null) { msg('先寫答案喔', 'bad'); return; }
     var ok = v === Q.a * Q.b, sec = Math.max(0, (now() - Q.t0 - Q.paused) / 1000);
     coinAnswer(ok); R.secs.push(sec); R.oks.push(ok); Q.done = true;
-    if (ok) { R.ok++; if (mkRec(Q, true) === 'graduated') R.grad++; } else { wrongOnce(); R.wrongList.push({ a: Q.a, b: Q.b, v: v }); }
+    if (ok) { R.ok++; if (mkRec(Q, true) === 'graduated') R.grad++; wlAdd(Q); } else { wrongOnce(); R.wrongList.push({ a: Q.a, b: Q.b, v: v }); }
     R.idx++;
     if (R.idx >= R.items.length) end(); else ask();
     msg(ok ? '✓ 對' : '✗ ' + Q.a + '×' + Q.b + ' ＝ ' + (Q.a * Q.b), ok ? 'good' : 'bad');
@@ -250,7 +273,7 @@ function submit() {
     }
   }
   Q.done = true;
-  if (!Q.wrong) { R.ok++; if (mkRec(Q, true) === 'graduated') R.grad++; }
+  if (!Q.wrong) { R.ok++; if (mkRec(Q, true) === 'graduated') R.grad++; wlAdd(Q); }
   msg('答對了！🎉', 'good'); draw();
 }
 function end() {
@@ -259,7 +282,7 @@ function end() {
   if (!R.sent) {
     R.sent = true;
     coinReport(R.mk ? 'math:mistakes' : 'math:multiply', R.ok, n);
-    if (R.mode === 'chal') try { if (window.KidsDone) KidsDone.record('mx', R.lv, { acc: s.acc, sec: s.avg }); } catch (e) { }
+    if (R.mode === 'chal' && R.lv !== 'word') try { if (window.KidsDone) KidsDone.record('mx', R.lv, { acc: s.acc, sec: s.avg }); } catch (e) { }
   }
   $('q').hidden = true; $('end').hidden = false;
   if (R.mode === 'chal') {

@@ -236,6 +236,7 @@
       }
     }
     out.push('所以 ' + fh(A) + ' ' + s + ' ' + fh(B));
+    if (Q.c != null) out.push('答：' + wordConcl(Q));
     return out;
   }
   function answerHTML(Q) { return fh(Q.A) + ' ' + SIGN[Q.ans] + ' ' + fh(Q.B); }
@@ -272,15 +273,87 @@
     return { total: total, secs: out };
   }
 
+  // ---------- ⑥ 應用題（2026-11-01）：生活情境＋比大小（不出加減）；不列入單元完成，所以不放進 GROUPS ----------
+  // 每個情境：t＝故事（{a}{b}＝兩個人或兩樣東西，{A}{B}＝兩個分數）、q＝問句、ask＝問「比較大」big 還是「比較小」small、big／small／same＝結論、
+  //   part＝一樣大的「一整個」的幾分之幾（只出真分數）；沒有 part＝數量（公升、公里…，可以是假分數、帶分數）
+  var WORD = ['word', '應用題'];
+  var WCTX = [
+    { t: '{a}吃了一個披薩的 {A}，{b}吃了一樣大的另一個披薩的 {B}。', q: '誰吃得比較多？', a: '小明', b: '小華', ask: 'big', big: '吃得比較多', small: '吃得比較少', same: '兩人吃得一樣多', part: 1 },
+    { t: '媽媽做了兩個一樣大的蛋糕。{a}那一桌吃掉了 {A} 個，{b}那一桌吃掉了 {B} 個。', q: '哪一桌吃得比較多？', a: '爸爸', b: '叔叔', ask: 'big', big: '那一桌吃得比較多', small: '那一桌吃得比較少', same: '兩桌吃得一樣多', part: 1 },
+    { t: '{a}寫完了回家作業的 {A}，{b}寫完了同一份回家作業的 {B}。', q: '誰寫得比較多？', a: '小美', b: '阿傑', ask: 'big', big: '寫得比較多', small: '寫得比較少', same: '兩人寫得一樣多', part: 1 },
+    { t: '{a}拼好了一盒拼圖的 {A}，{b}拼好了一模一樣的另一盒拼圖的 {B}。', q: '誰拼得比較多？', a: '志明', b: '怡君', ask: 'big', big: '拼得比較多', small: '拼得比較少', same: '兩人拼得一樣多', part: 1 },
+    { t: '{a}和{b}各有一瓶一樣的果汁。{a}喝了 {A} 瓶，{b}喝了 {B} 瓶。', q: '誰喝得比較少？', a: '小芳', b: '家豪', ask: 'small', big: '喝得比較多', small: '喝得比較少', same: '兩人喝得一樣多', part: 1 },
+    { t: '{a}看完了一本故事書的 {A}，{b}看完了同一本故事書的 {B}。', q: '誰看得比較多？', a: '小安', b: '小宇', ask: 'big', big: '看得比較多', small: '看得比較少', same: '兩人看得一樣多', part: 1 },
+    { t: '學校有兩塊一樣大的花圃。{a}種滿了第一塊的 {A}，{b}種滿了第二塊的 {B}。', q: '哪一班種得比較多？', a: '五年一班', b: '五年二班', ask: 'big', big: '種得比較多', small: '種得比較少', same: '兩班種得一樣多', part: 1 },
+    { t: '{a}和{b}的平板是同一款。{a}的平板還剩 {A} 的電，{b}的平板還剩 {B} 的電。', q: '誰的平板剩下的電比較多？', a: '哥哥', b: '姊姊', ask: 'big', big: '的平板剩下的電比較多', small: '的平板剩下的電比較少', same: '兩台剩下的電一樣多', part: 1 },
+    { t: '大隊接力練習，{a}跑了操場一圈的 {A}，{b}跑了同一個操場一圈的 {B}。', q: '誰跑得比較遠？', a: '阿明', b: '小傑', ask: 'big', big: '跑得比較遠', small: '跑得比較近', same: '兩人跑得一樣遠', part: 1 },
+    { t: '大掃除時，{a}掃完了一間教室的 {A}，{b}掃完了一樣大的另一間教室的 {B}。', q: '哪一組掃得比較少？', a: '第一組', b: '第二組', ask: 'small', big: '掃得比較多', small: '掃得比較少', same: '兩組掃得一樣多', part: 1 },
+    { t: '{a}吃了一片巧克力的 {A}，{b}吃了一樣大的另一片巧克力的 {B}。', q: '誰吃得比較少？', a: '弟弟', b: '妹妹', ask: 'small', big: '吃得比較多', small: '吃得比較少', same: '兩人吃得一樣多', part: 1 },
+    { t: '{a}今天喝了 {A} 公升的牛奶，{b}今天喝了 {B} 公升的牛奶。', q: '誰喝得比較多？', a: '小明', b: '小華', ask: 'big', big: '喝得比較多', small: '喝得比較少', same: '兩人喝得一樣多', part: 1 },
+    { t: '{a}家到學校 {A} 公里，{b}家到學校 {B} 公里。', q: '誰家離學校比較遠？', a: '小美', b: '小芳', ask: 'big', big: '家離學校比較遠', small: '家離學校比較近', same: '兩家離學校一樣遠' },
+    { t: '{a}剪了一段 {A} 公尺長的緞帶，{b}剪了一段 {B} 公尺長的緞帶。', q: '誰的緞帶比較短？', a: '怡君', b: '小安', ask: 'small', big: '的緞帶比較長', small: '的緞帶比較短', same: '兩條緞帶一樣長' },
+    { t: '水果攤上，一袋{a}重 {A} 公斤，一袋{b}重 {B} 公斤。', q: '哪一袋比較重？', a: '蘋果', b: '橘子', ask: 'big', big: '那一袋比較重', small: '那一袋比較輕', same: '兩袋一樣重' },
+    { t: '{a}昨天讀書讀了 {A} 小時，{b}讀了 {B} 小時。', q: '誰讀書的時間比較短？', a: '家豪', b: '志明', ask: 'small', big: '讀書的時間比較長', small: '讀書的時間比較短', same: '兩人讀書的時間一樣長', part: 1 },
+    { t: '{a}裝了 {A} 公升的水，{b}裝了 {B} 公升的水。', q: '哪一桶裝的水比較多？', a: '紅色水桶', b: '藍色水桶', ask: 'big', big: '裝的水比較多', small: '裝的水比較少', same: '兩桶裝的水一樣多' },
+    { t: '體育課跑步，{a}跑了 {A} 公里，{b}跑了 {B} 公里。', q: '誰跑得比較遠？', a: '阿傑', b: '小宇', ask: 'big', big: '跑得比較遠', small: '跑得比較近', same: '兩人跑得一樣遠' },
+    { t: '做蛋糕時，{a}用了 {A} 杯麵粉，{b}用了 {B} 杯麵粉。', q: '誰用的麵粉比較多？', a: '媽媽', b: '阿姨', ask: 'big', big: '用的麵粉比較多', small: '用的麵粉比較少', same: '兩人用的麵粉一樣多' },
+    { t: '從家裡走到公園，{a}要走 {A} 小時，{b}要走 {B} 小時。', q: '誰比較快走到公園？（花的時間越少越快）', a: '爺爺', b: '奶奶', ask: 'small', big: '比較慢走到公園', small: '比較快走到公園', same: '兩人一樣快', part: 1 }
+  ];
+  // 化成整數的題（mixm）不出：「讀書 25/5 小時」不像生活裡會說的話
+  var W_PART = ['sd', 'sn', 'one', 'half', 'lcd', 'red'], W_QTY = W_PART.concat(['mixw', 'mixs']);
+  var W_MAXD = { red: 24 };
+  // 難度（2026-11-01，循序漸進；規則在 word-level.js）：1＝同分母、同分子直接比；2＝要先通分、約分，或跟 1、跟一半比；3＝假分數、帶分數（要先化）
+  var W_DIFF = { sd: 1, sn: 1, one: 2, half: 2, lcd: 2, red: 2, mixw: 3, mixs: 3 };   // 生活情境：分母別太大（一個披薩切 31 片不合理）；約分題可以大一點
+  function wordOk(c, k, A, B) {
+    var C = WCTX[c], m = W_MAXD[k] || 12;
+    return !!C && (C.part ? W_PART : W_QTY).indexOf(k) >= 0 && A[2] <= m && B[2] <= m && (!C.part || (proper(A) && proper(B)));
+  }
+  function nameHTML(s) { return '<b>' + s + '</b>'; }
+  function wordFill(C, A, B, html) {
+    var f = html ? fh : txt, n = html ? nameHTML : String;
+    return C.t.replace(/\{a\}/g, n(C.a)).replace(/\{b\}/g, n(C.b)).replace('{A}', f(A)).replace('{B}', f(B));
+  }
+  // 結論：ans＝'>'｜'<'｜'='
+  function wordConcl(Q) {
+    var C = WCTX[Q.c]; if (Q.ans === '=') return C.same;
+    var aWins = C.ask === 'big' ? Q.ans === '>' : Q.ans === '<';
+    return (aWins ? C.a : C.b) + C[C.ask];
+  }
+  function buildWord(c, k, v) {
+    if (!isInt(c)) return null;
+    var Q = build(k, v); if (!Q || !wordOk(c, k, Q.A, Q.B)) return null;
+    var C = WCTX[c];
+    Q.c = c; Q.group = 'word'; Q.id = 'frc:w' + c + ':' + k + ':' + v.join('-'); Q.d = W_DIFF[k];
+    Q.story = wordFill(C, Q.A, Q.B, true); Q.ask = C.q; Q.who = [C.a, C.b];
+    Q.text = wordFill(C, Q.A, Q.B, false) + C.q;
+    return Q;
+  }
+  // maxD（循序漸進，預設 3）：只出難度 ≤ maxD 的題型
+  function makeWord(c, rnd, maxD) {
+    rnd = rnd || Math.random; maxD = maxD || 3;
+    var ks = WCTX[c] && (WCTX[c].part ? W_PART : W_QTY).filter(function (k) { return W_DIFF[k] <= maxD; }); if (!ks || !ks.length) return null;
+    var k = ks[Math.floor(rnd() * ks.length)];   // 先選題型再重抽數字：每種題型出現的機會一樣
+    for (var i = 0; i < 3000; i++) { var Q = buildWord(c, k, gen(k, rnd)); if (Q) return Q; }
+    return null;
+  }
+  // 一輪：情境不重複；照難度由小到大排
+  function wordRound(n, rnd, maxD) {
+    rnd = rnd || Math.random;
+    var cs = shuffle(rnd, WCTX.map(function (x, i) { return i; })), out = [];
+    for (var i = 0; i < cs.length && out.length < n; i++) { var Q = makeWord(cs[i], rnd, maxD); if (Q) out.push(Q); }
+    return out.map(function (Q, j) { return [Q.d, j, Q]; }).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }).map(function (z) { return z[2]; });
+  }
+
   // ---------- 錯題庫 ----------
-  // 考試⑥填填看的題跟①–⑤數字都不一樣，id 不會撞；錯題庫重做一律照練習的做法（先填再比）
-  function mkEntry(Q) { return { id: Q.id, p: { type: 'fraction', k: Q.kind, v: Q.v.slice(), q: Q.text } }; }
-  function fromMistake(p) { return p && p.type === 'fraction' && GROUP_OF[p.k] && Array.isArray(p.v) ? build(p.k, p.v) : null; }
+  // 考試⑥填填看的題跟①–⑤數字都不一樣，id 不會撞；錯題庫重做一律照練習的做法（先填再比）；應用題多帶 c＝情境編號
+  function mkEntry(Q) { var p = { type: 'fraction', k: Q.kind, v: Q.v.slice(), q: Q.text }; if (Q.c != null) p.c = Q.c; return { id: Q.id, p: p }; }
+  function fromMistake(p) { return p && p.type === 'fraction' && GROUP_OF[p.k] && Array.isArray(p.v) ? (p.c != null ? buildWord(p.c, p.k, p.v) : build(p.k, p.v)) : null; }
 
   var FRC = { GROUPS: GROUPS, GROUP_KINDS: GROUP_KINDS, GROUP_OF: GROUP_OF, KIND_NAME: KIND_NAME, SIGN: SIGN, SIGNS: SIGNS, PAPER: PAPER,
     gcd: gcd, lcm: lcm, num: num, top: top, cmp: cmp, okF: okF, improper: improper, whole: whole, rest: rest, simp: simp, txt: txt, fr: fr, fh: fh, mixHTML: mixHTML,
     rule: rule, build: build, gen: gen, make: make, round: round, checkCmp: checkCmp, checkFill: checkFill, fillAnswer: fillAnswer,
-    cmpHint: cmpHint, steps: steps, answerHTML: answerHTML, fillHTML: fillHTML, exam: exam, examScore: examScore, mkEntry: mkEntry, fromMistake: fromMistake };
+    cmpHint: cmpHint, steps: steps, answerHTML: answerHTML, fillHTML: fillHTML, exam: exam, examScore: examScore, mkEntry: mkEntry, fromMistake: fromMistake,
+    WORD: WORD, WCTX: WCTX, W_DIFF: W_DIFF, W_PART: W_PART, W_QTY: W_QTY, W_MAXD: W_MAXD, buildWord: buildWord, makeWord: makeWord, wordRound: wordRound, wordConcl: wordConcl };
   if (typeof module !== 'undefined' && module.exports) module.exports = FRC;
   G.FRC = FRC;
 })(typeof window !== 'undefined' ? window : globalThis);

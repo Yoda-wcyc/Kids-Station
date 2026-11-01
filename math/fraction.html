@@ -94,7 +94,7 @@ body{background:var(--bg)}
   <div id="kdone" hidden></div>
   <header class="fc-head">
     <h1 id="title">🍰 分數比較大小</h1>
-    <p class="muted" id="lede">五上分數。先看教學（分數條、數線），再分五種題型練習，最後考一份 100 分的考卷。</p>
+    <p class="muted" id="lede">五上分數。先看教學（分數條、數線），再分五種題型練習（還有 ⑥ 生活應用題），最後考一份 100 分的考卷。</p>
   </header>
 
   <div class="fc-tabs" role="tablist" id="tabs">
@@ -199,13 +199,15 @@ body{background:var(--bg)}
 </main>
 
 <script src="../kids-mistakes.js?v=3b9606d6df"></script>
-<script src="fraction.js?v=52f625594e"></script>
+<script src="fraction.js?v=0ae3275327"></script>
+<script src="word-level.js?v=0dd1455f2c"></script>
 <script>
 (function () {
 'use strict';
 /* 〈分數比較大小〉頁面（2026-10-27）。出題、判分、說明（純函式）在 fraction.js（window.FRC）；比大小一律交叉相乘的整數。
    📖 教學：免登入；分數條、數線用 SVG 現畫；分數一律上下排（FRC.fh）。
    ✏️ 練習：要登入（requireLogin＋一輪開始時 startActivity('math')）。五種題型（同分母・同分子、跟 1 跟一半比、通分再比、先約分再比、假分數・帶分數），一輪 5 題；
+     ⑥ 應用題（2026-11-01，FRC.WCTX 20 個生活情境＋上面的題型，答錯一樣收錯題庫，p 多帶 c＝情境）：不列入單元完成、不送 KidsDone；
      通分／約分／假分數題先用數字鍵盤填（通分、約分、化帶分數），再按 ＞＜＝ 大按鈕；每次作答 KidsCoins.answer(ok,'math')；答錯給方法提示（不給答案）。
      一輪結束送 practice_round 'math:fraction'（correct＝第一次就答對的題數）、KidsDone.record('fr', 題型, %)。
    📝 考試：要登入。固定一份（FRC.PAPER，題目數字自編）：①–⑤ 比大小、⑥ 填填看，配分 15／15／20／20／20／10；交卷才看分數、每題對錯、正解、說明。
@@ -215,7 +217,8 @@ var $ = function (id) { return document.getElementById(id); };
 var F = window.FRC;
 var MK = /[?&]mistakes=1(?:&|$)/.test(location.search);
 var ROUND = 5, CIRC = ['①', '②', '③', '④', '⑤', '⑥'];
-var GNAME = {}; F.GROUPS.forEach(function (g) { GNAME[g[0]] = g[1]; });
+var PGROUPS = F.GROUPS.concat([F.WORD]);   // ⑥ 應用題（2026-11-01）：只在練習，不列入單元完成（F.GROUPS 不變）
+var GNAME = {}; PGROUPS.forEach(function (g) { GNAME[g[0]] = g[1]; });
 var S = { tab: 'learn', group: 'basic' };
 var P = null, E = null;
 window.FRCPage = { S: S, P: function () { return P; }, E: function () { return E; } };   // 測試用
@@ -299,16 +302,20 @@ function guessQ(A, B) {
 /* ================= ✏️ 練習 ================= */
 function msg(t, kind) { var m = $('p-msg'); m.innerHTML = t || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); }
 var DESC = { basic: '分母一樣比分子；分子一樣，分母大的反而小。直接按 ＞＜＝。', bench: '分子比分母少 1（或多 1）→ 跟 1 比；一個超過一半、一個不到 → 跟一半比。',
-  lcd: '先用最小公倍數通分（數字鍵盤填分子、分母），再按 ＞＜＝。', red: '先約成最簡分數（數字鍵盤填），再按 ＞＜＝；有時候會一樣大。', mix: '先把假分數化成帶分數（填整數、分子），先比整數，再按 ＞＜＝。' };
+  lcd: '先用最小公倍數通分（數字鍵盤填分子、分母），再按 ＞＜＝。', red: '先約成最簡分數（數字鍵盤填），再按 ＞＜＝；有時候會一樣大。', mix: '先把假分數化成帶分數（填整數、分子），先比整數，再按 ＞＜＝。',
+  word: '生活裡的比大小：吃了多少披薩、喝了多少牛奶、走了多遠…。讀完故事，把兩個分數比大小（需要的話先通分、約分、化成帶分數），再想想答案是誰。（應用題是加強練習，不算在單元完成條件裡）' };
+// 循序漸進（2026-11-01，math/word-level.js）：⑥ 應用題先出難度 1，第一次就答對 3 題才混入難度 2，再來才是 3
+function wlLevel() { try { return window.WL ? WL.level('frc') : 3; } catch (e) { return 3; } }
+function wlNote() { try { return window.WL ? WL.note('frc') : ''; } catch (e) { return ''; } }
 function pStartHTML() {
-  var g = '<div class="selbar c" id="p-groups" role="group" aria-label="題型"><span class="lab">題型</span>' + F.GROUPS.map(function (x, i) { return '<button type="button" class="btn sm" data-g="' + x[0] + '" aria-pressed="' + (x[0] === S.group) + '">' + CIRC[i] + ' ' + x[1] + '</button>'; }).join('') + '</div>';
-  return '<h2>✏️ 練習</h2>' + g + '<p>' + DESC[S.group] + '<br>一輪 ' + ROUND + ' 題，第一次就答對才算分；答錯的題會收進 📕 錯題庫。</p><button type="button" class="btn primary big" id="p-go">開始這一輪 ▶</button>';
+  var g = '<div class="selbar c" id="p-groups" role="group" aria-label="題型"><span class="lab">題型</span>' + PGROUPS.map(function (x, i) { return '<button type="button" class="btn sm" data-g="' + x[0] + '" aria-pressed="' + (x[0] === S.group) + '">' + CIRC[i] + ' ' + x[1] + '</button>'; }).join('') + '</div>';
+  return '<h2>✏️ 練習</h2>' + g + '<p>' + DESC[S.group] + '<br>一輪 ' + ROUND + ' 題，第一次就答對才算分；答錯的題會收進 📕 錯題庫。</p>' + (S.group === 'word' ? '<p class="muted" id="p-lvnote">' + esc(wlNote()) + '</p>' : '') + '<button type="button" class="btn primary big" id="p-go">開始這一輪 ▶</button>';
 }
 function pHome() { P = null; $('p-start').hidden = false; $('p-q').hidden = true; $('p-end').hidden = true; $('p-start').className = 'card center'; $('p-start').innerHTML = pStartHTML(); }
 function pStart() {
   if (!authOK()) return;
   if (!startAct(pStart)) return;
-  P = { items: F.round(S.group, ROUND), idx: 0, ok: 0, grad: 0, sent: false, mk: false, group: S.group };
+  P = { items: S.group === 'word' ? F.wordRound(ROUND, null, wlLevel()) : F.round(S.group, ROUND), idx: 0, ok: 0, grad: 0, sent: false, mk: false, group: S.group };
   pQ();
 }
 function pQ() {
@@ -343,7 +350,9 @@ function duelHTML(Q, s) { return F.fh(Q.A) + '<span class="slot' + (s ? ' on' : 
 function pRender(focus) {
   var Q = P.Q, st = Q.st;
   $('p-prog').innerHTML = (P.mk ? '📕 錯題練習　' : '') + '<span>第 ' + (P.idx + 1) + ' / ' + P.items.length + ' 題</span><span class="muted">第一次就答對 ' + P.ok + ' 題</span><span class="muted">' + esc(GNAME[Q.group]) + '</span>';
-  $('p-text').textContent = st.done ? '答案：' : (st.filled ? '○ 裡要放 ＞、＜ 還是 ＝？' : '先填好下面的格子，再比大小。');
+  var how = st.done ? '答案：' : (st.filled ? '○ 裡要放 ＞、＜ 還是 ＝？' : '先填好下面的格子，再比大小。');
+  if (Q.c != null) $('p-text').innerHTML = '<span id="p-story">' + Q.story + ' <b>' + esc(Q.ask) + '</b></span><br><small class="muted">左邊是' + esc(Q.who[0]) + '的、右邊是' + esc(Q.who[1]) + '的。' + esc(how) + '</small>';   // 故事裡只有固定字＋F.fh 的數字
+  else $('p-text').textContent = how;
   $('p-duel').innerHTML = duelHTML(Q, st.done ? Q.ans : '');
   var a = '';
   if (st.log.length) a += '<ul class="log">' + st.log.map(function (s) { return '<li>✔ ' + s + '</li>'; }).join('') + '</ul>';
@@ -373,7 +382,7 @@ function pPick(s) {
     return;
   }
   Q.st.done = true;
-  if (!Q.st.wrong) { P.ok++; if (mkRec(Q, true) === 'graduated') P.grad++; }
+  if (!Q.st.wrong) { P.ok++; if (mkRec(Q, true) === 'graduated') P.grad++; if (!P.mk && Q.c != null) try { if (window.WL) WL.add('frc', Q.d, true); } catch (e) { } }
   msg(Q.st.wrong ? '' : '答對了！🎉', Q.st.wrong ? '' : 'good');
   pRender(false);
 }
@@ -382,7 +391,7 @@ function pEnd() {
   if (!P.sent) {
     P.sent = true;
     coinReport(P.mk ? 'math:mistakes' : 'math:fraction', P.ok, n);
-    if (!P.mk && n) doneRec('fr', P.group, pct);   // 單元完成：這個題型最佳一輪（第一次就答對的題數／題數）
+    if (!P.mk && n && P.group !== 'word') doneRec('fr', P.group, pct);   // 單元完成：這個題型最佳一輪（第一次就答對的題數／題數）；應用題不列入
   }
   $('p-q').hidden = true; $('p-end').hidden = false;
   $('p-end').innerHTML = '<p class="big">' + (P.ok === n ? '🏆' : '💪') + '</p><p class="score" id="p-score">' + P.ok + ' / ' + n + '</p><p>第一次就答對 ' + P.ok + ' 題（' + pct + '%）' +

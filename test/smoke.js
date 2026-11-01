@@ -60,7 +60,10 @@ R.forEach(r => {
 ok(G.length === 19, 'grammar topics'); // 2026-10-18 +do-does-on（翰林五 Unit 2）；2026-10-25 第 2 批 +place、suggest
 G.forEach(g => {
   ok(g.id && g.title && g.rules.length && g.ex.length >= 2, 'grammar ' + g.id);
-  ok(G.indexOf(g) < 12 ? g.q.length === 13 : g.q.length >= 15, 'grammar q count ' + g.id); // 原 12 個主題 13 題；10-18 新增主題至少 15 題
+  ok(g.q.length === 30, 'grammar q count ' + g.id); // 原 12 個主題 13 題、10-18 起新增主題 15 題；11-01 第 6 批每個主題補到 30 題
+  // 11-01 第 6 批：追加的只能是改錯題（題組固定拿「最後 3 題填空」轉打字，尾端加填空會換掉題組）；打錯句原樣不能判對
+  const n0 = G.indexOf(g) < 12 ? 13 : 15;
+  g.q.slice(n0).forEach(q => ok(q.type === 'fix' && KE.typeNorm(KE.expandContr(q.wrong)) !== KE.typeNorm(KE.expandContr(q.right)) && !/,/.test(q.right), 'batch6 fix only, wrong ≠ right when typed, no comma: ' + g.id + ' ' + q.right));
   ok(Array.isArray(g.typed) && g.typed.length === 2 && g.typed.every(t => t.zh && t.en), 'grammar typed ' + g.id);
   g.q.forEach(q => {
     ok(q.why, 'why ' + g.id);
@@ -854,7 +857,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
     ok(CK.validEvent(ev('math:gcdword')) && CK.validEvent(ev('math:gcd')) && !CK.validEvent(ev('math:gcdword:x')) && !CK.validEvent(ev('math:word')), 'kids-coins: math:gcdword valid, look-alikes not');
     const GWm = require(path.join(root, 'math', 'gcd-word.js'));
-    ok(GWm.T.length === 13 && GWm.T.every(t => { const p = GWm.make(t.id, 'basic'); return p && p.keys.length >= 2 && GWm.build(p.tid, p.v).id === p.id; }), 'gcd-word: 13 templates build + rebuild');
+    ok(GWm.T.length === 22 && GWm.T.every(t => { const p = GWm.make(t.id, 'basic'); return p && p.keys.length >= 2 && GWm.build(p.tid, p.v).id === p.id; }), 'gcd-word: 22 templates build + rebuild（2026-11-01 由 13 加到 22）');
   }
   // 倍數與公倍數＋乘法快算（2026-10-21）：送 practice_round math:multiples／math:multiples-test／math:multiply、錯題 type 'multiples'／'multiply'、錯題庫路由、前端白名單；
   // 出題正確性見 test/multiples.test.js、test/multiply.test.js
@@ -885,6 +888,26 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
     ok(['math:fraction', 'math:fraction-test'].every(it => CK.validEvent(ev(it))) && ['math:fractions', 'math:fraction-tests', 'math:fraction:x', 'english:fraction'].every(it => !CK.validEvent(ev(it))), 'kids-coins: math:fraction／fraction-test valid, look-alikes not');
     require('./fraction.test.js');
+  }
+  // 數學應用題補題（2026-11-01）：分數 ⑥ 應用題、乘法「應用題」、天平「📝 應用題」；都不列入單元完成、沿用既有學習幣事件；每個模板 3000 次獨立驗證在 test/word-bank.test.js
+  {
+    const frh = fs.readFileSync(path.join(root, 'math', 'fraction.html'), 'utf8'), mxh = fs.readFileSync(path.join(root, 'math', 'multiply.html'), 'utf8'), b2 = fs.readFileSync(path.join(root, 'math', 'balance.html'), 'utf8');
+    const KC2 = require(path.join(root, 'completion.js')), FRw = require(path.join(root, 'math', 'fraction.js')), MXw = require(path.join(root, 'math', 'multiply.js'));
+    ok(frh.includes('F.GROUPS.concat([F.WORD])') && frh.includes("S.group === 'word' ? F.wordRound(ROUND, null, wlLevel())") && frh.includes("P.group !== 'word') doneRec('fr', P.group") && KC2.FR_G.length === 5 && FRw.GROUPS.length === 5 && SM.FR_K.indexOf('word') < 0,
+      'fraction.html: ⑥ 應用題只在練習、不送 KidsDone；完成條件仍是 5 組＋考試');
+    ok(mxh.includes("X.LV.concat(['word'])") && mxh.includes("X.wordRound(n, null, wlLevel())") && mxh.includes("R.mode === 'chal' && R.lv !== 'word'") && mxh.includes("'mxw:' + q.c") && MXw.LV.indexOf('word') < 0 && KC2.MX_REQ.map(x => x[0]).join() === 'd21,d22',
+      'multiply.html: 應用題（不在 LV、挑戰不記達標、錯題 id mxw:）；完成條件仍是 d21＋d22 挑戰');
+    ok(/<script src="\.\.\/kids-mistakes\.js(\?v=[0-9a-f]+)?"><\/script>\s*<script src="balance-word\.js(\?v=[0-9a-f]+)?"><\/script>/.test(b2) && b2.includes('id="word-sec"') && b2.includes('#bw-box button') && b2.includes('S.mkWord[q]') && b2.includes("$('word-sec').hidden = true") && KC2.BAL.length === 8,
+      'balance.html: 📝 應用題區（balance-word.js）、登入閘門、錯題練習顯示故事＋記回應用題那筆；完成條件仍是 8 題內建題');
+    ok(!/math:(balance-word|fraction-word|multiply-word)/.test(frh + mxh + b2), '應用題沒有用新的學習幣事件名');
+    // 循序漸進（2026-11-01）：五個應用題頁都載 word-level.js、出題帶目前難度、第一次就答對才累積（錯題練習不算）；新手第一回合沒有難度 3 的斷言在 word-bank.test.js
+    const sdh2 = fs.readFileSync(path.join(root, 'math', 'short-division.html'), 'utf8'), muh2 = fs.readFileSync(path.join(root, 'math', 'multiples.html'), 'utf8');
+    ok([frh, mxh, b2, sdh2, muh2].every(h => /<script src="word-level\.js(\?v=[0-9a-f]+)?"><\/script>/.test(h)) &&
+      sdh2.includes("GW.roundTids(WS.cat, ROUND, null, wlLevel())") && sdh2.includes("WL.add('gw', Q.p.d, true)") && muh2.includes("wlUnit(S.group) ? wlLevel() : 3") && muh2.includes("WL.add('mul', Q.diff, true)") &&
+      frh.includes("F.wordRound(ROUND, null, wlLevel())") && frh.includes("WL.add('frc', Q.d, true)") && mxh.includes("X.wordRound(n, null, wlLevel())") && mxh.includes("WL.add('mx', Q.d, true)") && b2.includes("WL.add('bal', BWS.Q.d, true)") && b2.includes("WL.level('bal')"),
+      '應用題循序漸進：五頁都接上 word-level.js（出題帶難度、答對才累積）');
+    { const WLm = require(path.join(root, 'math', 'word-level.js')); ok(WLm.KEY === 'kids_word_lv' && !SM.MP_K.includes('kids_word_lv'), 'word-level: 進度只存這台（kids_word_lv），不進同步、不影響完成'); }
+    require('./word-bank.test.js');
   }
   ok(!/['"]ke_mistakes['"]/.test(fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8')) && fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("KEY = 'kids_mistakes'"), 'kids_ prefix key; English ke_mistakes untouched');
 }
@@ -964,7 +987,27 @@ const mmJs = fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8');
   mmQ.window.DATA_SOCIAL.units.concat(mmQ.window.DATA_SCIENCE.units).forEach(u => {
     ok(new Set(u.quiz.map(q => KMh(q.q))).size === u.quiz.length, u.id + ': quiz texts hash-unique (' + u.quiz.length + ')');
     ok(SBq.pickQuiz(u.quiz, 15, KMh, {}, {}, SBq.rng(7)).length === Math.min(15, u.quiz.length), u.id + ': one round = ' + Math.min(15, u.quiz.length) + ' questions');
+    // 循序漸進（2026-11-01）：新手第一輪先把 d:1 出完才出 d:2；一輪內 d 不遞減；答錯的題下一輪一定回來
+    const dOf = q => +q.d || 1, n1 = u.quiz.filter(q => dOf(q) === 1).length;
+    for (let seed = 1; seed <= 5; seed++) {
+      const R = SBq.rng(seed * 11), r1 = SBq.pickQuiz(u.quiz, 15, KMh, {}, {}, R), ds = r1.map(dOf);
+      ok(ds.slice(0, n1).every(d => d === 1) && !ds.slice(n1).includes(1), u.id + ': newbie round 1 is d:1 first (seed ' + seed + ')');
+      ok(ds.every((d, i) => !i || ds[i - 1] <= d), u.id + ': round order d non-decreasing (seed ' + seed + ')');
+      const okS = {}, mkS = {}; r1.forEach((q, i) => { if (i < 13) okS[KMh(q.q)] = 1; else mkS[KMh(q.q)] = 1; });   // 前 13 題答對、最後 2 題答錯
+      const r2 = SBq.pickQuiz(u.quiz, 15, KMh, okS, mkS, R).map(q => KMh(q.q));
+      ok(Object.keys(mkS).every(h => r2.includes(h)) && !Object.keys(okS).some(h => r2.includes(h)), u.id + ': round 2 brings back the 2 wrong ones, no answered-right (seed ' + seed + ')');
+    }
   });
+  // 混合難度：各層內照 d 小到大；錯題庫（答對過但還在錯題庫）仍排在「其他」前面
+  {
+    const mq = Array.from({ length: 30 }, (_, i) => ({ q: 'm' + i, d: 3 - (i % 3) })), okA = Object.fromEntries(mq.map(q => [q.q, 1]));
+    for (let seed = 1; seed <= 10; seed++) {
+      const p = SBq.pickQuiz(mq, 15, hq, okA, { m0: 1, m3: 1 }, SBq.rng(seed)).map(q => q.q);   // m0、m3 是 d:3 的錯題
+      ok(p.includes('m0') && p.includes('m3'), 'pickQuiz: mistakes (d:3) still picked before others (seed ' + seed + ')');
+      ok(p.map(s => mq[+s.slice(1)].d).every((d, i, a) => !i || a[i - 1] <= d), 'pickQuiz: mixed round order d non-decreasing (seed ' + seed + ')');
+    }
+    ok(SBq.pickQuiz(mq, 15, hq, {}, {}, SBq.rng(5)).map(q => q.d).join('') === '111111111122222' &&SBq.pickQuiz(mq.slice(0, 12), 15, hq, {}, {}, SBq.rng(5)).map(q => q.d).join('') === '111122223333', 'pickQuiz: tier 0 by d ascending; < 15 → all, d sorted');
+  }
 }
 ok(!fs.existsSync(path.join(root, 'social')) || fs.readdirSync(path.join(root, 'social'), { recursive: true }).every(f => fs.statSync(path.join(root, 'social', f)).isDirectory()), 'old social/ folder has no files (moved to mindmap/)');
 // 部署排除：demo、測試、.md 不上線
@@ -999,6 +1042,19 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
   [['index.html', ''], ['map.html', ''], ['mindmap/social.html', '../'], ['mindmap/science.html', '../'], ['math/balance.html', '../'], ['math/short-division.html', '../'], ['math/multiples.html', '../'], ['math/multiply.html', '../'], ['math/fraction.html', '../'], ['ai/hallucinate.html', '../'], ['ai/ask-well.html', '../'], ['ai/secrets.html', '../']]
     .forEach(([f, pre]) => ok(loads(f, pre), f + ' loads syncmerge.js → completion.js → kids-done.js'));
   ['ai/hallucinate.html', 'ai/ask-well.html', 'ai/secrets.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'); ok(h.includes("KidsDone.record('ai'") && h.includes('KidsDone.mount(') && h.includes('id="kdone"'), f + ': records 玩完 + banner'); });
+  // AI 三頁練習題（2026-11-01）：GAME.practice 每頁 ≥30 題；每輪 draw() 抽 PN 題（10～15）、不重複、不改題庫順序；練習題錯題用固定 id
+  ['ai/hallucinate.html', 'ai/ask-well.html', 'ai/secrets.html'].forEach(f => {
+    const h = fs.readFileSync(path.join(root, f), 'utf8'), P = JSON.parse(h.match(/^const GAME = (.*);$/m)[1]).practice;
+    ok(Array.isArray(P) && P.length >= 30 && new Set(P.map(p => p.id)).size === P.length && new Set(P.map(p => p.q)).size === P.length, f + ': practice ≥30, unique id/q');
+    ok(P.every(p => /^p\d\d$/.test(p.id) && p.q && p.peek && p.opts.length === 3 && new Set(p.opts).size === 3 && [0, 1, 2].includes(p.correct)), f + ': practice items well-formed (3 opts, 1 correct)');
+    ok([0, 1, 2].every(c => P.filter(p => p.correct === c).length >= P.length / 5), f + ': correct position spread over A/B/C');
+    ok(P.filter(p => { const L = p.opts.map(o => [...o].length), m = Math.max(...L); return L[p.correct] === m && L.filter(x => x === m).length === 1; }).length <= P.length / 2, f + ': correct is not usually the longest option');
+    const PN = +h.match(/PN = (\d+)/)[1], draw = new Function('return ' + h.match(/function draw\(a,n\)\{.*\}/)[0])(), ids = P.map(p => p.id).join(), seen = new Set();
+    let good = PN >= 10 && PN <= 15;
+    for (let t = 0; t < 300 && good; t++) { const d = draw(P, PN); d.forEach(p => seen.add(p.id)); good = d.length === PN && new Set(d.map(p => p.id)).size === PN && d.every(p => P.includes(p)); }
+    ok(good && seen.size === P.length && P.map(p => p.id).join() === ids, f + ': draw ' + PN + ' distinct per round, covers whole pool, pool untouched');
+    ok(h.includes('ROUNDS=GAME.rounds.concat(practiceRounds())') && h.includes("pg+'|'+(r.id||idx)") && h.includes('onclick="practice()"') && h.includes("startActivity('ai',practice)"), f + ': practice wired (4 關＋抽題、錯題 id、再練 PN 題走登入＋額度)');
+  });
   const appJs = fs.readFileSync(path.join(root, 'app.js'), 'utf8'), mmJs2 = fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8'), sdH = fs.readFileSync(path.join(root, 'math', 'short-division.html'), 'utf8'), balH = fs.readFileSync(path.join(root, 'math', 'balance.html'), 'utf8');
   ok(appJs.includes("KidsDone.record('tb', Q.cfg.tb") && appJs.includes("KidsDone.mount($('#kdb'), 'tb:'") && appJs.includes('href="map.html"'), 'app.js: exam score saved, textbook banner, home 課程地圖 tile');
   ok(mmJs2.includes("doneRec('czFirst', Math.round(first / s.n * 100))") && !mmJs2.includes("doneRec('cz',") && mmJs2.includes("doneRec('qz'") && mmJs2.includes("'mm:' + pk(u.id)"), 'mindmap.js: 考考自己存第一次答對率（czFirst）／練習題 best saved, banner');

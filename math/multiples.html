@@ -221,9 +221,10 @@ body{background:var(--bg)}
 
 <script src="../kids-mistakes.js?v=3b9606d6df"></script>
 <script src="short-division.js?v=17afc65cb7"></script>
-<script src="multiply.js?v=002b1af76c"></script>
-<script src="multiples.js?v=57f6dab5a4"></script>
+<script src="multiply.js?v=8f29524857"></script>
+<script src="multiples.js?v=1f75dd5120"></script>
 <script src="multiples-papers.js?v=00a691b6b8"></script>
+<script src="word-level.js?v=0dd1455f2c"></script>
 <script>
 (function () {
 'use strict';
@@ -377,19 +378,24 @@ function ansText(Q, a) {
 
 /* ================= ✏️ 練習 ================= */
 function msg(t, kind) { var m = $('p-msg'); m.innerHTML = t || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); }
+// 循序漸進（2026-11-01，math/word-level.js）：應用題、素養題「全部」先出難度 1，答對 3 題才混入難度 2，再來才是 3；指定種類照舊
+function wlUnit(g) { return g === 'word' || g === 'lit'; }
+function wlLevel() { try { return window.WL ? WL.level('mul') : 3; } catch (e) { return 3; } }
+function wlNote() { try { return window.WL ? WL.note('mul') : ''; } catch (e) { return ''; } }
 function pStartHTML() {
   var g = '<div class="selbar c" id="p-groups" role="group" aria-label="題型"><span class="lab">題型</span>' + M.GROUPS.map(function (x) { return '<button type="button" class="btn sm" data-g="' + x[0] + '" aria-pressed="' + (x[0] === S.group) + '">' + x[1] + '</button>'; }).join('') + '</div>';
   var w = S.group === 'word' ? '<div class="selbar c" id="p-only" role="group" aria-label="應用題種類"><span class="lab">種類</span><button type="button" class="btn sm" data-only="" aria-pressed="' + (!S.only) + '">全部</button>' +
     M.GROUP_KINDS.word.map(function (k) { return '<button type="button" class="btn sm" data-only="' + k + '" aria-pressed="' + (S.only === k) + '">' + M.WORD_NAME[k] + '</button>'; }).join('') + '</div>' : '';
   var desc = { circle: '點選哪些數是 N 的倍數。', both: '同時是 2 和 5、5 和 10 的倍數（看個位數）。', fill: '範圍內的倍數、定位板最大／最小、末位填數。', lcm: '最小公倍數＋從它開始的 3 個公倍數（可以開列舉、短除輔助）。',
     word: '每題分步：選方法 → 除法算式與商餘 → 商要不要 +1 → 乘法 → 回答與單位。', lit: '範圍裡最多／最少、長方形拼正方形。' }[S.group];
-  return '<h2>✏️ 練習</h2>' + g + w + '<p>' + desc + '<br>一輪 ' + ROUND + ' 題，第一次就答對才算分；答錯的題會收進 📕 錯題庫。</p><button type="button" class="btn primary big" id="p-go">開始這一輪 ▶</button>';
+  var lvn = (S.group === 'word' || S.group === 'lit') && !S.only ? '<p class="muted" id="p-lvnote">' + esc(wlNote()) + '</p>' : '';
+  return '<h2>✏️ 練習</h2>' + g + w + '<p>' + desc + '<br>一輪 ' + ROUND + ' 題，第一次就答對才算分；答錯的題會收進 📕 錯題庫。</p>' + lvn + '<button type="button" class="btn primary big" id="p-go">開始這一輪 ▶</button>';
 }
 function pHome() { P = null; $('p-start').hidden = false; $('p-q').hidden = true; $('p-end').hidden = true; $('p-start').className = 'card center'; $('p-start').innerHTML = pStartHTML(); }
 function pStart() {
   if (!authOK()) return;
   if (!startAct(pStart)) return;
-  P = { items: M.round(S.group, ROUND, null, S.only), idx: 0, ok: 0, grad: 0, sent: false, mk: false, group: S.group };
+  P = { items: M.round(S.group, ROUND, null, S.only, wlUnit(S.group) ? wlLevel() : 3), idx: 0, ok: 0, grad: 0, sent: false, mk: false, group: S.group };
   pQ();
 }
 function pQ() {
@@ -460,7 +466,7 @@ function wrongQ() { var st = P.Q.st; st.wrong = true; if (!st.recorded) { st.rec
 function nextStep(log) { var st = P.Q.st; if (log) st.log.push(log); st.step++; msg(''); pRender(true); }
 function finishQ() {
   var Q = P.Q, st = Q.st; st.done = true;
-  if (!st.wrong) { P.ok++; if (mkRec(Q, true) === 'graduated') P.grad++; }
+  if (!st.wrong) { P.ok++; if (mkRec(Q, true) === 'graduated') P.grad++; if (!P.mk && wlUnit(Q.group)) try { if (window.WL) WL.add('mul', Q.diff, true); } catch (e) { } }
   msg(st.wrong ? '' : '答對了！🎉', st.wrong ? '' : 'good');
   pRender(false);
 }

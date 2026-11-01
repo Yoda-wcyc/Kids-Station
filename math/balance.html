@@ -379,6 +379,7 @@ footer .share-row{margin:14px 0 0}
   </header>
 
   <nav class="tabs" id="tabs" aria-label="選一題"></nav>
+  <p class="store-note" id="bw-story" hidden></p>
   <p class="store-note" id="store-note" hidden>這個瀏覽器不能記住你加的題目，重新整理就會消失。</p>
 
   <div class="controls" id="controls" role="group" aria-label="步驟控制">
@@ -433,6 +434,12 @@ footer .share-row{margin:14px 0 0}
       <div class="tryme" id="tryme" hidden></div>
       <div id="result"></div>
     </div>
+  </section>
+
+  <section class="sec" id="word-sec" aria-labelledby="word-h">
+    <h2 id="word-h">📝 應用題</h2>
+    <p class="sub">讀故事，用 x 表示不知道的數：先選出對的算式，再算出 x。答錯的題會收進 📕 錯題庫。（應用題是加強練習，不算在單元完成條件裡）</p>
+    <div class="box" id="bw-box"></div>
   </section>
 
   <section class="sec" id="editor-sec" aria-labelledby="editor-h">
@@ -574,6 +581,8 @@ footer .share-row{margin:14px 0 0}
 </main>
 
 <script src="../kids-mistakes.js?v=3b9606d6df"></script>
+<script src="balance-word.js?v=06163b98ed"></script>
+<script src="word-level.js?v=0dd1455f2c"></script>
 <script>
 (function(){
 'use strict';
@@ -944,7 +953,7 @@ function verifyStages(L, s){
 /* ================= 狀態 ================= */
 var BUILTIN = ['x+5=12', 'x−3=9', '12+x=20', 'x+8−2=15', '(x+3)−2=10', '(x−5)+4=12', 'x−(6−2)=7', 'x+(10−4)=15'];
 function builtinList(){ return BUILTIN.map(function(q){ return { q:q, own:false }; }); }
-var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, storeOK:true, store:null, solved:{}, coinSent:{}, quotaAsked:{}, wrongOnce:{}, mkDone:{}, mkGrad:0, mkSent:false };
+var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, storeOK:true, store:null, solved:{}, coinSent:{}, quotaAsked:{}, wrongOnce:{}, mkDone:{}, mkGrad:0, mkSent:false, mkWord:{} };
 /* 📕 錯題庫（../kids-mistakes.js）：「換你算算看」第一次按確定就算錯的題 → 收進數學錯題庫（id＝'eq:'＋方程式）；
    在錯題庫裡的題，一次就算對＝答對一次，連對 3 次畢業（規則同英文）。
    ?mistakes=1（首頁錯題庫按「只練錯題」）：題目清單換成錯題、不存回題目清單、不顯示出題／管理；每題重做「換你算」，
@@ -952,7 +961,13 @@ var S = { list:[], parsed:[], idx:0, P:null, i:0, playing:false, editing:-1, sto
 var MK = /[?&]mistakes=1/.test(location.search);
 /* 短除法錯題（p.type 'gcd'；應用題 'gcdword'）在 short-division.html?mistakes=1 練（只有應用題時那頁自己轉去練應用題）；這裡做完還有的話給一顆「接著練」 */
 function gcdMore(){ var n = 0; try { n = (window.KidsMistakes ? KidsMistakes.list('math') : []).filter(function(e){ return e.p && (e.p.type === 'gcd' || e.p.type === 'gcdword'); }).length; } catch (e){} return (n ? '<a class="btn" id="mk-gcd" href="short-division.html?mistakes=1">接著練短除法錯題（' + n + ' 題）▶</a>' : '') + (window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['multiples', 'multiply', 'fraction']) : ''); }
-function mkRec(q, ok){ try { return window.KidsMistakes ? KidsMistakes.record('math', 'eq:' + q, ok, { q:q }) : null; } catch (e){ return null; } }
+function mkRec(q, ok){
+  try {
+    if (!window.KidsMistakes) return null;
+    var w = S.mkWord[q]; if (w) return KidsMistakes.record('math', w.id, ok, w.p);   /* 錯題練習裡的應用題：記回應用題那一筆（id eqw:…） */
+    return KidsMistakes.record('math', 'eq:' + q, ok, { q:q });
+  } catch (e){ return null; }
+}
 var timers = [], anims = [];
 function later(fn, ms){ var id = setTimeout(fn, ms); timers.push(id); return id; }
 function clearAll(){
@@ -1471,6 +1486,7 @@ function loadProblem(k){
   var rows = $('manage-list').querySelectorAll('.mrow');
   for (var r = 0; r < rows.length; r++) rows[r].classList.toggle('on', r === S.idx);
   $('board-title').textContent = '第 ' + (S.idx + 1) + ' 題：' + toText(S.P.L, true) + ' = ' + S.P.R;
+  var ws = S.mkWord[S.P.q]; $('bw-story').hidden = !ws; $('bw-story').textContent = ws ? '📝 應用題：' + ws.text + '（算式：' + ws.eq + '）' : '';
   renderDots();
   goTo(0, false);
   if (MK) mkBar();
@@ -1788,6 +1804,69 @@ function selfCheck(){
 }
 window.eqSelfCheck = selfCheck;
 
+/* ================= 📝 應用題（2026-11-01；故事模板在 balance-word.js）=================
+   ① 三個算式選一個（按鈕）→ ② 算出 x（數字輸入）→ 看解法。每次作答 KidsCoins.answer(ok,'math')；第一次答錯（哪一步都算）收進錯題庫
+   （id 'eqw:<故事>:<數字>'，p＝{q:算式, bw:故事, v:數字, t:故事文字}，沒有 type＝天平錯題；錯題練習載入算式、上面顯示故事）；不送 KidsDone、不送新的學習幣事件。 */
+var BWS = { Q:null, step:0, wrong:false, asked:{} };
+function bwRec(Q, ok){ try { if (!window.KidsMistakes) return null; var m = BW.mkEntry(Q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e){ return null; } }
+/* 循序漸進（math/word-level.js）：先出難度 1，第一次就答對 3 題才混入難度 2，再來才是 3（兩步的式子） */
+function bwLevel(){ try { return window.WL ? WL.level('bal') : 3; } catch (e){ return 3; } }
+function bwNew(){
+  var n = BWS.Q ? BWS.Q.c : -1, m = bwLevel(), cs = BW.T.map(function(t, i){ return i; }).filter(function(i){ return BW.T[i].d <= m && i !== n; });
+  BWS.Q = BW.make(cs[Math.floor(Math.random() * cs.length)]); BWS.step = 0; BWS.wrong = false; bwRender('');
+}
+function bwSolve(Q){
+  var P = analyze(Q.eq); if (!P.ok) return [];
+  return P.steps.filter(function(st){ return st.type !== 'verify'; }).map(eqText).concat(['檢查：' + verifyStages(P.L, P.sol).map(function(t){ return toText(t, true); }).join(' = ') + '，對了！']);
+}
+function bwRender(msg, bad){
+  var Q = BWS.Q, h = '<p class="h2-sub" id="bw-lvnote">' + esc(window.WL ? WL.note('bal') : '') + '</p><p id="bw-q" style="font-size:1.15rem;line-height:1.8;font-weight:700;margin:0 0 8px">' + esc(Q.text) + ' <b>' + esc(Q.ask) + '</b></p>';
+  if (BWS.step === 0) h += '<p class="h2-sub">① 用 <var>x</var> 表示要找的數，哪一個算式對？</p><div class="row" id="bw-opts">' + Q.opts.map(function(o, i){ return '<button type="button" class="btn" data-bwo="' + i + '">' + esc(o) + '</button>'; }).join('') + '</div>';
+  else {
+    h += '<p class="h2-sub">✔ 算式：<b>' + esc(Q.eq) + '</b></p>';
+    if (BWS.step === 1) h += '<p class="h2-sub">② 算出 <var>x</var>：</p><div class="try-row"><span class="try-x"><var>x</var> =</span><input class="try-in" id="bw-in" type="text" inputmode="numeric" autocomplete="off" maxlength="6" aria-label="x 等於多少"><button type="button" class="btn primary" id="bw-go">確定</button></div>';
+    else h += '<p>' + (BWS.wrong ? '💪 完成了！這題已經收進 📕 錯題庫。' : '🎉 第一次就答對！') + '　答：<b id="bw-ans">' + Q.x + ' ' + esc(Q.unit) + '</b></p><ol class="h2-sub">' + bwSolve(Q).map(function(t){ return '<li>' + esc(t) + '</li>'; }).join('') + '</ol>' +
+      '<div class="row"><button type="button" class="btn primary" id="bw-next">下一題 ▶</button></div>';
+  }
+  $('bw-box').innerHTML = h + '<p class="try-msg' + (bad ? ' bad' : '') + '" id="bw-msg" role="status" aria-live="polite">' + esc(msg || '') + '</p>';
+}
+function bwWrong(){ if (!BWS.wrong){ BWS.wrong = true; bwRec(BWS.Q, false); } }
+function bwAnswer(fn){   /* 要登入；每一題第一次作答算開始一次練習（跟「換你算算看」一樣） */
+  if (window.KidsAuth && !KidsAuth.requireLogin('math')) return false;
+  if (!BWS.asked[BWS.Q.id]){ if (window.KidsAuth && KidsAuth.startActivity && !KidsAuth.startActivity('math', fn)) return false; BWS.asked[BWS.Q.id] = true; }
+  return true;
+}
+function bwPick(i){
+  if (!bwAnswer(function(){ bwPick(i); })) return;
+  var ok = BWS.Q.opts[i] === BWS.Q.eq;
+  if (window.KidsCoins) KidsCoins.answer(ok, 'math');
+  if (!ok){ bwWrong(); bwRender('再想想 👀 照故事的順序寫：原本不知道的數用 x；「又給、買進、上來、倒進」用 ＋，「用掉、花掉、送出、開走」用 −；最後等於現在的數。', true); return; }
+  BWS.step = 1; bwRender('');
+  try { $('bw-in').focus({ preventScroll:true }); } catch (e){}
+}
+function bwSubmit(){
+  var inp = $('bw-in'); if (!inp || !bwAnswer(bwSubmit)) return;
+  var raw = normalize(inp.value);
+  if (!/^[0-9]+$/.test(raw)){ bwRender('先寫一個數字喔！', false); return; }
+  var ok = Number(raw) === BWS.Q.x;
+  if (window.KidsCoins) KidsCoins.answer(ok, 'math');
+  if (!ok){
+    bwWrong();
+    var P = analyze(BWS.Q.eq), st = P.ok ? P.steps[revealAt(P) - 1] : null;
+    bwRender('差一點！再算一次。' + (st ? '提示：' + eqText(st) : ''), true); $('bw-in').value = raw; return;
+  }
+  if (!BWS.wrong){ bwRec(BWS.Q, true); try { if (window.WL) WL.add('bal', BWS.Q.d, true); } catch (e){} }
+  BWS.step = 2; bwRender('');
+}
+$('bw-box').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  if (b.hasAttribute('data-bwo')) bwPick(+b.getAttribute('data-bwo'));
+  else if (b.id === 'bw-go') bwSubmit();
+  else if (b.id === 'bw-next') bwNew();
+});
+$('bw-box').addEventListener('keydown', function(e){ if (e.key === 'Enter' && e.target.id === 'bw-in'){ e.preventDefault(); bwSubmit(); } });
+window.BWPage = { S:BWS, analyze:analyze };   /* 測試用 */
+
 /* ================= 啟動 ================= */
 S.store = getStore();
 var loaded = loadList(S.store);
@@ -1797,10 +1876,15 @@ $('store-note').hidden = S.storeOK;
 if (MK){
   /* 錯題練習：清單換成錯題庫裡的方程式（最多 30 題、最近答錯的先），出題／管理區收起來 */
   var mkl = [];
-  try { (window.KidsMistakes ? KidsMistakes.list('math') : []).forEach(function(e){ var a = analyze((e.p && e.p.q) || ''); if (a.ok && mkl.length < 30 && !mkl.some(function(o){ return o.q === a.q; })) mkl.push({ q:a.q, own:true }); }); } catch (e){}
+  try { (window.KidsMistakes ? KidsMistakes.list('math') : []).forEach(function(e){
+    var a = analyze((e.p && e.p.q) || ''); if (!a.ok || mkl.length >= 30 || mkl.some(function(o){ return o.q === a.q; })) return;
+    var w = BW.fromMistake(e.p);   /* 應用題：用故事＋數字重建（算式要一樣才算） */
+    if (w && analyze(w.eq).q === a.q){ var m = BW.mkEntry(w); S.mkWord[a.q] = { id:m.id, p:m.p, text:w.text + w.ask, eq:w.eq }; }
+    mkl.push({ q:a.q, own:true });
+  }); } catch (e){}
   var mkb = document.createElement('div'); mkb.id = 'mk-bar'; mkb.className = 'mk-bar'; mkb.setAttribute('role', 'status');
   $('tabs').parentNode.insertBefore(mkb, $('tabs'));
-  $('editor-sec').hidden = true; $('manage-sec').hidden = true; $('store-note').hidden = true;
+  $('editor-sec').hidden = true; $('manage-sec').hidden = true; $('store-note').hidden = true; $('word-sec').hidden = true;
   document.querySelector('header h1').textContent = '📕 數學錯題練習';
   if (!mkl.length){
     Array.prototype.forEach.call(document.querySelector('main.wrap').children, function(el){ if (el.tagName !== 'HEADER' && el !== mkb) el.hidden = true; });
@@ -1812,6 +1896,7 @@ if (S.list.length){
 refreshLists();
 loadProblem(0);
 }
+if (!MK) bwNew();
 checkInput();
 try {
   var res = selfCheck();
@@ -1833,7 +1918,7 @@ try {
 /* 頁首：這個單元學完了沒（completion.js 判定；📕 錯題練習不顯示） */
 if (window.KidsDone && !/[?&]mistakes=/.test(location.search)) KidsDone.mount(document.getElementById('kdone'), 'math:balance', { title: '天平解方程式' });
 /* 會員閘門：看說明、翻「常見錯誤」卡片免登入；按步驟／自動播放／選題／換你算算看／自己出題／管理題目要登入 */
-if (window.KidsAuth) KidsAuth.guard('#controls button, #dots .dot, #tryme button, #tabs .tab[data-k], #editor-sec .keypad .key, #editor-sec .row button, #manage-sec button', 'math', { keys: ['ArrowLeft', 'ArrowRight'] });
+if (window.KidsAuth) KidsAuth.guard('#controls button, #dots .dot, #tryme button, #tabs .tab[data-k], #editor-sec .keypad .key, #editor-sec .row button, #manage-sec button, #bw-box button', 'math', { keys: ['ArrowLeft', 'ArrowRight'] });
 </script>
 
 </body>

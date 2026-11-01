@@ -26,23 +26,34 @@ const EXPECT = {
   gear: v => { const L = euL(v[0], v[1]); return { kind: 'lcm', keys: [v[0], v[1]], ans: L, follow: [L / v[0], L / v[1]] }; },
   rem: v => { const L = euL(v[0], v[1]); return { kind: 'lcm', keys: [v[0], v[1]], ans: L + v[2], follow: [L / v[0]] }; },
   fruit3: v => { const g = eu(eu(v[0], v[1]), v[2]); return { kind: 'gcd', keys: [v[0], v[1], v[2]], ans: g, follow: [(v[0] + v[1] + v[2]) / g] }; },
-  meet3: v => { const L = euL(euL(v[0], v[1]), v[2]); return { kind: 'lcm', keys: [v[0], v[1], v[2]], ans: L, follow: [L / v[0]] }; }
+  meet3: v => { const L = euL(euL(v[0], v[1]), v[2]); return { kind: 'lcm', keys: [v[0], v[1], v[2]], ans: L, follow: [L / v[0]] }; },
+  // 2026-11-01 加
+  group: v => { const g = eu(v[0], v[1]); return { kind: 'gcd', keys: [v[0], v[1]], ans: g, follow: [v[0] / g + v[1] / g] }; },
+  candy: v => { const g = eu(v[0], v[1]); return { kind: 'gcd', keys: [v[0], v[1]], ans: g, follow: [v[0] / g, v[1] / g] }; },
+  cake: v => { const g = eu(v[0], v[1]); return { kind: 'gcd', keys: [v[0], v[1]], ans: g, follow: [(v[0] / g) * (v[1] / g)] }; },
+  juice: v => { const g = eu(v[0], v[1]); return { kind: 'gcd', keys: [v[0], v[1]], ans: g, follow: [(v[0] + v[1]) / g] }; },
+  stack: v => { const L = euL(v[0], v[1]); return { kind: 'lcm', keys: [v[0], v[1]], ans: L, follow: [L / v[0], L / v[1]] }; },
+  duty: v => { const L = euL(v[0], v[1]); return { kind: 'lcm', keys: [v[0], v[1]], ans: L, follow: [L / v[1]] }; },
+  zongzi: v => { const L = euL(v[0], v[1]); return { kind: 'lcm', keys: [v[0], v[1]], ans: L, follow: [L / v[0]] }; },
+  class3: v => { const g = eu(eu(v[0], v[1]), v[2]); return { kind: 'gcd', keys: [v[0], v[1], v[2]], ans: g, follow: [(v[0] + v[1] + v[2]) / g] }; },
+  pack3: v => { const L = euL(euL(v[0], v[1]), v[2]); return { kind: 'lcm', keys: [v[0], v[1], v[2]], ans: L, follow: [L / v[2]] }; }
 };
-const CAT = { share: 'gcd', paper: 'gcd', tile: 'gcd', flag: 'gcd', ribbon: 'gcd', bus: 'lcm', brick: 'lcm', light: 'lcm', run: 'lcm', gear: 'lcm', rem: 'adv', fruit3: 'adv', meet3: 'adv' };
+const CAT = { share: 'gcd', paper: 'gcd', tile: 'gcd', flag: 'gcd', ribbon: 'gcd', bus: 'lcm', brick: 'lcm', light: 'lcm', run: 'lcm', gear: 'lcm', rem: 'adv', fruit3: 'adv', meet3: 'adv',
+  group: 'gcd', candy: 'gcd', cake: 'gcd', juice: 'gcd', stack: 'lcm', duty: 'lcm', zongzi: 'lcm', class3: 'adv', pack3: 'adv' };
 
 // ---- 模板清單：每種題型都有 ----
 {
   ok(J(GW.T.map(t => t.id).sort()) === J(Object.keys(EXPECT).sort()), '模板清單跟測試的答案表一致: ' + GW.T.map(t => t.id));
-  ok(GW.T.filter(t => t.cat === 'gcd').length === 5 && GW.T.filter(t => t.cat === 'lcm').length === 5 && GW.T.filter(t => t.cat === 'adv').length === 3, '最大公因數 5、最小公倍數 5、進階 3');
+  ok(GW.T.filter(t => t.cat === 'gcd').length === 9 && GW.T.filter(t => t.cat === 'lcm').length === 8 && GW.T.filter(t => t.cat === 'adv').length === 5, '最大公因數 9、最小公倍數 8、進階 5（共 22 個情境）');
   GW.T.forEach(t => ok(CAT[t.id] === t.cat, t.id + ' 的分類'));
 }
 
-// ---- 每個模板 × 兩種難度 × 500 次 ----
+// ---- 每個模板 × 兩種難度 × 3000 次（2026-11-01 由 500 提高）----
 {
   const rnd = lcg(20261014);
   GW.T.forEach(t => ['basic', 'adv'].forEach(lv => {
     let bad = 0, maxAns = 0, ids = new Set();
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 3000; i++) {
       const p = GW.make(t.id, lv, rnd), why = [];
       if (!p) { bad++; console.log('  null', t.id, lv); continue; }
       const E = EXPECT[t.id](p.v);
@@ -93,7 +104,7 @@ const CAT = { share: 'gcd', paper: 'gcd', tile: 'gcd', flag: 'gcd', ribbon: 'gcd
       if (p.id !== 'gcdword:' + t.id + ':' + p.v.join(',') || p.id.length > 200) why.push('id');
       if (why.length) { bad++; if (bad < 4) console.log('  bad', t.id, lv, J(p.v), why.join('; ')); }
     }
-    ok(bad === 0, `${t.id}（${lv}）500 次：答案正整數、追問正確、跟 GCD/LCM 函式交叉驗證、題目文字與干擾數字、原題重做（錯 ${bad}；最大答案 ${maxAns}；不同題 ${ids.size}）`);
+    ok(bad === 0, `${t.id}（${lv}）3000 次：答案正整數、追問正確、跟 GCD/LCM 函式交叉驗證、題目文字與干擾數字、原題重做（錯 ${bad}；最大答案 ${maxAns}；不同題 ${ids.size}）`);
     ok(ids.size >= 20, `${t.id}（${lv}）數字有變化（${ids.size} 種）`);
   }));
 }

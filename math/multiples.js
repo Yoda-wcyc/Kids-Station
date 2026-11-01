@@ -39,27 +39,52 @@
   var GROUP_KINDS = { circle: ['circle'], both: ['both'], fill: ['range', 'board', 'last'], lcm: ['lcm'], word: ['wfloor', 'wrange', 'wover', 'wceil', 'wlcm', 'wlcmr'], lit: ['lminmax', 'lsquare'] };
   var WORD_NAME = { wfloor: '不超過且最接近', wrange: '範圍內剛好分完', wover: '比它多且最接近', wceil: '最少要幾包', wlcm: '最少（公倍數）', wlcmr: '範圍內的公倍數' };
   var DIV_KINDS = ['wfloor', 'wrange', 'wover', 'wceil'];
-  var UNITS = ['顆', '人', '張', '包', '塊', '個', '本', '片', '盒', '枝', '組', '公分'];
+  // 應用題、素養題的難度 Q.diff（Q.d 是「每份幾個」，別搞混；2026-11-01，循序漸進；規則在 word-level.js）：1＝一步（除完不用 +1、直接找最小公倍數）；
+  //   2＝要判斷商 +1、範圍、最少最多；3＝要先想到用最小公倍數再配合範圍、長方形拼正方形
+  var DIFF = { wfloor: 1, wlcm: 1, wover: 2, wceil: 2, wrange: 2, lminmax: 2, wlcmr: 3, lsquare: 3 };
+  var UNITS = ['顆', '人', '張', '包', '塊', '個', '本', '片', '盒', '枝', '組', '公分', '輛', '分鐘'];   // 輛、分鐘：2026-11-01 新故事用
 
   // ---------- 故事（{d}{N}{A}{B}{a}{b}{L}{W} 會換成數字；u＝答案單位）----------
   var CTX = {
     wfloor: [['水果行裡的柳丁每 {d} 顆裝成一袋，剛好可以裝完。如果柳丁的數量不超過 {N} 顆，且最接近 {N} 顆，這些柳丁有多少顆？', '顆'],
       ['圖書館把書每 {d} 本放一層，剛好放完。如果書不超過 {N} 本，而且最接近 {N} 本，圖書館有多少本書？', '本'],
-      ['麵包店把餅乾每 {d} 片裝成一盒，剛好裝完。如果餅乾不超過 {N} 片，且最接近 {N} 片，餅乾有多少片？', '片']],
+      ['麵包店把餅乾每 {d} 片裝成一盒，剛好裝完。如果餅乾不超過 {N} 片，且最接近 {N} 片，餅乾有多少片？', '片'],
+      ['園遊會把氣球每 {d} 個綁成一束，剛好可以綁完。如果氣球不超過 {N} 個，而且最接近 {N} 個，氣球有多少個？', '個'],
+      ['學校把運動會的號碼布每 {d} 張裝成一袋，剛好裝完。如果號碼布不超過 {N} 張，且最接近 {N} 張，號碼布有多少張？', '張'],
+      ['果園把芭樂每 {d} 顆裝成一箱，剛好可以裝完。如果芭樂不超過 {N} 顆，而且最接近 {N} 顆，芭樂有多少顆？', '顆']],
     wrange: [['五年級的學生人數在 {A} 人～{B} 人之間，每 {d} 人分成一班，剛好可以分完，五年級學生共有多少人？', '人'],
-      ['一箱蘋果在 {A} 顆～{B} 顆之間，每 {d} 顆裝成一盒，剛好可以裝完，這箱蘋果有多少顆？', '顆']],
+      ['水果行進了一批蘋果，數量在 {A} 顆～{B} 顆之間，每 {d} 顆裝成一盒，剛好可以裝完，這批蘋果有多少顆？', '顆'],
+      ['一盒迴紋針在 {A} 個～{B} 個之間，每 {d} 個串成一串，剛好可以串完，這盒迴紋針有多少個？', '個'],
+      ['圖書室的故事書在 {A} 本～{B} 本之間，每 {d} 本放一格，剛好可以放完，故事書有多少本？', '本'],
+      ['運動會進場的隊伍在 {A} 人～{B} 人之間，每 {d} 人排成一排，剛好可以排完，隊伍共有多少人？', '人']],
     wover: [['老師將全部色紙每 {d} 張裝成一包，剛好可以裝完。如果色紙數量最接近 {N} 張，且比 {N} 張多，老師有多少張色紙？', '張'],
-      ['農場把雞蛋每 {d} 顆裝成一盒，剛好可以裝完。如果雞蛋比 {N} 顆多，而且最接近 {N} 顆，農場有多少顆雞蛋？', '顆']],
+      ['農場把雞蛋每 {d} 顆裝成一盒，剛好可以裝完。如果雞蛋比 {N} 顆多，而且最接近 {N} 顆，農場有多少顆雞蛋？', '顆'],
+      ['校慶要發紀念貼紙，每 {d} 張裝成一包，剛好可以裝完。如果貼紙比 {N} 張多，而且最接近 {N} 張，貼紙有多少張？', '張'],
+      ['麵包店把小餐包每 {d} 個裝成一袋，剛好可以裝完。如果餐包比 {N} 個多，而且最接近 {N} 個，餐包有多少個？', '個'],
+      ['書局把鉛筆每 {d} 枝裝成一盒，剛好可以裝完。如果鉛筆比 {N} 枝多，而且最接近 {N} 枝，鉛筆有多少枝？', '枝']],
     wceil: [['工藝店販售珠子，每包珠子有 {d} 顆。老師需要 {N} 顆，最少要買幾包？也就是幾顆珠子？', '包', '顆'],
-      ['文具店的鉛筆每盒有 {d} 枝。班上需要 {N} 枝，最少要買幾盒？也就是幾枝鉛筆？', '盒', '枝']],
+      ['文具店的鉛筆每盒有 {d} 枝。班上需要 {N} 枝，最少要買幾盒？也就是幾枝鉛筆？', '盒', '枝'],
+      ['班上要做卡片，每包色紙有 {d} 張。全班需要 {N} 張色紙，最少要買幾包？也就是幾張色紙？', '包', '張'],
+      ['校外教學要租車，每輛車可以坐 {d} 人。全年級有 {N} 人要去，最少要租幾輛車？這些車一共可以坐幾人？', '輛', '人'],
+      ['餅乾每盒有 {d} 片。園遊會需要 {N} 片餅乾，最少要買幾盒？也就是幾片餅乾？', '盒', '片']],
     wlcm: [['奶奶做了一些餅乾，每 {a} 塊裝成一盒，或每 {b} 塊裝成一盒，都可以剛好裝完，奶奶最少做了幾塊餅乾？', '塊'],
-      ['弟弟有一些骨牌，每 {a} 個排成一排，剛好可以排完；改成每 {b} 個排成一排，也剛好可以排完，骨牌最少有幾個？', '個']],
-    wlcmr: [['一盒彈珠在 {A} 顆～{B} 顆之間，每 {a} 顆裝一包或每 {b} 顆裝一包，都剛好可以分完，這盒彈珠有幾顆？', '顆'],
-      ['班遊的人數在 {A} 人～{B} 人之間，每 {a} 人一組或每 {b} 人一組，都剛好可以分完，班遊有幾人？', '人']],
+      ['弟弟有一些骨牌，每 {a} 個排成一排，剛好可以排完；改成每 {b} 個排成一排，也剛好可以排完，骨牌最少有幾個？', '個'],
+      ['老師有一些獎勵貼紙，每 {a} 張分給一組，或每 {b} 張分給一組，都可以剛好分完，貼紙最少有幾張？', '張'],
+      ['園遊會的氣球每 {a} 個綁一束，或每 {b} 個綁一束，都可以剛好綁完，氣球最少有幾個？', '個'],
+      ['媽媽買了一些草莓，每 {a} 顆裝一盒，或每 {b} 顆裝一盒，都剛好裝完，草莓最少有幾顆？', '顆'],
+      ['兩路公車同時從總站開出，紅線每 {a} 分鐘開一班、藍線每 {b} 分鐘開一班，最少再過幾分鐘，兩路公車又會同時開出？', '分鐘']],
+    wlcmr: [['一罐彈珠在 {A} 顆～{B} 顆之間，每 {a} 顆裝一包或每 {b} 顆裝一包，都剛好可以裝完，這罐彈珠有幾顆？', '顆'],
+      ['戶外教學的人數在 {A} 人～{B} 人之間，每 {a} 人一組或每 {b} 人一組，都剛好可以分完，戶外教學有幾人？', '人'],
+      ['果園採收的橘子在 {A} 顆～{B} 顆之間，每 {a} 顆裝一袋或每 {b} 顆裝一袋，都剛好可以裝完，果園採收了幾顆橘子？', '顆'],
+      ['校慶大會舞的表演人數在 {A} 人～{B} 人之間，每 {a} 人排一排或每 {b} 人排一排，都剛好可以排完，表演的有幾人？', '人']],
     lminmax: [['快樂國小全校學生人數在 {A} 人～{B} 人之間，每 {d} 人分成一組，剛好可以分完，全校學生最少有多少人？最多有多少人？', '人'],
-      ['一批貼紙在 {A} 張～{B} 張之間，每 {d} 張裝成一袋，剛好可以裝完，貼紙最少有多少張？最多有多少張？', '張']],
+      ['一批貼紙在 {A} 張～{B} 張之間，每 {d} 張裝成一袋，剛好可以裝完，貼紙最少有多少張？最多有多少張？', '張'],
+      ['一箱鉛筆在 {A} 枝～{B} 枝之間，每 {d} 枝裝成一盒，剛好可以裝完，鉛筆最少有多少枝？最多有多少枝？', '枝'],
+      ['園遊會準備的氣球在 {A} 個～{B} 個之間，每 {d} 個綁成一束，剛好可以綁完，氣球最少有多少個？最多有多少個？', '個']],
     lsquare: [['老師準備了長方形壁報紙，每張長 {L} 公分、寬 {W} 公分。學生把壁報紙以同方向接成正方形，排成的正方形邊長最短是幾公分？', '公分'],
-      ['用長 {L} 公分、寬 {W} 公分的長方形磁磚，同方向排成一個正方形，正方形的邊長最短是幾公分？', '公分']]
+      ['用長 {L} 公分、寬 {W} 公分的長方形磁磚，同方向排成一個正方形，正方形的邊長最短是幾公分？', '公分'],
+      ['用長 {L} 公分、寬 {W} 公分的長方形地墊，同方向鋪成一個正方形的遊戲區，遊戲區的邊長最短是幾公分？', '公分'],
+      ['用長 {L} 公分、寬 {W} 公分的長方形木板，同方向拼成一個正方形的舞台，舞台的邊長最短是幾公分？', '公分']]
   };
   function fill(t, o) { return t.replace(/\{([a-zA-Z])\}/g, function (m, k) { return o[k] != null ? String(o[k]) : m; }); }
 
@@ -169,7 +194,7 @@
   function build(kind, v) {
     if (!GROUP_OF[kind] || !Array.isArray(v)) return null;
     v = v.map(Number);
-    var Q = { kind: kind, group: GROUP_OF[kind], v: v.slice(), id: 'mul:' + kind + ':' + v.join(',') }, d, N, A, B, a, b, L, q, ctx;
+    var Q = { kind: kind, group: GROUP_OF[kind], v: v.slice(), id: 'mul:' + kind + ':' + v.join(','), diff: DIFF[kind] || 1 }, d, N, A, B, a, b, L, q, ctx;
     switch (kind) {
       case 'circle':
         N = v[0]; var xs = v.slice(1);
@@ -267,16 +292,22 @@
   }
   function make(kind, rnd, opt) { for (var t = 0; t < 30; t++) { var Q = build(kind, gen(kind, rnd, opt)); if (Q) return Q; } return null; }
   // 練習一輪：group 的題型輪流出（word 可指定 only＝某一個模板）
-  function round(group, n, rnd, only) {
-    rnd = rnd || Math.random;
+  // maxD（循序漸進，預設 3）：沒指定 only 時只出難度 ≤ maxD 的題型（都沒有就出最簡單的）；一輪照難度由小到大排
+  function round(group, n, rnd, only, maxD) {
+    rnd = rnd || Math.random; maxD = maxD || 3;
     var ks = only && GROUP_OF[only] === group ? [only] : GROUP_KINDS[group];
     if (!ks) return [];
+    if (!only) {
+      var dk = function (k) { return DIFF[k] || 1; }, okK = ks.filter(function (k) { return dk(k) <= maxD; });
+      if (!okK.length) { var m = Math.min.apply(null, ks.map(dk)); okK = ks.filter(function (k) { return dk(k) === m; }); }
+      ks = okK;
+    }
     var out = [], seen = {}, order = shuffle(rnd, ks), guard = 0;
     while (out.length < n && guard++ < 200) {
       var Q = make(order[out.length % order.length], rnd);
       if (Q && !seen[Q.id]) { seen[Q.id] = 1; out.push(Q); }
     }
-    return out;
+    return out.map(function (Q, i) { return [Q.diff, i, Q]; }).sort(function (x, y) { return x[0] - y[0] || x[1] - y[1]; }).map(function (z) { return z[2]; });
   }
 
   // ---------- 判分 ----------
@@ -367,7 +398,7 @@
   function mulCheck(a, b, x) { return x != null && x !== a * b ? mhint(a, b) : ''; }
   function ansHint(Q, an) {
     var y = an[0];
-    if (Q.kind === 'wlcm') return y != null && y % Q.a === 0 && y % Q.b === 0 ? y + ' 也可以剛好裝完，可是還有更少的：找最小公倍數。' : '每 ' + Q.a + ' 個或每 ' + Q.b + ' 個都剛好 → 要同時是 ' + Q.a + ' 和 ' + Q.b + ' 的倍數 → 最小公倍數。';
+    if (Q.kind === 'wlcm') return y != null && y % Q.a === 0 && y % Q.b === 0 ? y + ' 也是 ' + Q.a + ' 和 ' + Q.b + ' 的公倍數，可是還有更小的：找最小公倍數。' : '每 ' + Q.a + ' 和每 ' + Q.b + ' 都要剛好 → 要同時是 ' + Q.a + ' 和 ' + Q.b + ' 的倍數 → 最小公倍數。';
     if (Q.kind === 'wlcmr') return '先找 ' + Q.a + ' 和 ' + Q.b + ' 的最小公倍數 ' + Q.l + '，再找它在 ' + Q.A + '～' + Q.B + ' 裡的倍數。' + (y != null && y % Q.l !== 0 ? '' : '');
     if (Q.kind === 'wceil') {
       var h = [];
@@ -386,7 +417,7 @@
   function needMethod(Q) { return DIV_KINDS.indexOf(Q.kind) >= 0 ? 'div' : 'lcm'; }
   function stepMethod(Q, m) {
     var want = needMethod(Q), ok = m === want;
-    return { ok: ok, hint: ok ? '' : want === 'div' ? '題目只有「每 ' + Q.d + ' 個一份」一種分法，要看 ' + (Q.kind === 'wrange' ? '範圍' : Q.N) + ' 裡面有幾份 → 用除法。' : '題目有兩種分法（每 ' + Q.a + ' 個、每 ' + Q.b + ' 個）都要剛好 → 要同時是兩個數的倍數 → 找公倍數。' };
+    return { ok: ok, hint: ok ? '' : want === 'div' ? '題目只有「每 ' + Q.d + ' 個一份」一種分法，要看 ' + (Q.kind === 'wrange' ? '範圍' : Q.N) + ' 裡面有幾份 → 用除法。' : '題目有兩個數（每 ' + Q.a + '、每 ' + Q.b + '）都要剛好 → 要同時是兩個數的倍數 → 找公倍數。' };
   }
   // 除法：x ÷ y ＝ q … r
   function stepDiv(Q, x, y, q, r) {
@@ -517,7 +548,7 @@
   function mkEntry(Q) { var p = { type: 'multiples', k: Q.kind, v: Q.v.slice(), q: Q.short || Q.text }; if (Q.paper) { p.paper = Q.paper; p.pn = Q.pn; } return { id: Q.id, p: p }; }
   function fromMistake(p) { return p && p.type === 'multiples' && GROUP_OF[p.k] && Array.isArray(p.v) ? build(p.k, p.v) : null; }
 
-  var MUL = { GROUPS: GROUPS, GROUP_OF: GROUP_OF, GROUP_KINDS: GROUP_KINDS, WORD_NAME: WORD_NAME, DIV_KINDS: DIV_KINDS, UNITS: UNITS, CTX: CTX, RULE: RULE, METHOD: METHOD, PTS: PTS, EXAM: EXAM,
+  var MUL = { DIFF: DIFF, GROUPS: GROUPS, GROUP_OF: GROUP_OF, GROUP_KINDS: GROUP_KINDS, WORD_NAME: WORD_NAME, DIV_KINDS: DIV_KINDS, UNITS: UNITS, CTX: CTX, RULE: RULE, METHOD: METHOD, PTS: PTS, EXAM: EXAM,
     gcd: gcd, lcm: lcm, gen: gen, build: build, make: make, round: round, check: check, num: num, nums: nums, divText: divText,
     needMethod: needMethod, stepMethod: stepMethod, stepDiv: stepDiv, needPlus: needPlus, plusWhy: plusWhy, stepPlus: stepPlus, stepMul: stepMul, stepLcm: stepLcm,
     keySteps: keySteps, answerText: answerText, exam: exam, examScore: examScore, mkEntry: mkEntry, fromMistake: fromMistake };

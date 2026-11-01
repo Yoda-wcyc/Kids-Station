@@ -25,5 +25,14 @@ window.DATA_ROOTS = [
 {p:"-est",t:"suffix",m:"最…",words:[{w:"tallest",zh:"最高的",parts:["tall","est"]},{w:"fastest",zh:"最快的",parts:["fast","est"]},{w:"smallest",zh:"最小的",parts:["small","est"]}]},
 {p:"port",t:"root",m:"搬運",words:[{w:"airport",zh:"機場",parts:["air","port"]},{w:"passport",zh:"護照",parts:["pass","port"]},{w:"transport",zh:"運輸",parts:["trans","port"]}]},
 {p:"graph",t:"root",m:"寫、畫",words:[{w:"photograph",zh:"照片",parts:["photo","graph"]},{w:"autograph",zh:"親筆簽名",parts:["auto","graph"]},{w:"paragraph",zh:"段落",parts:["para","graph"]}]},
-{p:"scope",t:"root",m:"看的工具",words:[{w:"microscope",zh:"顯微鏡",parts:["micro","scope"]},{w:"periscope",zh:"潛望鏡",parts:["peri","scope"]}]}
+{p:"scope",t:"root",m:"看的工具",words:[{w:"microscope",zh:"顯微鏡",parts:["micro","scope"]},{w:"periscope",zh:"潛望鏡",parts:["peri","scope"]}]},
+// 2026-11-01 第 6 批：+8 個（每個 3 個例字；例字不跟舊字根重複，題號 r:<字>:… 都是新的）
+{p:"uni-",t:"prefix",m:"一、單一",words:[{w:"uniform",zh:"制服",parts:["uni","form"]},{w:"unicorn",zh:"獨角獸",parts:["uni","corn"]},{w:"unicycle",zh:"單輪車",parts:["uni","cycle"]}]},
+{p:"semi-",t:"prefix",m:"一半",words:[{w:"semicircle",zh:"半圓形",parts:["semi","circle"]},{w:"semifinal",zh:"準決賽",parts:["semi","final"]},{w:"semicolon",zh:"分號（；）",parts:["semi","colon"]}]},
+{p:"micro-",t:"prefix",m:"很小的",words:[{w:"microwave",zh:"微波爐",parts:["micro","wave"]},{w:"microphone",zh:"麥克風",parts:["micro","phone"]},{w:"microchip",zh:"微晶片",parts:["micro","chip"]}]},
+{p:"-teen",t:"suffix",m:"十幾（13～19）",words:[{w:"fourteen",zh:"十四",parts:["four","teen"]},{w:"sixteen",zh:"十六",parts:["six","teen"]},{w:"nineteen",zh:"十九",parts:["nine","teen"]}]},
+{p:"-ty",t:"suffix",m:"乘以十（幾十）",words:[{w:"sixty",zh:"六十",parts:["six","ty"]},{w:"seventy",zh:"七十",parts:["seven","ty"]},{w:"ninety",zh:"九十",parts:["nine","ty"]}]},
+{p:"-th",t:"suffix",m:"第…（排順序）",words:[{w:"fourth",zh:"第四",parts:["four","th"]},{w:"sixth",zh:"第六",parts:["six","th"]},{w:"seventh",zh:"第七",parts:["seven","th"]}]},
+{p:"-en",t:"suffix",m:"使變得…",words:[{w:"sharpen",zh:"削尖；使變尖",parts:["sharp","en"]},{w:"shorten",zh:"使變短",parts:["short","en"]},{w:"darken",zh:"使變暗",parts:["dark","en"]}]},
+{p:"-ward",t:"suffix",m:"朝…方向",words:[{w:"upward",zh:"向上",parts:["up","ward"]},{w:"downward",zh:"向下",parts:["down","ward"]},{w:"backward",zh:"向後",parts:["back","ward"]}]}
 ];

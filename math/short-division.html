@@ -184,7 +184,8 @@ body{background:var(--bg)}
 
 <script src="../kids-mistakes.js?v=3b9606d6df"></script>
 <script src="short-division.js?v=17afc65cb7"></script>
-<script src="gcd-word.js?v=ad02b84034"></script>
+<script src="gcd-word.js?v=889d7b62a4"></script>
+<script src="word-level.js?v=0dd1455f2c"></script>
 <script>
 (function () {
 'use strict';
@@ -589,6 +590,8 @@ function wAuth() {   // 作答要登入；這一輪第一次作答時 startActiv
   }
   return true;
 }
+function wlLevel() { try { return window.WL ? WL.level('gw') : 3; } catch (e) { return 3; } }
+function wlNote() { try { return window.WL ? WL.note('gw') : ''; } catch (e) { return ''; } }
 function wRec(Q, ok) {
   var p = Q.p;
   try { return window.KidsMistakes ? KidsMistakes.record('math', p.id, ok, { type: 'gcdword', t: p.tid, v: p.v.slice(), q: p.name + '：' + p.keys.join('、') }) : null; } catch (e) { return null; }
@@ -603,13 +606,13 @@ function wStartHTML() {
   };
   return '<h2>📝 應用題</h2><p>一輪 ' + ROUND + ' 題，每題四步：<br>① 判斷要用最大公因數還是最小公倍數 → ② 從題目找出要短除的數 → ③ 短除法 → ④ 回答（數字＋單位）</p>' +
     seg('w-lv', '難度', WLV_NAME, WS.lv, 'data-wlv') + seg('w-cat', '題型', WCAT_NAME, WS.cat, 'data-wcat') +
-    '<p class="muted">看題目不用登入；開始作答要先登入。</p><button type="button" class="btn primary big" id="w-go">開始這一輪 ▶</button>';
+    '<p class="muted" id="w-lvnote">' + esc(wlNote()) + '</p><p class="muted">看題目不用登入；開始作答要先登入。</p><button type="button" class="btn primary big" id="w-go">開始這一輪 ▶</button>';
 }
 function wHome() {
   W = null; $('w-start').hidden = false; $('w-q').hidden = true; $('w-end').hidden = true; $('w-start').className = 'card center'; $('w-start').innerHTML = wStartHTML();
 }
 function wStart() {
-  var items = GW.roundTids(WS.cat, ROUND).map(function (t) { return GW.make(t, WS.lv); }).filter(Boolean);
+  var items = GW.roundTids(WS.cat, ROUND, null, wlLevel()).map(function (t) { return GW.make(t, WS.lv); }).filter(Boolean);   // 循序漸進：難度 1 答對 3 題才混入難度 2，再來才是 3（math/word-level.js）
   W = { items: items, idx: 0, ok: 0, grad: 0, sent: false, mk: false, act: false, lv: WS.lv, cat: WS.cat };
   wQ();
 }
@@ -823,7 +826,7 @@ function wAns() {
   Q.ai++; Q.unit = ''; Q.uorder = null;
   if (Q.ai <= p.follow.length) { wRender(true); wMsg('✓ 答對了！還有一個追問。', 'good'); return; }
   Q.phase = 'done';
-  if (!Q.wrong) { W.ok++; if (wRec(Q, true) === 'graduated') W.grad++; }
+  if (!Q.wrong) { W.ok++; if (wRec(Q, true) === 'graduated') W.grad++; if (!W.mk) try { if (window.WL) WL.add('gw', Q.p.d, true); } catch (e) { } }
   wRender(false); wMsg('');
 }
 function wEnd() {

@@ -60,15 +60,18 @@
     return a;
   }
 
-  /* 練習題一輪抽 n 題（2026-10-29）：先出還沒答對過的（okSet 沒有）→ 錯題庫裡的（mkSet 有）→ 其他；同一層內隨機，
-   * 同一題（題目文字雜湊一樣）一輪只出一次；抽完再整輪打亂。題數不到 n 就全出。hashOf＝題目文字 → 雜湊。 */
+  /* 練習題一輪抽 n 題（2026-10-29；2026-11-01 循序漸進）：先出還沒答對過的（okSet 沒有）→ 錯題庫裡的（mkSet 有）→ 其他；
+   * 同一層內照難度 d 由小到大（沒有 d 當 1），同 d 裡錯題庫的先（答錯過、還沒答對的下一輪一定回來），其餘隨機；
+   * 同一題（題目文字雜湊一樣）一輪只出一次；抽出的 n 題照 d 由小到大出題（同 d 打亂）。題數不到 n 就全出。hashOf＝題目文字 → 雜湊。 */
   function pickQuiz(qs, n, hashOf, okSet, mkSet, rand) {
-    var tiers = [[], [], []], seen = {};
+    var all = [], seen = {}, dOf = function (q) { return +q.d || 1; };
     (qs || []).forEach(function (q) {
       var h = hashOf(q.q); if (seen[h]) return; seen[h] = 1;
-      tiers[!okSet[h] ? 0 : mkSet[h] ? 1 : 2].push(q);
+      all.push({ q: q, k: [!okSet[h] ? 0 : mkSet[h] ? 1 : 2, dOf(q), mkSet[h] ? 0 : 1, rand()] });
     });
-    return shuffle(tiers.reduce(function (a, t) { return a.concat(shuffle(t, rand)); }, []).slice(0, n), rand);
+    var cmp = function (a, b) { for (var i = 0; i < a.k.length; i++) if (a.k[i] !== b.k[i]) return a.k[i] - b.k[i]; return 0; };
+    var pick = all.sort(cmp).slice(0, n).map(function (x) { return { q: x.q, k: [dOf(x.q), rand()] }; });
+    return pick.sort(cmp).map(function (x) { return x.q; });
   }
 
   /* 重點可以是：

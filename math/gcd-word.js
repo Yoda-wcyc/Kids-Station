@@ -46,13 +46,13 @@
             { q: '每位小朋友可以拿到幾個橡皮擦？', ans: B / g, unit: '個', units: ['個', '枝', '人'], hint: B + ' 個橡皮擦平分給 ' + g + ' 位小朋友，用除法算算看。' }],
           sol: A + ' 和 ' + B + ' 的最大公因數是 ' + g + '，所以最多分給 ' + g + ' 位小朋友；每人拿 ' + A + '÷' + g + '＝' + (A / g) + ' 枝鉛筆、' + B + '÷' + g + '＝' + (B / g) + ' 個橡皮擦。' };
       } },
-    { id: 'paper', cat: 'gcd', kind: 'gcd', name: '色紙剪成最大正方形',
+    { id: 'paper', cat: 'gcd', kind: 'gcd', name: '壁報紙剪成最大正方形',
       draw: function (lv, rnd) { var g = lv === 'adv' ? ri(rnd, 3, 15) : ri(rnd, 2, 10), p = lv === 'adv' ? cop(rnd, 2, 12) : cop(rnd, 2, 8); return [g * p[0], g * p[1], ri(rnd, 2, 15)]; },
       ok: function (v) { var A = v[0], B = v[1], g = gcd(A, B); return A > B && g >= 2 && A <= 200 && (A / g) * (B / g) <= 144 && v[2] >= 1 && v[2] <= 30 && noneIn(v[2], [A, B]); },
       make: function (v) {
         var A = v[0], B = v[1], g = gcd(A, B), x = A / g, y = B / g;
-        return { text: '一張長方形色紙長 {0} 公分、寬 {1} 公分，一張 {2} 元。要把它剪成大小一樣的正方形，而且紙不能有剩下。',
-          toks: [K(A), K(B), X(v[2], '色紙的價錢')],
+        return { text: '一張長方形壁報紙長 {0} 公分、寬 {1} 公分，一張 {2} 元。要把它剪成大小一樣的正方形，而且紙不能有剩下。',
+          toks: [K(A), K(B), X(v[2], '壁報紙的價錢')],
           ask: { q: '正方形的邊長最長是幾公分？', ans: g, unit: '公分', units: ['公分', '平方公分', '張'], hint: '正方形的邊長要能把長和寬都剛好分完，最長＝長和寬的最大公因數。' },
           follow: [{ q: '這樣可以剪成幾張正方形？', ans: x * y, unit: '張', units: ['張', '公分', '平方公分'], hint: '長那一邊可以排幾個？寬那一邊可以排幾個？兩個再相乘。' }],
           sol: A + ' 和 ' + B + ' 的最大公因數是 ' + g + '，正方形邊長最長 ' + g + ' 公分；長邊排 ' + A + '÷' + g + '＝' + x + ' 個、寬邊排 ' + B + '÷' + g + '＝' + y + ' 個，共 ' + x + '×' + y + '＝' + (x * y) + ' 張。' };
@@ -68,15 +68,15 @@
           follow: [{ q: '這樣一共要鋪幾塊地磚？', ans: x * y, unit: '塊', units: ['塊', '公分', '元'], hint: '長那一邊排幾塊？寬那一邊排幾塊？兩個再相乘。' }],
           sol: A + ' 和 ' + B + ' 的最大公因數是 ' + g + '，地磚邊長最大 ' + g + ' 公分；長邊排 ' + x + ' 塊、寬邊排 ' + y + ' 塊，共 ' + x + '×' + y + '＝' + (x * y) + ' 塊。' };
       } },
-    { id: 'flag', cat: 'gcd', kind: 'gcd', name: '花圃四周等距插旗',
+    { id: 'flag', cat: 'gcd', kind: 'gcd', name: '草地四周等距插旗',
       draw: function (lv, rnd) { var g = lv === 'adv' ? ri(rnd, 3, 20) : ri(rnd, 2, 10), p = lv === 'adv' ? cop(rnd, 2, 12) : cop(rnd, 2, 9); return [g * p[0], g * p[1], ri(rnd, 3, 12)]; },
       ok: function (v) { var A = v[0], B = v[1], g = gcd(A, B); return A > B && g >= 2 && A <= 300 && 2 * (A + B) / g <= 60 && v[2] >= 2 && v[2] <= 40 && noneIn(v[2], [A, B]); },
       make: function (v) {
         var A = v[0], B = v[1], g = gcd(A, B), n = 2 * (A + B) / g;
-        return { text: '學校有一個長方形花圃，長 {0} 公尺、寬 {1} 公尺。{2} 位同學要沿著花圃的四周插旗子，每兩支旗子之間的距離都一樣，而且四個角都要插一支。',
+        return { text: '學校有一塊長方形的草地，長 {0} 公尺、寬 {1} 公尺。{2} 位同學要沿著草地的四周插旗子，每兩支旗子之間的距離都一樣，而且四個角都要插一支。',
           toks: [K(A), K(B), X(v[2], '幫忙的人數')],
           ask: { q: '每兩支旗子之間的距離最長是幾公尺？', ans: g, unit: '公尺', units: ['公尺', '支', '位'], hint: '四個角都要插，間隔要能把長和寬都剛好分完，最長＝長和寬的最大公因數。' },
-          follow: [{ q: '這樣一共要插幾支旗子？', ans: n, unit: '支', units: ['支', '公尺', '位'], hint: '先算花圃一圈有多長，再看一圈裡有幾個間隔；圍成一圈時，旗子的支數＝間隔的個數。' }],
+          follow: [{ q: '這樣一共要插幾支旗子？', ans: n, unit: '支', units: ['支', '公尺', '位'], hint: '先算草地一圈有多長，再看一圈裡有幾個間隔；圍成一圈時，旗子的支數＝間隔的個數。' }],
           sol: A + ' 和 ' + B + ' 的最大公因數是 ' + g + '，間隔最長 ' + g + ' 公尺；一圈長 (' + A + '＋' + B + ')×2＝' + (2 * (A + B)) + ' 公尺，' + (2 * (A + B)) + '÷' + g + '＝' + n + '，共 ' + n + ' 支旗子。' };
       } },
     { id: 'ribbon', cat: 'gcd', kind: 'gcd', name: '緞帶剪成一樣長',
@@ -89,6 +89,52 @@
           ask: { q: '每一小段是幾公分？', ans: g, unit: '公分', units: ['公分', '段', '元'], hint: '每段的長度要能把兩條緞帶都剛好剪完，越長越好＝最大公因數。' },
           follow: [{ q: '兩條緞帶一共可以剪成幾段？', ans: n, unit: '段', units: ['段', '公分', '元'], hint: '紅緞帶剪成幾段？藍緞帶剪成幾段？兩個加起來。' }],
           sol: A + ' 和 ' + B + ' 的最大公因數是 ' + g + '，每段 ' + g + ' 公分；紅的剪 ' + (A / g) + ' 段、藍的剪 ' + (B / g) + ' 段，共 ' + n + ' 段。' };
+      } },
+    // 2026-11-01 加：分組、禮物袋、切蛋糕、分裝果汁
+    { id: 'group', cat: 'gcd', kind: 'gcd', name: '男生女生分小組',
+      draw: function (lv, rnd) { var g = lv === 'adv' ? ri(rnd, 3, 12) : ri(rnd, 2, 8), p = lv === 'adv' ? cop(rnd, 2, 12) : cop(rnd, 2, 8); return [g * p[0], g * p[1], ri(rnd, 2, 9)]; },
+      ok: function (v) { var A = v[0], B = v[1], g = gcd(A, B); return A !== B && g >= 2 && A <= 150 && B <= 150 && Math.max(A, B) <= 2 * Math.min(A, B) && A / g <= 12 && B / g <= 12 && v[2] >= 2 && v[2] <= 9 && noneIn(v[2], [A, B]); },
+      make: function (v) {
+        var A = v[0], B = v[1], g = gcd(A, B), n = (A + B) / g;
+        return { text: '五年級去校外教學，男生有 {0} 人、女生有 {1} 人，還有 {2} 位老師帶隊。要把男生和女生分別分成人數一樣多的小組（男生、女生不混在一起），每個人都要分到組。',
+          toks: [K(A), K(B), X(v[2], '老師的人數')],
+          ask: { q: '每組最多幾人？', ans: g, unit: '人', units: ['人', '組', '位'], hint: '每組人數要能把男生、女生都剛好分完，最多＝兩個人數的最大公因數。' },
+          follow: [{ q: '這樣男生、女生一共分成幾組？', ans: n, unit: '組', units: ['組', '人', '位'], hint: '男生分成幾組？女生分成幾組？兩個加起來。' }],
+          sol: A + ' 和 ' + B + ' 的最大公因數是 ' + g + '，每組最多 ' + g + ' 人；男生 ' + A + '÷' + g + '＝' + (A / g) + ' 組、女生 ' + B + '÷' + g + '＝' + (B / g) + ' 組，共 ' + n + ' 組。' };
+      } },
+    { id: 'candy', cat: 'gcd', kind: 'gcd', name: '糖果餅乾裝禮物袋',
+      draw: function (lv, rnd) { var g = lv === 'adv' ? ri(rnd, 4, 20) : ri(rnd, 2, 12), p = lv === 'adv' ? cop(rnd, 2, 13) : cop(rnd, 2, 9); return [g * p[0], g * p[1], ri(rnd, 5, 25)]; },
+      ok: function (v) { var A = v[0], B = v[1], g = gcd(A, B); return A !== B && g >= 2 && A <= 300 && B <= 300 && A / g <= 15 && B / g <= 15 && v[2] >= 2 && v[2] <= 99 && noneIn(v[2], [A, B]); },
+      make: function (v) {
+        var A = v[0], B = v[1], g = gcd(A, B);
+        return { text: '班上要辦聖誕節交換禮物，老師準備了 {0} 顆糖果和 {1} 片餅乾，要裝成一樣的禮物袋：每袋的糖果一樣多、餅乾也一樣多，而且全部剛好裝完。一個禮物袋 {2} 元。',
+          toks: [K(A), K(B), X(v[2], '禮物袋的價錢')],
+          ask: { q: '最多可以裝成幾袋？', ans: g, unit: '袋', units: ['袋', '顆', '片', '元'], hint: '袋數要能把糖果和餅乾都剛好分完，最多＝兩個數量的最大公因數。' },
+          follow: [{ q: '每袋有幾顆糖果？', ans: A / g, unit: '顆', units: ['顆', '片', '袋'], hint: A + ' 顆糖果平分成 ' + g + ' 袋，用除法算算看。' },
+            { q: '每袋有幾片餅乾？', ans: B / g, unit: '片', units: ['片', '顆', '袋'], hint: B + ' 片餅乾平分成 ' + g + ' 袋，用除法算算看。' }],
+          sol: A + ' 和 ' + B + ' 的最大公因數是 ' + g + '，最多裝 ' + g + ' 袋；每袋 ' + A + '÷' + g + '＝' + (A / g) + ' 顆糖果、' + B + '÷' + g + '＝' + (B / g) + ' 片餅乾。' };
+      } },
+    { id: 'cake', cat: 'gcd', kind: 'gcd', name: '長方形蛋糕切正方形小塊',
+      draw: function (lv, rnd) { var g = lv === 'adv' ? ri(rnd, 2, 9) : ri(rnd, 2, 6), p = lv === 'adv' ? cop(rnd, 2, 10) : cop(rnd, 2, 8); return [g * p[0], g * p[1], ri(rnd, 20, 60)]; },
+      ok: function (v) { var A = v[0], B = v[1], g = gcd(A, B); return A > B && g >= 2 && A <= 60 && B >= 10 && (A / g) * (B / g) <= 80 && v[2] >= 10 && v[2] <= 90 && noneIn(v[2], [A, B]); },
+      make: function (v) {
+        var A = v[0], B = v[1], g = gcd(A, B), x = A / g, y = B / g;
+        return { text: '媽媽烤了一個長方形的蛋糕，長 {0} 公分、寬 {1} 公分，一共烤了 {2} 分鐘。要把蛋糕切成大小一樣的正方形小塊，而且不能有剩下。',
+          toks: [K(A), K(B), X(v[2], '烤的時間')],
+          ask: { q: '每小塊的邊長最長是幾公分？', ans: g, unit: '公分', units: ['公分', '塊', '分鐘'], hint: '小塊的邊長要能把長和寬都剛好切完，最長＝長和寬的最大公因數。' },
+          follow: [{ q: '這樣可以切成幾塊？', ans: x * y, unit: '塊', units: ['塊', '公分', '分鐘'], hint: '長那一邊切成幾塊？寬那一邊切成幾塊？兩個再相乘。' }],
+          sol: A + ' 和 ' + B + ' 的最大公因數是 ' + g + '，邊長最長 ' + g + ' 公分；長邊切 ' + x + ' 塊、寬邊切 ' + y + ' 塊，共 ' + x + '×' + y + '＝' + (x * y) + ' 塊。' };
+      } },
+    { id: 'juice', cat: 'gcd', kind: 'gcd', name: '兩種果汁分裝成一樣大的桶子',
+      draw: function (lv, rnd) { var g = lv === 'adv' ? ri(rnd, 3, 15) : ri(rnd, 2, 8), p = lv === 'adv' ? cop(rnd, 2, 12) : cop(rnd, 2, 9); return [g * p[0], g * p[1], ri(rnd, 10, 40)]; },
+      ok: function (v) { var A = v[0], B = v[1], g = gcd(A, B); return A !== B && g >= 2 && A <= 100 && B <= 100 && (A + B) / g <= 30 && v[2] >= 2 && v[2] <= 99 && noneIn(v[2], [A, B]); },
+      make: function (v) {
+        var A = v[0], B = v[1], g = gcd(A, B), n = (A + B) / g;
+        return { text: '園遊會的果汁攤有 {0} 公升柳橙汁和 {1} 公升蘋果汁，要分裝到一樣大的桶子裡（兩種果汁不能混在一起），每桶都要裝滿、果汁不能有剩下。一個桶子 {2} 元。',
+          toks: [K(A), K(B), X(v[2], '桶子的價錢')],
+          ask: { q: '每個桶子最多可以裝幾公升？', ans: g, unit: '公升', units: ['公升', '個', '元'], hint: '每桶裝的公升數要能把兩種果汁都剛好裝完，最多＝最大公因數。' },
+          follow: [{ q: '這樣一共要用幾個桶子？', ans: n, unit: '個', units: ['個', '公升', '元'], hint: '柳橙汁裝幾桶？蘋果汁裝幾桶？兩個加起來。' }],
+          sol: A + ' 和 ' + B + ' 的最大公因數是 ' + g + '，每桶最多 ' + g + ' 公升；柳橙汁 ' + (A / g) + ' 桶、蘋果汁 ' + (B / g) + ' 桶，共 ' + n + ' 個桶子。' };
       } },
 
     // ================= 最小公倍數 =================
@@ -133,7 +179,7 @@
           sol: a + ' 和 ' + b + ' 的最小公倍數是 ' + L + '，最少再過 ' + L + ' 秒會再一起閃。' };
       } },
     { id: 'run', capB: 40, cat: 'lcm', kind: 'lcm', name: '繞操場在起點相遇',
-      draw: function (lv, rnd) { return lv === 'adv' ? [ri(rnd, 4, 15), ri(rnd, 3, 12), pick(rnd, [200, 250, 300, 400])] : [ri(rnd, 3, 10), ri(rnd, 2, 8), pick(rnd, [200, 250, 300, 400])]; },
+      draw: function (lv, rnd) { var a, b, k = 0; if (lv === 'adv') { do { a = ri(rnd, 4, 10); b = ri(rnd, 3, 8); } while (lcm(a, b) > 60 && k++ < 50); return [a, b, pick(rnd, [200, 250, 300, 400])]; } return [ri(rnd, 3, 10), ri(rnd, 2, 8), pick(rnd, [200, 250, 300, 400])]; },
       ok: function (v) { var a = v[0], b = v[1], L = lcm(a, b); return a > b && b >= 2 && nonDiv(a, b) && L <= 120 && L / b <= 30 && v[2] >= 1 && v[2] <= 999 && noneIn(v[2], [a, b]); },
       make: function (v) {
         var a = v[0], b = v[1], L = lcm(a, b);
@@ -155,6 +201,41 @@
           follow: [{ q: '到那時候，大齒輪轉了幾圈？', ans: L / A, unit: '圈', units: ['圈', '齒', '公分'], hint: '轉過的齒數 ÷ 大齒輪的齒數。' },
             { q: '小齒輪轉了幾圈？', ans: L / B, unit: '圈', units: ['圈', '齒', '公分'], hint: '轉過的齒數 ÷ 小齒輪的齒數。' }],
           sol: A + ' 和 ' + B + ' 的最小公倍數是 ' + L + '，最少轉過 ' + L + ' 個齒；大齒輪轉 ' + L + '÷' + A + '＝' + (L / A) + ' 圈，小齒輪轉 ' + L + '÷' + B + '＝' + (L / B) + ' 圈。' };
+      } },
+    // 2026-11-01 加：積木疊一樣高、值日生、包粽子
+    { id: 'stack', capB: 60, cat: 'lcm', kind: 'lcm', name: '兩種積木疊成一樣高',
+      draw: function (lv, rnd) { return lv === 'adv' ? [ri(rnd, 4, 15), ri(rnd, 3, 12), ri(rnd, 50, 300)] : [ri(rnd, 3, 9), ri(rnd, 2, 8), ri(rnd, 50, 200)]; },
+      ok: function (v) { var a = v[0], b = v[1], L = lcm(a, b); return a > b && b >= 2 && nonDiv(a, b) && L <= 120 && L / b <= 20 && v[2] >= 1 && v[2] <= 999 && noneIn(v[2], [a, b, L]); },
+      make: function (v) {
+        var a = v[0], b = v[1], L = lcm(a, b);
+        return { text: '紅色積木每塊高 {0} 公分，藍色積木每塊高 {1} 公分，一盒積木 {2} 元。弟弟把紅色積木疊成一疊、藍色積木疊成另一疊，要讓兩疊剛好一樣高。',
+          toks: [K(a), K(b), X(v[2], '積木的價錢')],
+          ask: { q: '兩疊最矮是幾公分高？', ans: L, unit: '公分', units: ['公分', '塊', '元'], hint: '高度要是 ' + a + ' 的倍數，也要是 ' + b + ' 的倍數，最矮＝最小公倍數。' },
+          follow: [{ q: '這時紅色積木疊了幾塊？', ans: L / a, unit: '塊', units: ['塊', '公分', '元'], hint: '高度 ÷ 紅色積木一塊的高度。' },
+            { q: '藍色積木疊了幾塊？', ans: L / b, unit: '塊', units: ['塊', '公分', '元'], hint: '高度 ÷ 藍色積木一塊的高度。' }],
+          sol: a + ' 和 ' + b + ' 的最小公倍數是 ' + L + '，最矮 ' + L + ' 公分；紅色 ' + L + '÷' + a + '＝' + (L / a) + ' 塊、藍色 ' + L + '÷' + b + '＝' + (L / b) + ' 塊。' };
+      } },
+    { id: 'duty', capB: 40, cat: 'lcm', kind: 'lcm', name: '兩人又一起當值日生',
+      draw: function (lv, rnd) { return lv === 'adv' ? [ri(rnd, 4, 15), ri(rnd, 3, 12), ri(rnd, 20, 35)] : [ri(rnd, 3, 10), ri(rnd, 2, 8), ri(rnd, 20, 35)]; },
+      ok: function (v) { var a = v[0], b = v[1], L = lcm(a, b); return a > b && b >= 2 && nonDiv(a, b) && L <= 90 && v[2] >= 10 && v[2] <= 40 && noneIn(v[2], [a, b, L]); },
+      make: function (v) {
+        var a = v[0], b = v[1], L = lcm(a, b);
+        return { text: '小明每 {0} 天當一次值日生，小華每 {1} 天當一次值日生，班上一共有 {2} 位同學。今天兩人剛好一起當值日生。',
+          toks: [K(a), K(b), X(v[2], '班上的人數')],
+          ask: { q: '最少再過幾天，兩人又會一起當值日生？', ans: L, unit: '天', units: ['天', '次', '位'], hint: '要等的天數要是 ' + a + ' 的倍數，也要是 ' + b + ' 的倍數，最少＝最小公倍數。' },
+          follow: [{ q: '從今天到那一天（不算今天、算那一天），小華當了幾次值日生？', ans: L / b, unit: '次', units: ['次', '天', '位'], hint: '要等的天數 ÷ 小華幾天當一次。' }],
+          sol: a + ' 和 ' + b + ' 的最小公倍數是 ' + L + '，最少再過 ' + L + ' 天；小華當了 ' + L + '÷' + b + '＝' + (L / b) + ' 次。' };
+      } },
+    { id: 'zongzi', capB: 60, cat: 'lcm', kind: 'lcm', name: '粽子怎麼裝都剛好',
+      draw: function (lv, rnd) { return lv === 'adv' ? [ri(rnd, 5, 20), ri(rnd, 4, 18), ri(rnd, 25, 60)] : [ri(rnd, 3, 12), ri(rnd, 2, 10), ri(rnd, 25, 60)]; },
+      ok: function (v) { var a = v[0], b = v[1], L = lcm(a, b); return a > b && b >= 2 && nonDiv(a, b) && L <= 180 && v[2] >= 1 && v[2] <= 99 && noneIn(v[2], [a, b, L]); },
+      make: function (v) {
+        var a = v[0], b = v[1], L = lcm(a, b);
+        return { text: '端午節到了，奶奶包了一些粽子，一顆粽子 {2} 元。粽子每 {0} 顆裝一袋，或每 {1} 顆裝一袋，都剛好裝完、沒有剩下。',
+          toks: [K(a), K(b), X(v[2], '粽子的價錢')],
+          ask: { q: '奶奶最少包了幾顆粽子？', ans: L, unit: '顆', units: ['顆', '袋', '元'], hint: '粽子的顆數要是 ' + a + ' 的倍數，也要是 ' + b + ' 的倍數，最少＝最小公倍數。' },
+          follow: [{ q: '如果每 ' + a + ' 顆裝一袋，可以裝幾袋？', ans: L / a, unit: '袋', units: ['袋', '顆', '元'], hint: '粽子的顆數 ÷ ' + a + '。' }],
+          sol: a + ' 和 ' + b + ' 的最小公倍數是 ' + L + '，最少 ' + L + ' 顆；每 ' + a + ' 顆一袋，可以裝 ' + L + '÷' + a + '＝' + (L / a) + ' 袋。' };
       } },
 
     // ================= 進階：同餘、三個數 =================
@@ -178,10 +259,10 @@
       ok: function (v) { var A = v[0], B = v[1], C = v[2], g = gcd3(A, B, C); return distinct([A, B, C]) && g >= 2 && Math.max(A, B, C) <= 200 && (A + B + C) / g <= 36 && v[3] >= 1 && v[3] <= 999 && noneIn(v[3], [A, B, C]); },
       make: function (v) {
         var A = v[0], B = v[1], C = v[2], g = gcd3(A, B, C), n = (A + B + C) / g;
-        return { text: '水果店送來 {0} 顆蘋果、{1} 顆橘子和 {2} 顆芭樂，一共 {3} 元。要把三種水果都平分給一些小朋友，每一種都要剛好分完、不能有剩下。',
-          toks: [K(A), K(B), K(C), X(v[3], '水果的價錢')],
-          ask: { q: '最多可以分給幾位小朋友？', ans: g, unit: '人', units: ['人', '顆', '元'], hint: '最多分給幾人＝三種水果數量的最大公因數（三個數都要能整除）。' },
-          follow: [{ q: '每位小朋友一共可以拿到幾顆水果？', ans: n, unit: '顆', units: ['顆', '人', '元'], hint: '每人拿幾顆蘋果、幾顆橘子、幾顆芭樂？三個加起來。' }],
+        return { text: '水果店送來 {0} 顆蘋果、{1} 顆橘子和 {2} 顆芭樂，水果店離學校 {3} 公尺。要把三種水果都平分給一些小朋友，每一種都要剛好分完、不能有剩下。',
+          toks: [K(A), K(B), K(C), X(v[3], '水果店到學校的距離')],
+          ask: { q: '最多可以分給幾位小朋友？', ans: g, unit: '人', units: ['人', '顆', '公尺'], hint: '最多分給幾人＝三種水果數量的最大公因數（三個數都要能整除）。' },
+          follow: [{ q: '每位小朋友一共可以拿到幾顆水果？', ans: n, unit: '顆', units: ['顆', '人', '公尺'], hint: '每人拿幾顆蘋果、幾顆橘子、幾顆芭樂？三個加起來。' }],
           sol: A + '、' + B + '、' + C + ' 的最大公因數是 ' + g + '，最多分給 ' + g + ' 位；每人拿 ' + (A / g) + '＋' + (B / g) + '＋' + (C / g) + '＝' + n + ' 顆水果。' };
       } },
     { id: 'meet3', capB: 120, cat: 'adv', kind: 'lcm', name: '三人再一次在圖書館遇到（三個數）',
@@ -194,8 +275,41 @@
           ask: { q: '最少再過幾天，三個人會再一次在圖書館遇到？', ans: L, unit: '天', units: ['天', '次', '週'], hint: '要等的天數要同時是 ' + a + '、' + b + '、' + c + ' 的倍數，最少＝三個數的最小公倍數。' },
           follow: [{ q: '從今天到下次遇到（不算今天、算那一天），小明去了幾次圖書館？', ans: L / a, unit: '次', units: ['次', '天', '週'], hint: '要等的天數 ÷ 小明幾天去一次。' }],
           sol: a + '、' + b + '、' + c + ' 的最小公倍數是 ' + L + '，最少再過 ' + L + ' 天；小明去了 ' + L + '÷' + a + '＝' + (L / a) + ' 次。' };
+      } },
+    // 2026-11-01 加：三班排隊形（三個數的最大公因數）、餅乾三種裝法（三個數的最小公倍數）
+    { id: 'class3', cat: 'adv', kind: 'gcd', name: '三班排成一樣長的隊伍（三個數）',
+      draw: function (lv, rnd) {
+        var g = lv === 'adv' ? ri(rnd, 3, 9) : ri(rnd, 2, 6), lo = Math.ceil(12 / g), hi = Math.floor(36 / g), x, y, z, k = 0;
+        do { x = ri(rnd, lo, hi); y = ri(rnd, lo, hi); z = ri(rnd, lo, hi); } while ((!distinct([x, y, z]) || gcd3(x, y, z) !== 1) && k++ < 500);
+        return [g * x, g * y, g * z];
+      },
+      ok: function (v) { var A = v[0], B = v[1], C = v[2], g = gcd3(A, B, C); return distinct([A, B, C]) && g >= 2 && Math.min(A, B, C) >= 12 && Math.max(A, B, C) <= 36 && (A + B + C) / g <= 40; },
+      make: function (v) {
+        var A = v[0], B = v[1], C = v[2], g = gcd3(A, B, C), n = (A + B + C) / g;
+        return { text: '運動會要排進場隊伍，五年一班有 {0} 人、五年二班有 {1} 人、五年三班有 {2} 人。每班各自排成好幾排（不混班），每一排的人數都一樣多，而且每個人都要排進去。',
+          toks: [K(A), K(B), K(C)],
+          ask: { q: '每排最多幾人？', ans: g, unit: '人', units: ['人', '排', '班'], hint: '每排人數要能把三班都剛好排完，最多＝三個數的最大公因數（三個數都要能整除）。' },
+          follow: [{ q: '三班一共排成幾排？', ans: n, unit: '排', units: ['排', '人', '班'], hint: '每班各排成幾排？三個加起來。' }],
+          sol: A + '、' + B + '、' + C + ' 的最大公因數是 ' + g + '，每排最多 ' + g + ' 人；一共 ' + (A / g) + '＋' + (B / g) + '＋' + (C / g) + '＝' + n + ' 排。' };
+      } },
+    { id: 'pack3', capB: 120, cat: 'adv', kind: 'lcm', name: '餅乾三種裝法都剛好（三個數）',
+      draw: function (lv, rnd) { var hi = lv === 'adv' ? 15 : 10, lo = lv === 'adv' ? 3 : 2; return [ri(rnd, lo, hi), ri(rnd, lo, hi), ri(rnd, lo, hi)]; },
+      ok: function (v) { var a = v[0], b = v[1], c = v[2], L = lcm3(a, b, c); return distinct(v) && Math.min(a, b, c) >= 2 && L <= 360 && noneIn(L, v) && L / Math.min(a, b, c) <= 40; },
+      make: function (v) {
+        var a = v[0], b = v[1], c = v[2], L = lcm3(a, b, c);
+        return { text: '園遊會要賣手工餅乾。餅乾每 {0} 片裝一包、每 {1} 片裝一包、或每 {2} 片裝一包，三種裝法都剛好裝完、沒有剩下。',
+          toks: [K(a), K(b), K(c)],
+          ask: { q: '最少要準備幾片餅乾？', ans: L, unit: '片', units: ['片', '包', '元'], hint: '餅乾的片數要同時是 ' + a + '、' + b + '、' + c + ' 的倍數，最少＝三個數的最小公倍數。' },
+          follow: [{ q: '如果每 ' + c + ' 片裝一包，可以裝幾包？', ans: L / c, unit: '包', units: ['包', '片', '元'], hint: '餅乾的片數 ÷ ' + c + '。' }],
+          sol: a + '、' + b + '、' + c + ' 的最小公倍數是 ' + L + '，最少 ' + L + ' 片；每 ' + c + ' 片一包，可以裝 ' + L + '÷' + c + '＝' + (L / c) + ' 包。' };
       } }
   ];
+  // 難度（2026-11-01，循序漸進；規則在 word-level.js）：1＝答案就是最大公因數／最小公倍數，追問只要除一次；
+  //   2＝追問要再乘、再加、算周長，或情境比較難想（齒輪、拼磁磚）；3＝時間換算、同餘、三個數
+  var DIFF = { share: 1, candy: 1, light: 1, run: 1, stack: 1, duty: 1, zongzi: 1,
+    paper: 2, tile: 2, flag: 2, ribbon: 2, group: 2, cake: 2, juice: 2, brick: 2, gear: 2,
+    bus: 3, rem: 3, fruit3: 3, meet3: 3, class3: 3, pack3: 3 };
+  T.forEach(function (t) { t.d = DIFF[t.id]; });
   var BY = {}; T.forEach(function (t) { BY[t.id] = t; });
   var CATS = { gcd: '最大公因數', lcm: '最小公倍數', adv: '挑戰題' };
 
@@ -206,7 +320,7 @@
     var ok = false; try { ok = !!t.ok(v); } catch (e) { ok = false; }
     if (!ok) return null;
     var p = t.make(v);
-    p.tid = tid; p.v = v.slice(); p.kind = t.kind; p.cat = t.cat; p.name = t.name; p.time = !!t.time;
+    p.tid = tid; p.v = v.slice(); p.kind = t.kind; p.cat = t.cat; p.name = t.name; p.time = !!t.time; p.d = t.d;
     p.id = 'gcdword:' + tid + ':' + v.join(',');
     p.keys = p.toks.filter(function (x) { return x.role === 'key'; }).map(function (x) { return x.n; });
     p.core = t.kind === 'gcd' ? SD.gcdAll(p.keys) : SD.lcmAll(p.keys);
@@ -220,15 +334,27 @@
   }
   function shuffle(a, rnd) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   // 一輪的模板：cat＝'mix'（最大公因數 2 題＋最小公倍數 2 題＋挑戰 1 題）｜'gcd'｜'lcm'｜'adv'；n 題；同一輪模板盡量不重複
-  function roundTids(cat, n, rnd) {
-    rnd = rnd || Math.random; n = n || 5;
-    var ids = function (c) { return T.filter(function (t) { return t.cat === c; }).map(function (t) { return t.id; }); };
+  // maxD（循序漸進，預設 3）：只出難度 ≤ maxD 的模板（這一類都沒有就出這一類最簡單的）；mix 的挑戰題還沒開放時改出一題最大公因數或最小公倍數；一輪照難度由小到大排
+  function roundTids(cat, n, rnd, maxD) {
+    rnd = rnd || Math.random; n = n || 5; maxD = maxD || 3;
+    var ids = function (c, strict) {
+      var all = T.filter(function (t) { return t.cat === c; }), ok = all.filter(function (t) { return t.d <= maxD; });
+      if (!ok.length && !strict) { var m = Math.min.apply(null, all.map(function (t) { return t.d; })); ok = all.filter(function (t) { return t.d === m; }); }
+      return ok.map(function (t) { return t.id; });
+    };
     var out;
-    if (cat === 'mix') out = shuffle(ids('gcd'), rnd).slice(0, 2).concat(shuffle(ids('lcm'), rnd).slice(0, 2), shuffle(ids('adv'), rnd).slice(0, 1));
-    else { var pool = ids(CATS[cat] ? cat : 'gcd'); out = shuffle(pool, rnd).slice(0, n); while (out.length < n) out.push(pool[Math.floor(rnd() * pool.length)]); }
+    if (cat === 'adv' && !ids('adv', true).length) cat = 'mix';   // 挑戰題（都是難度 3）還沒開放：先出綜合題
+    if (cat === 'mix') {
+      var adv = shuffle(ids('adv', true), rnd).slice(0, 1);
+      out = shuffle(ids('gcd'), rnd).slice(0, 2).concat(shuffle(ids('lcm'), rnd).slice(0, 2), adv);
+      if (!adv.length) out.push(shuffle(ids(rnd() < 0.5 ? 'gcd' : 'lcm'), rnd).filter(function (t) { return out.indexOf(t) < 0; })[0]);
+      out = out.filter(Boolean);
+    } else { var pool = ids(CATS[cat] ? cat : 'gcd'); out = shuffle(pool, rnd).slice(0, n); while (out.length < n) out.push(pool[Math.floor(rnd() * pool.length)]); }
     out = shuffle(out, rnd);
-    while (out.length < n) out.push(T[Math.floor(rnd() * T.length)].id);
-    return out.slice(0, n);
+    var easy = T.filter(function (t) { return t.d <= maxD; });
+    while (out.length < n) out.push(easy[Math.floor(rnd() * easy.length)].id);
+    out = out.slice(0, n);
+    return out.map(function (t, i) { return [BY[t].d, i, t]; }).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }).map(function (z) { return z[2]; });
   }
   // 題目文字切成片段：[{t:文字}｜{i:第幾個數字}]
   function segs(text) {
