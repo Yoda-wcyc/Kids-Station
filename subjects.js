@@ -43,6 +43,8 @@
   };
   Object.keys(MM_UNITS).forEach(k => {
     ACTS[k] = MM_UNITS[k].map(([id, t], i) => ({ id, title: `單元${NUMS[i]}　${t}`, desc: () => mmDesc(k, id), icon: '🗺️', src: `mindmap/${k}.html?u=${id}`, dk: `mm:${k}:${id}` }));
+    // 📝 段考模擬（2026-11-01，mindmap/exam.js）：單元一＋二、三＋四各一份 30 題；不算單元完成（沒有 dk）
+    ACTS[k].push({ id: 'mock', title: '📝 段考模擬', desc: '兩個單元一份、30 題由易到難，可以選 40 分鐘限時', icon: '📝', src: `mindmap/${k}.html?mock=1` });
   });
   // 📕 錯題庫（kids-mistakes.js）：有題目的科目各一張卡 → #s/<科>/mistakes（清單免登入）；「只練錯題」→ #s/<科>/mistakes-go[-<單元>]
   //   社會／自然 → iframe mindmap/<科>.html?mistakes=1[&u=單元]；數學 → iframe math/balance.html?mistakes=1（錯題全是短除法 p.type 'gcd'／應用題 'gcdword' 時改開

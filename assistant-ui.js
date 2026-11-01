@@ -30,7 +30,7 @@
   function snapshot() {
     const KD = window.KidsDone, ui = ld(UIK, {}) || {};
     return { now: Date.now(), data: KD ? KD.data() : {}, ctx: KD ? KD.ctx() : {}, mk: ld('kids_mistakes', {}), keMk: ld('ke_mistakes', {}), seen: ld('kids_coin_seen', {}),
-      zhLocal: ld('kids_zh_reading', {}), wordLv: ld('kids_word_lv', {}), goal: goal(), nick: nick(), prevCheer: ui.cheer || '' };
+      zhLocal: ld('kids_zh_reading', {}), exam: ld('kids_mm_exam', {}), wordLv: ld('kids_word_lv', {}), goal: goal(), nick: nick(), prevCheer: ui.cheer || '' };
   }
   function analyze() {
     const s = snapshot(), r = KA.analyze(s);

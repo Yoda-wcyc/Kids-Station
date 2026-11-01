@@ -177,3 +177,14 @@ body{overflow:hidden;overscroll-behavior:none;font-size:19px}
 .lit-ctx{margin-top:12px}
 .lit-ctx summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:#1d5d99}
 .lit-ctx .zr-art{padding:12px 14px;margin-top:6px}
+/* 📄 單元測驗／📝 段考模擬（2026-11-01）：交卷前選了只標「已選」，不說對錯；排順序／配對的「確定」鈕藏起來（交卷才判分） */
+.ex-rules{margin:4px 0 12px;padding-left:22px;line-height:1.7}
+.ex-timer-opt{display:flex;align-items:center;gap:10px;min-height:48px;margin:0 0 12px;font-weight:700;cursor:pointer}
+.ex-timer-opt input{width:24px;height:24px}
+.ex-q .opt.sel{border-color:var(--pri);background:#fff3e8;box-shadow:0 0 0 3px rgba(255,138,61,.35)}
+.ex-q [data-qk=oCheck],.ex-q [data-qk=mCheck]{display:none}
+.ex-sec{margin:22px 0 8px;font-size:1.1rem}
+.ex-submit{margin-top:16px}
+.ex-sg{text-align:left;margin:14px 0 6px;background:#fffaf0;border:2px solid #f0e2c8;border-radius:14px;padding:10px 14px}
+.ex-sg ul{margin:6px 0 0;padding-left:20px}.ex-sg li{margin:8px 0;line-height:1.6}
+.n.focus{box-shadow:0 0 0 5px rgba(255,138,61,.55)}

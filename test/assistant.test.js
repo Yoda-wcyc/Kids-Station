@@ -42,7 +42,7 @@ function routeOk(href) {
   return false;
 }
 ok(PAGES.has('home') && PAGES.has('mistakes') && PAGES.has('tb') && ACT.math.includes('fraction') && ACT.chinese.includes('reading') && ACT.ai.includes('secrets') && MK_SUBJ.includes('science'), 'route tables parsed: ' + [...PAGES] + ' | ' + JSON.stringify(ACT) + ' | ' + MK_SUBJ);
-ok(!routeOk('index.html#s/chinese/idioms') && !routeOk('index.html#s/math/nope') && routeOk('index.html#s/science/mistakes-n3') && routeOk('assistant.html'), 'routeOk sanity');
+ok(routeOk('index.html#s/chinese/idioms') && !routeOk('index.html#s/chinese/nope') && !routeOk('index.html#s/math/nope') && routeOk('index.html#s/science/mistakes-n3') && routeOk('assistant.html'), 'routeOk sanity');
 const allLinks = r => [].concat(r.tasks.map(t => t.href), r.weak.flatMap(w => [w.href, w.href2].filter(Boolean)), r.next.map(n => n.href), r.subjects.map(s => s.href), r.subjects.map(s => s.mkHref));
 
 // ---------- 1. 新帳號：歡迎語、從各科第一單元開始、不出錯 ----------
@@ -108,7 +108,22 @@ const MANY = snap({
   // 成語模組接線後才會有 cy 開頭的國語錯題 → 成語解法（連到國語錯題庫）
   const r2 = KA.analyze(snap({ mk: { chinese: Object.fromEntries([1, 2, 3].map(i => [`cy00${i}:q1`, mkE(T1, {})])) } }));
   const cy = r2.weak.find(w => w.sol === 'zhIdiom');
-  ok(cy && /成語故事/.test(cy.steps[0]) && /常見誤用/.test(cy.steps[1]) && routeOk(cy.href), 'idiom mistakes → idiom solution ' + JSON.stringify(cy));
+  ok(cy && /成語故事/.test(cy.steps[0]) && /常見誤用/.test(cy.steps[1]) && cy.href === 'index.html#s/chinese/idioms' && cy.href2 === 'index.html#s/chinese/mistakes' && routeOk(cy.href) && routeOk(cy.href2), 'idiom mistakes → idiom solution ' + JSON.stringify(cy));
+}
+// 社會／自然單元測驗（kids_mm_exam）最近一次 < 70 分 → 弱點：先看重點 → 只練錯題 → 再考一次；≥ 70、段考、_seen 不算
+{
+  const exam = { 'social:u3': { best: 72, last: 56, n: 2, at: T1 }, 'science:n2': { best: 90, last: 88, n: 1, at: T1 }, 'social:mock-u1-u2': { best: 40, last: 40, n: 1, at: T1 }, _seen: { social: { 'x:u3-x01': T1 } } };
+  const r = KA.analyze(snap({ exam }));
+  const w = r.weak.find(x => x.sol === 'mmExam');
+  ok(w && w.title === '社會・成為清帝國的領土' && w.text === '單元測驗 56 分' && w.href === 'index.html#s/social/u3' && w.href2 === 'index.html#s/social/mistakes-u3', 'exam < 70 → weak ' + JSON.stringify(w));
+  ok(w && /看重點/.test(w.steps[0]) && /只練錯題/.test(w.steps[1]) && /再考一次/.test(w.steps[2]), 'exam weak steps: 看重點 → 只練錯題 → 再考一次 ' + (w && w.steps));
+  ok(r.weak.filter(x => x.sol === 'mmExam').length === 1 && !r.weak.some(x => /自然/.test(x.title)) && allLinks(r).every(routeOk), 'exam ≥ 70 / mock / _seen 不列弱點；links ok');
+  // 同單元也有錯題 → 併成一項（分數＋錯題數），排在其他弱點前面
+  const mk = { social: Object.fromEntries([1, 2, 3, 4].map(i => [`u3|q|h${i}`, mkE(T1, { u: 'u3', k: 'X', s: '題', a: '答' })])), math: Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`mx:1${i}x7`, mkE(T1, { type: 'multiply', a: 10 + i, b: 7, lv: 'd21' })])) };
+  const r2 = KA.analyze(snap({ exam, mk })), so = r2.weak.filter(x => x.k === 'social');
+  ok(so.length === 1 && so[0].sol === 'mmExam' && so[0].text === '單元測驗 56 分・錯題 4 題' && r2.weak[0] === so[0], 'exam + mistakes same unit → merged, first ' + JSON.stringify(r2.weak.map(x => x.title + ':' + x.text)));
+  const t = r2.tasks.find(x => x.k === 'social');
+  ok(t && t.kind === 'mistakes' && /4 題/.test(t.title), 'exam weak does not change mistakes task ' + JSON.stringify(t));
 }
 
 // ---------- 3. 很久沒練 → 複習一輪 ----------

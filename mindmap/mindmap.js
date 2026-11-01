@@ -2,6 +2,7 @@
  * 頁面：mindmap/social.html、mindmap/science.html（<body data-subj="social|science">），?u=<單元id> 只開那一個單元。
  * 四模式：📖 看重點（免登入）／🧠 背架構／✏️ 考考自己／📝 練習題（後三者開始時 KidsAuth.requireLogin＋startActivity(科)）。
  * 🧩 素養題組（2026-11-01）：每單元 5 組「資料＋4 題」（data/<科>/lit*.js 的 <資料>.lit[單元id]），題目元件 ../quizkit.js、區塊畫面與判分 ../chinese/reading-core.js；不算單元完成。
+ * 📄 單元測驗／📝 段考模擬（2026-11-01）：組卷與判分 exam.js（MMExam），新題在 data/<科>/exam1-4.js；段考頁＝?mock=1（首頁社會、自然各一張卡）；不算單元完成。
  * 學習幣：每次作答 KidsCoins.answer(ok, 科)；一輪結束 KidsCoins.report({type:'practice_round', item:'<科>:<arch|cloze|quiz>', correct, total})。
  * 紀錄：localStorage kids_mm_progress／kids_mm_blanks（key＝'<科>:<單元id>'）、kids_mm_ui（key＝科）；舊的 kids_social_* 會自動搬過來。
  * 抽題規則與資料格式見 data/FORMAT.md。 */
@@ -70,7 +71,7 @@ function migrateOld(){
 migrateOld();
 
 /* ---------- 登入與學習幣（沿用全站規則；kids-auth.js／kids-coins.js 沒載入時一律放行、不計） ---------- */
-var WHY = {arch:'背架構', cloze:'考考自己', quiz:'做練習題', lit:'做素養題組'};
+var WHY = {arch:'背架構', cloze:'考考自己', quiz:'做練習題', lit:'做素養題組', exam:'做單元測驗', mock:'做段考模擬'};
 function loggedOK(){ var A = window.KidsAuth; try{ return !A || !A.configured() || A.isLoggedIn(); }catch(e){ return true; } }
 /* 開始一輪：先登入、再問練習額度（目前免費額度關閉＝照常放行）；retry＝額度閘門先擋、後端說可以時重來一次 */
 function gate(mode, retry){
@@ -140,7 +141,7 @@ function recordResult(uid, level, pct, isReview){
 }
 /* 單元完成（../completion.js 判定、../kids-done.js 補存＋頁首橫幅）：考考自己、練習題一輪的答對率（跟結果畫面上的 % 一樣）存進 kids_done */
 function doneRec(sec, pct){ try{ if(window.KidsDone && !MKMODE) window.KidsDone.record(sec, pk(unit().id), pct); }catch(e){} }
-function paintDone(){ try{ var el = $('#kdone'); if(!el || !window.KidsDone) return; if(MKMODE || !unit()){ el.hidden = true; return; } var u = unit(); window.KidsDone.mount(el, 'mm:' + pk(u.id), {compact:true, title:D.units.length > 1 ? unitLabel(u) + '・' + u.title : ''}); }catch(e){} }
+function paintDone(){ try{ var el = $('#kdone'); if(!el || !window.KidsDone) return; if(MKMODE || MOCK || !unit()){ el.hidden = true; return; } var u = unit(); window.KidsDone.mount(el, 'mm:' + pk(u.id), {compact:true, title:D.units.length > 1 ? unitLabel(u) + '・' + u.title : ''}); }catch(e){} }
 /* 帳號同步（sync.js；在首頁 iframe 裡借用首頁的 KESync）：一關結束馬上同步，挖空紀錄 3 秒後 */
 function syncTouch(now){ try{ var K = window.KESync; if(K) (now ? K.now : K.touch)(); }catch(e){} }
 /* 別台的紀錄合併進來（storage／kesync-data）：停在關卡首頁才重畫，正在玩的不打斷 */
@@ -760,7 +761,7 @@ function renderQuiz(){
 }
 function quizDone(right){ var it = QZ.items[QZ.i]; it.done = true; it.right = right; if(right) QZ.ok++; coinAnswer(right);
   if(QZ.mk){ try{ if(KMx().record(SUBJ, it.mk, right) === 'graduated') QZ.grad++; }catch(e){} }
-  else { mkQuiz(it.q, right); if(right) qzOk(it.q); }
+  else { mkQuiz(it.q, right); if(right) qzOk(it.q); exMarkSeen(['q:' + qHash(it.q.q)]); }   // 單元測驗抽題時避開最近 7 天做過的
   if(QZ.items.every(function(x){ return x.done; }) && !QZ.reported){ QZ.reported = true; coinRound(QZ.mk ? 'mistakes' : 'quiz', QZ.ok, QZ.items.length); if(!QZ.mk) doneRec('qz', Math.round(QZ.ok / QZ.items.length * 100)); }
   renderQuiz(); }
 
@@ -841,6 +842,9 @@ function mkQ(e){
   if(p.k === 'q'){ var h = e.id.split('|q|')[1]; return (u.quiz || []).filter(function(q){ return K.hash(q.q) === h; })[0] || null; }
   if(p.k === 'L'){ var lm = /\|L\|(.+):(q\d+)$/.exec(e.id), ls = lm && litSets(u).filter(function(x){ return x.id === lm[1]; })[0], lq = ls && ls.qs.filter(function(x){ return x.id === lm[2]; })[0];   // 素養題組：原題重做，連同資料
     return lq && lq.type !== 'open' ? Object.assign({}, lq, {tl:'🧩 素養題組', ctx:ls}) : null; }
+  if(p.k === 'X'){ var xid = e.id.split('|X|')[1], E = D.exam && D.exam[u.id]; if(!E) return null;   // 單元測驗新題：原題重做（題組題連同資料）
+    var xq = E.qs.filter(function(x){ return x.id === xid; })[0]; if(xq) return Object.assign({}, xq, {tl:'📄 單元測驗'});
+    var gq = E.grp && E.grp.qs.filter(function(x){ return x.id === xid; })[0]; return gq ? Object.assign({}, gq, {tl:'📄 單元測驗・題組', ctx:E.grp}) : null; }
   if(p.k === 'a'){
     var nid = e.id.split('|a|')[1], seq = archSeq(u), it = seq.filter(function(s){ return s.id === nid; })[0]; if(!it || it.nq) return null;
     var sib = {}; seq.forEach(function(s){ if(s.par === it.par) sib[s.title] = 1; });   // 同一上層的兄弟也是對的 → 不當干擾項
@@ -874,6 +878,118 @@ function mkFillHTML(it){
 }
 function mkBack(){ return '../index.html#s/' + SUBJ + '/mistakes' + (ONLY ? '-' + ONLY : ''); }
 
+/* ---------- 📄 單元測驗／📝 段考模擬（2026-11-01）----------
+   組卷與判分在 exam.js（MMExam）：單元測驗 25 題、段考模擬 30 題（兩單元），配分 100；新題在 data/<科>/exam1-4.js，另一半從練習題庫挑，避開最近 7 天做過的題。
+   作答時不說對錯，交卷才一起看：分數、每題解析、錯題標紅；錯題進錯題庫（題庫題 '<單元>|q|<雜湊>'，跟練習題同一筆；新題 '<單元>|X|<題id>'）；
+   依答錯的題建議回去複習哪個重點（連到 ?u=<單元>&focus=<節點>）。段考可選 40 分鐘限時（預設關，時間到自動交卷）。
+   學習幣：交卷時每題 KidsCoins.answer；一份送 practice_round '<科>:quiz'（沿用練習題的事件，不另開新事件）。不算單元完成（不呼叫 doneRec）。
+   本機紀錄（不同步，同素養題組）：localStorage kids_mm_exam＝{'<科>:<卷id>':{best:最高分, last:最近一次, n:考了幾次, at}, _seen:{'<科>':{題key:最後作答時間}}}
+   卷id＝單元id 或 'mock-<單元>-<單元>'；題key 見 exam.js（練習題作答也會記，7 天後清掉）。 */
+var XKEY = 'kids_mm_exam', EXM = null, MOCK = /[?&]mock=1/.test(location.search), MOCK_MIN = 40, exTimerId = 0;
+var EXTYPE = {mc:'選擇題', tf:'是非題', order:'排順序', match:'配對題'};
+function MXx(){ return window.MMExam; }
+function exAll(){ return lsGet(XKEY, {}); }
+function exRec(id){ return exAll()[SUBJ + ':' + id] || {}; }
+function exSeen(){ return (exAll()._seen || {})[SUBJ] || {}; }
+function exMarkSeen(keys){ var all = exAll(), t = Date.now(), s = (all._seen || {})[SUBJ] || {}; if(MXx()) s = MXx().prune(s, t); keys.forEach(function(k){ s[k] = t; }); all._seen = all._seen || {}; all._seen[SUBJ] = s; lsSet(XKEY, all); }
+function exOn(u){ return !!(MXx() && QKx() && ZRx() && D.exam && u && D.exam[u.id]); }
+function mockPairs(){ var out = []; for(var i = 0; i + 1 < ALL_UNITS.length; i += 2) if(D.exam && D.exam[ALL_UNITS[i].id] && D.exam[ALL_UNITS[i + 1].id]) out.push([ALL_UNITS[i], ALL_UNITS[i + 1]]); return out; }
+function unitById(id){ return ALL_UNITS.filter(function(x){ return x.id === id; })[0]; }
+function exCard(id, small, title, v){ var r = exRec(id); return '<button class="lit-card' + (r.n ? (r.best >= 90 ? ' done' : ' tried') : '') + '" data-act="exGo" data-v="' + v + '"><small>' + esc(small) + '</small><b>' + esc(title) + '</b><span>' + (r.n ? '🏅 最高 ' + r.best + ' 分・最近 ' + r.last + ' 分' : '⚪ 還沒考過') + '</span></button>'; }
+function renderExamHome(){
+  EXM = null; exStopTimer();
+  var html = '<div class="mm-wrap">';
+  if(MOCK){
+    html += '<h2>📝 ' + CFG.name + '段考模擬</h2><ul class="ex-rules"><li>兩個單元一份，每份 30 題、滿分 100 分（前 20 題每題 3 分、後 10 題每題 4 分）。</li><li>題目由易到難，最後是題組：先讀一段資料再回答。</li><li>考試中不說對錯，全部寫完按「交卷」，才看分數和每一題的解析。</li><li>答錯的題會收進錯題庫；這裡不算進單元完成。</li></ul>' +
+      '<label class="ex-timer-opt"><input type="checkbox" id="exTimed"> ⏱️ 限時 ' + MOCK_MIN + ' 分鐘（時間到自動交卷）</label>' +
+      '<div class="lit-grid">' + mockPairs().map(function(p, i){ return exCard('mock-' + p[0].id + '-' + p[1].id, unitLabel(p[0]) + '＋' + unitLabel(p[1]), p[0].title + '、' + p[1].title, 'mock:' + i); }).join('') + '</div>';
+  } else {
+    var u = unit();
+    html += '<h2>📄 單元測驗・' + esc(unitLabel(u)) + '</h2><ul class="ex-rules"><li>25 題、每題 4 分，滿分 100 分：選擇 15 題、是非 5 題、配對或排序 2 題、題組 1 組（3 題）。</li><li>題目由易到難；大約一半是新題，一半從練習題裡挑（最近一週做過的會先避開）。</li><li>考試中不說對錯，全部寫完按「交卷」，才看分數和每一題的解析。</li><li>答錯的題會收進錯題庫；這裡不算進單元完成。</li></ul>' +
+      (exOn(u) ? '<div class="lit-grid">' + exCard(u.id, unitLabel(u), u.title, 'unit') + '</div>' : '<p>這個單元還沒有測驗卷。</p>');
+  }
+  $('#panel').innerHTML = html + '</div>';
+}
+function startExam(v, timed){
+  var M = MXx(), Q = QKx(); if(!M || !Q) return; Q.css();
+  var src = {units:ALL_UNITS, exam:D.exam}, o = {hash:qHash, recent:M.recentFn(exSeen(), Date.now()), rand:R}, P = null;
+  timed = !!(MOCK && timed);
+  if(v === 'unit') P = M.unitPaper(src, unit().id, o);
+  else { var pr = mockPairs()[+String(v).split(':')[1]]; if(pr) P = M.mockPaper(src, [pr[0].id, pr[1].id], o); }
+  if(!P){ toast('找不到這份考卷'); return; }
+  EXM = {v:v, timed:timed, P:P, st:P.items.map(function(it){ return Q.prep(it.q, R); }), done:false, confirm:false, end:timed ? Date.now() + MOCK_MIN * 60000 : 0};
+  renderExam(); $('#panel').scrollTop = 0; exStartTimer();
+}
+function exTitle(){ var P = EXM.P; return P.kind === 'mock' ? '📝 段考模擬・' + P.units.map(function(id){ var u = unitById(id); return u ? unitLabel(u) : id; }).join('＋') : '📄 單元測驗・' + unitLabel(unitById(P.id) || unit()); }
+function exAnswered(){ var M = MXx(); return EXM.P.items.filter(function(it, i){ return M.answered(it.q, EXM.st[i]); }).length; }
+function exStat(){
+  if(!EXM || EXM.done) return '';
+  var s = '已作答 ' + exAnswered() + ' / ' + EXM.P.items.length;
+  if(EXM.end){ var left = Math.max(0, EXM.end - Date.now()); s += '　⏱️ 剩 ' + Math.floor(left / 60000) + ':' + String(Math.floor(left % 60000 / 1000)).padStart(2, '0'); }
+  return s;
+}
+function exStartTimer(){ exStopTimer(); if(!EXM || !EXM.end) return; exTimerId = setInterval(function(){ if(!EXM || EXM.done){ exStopTimer(); return; } var el = $('#exStat'); if(el) el.textContent = exStat(); if(Date.now() >= EXM.end){ toast('⏰ 時間到，自動交卷'); exSubmit(true); } }, 1000); }
+function exStopTimer(){ if(exTimerId){ clearInterval(exTimerId); exTimerId = 0; } }
+/* 考到一半要離開（切模式、換單元、回測驗）：有作答就先問；確定離開才丟掉這份卷（計時也停） */
+function exLeaveOK(){ if(!EXM || EXM.done) return true; if(exAnswered() && !window.confirm('目前的作答會不見，確定要離開嗎？')) return false; exStopTimer(); EXM = null; return true; }
+/* 一題：交卷前選擇／是非自己畫（選了只標「已選」，不說對錯，可以改）；排順序／配對用 quizkit 的作答區（「確定」鈕用 CSS 藏起來，交卷時才判分） */
+function exQHTML(i){
+  var it = EXM.P.items[i], q = it.q, st = EXM.st[i], Q = QKx(), done = EXM.done, body;
+  if(!done && (q.type === 'mc' || q.type === 'tf')){
+    var opts = q.type === 'mc' ? st.ord.map(function(oi){ return [oi, esc(q.opts[oi])]; }) : [[true, '⭕ 對'], [false, '❌ 錯']];
+    body = '<div class="opts' + (q.type === 'mc' ? ' one' : '') + '">' + opts.map(function(o){ return '<button type="button" class="opt' + (st.pick === o[0] ? ' sel' : '') + '" data-ex="pick" data-v="' + o[0] + '" aria-pressed="' + (st.pick === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+  } else body = Q.body(st);
+  var showAns = !st.right && (q.type === 'mc' || q.type === 'tf');
+  var fb = done ? '<div class="fb ' + (st.right ? 'ok' : 'no') + '"><div class="fbh">' + (st.right ? '✓ 答對了' : '✗ 答錯了' + (showAns ? '・正確答案：' + esc(Q.answerText(q)) : '')) + '</div><div>' + esc(q.why || '') + Q.extra(st) + '</div></div>' : '';
+  return '<div class="zr-q ex-q' + (done ? (st.right ? ' ok' : ' no') : '') + '" id="exq' + i + '" data-i="' + i + '"><div class="zr-qh"><span>第 ' + (i + 1) + ' 題</span><span class="qtype" style="margin:0">' + EXTYPE[q.type] + '</span><span>' + it.pts + ' 分</span>' + (done ? '<span>' + (st.right ? '✅' : '❌') + '</span>' : '') + '</div>' +
+    '<p class="zr-qt">' + esc(q.q) + '</p>' + body + fb + '</div>';
+}
+function renderExam(){
+  var P = EXM.P, html = '<div class="mm-wrap"><div class="tr-head"><span class="t">' + esc(exTitle()) + '</span><span class="p" id="exStat">' + exStat() + '</span><button class="mm-b sm" data-act="exHome">⬅ 回測驗</button></div>';
+  if(EXM.done) html += exResultHTML();
+  var lastG = null;
+  P.items.forEach(function(it, i){
+    if(it.grp && it.grp !== lastG){ lastG = it.grp; html += '<h3 class="ex-sec">題組：先讀資料，再回答下面 ' + it.grp.qs.length + ' 題</h3>' + litArt(it.grp); }
+    html += exQHTML(i);
+  });
+  if(!EXM.done) html += '<div class="ex-submit"><p class="zr-msg" id="exMsg" aria-live="polite"></p><button class="mm-b big on" data-act="exSubmit" style="width:100%;min-height:60px">📮 交卷</button></div>';
+  $('#panel').innerHTML = html + '</div>';
+}
+function exPaint(i){ var el = $('#exq' + i); if(el) el.outerHTML = exQHTML(i); var s = $('#exStat'); if(s) s.textContent = exStat(); var m = $('#exMsg'); if(m) m.textContent = ''; }
+function exSubmit(force){
+  if(!EXM || EXM.done) return;
+  var M = MXx(), P = EXM.P, left = P.items.length - exAnswered();
+  if(left && !force && !EXM.confirm){ EXM.confirm = true; var m = $('#exMsg'); if(m) m.textContent = '還有 ' + left + ' 題沒寫完。確定要交卷，就再按一次「交卷」。'; return; }
+  exStopTimer(); EXM.done = true;
+  var oks = P.items.map(function(it, i){ var st = EXM.st[i], r = M.isRight(it.q, st); st.done = true; st.right = r; return r; }), S = M.score(P.items, oks);
+  EXM.S = S;
+  P.items.forEach(function(it, i){ coinAnswer(oks[i]); mkRec(it.mk, oks[i], {u:it.u, k:it.src === 'x' ? 'X' : 'q', s:String(it.q.q).slice(0, 120), a:String(QKx().answerText(it.q)).slice(0, 120)}); });
+  coinRound('quiz', S.right, S.total);
+  exMarkSeen(P.items.map(function(it){ return it.key; }));
+  var all = exAll(), k = SUBJ + ':' + P.id, r = all[k] || {}; r.best = Math.max(r.best || 0, S.score); r.last = S.score; r.n = (r.n || 0) + 1; r.at = Date.now(); all[k] = r; lsSet(XKEY, all);
+  EXM.sg = M.suggest({units:ALL_UNITS}, P.items.filter(function(_, i){ return !oks[i]; }), 3);
+  renderExam(); $('#panel').scrollTop = 0;
+}
+function exResultHTML(){
+  var S = EXM.S, wrong = S.total - S.right, sg = EXM.sg || [];
+  var rec = '<div class="ex-sg"><b>📌 建議回去複習</b>' + (sg.length ? '<ul>' + sg.map(function(x){ var u = unitById(x.u);
+      return '<li><span>' + esc((u ? unitLabel(u) + ' › ' : '') + x.path.join(' › ')) + '（錯 ' + x.n + ' 題）</span> <a class="mm-b sm" href="?u=' + encodeURIComponent(x.u) + (x.id ? '&focus=' + encodeURIComponent(x.id) : '') + '">📖 去看重點</a></li>'; }).join('') + '</ul>'
+    : '<p>全部答對，沒有要特別複習的地方 🎉</p>') + '</div>';
+  return '<div class="card result center" id="exResult"><div class="party">' + (S.score >= 90 ? '🏆' : S.score >= 70 ? '🎉' : '💪') + '</div><div class="score">' + S.score + ' 分</div><p>答對 ' + S.right + ' / ' + S.total + ' 題' + (wrong ? '・答錯的 ' + wrong + ' 題已經收進 📕 錯題庫（下面標紅的就是）' : '') + '</p>' + rec +
+    '<div class="share-row"><button class="mm-b on" data-act="exAgain">🔁 再考一次（換題）</button><button class="mm-b" data-act="exHome">回測驗</button></div></div>';
+}
+document.addEventListener('click', function(e){   // 作答：選擇／是非（data-ex）、排順序／配對（quizkit 的 data-qk）
+  if(!EXM || EXM.done) return;
+  var b = e.target.closest && e.target.closest('[data-ex],[data-qk]'), qel = b && b.closest('.ex-q'); if(!qel || b.disabled) return;
+  var i = +qel.getAttribute('data-i'), it = EXM.P.items[i], st = EXM.st[i];
+  if(b.hasAttribute('data-ex')){ var v = b.getAttribute('data-v'); st.pick = it.q.type === 'tf' ? v === 'true' : +v; }
+  else { var name = b.getAttribute('data-qk'); if(name === 'oCheck' || name === 'mCheck') return; var r = QKx().act(st, name, b.getAttribute('data-v')); if(r.msg) toast(r.msg); }
+  EXM.confirm = false; exPaint(i);
+});
+/* 「去看重點」連過來的 ?focus=<節點>：展開它和上層，畫面移到它 */
+var FOCUS = (function(){ var m = /[?&]focus=([a-z0-9-]+)/i.exec(location.search); return m ? m[1] : ''; })();
+function focusPath(id){ var u = unit(), out = null; (function w(d, anc){ if(out) return; if(d.id === id){ out = anc.concat([id]); return; } kidsData(d).forEach(function(c){ w(c, d === u ? anc : anc.concat([d.id])); }); })(u, []); return out; }
+
 /* ---------- 共用 UI ---------- */
 var toastT;
 function toast(m){ var t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function(){ t.classList.remove('on'); }, 1600); }
@@ -892,24 +1008,28 @@ function updateChrome(){
   document.querySelectorAll('#tools [data-act]').forEach(function(b){ b.hidden = !showTools || (b.id === 'btnShuffle' && UI.mode !== 'cloze'); });
   if(!mapOn){ $('#trayTop').hidden = true; $('#trayBot').hidden = true; }
   var lb = $('#modes [data-v=lit]'); if(lb) lb.hidden = !litOn();
-  if(MKMODE){ $('#units').hidden = true; $('#modes').hidden = true; $('#layoutSeg').style.visibility = 'hidden'; }
+  var xb = $('#modes [data-v=exam]'); if(xb) xb.hidden = !exOn(unit());
+  if(MKMODE || MOCK){ $('#units').hidden = true; $('#modes').hidden = true; $('#layoutSeg').style.visibility = 'hidden'; }
   paintDone();
 }
 function enterMode(){
-  closePop(); closeModal(); arch = null;
+  closePop(); closeModal(); arch = null; EXM = null; exStopTimer();
+  if(UI.mode === 'exam' && !exOn(unit())) UI.mode = 'read';
   if(UI.mode === 'read' || UI.mode === 'cloze'){ showMap(); renderTray(); render(); fit(false, AUTO_MIN); }
   else if(UI.mode === 'arch'){ showPanel(); renderArchHome(); }
   else if(UI.mode === 'quiz'){ showPanel(); startQuiz(); }
   else if(UI.mode === 'lit'){ showPanel(); renderLitHome(); }
+  else if(UI.mode === 'exam'){ showPanel(); renderExamHome(); }
   updateChrome();
 }
 var ACT = {
   layout:function(el){ UI.layout = el.dataset.v; saveUI(); updateChrome(); render(); if(archMap() && arch.level >= 2 && curItem()){ fit(false, AUTO_MIN); focusNode(curItem().id); } else fit(true, AUTO_MIN); },
   mode:function(el){ var m = el.dataset.v;
+    if(!exLeaveOK()) return;
     if(m !== 'read' && m !== UI.mode && !gate(m, function(){ ACT.mode(el); })) return;   // 看重點免登入；其他三種開始時先登入
     var keep = (UI.mode === 'read' || UI.mode === 'cloze') && (m === 'read' || m === 'cloze'); UI.mode = m; saveUI();
     if(keep){ closePop(); closeModal(); updateChrome(); render(); } else enterMode(); },
-  unit:function(el){ UI.unit = +el.dataset.v; if(UI.mode !== 'read' && !loggedOK()) UI.mode = 'read'; saveUI(); expanded = new Set(); enterMode(); },
+  unit:function(el){ if(!exLeaveOK()) return; UI.unit = +el.dataset.v; if(UI.mode !== 'read' && !loggedOK()) UI.mode = 'read'; saveUI(); expanded = new Set(); enterMode(); },
   expandAll:function(){ allDataNodes(unit()).forEach(function(x){ expanded.add(x.d.id); }); render(); fit(true, AUTO_MIN); },
   collapseAll:function(){ expanded = new Set(); render(); fit(true, AUTO_MIN); },
   zoomIn:function(){ zoomAt(1.25, vp.clientWidth / 2, vp.clientHeight / 2, true); },
@@ -954,7 +1074,11 @@ var ACT = {
   litHome:function(){ renderLitHome(); $('#panel').scrollTop = 0; },
   litOpen:function(el){ var i = +el.dataset.v, it = LT.items[i], ta = $('#lq' + i + ' textarea'); it.text = ta ? ta.value : it.text;
     if(ZRx().countText(it.text) < ZRx().OPEN_MIN){ var m = $('#lq' + i + ' [data-msg]'); if(m) m.textContent = '再多寫一點：至少 ' + ZRx().OPEN_MIN + ' 個字，說出你的想法和理由。'; return; }
-    it.done = true; litPaint(i); litFinish(); }
+    it.done = true; litPaint(i); litFinish(); },
+  exGo:function(el){ if(!gate(MOCK ? 'mock' : 'exam', function(){ ACT.exGo(el); })) return; var tm = $('#exTimed'); startExam(el.dataset.v, tm && tm.checked); },
+  exAgain:function(){ var v = EXM && EXM.v, tm = EXM && EXM.timed; if(!v) return; if(!gate(MOCK ? 'mock' : 'exam', function(){ ACT.exAgain(); })) return; startExam(v, tm); },
+  exHome:function(){ if(!exLeaveOK()) return; renderExamHome(); $('#panel').scrollTop = 0; },
+  exSubmit:function(){ exSubmit(false); }
 };
 /* 練錯題要登入（首頁錯題庫按「只練錯題」時已經問過登入與練習額度；直接開這頁沒登入就跳登入提示） */
 function gateMk(){ var A = window.KidsAuth; try{ if(A && !A.requireLogin('練錯題')) return false; }catch(e){} return true; }
@@ -972,7 +1096,7 @@ function buildDOM(){
       '<span class="mm-auth" data-kids-auth-slot></span></div>' +
       '<div id="kdone" hidden></div>' +
       '<nav class="mm-units" id="units" aria-label="單元"></nav>' +
-      '<nav class="mm-modes" id="modes" aria-label="模式"><button class="mm-b" data-act="mode" data-v="read">📖 看重點</button><button class="mm-b" data-act="mode" data-v="arch">🧠 背架構</button><button class="mm-b" data-act="mode" data-v="cloze">✏️ 考考自己</button><button class="mm-b" data-act="mode" data-v="quiz">📝 練習題</button><button class="mm-b" data-act="mode" data-v="lit" hidden>🧩 素養題組</button></nav></header>' +
+      '<nav class="mm-modes" id="modes" aria-label="模式"><button class="mm-b" data-act="mode" data-v="read">📖 看重點</button><button class="mm-b" data-act="mode" data-v="arch">🧠 背架構</button><button class="mm-b" data-act="mode" data-v="cloze">✏️ 考考自己</button><button class="mm-b" data-act="mode" data-v="quiz">📝 練習題</button><button class="mm-b" data-act="mode" data-v="lit" hidden>🧩 素養題組</button><button class="mm-b" data-act="mode" data-v="exam" hidden>📄 單元測驗</button></nav></header>' +
     '<main class="mm-main"><section class="mm-mapwrap" id="mapwrap"><div class="mm-tray tt" id="trayTop" hidden></div>' +
       '<div class="mm-vp" id="vp"><div class="mm-stage" id="stage"><svg id="lines" xmlns="http://www.w3.org/2000/svg"></svg><div id="nodes"></div></div>' +
         '<div class="mm-tools" id="tools"><button class="mm-b sm" data-act="expandAll">➕ 展開全部</button><button class="mm-b sm" data-act="collapseAll">➖ 收合全部</button><button class="mm-b sm" data-act="reshuffle" id="btnShuffle">🔀 換一組</button><span class="mm-score" id="score" hidden></span></div>' +
@@ -998,13 +1122,22 @@ function init(){
     if(gateMk()) startMk(); else { showPanel(); $('#panel').innerHTML = '<div class="mm-wrap"><p>要先登入，才可以練錯題喔！</p><button class="mm-b on" data-act="mkAgain">🔑 登入後開始</button></div>'; }
     return;
   }
+  if(MOCK){   // 📝 段考模擬（首頁社會、自然的卡片開 ?mock=1）：不顯示單元列／模式列；開始考試時才要登入
+    $('.mm-top h1').textContent = '📝 ' + CFG.name + '段考模擬';
+    document.title = CFG.name + '段考模擬｜小朋友學習站';
+    UI.mode = 'exam'; enterMode();   // 不 saveUI：不改單元頁記住的模式
+    return;
+  }
+  var fp = FOCUS && focusPath(FOCUS);   // 交卷後「去看重點」連過來：直接看重點、展開到那個節點
+  if(fp){ UI.mode = 'read'; saveUI(); fp.forEach(function(id){ expanded.add(id); }); }
   // 上次停在背架構／考考自己／練習題：沒登入就回到看重點；有登入照常進入（也算開始一輪）
   var m0 = UI.mode;
   if(m0 !== 'read'){ UI.mode = 'read'; if(loggedOK() && gate(m0, function(){ UI.mode = m0; saveUI(); enterMode(); })) UI.mode = m0; }
   enterMode();
+  if(fp) setTimeout(function(){ focusNode(FOCUS, 0.85); var el = document.querySelector('.n[data-id="' + FOCUS + '"]'); if(el) el.classList.add('focus'); }, 40);
   window.addEventListener('storage', function(e){ if(e.key === PKEY || e.key === null) onSynced(); });
   window.addEventListener('kids-sync-updated', onSynced);   // 自動同步合併到新資料（首頁會把事件轉給子框）
 }
-window.MM = { refresh:function(){ if(!D.units[UI.unit]) UI.unit = 0; enterMode(); }, state:function(){ return {UI:UI, view:view, arch:arch, QZ:QZ, cloze:cloze, NODES:NODES, STAGE:STAGE}; }, act:function(name, data){ var el = document.createElement('button'); Object.keys(data || {}).forEach(function(k){ el.dataset[k] = data[k]; }); ACT[name](el); }, archSeq:archSeq };
+window.MM = { refresh:function(){ if(!D.units[UI.unit]) UI.unit = 0; enterMode(); }, state:function(){ return {UI:UI, view:view, arch:arch, QZ:QZ, cloze:cloze, NODES:NODES, STAGE:STAGE}; }, act:function(name, data){ var el = document.createElement('button'); Object.keys(data || {}).forEach(function(k){ el.dataset[k] = data[k]; }); ACT[name](el); }, archSeq:archSeq, exState:function(){ return EXM; } };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

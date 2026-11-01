@@ -10,6 +10,7 @@
      keMk          ke_mistakes（英文錯題，key＝題號）
      seen          kids_coin_seen（kids-coins.js 每次作答補記：{科:{t:最後作答時間, d:[最近 21 天有作答的日期]}}；這台才有、不同步）
      zhLocal       kids_zh_reading（國語閱讀本機細節）
+     exam          kids_mm_exam（社會／自然單元測驗分數：{'<科>:<單元>':{best,last,n,at}}；mock-*、_seen 不看）
      wordLv        kids_word_lv（數學應用題循序漸進的難度）
      goal          {min:今天有效分鐘, met:達標了沒}｜null（不知道就不出「每日目標」任務）
      nick          暱稱（打招呼用）
@@ -31,6 +32,7 @@
     MAX_WEAK: 5,         // 比較弱的地方最多 5 項
     WEAK_MIN: 3,         // 同一類錯題 ≥ 3 題才列為「比較弱」
     WEAK_PER_SUBJ: 2,    // 比較弱的地方：同一科最多 2 項
+    EXAM_WEAK: 70,       // 社會／自然單元測驗最近一次 < 70 分 → 列為比較弱
     NEXT_MAX: 4,         // 還沒開始的：最多列 4 科的下一步
     COMEBACK_DAYS: 4,    // 隔 4 天以上回來 → 「歡迎回來」
     MANY_WRONG: 8,       // 今天答錯 ≥ 8 題 → 安慰＋鼓勵
@@ -76,7 +78,9 @@
     zhRead: { steps: ['🔍 回到文章找「證據句」：答案一定藏在文章裡', '📖 只練錯題時可以按「展開原文」，把證據句找出來', '✅ 找到證據句，再選答案'],
       href: '{mk}', btn: '📕 只練國語錯題' },
     zhIdiom: { steps: ['📖 先重讀一次成語故事', '💡 再看「成語解說」裡的例句和 ⚠️ 常見誤用', '📕 到國語錯題庫按「只練錯題」再做一次'],
-      href: '{mk}', btn: '📕 只練國語錯題' },
+      href: '{unit}', btn: '📜 去讀成語故事', href2: '{mk}', btn2: '📕 只練國語錯題' },
+    mmExam: { steps: ['📖 進單元先按「看重點」，把重點讀一遍', '📕 到錯題庫按「只練錯題」，把考錯的題練回來', '📄 再考一次「單元測驗」（會換題），看看進步了多少'],
+      href: '{unit}', btn: '📖 去看重點', href2: '{mk}', btn2: '📕 只練錯題' },
     ai: { steps: ['🤖 到 AI 錯題庫按「只練錯題」', '💬 每題答完都有說明，讀一遍再按下一題'],
       href: '{mk}', btn: '🤖 只練錯題' }
   };
@@ -256,7 +260,15 @@
     }
     { const ids = live(mk.chinese), cy = ids.filter(id => /^cy/.test(id)), rd = ids.filter(id => !/^cy/.test(id));
       if (rd.length) groups.push({ k: 'chinese', kind: 'zhRead', n: rd.length, title: '國語・閱讀理解', unitHref: SBY.chinese.home, mkHref: SBY.chinese.mk, extra: '' });
-      if (cy.length) groups.push({ k: 'chinese', kind: 'zhIdiom', n: cy.length, title: '國語・成語', unitHref: SBY.chinese.home, mkHref: SBY.chinese.mk, extra: '' });   // 成語模組接線後才會有
+      if (cy.length) groups.push({ k: 'chinese', kind: 'zhIdiom', n: cy.length, title: '國語・成語', unitHref: 'index.html#s/chinese/idioms', mkHref: SBY.chinese.mk, extra: '' });   // 成語錯題 id 都是 cy 開頭
+    }
+    // 社會／自然〈📄 單元測驗〉最近一次 < EXAM_WEAK 分 → 列為弱點（同單元已有錯題組就併進去）
+    { const ex = obj(snap.exam);
+      Object.keys(ex).forEach(key => { const m = /^(social|science):([a-z0-9]+)$/.exec(key), sc = num(obj(ex[key]).last); if (!m || sc == null || sc >= RULES.EXAM_WEAK) return;
+        const k = m[1], u = m[2], i = mmIdx(k, u); if (i < 0) return;
+        const g = groups.find(x => x.k === k && x.kind === 'mm' && x.unit === u);
+        if (g) g.exam = sc;
+        else groups.push({ k, kind: 'mm', unit: u, n: 0, exam: sc, title: `${SBY[k].name}・${mmTitle(k, u)}`, unitHref: `index.html#s/${k}/${u}`, mkHref: `index.html#s/${k}/mistakes-${u}`, extra: '' }); });
     }
     { const n = live(mk.ai).length; if (n) groups.push({ k: 'ai', kind: 'ai', n, title: 'AI・挑戰題', unitHref: SBY.ai.home, mkHref: SBY.ai.mk, extra: '' }); }
 
@@ -298,11 +310,13 @@
 
     // ---------- 比較弱的地方 ----------
     const weak = [], per = {};
-    groups.filter(g => g.n >= RULES.WEAK_MIN).sort((x, y) => (y.n - x.n) || (SK.indexOf(x.k) - SK.indexOf(y.k))).forEach(g => {
+    const isEx = g => (g.exam != null ? 1 : 0);   // 單元測驗不及格的排前面
+    groups.filter(g => g.n >= RULES.WEAK_MIN || g.exam != null).sort((x, y) => (isEx(y) - isEx(x)) || (y.n - x.n) || (SK.indexOf(x.k) - SK.indexOf(y.k))).forEach(g => {
       if (weak.length >= RULES.MAX_WEAK || (per[g.k] || 0) >= RULES.WEAK_PER_SUBJ) return;
       per[g.k] = (per[g.k] || 0) + 1;
-      const sol = SOLUTIONS[g.kind], v = { unit: g.unitHref, mk: g.mkHref, how: g.calc ? MATH_KIND[g.calc][2] : '' };
-      weak.push({ k: g.k, icon: SBY[g.k].icon, title: g.title, text: `錯題 ${g.n} 題`, n: g.n, extra: g.extra, sol: g.kind, steps: sol.steps.map(x => fill(x, v)),
+      const kind = g.exam != null ? 'mmExam' : g.kind, sol = SOLUTIONS[kind], v = { unit: g.unitHref, mk: g.mkHref, how: g.calc ? MATH_KIND[g.calc][2] : '' };
+      const text = g.exam != null ? `單元測驗 ${g.exam} 分` + (g.n ? `・錯題 ${g.n} 題` : '') : `錯題 ${g.n} 題`;
+      weak.push({ k: g.k, icon: SBY[g.k].icon, title: g.title, text, n: g.n, extra: g.extra, sol: kind, steps: sol.steps.map(x => fill(x, v)),
         href: fill(sol.href, v), btn: sol.btn, href2: sol.href2 ? fill(sol.href2, v) : '', btn2: sol.btn2 || '' });
     });
 
