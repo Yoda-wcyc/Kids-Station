@@ -71,9 +71,9 @@ G.forEach(g => {
     else { ok(q.type === 'fix' && q.wrong && q.right && q.wrong !== q.right, 'fix ' + q.right); }
   });
 });
-ok(P.length === 193 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 185 with 5 examples each'); // 2026-10-25 第 5 批 +40（patterns-2.js） // 2026-10-25 第 2 批 +40 // 2026-10-18 +2（翰林五上 Unit 2）＋13（翰林五上 U1/U3/U4、五下 U1–U4）
-ok(new Set(P.map(p => p.id)).size === 193, 'pattern ids unique'); // 11-01 六上課本句型 +8 → 193
-ok(P.filter(p => p.lv === 1).length === 80 && P.filter(p => p.lv === 2).length === 66 && P.filter(p => p.lv === 3).length === 47, 'pattern levels 80/66/47'); // 11-01 六上課本句型 lv1 +6、lv2 +2
+ok(P.length === 201 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 185 with 5 examples each'); // 2026-10-25 第 5 批 +40（patterns-2.js） // 2026-10-25 第 2 批 +40 // 2026-10-18 +2（翰林五上 Unit 2）＋13（翰林五上 U1/U3/U4、五下 U1–U4）
+ok(new Set(P.map(p => p.id)).size === 201, 'pattern ids unique'); // 11-01 六上、六下課本句型各 +8 → 201
+ok(P.filter(p => p.lv === 1).length === 86 && P.filter(p => p.lv === 2).length === 68 && P.filter(p => p.lv === 3).length === 47, 'pattern levels 86/68/47'); // 11-01 六上、六下課本句型各 lv1 +6、lv2 +2
 // 課本句型：同一個句型裡的中文不重複（看中文選句子才不會兩個都對）
 P.filter(p => p.tb).forEach(p => { const z = p.ex.concat(p.extra).map(e => e.zh); ok(new Set(z).size === z.length, 'textbook pattern zh unique: ' + p.id); });
 ['there-is', 'want-to', 'like-ing', 'time-to', 'how-many', 'can-you', 'lets', 'have-to', 'it-is-to', 'what-do', 'i-think', 'dont'].forEach(id => ok(P.find(p => p.id === id && p.lv === 2), 'original pattern kept as 基本: ' + id));
@@ -242,7 +242,7 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
 
 // ---- 📘 課本單元（2026-10-18 翰林 Here We Go! 五上／五下）----
 {
-  const IDS = ['hanlin-5-u1', 'hanlin-5-u2', 'hanlin-5-u3', 'hanlin-5-u4', 'hanlin-6-u1', 'hanlin-6-u2', 'hanlin-6-u3', 'hanlin-6-u4', 'hanlin-7-u1', 'hanlin-7-u2', 'hanlin-7-u3', 'hanlin-7-u4'];
+  const IDS = ['hanlin-5-u1', 'hanlin-5-u2', 'hanlin-5-u3', 'hanlin-5-u4', 'hanlin-6-u1', 'hanlin-6-u2', 'hanlin-6-u3', 'hanlin-6-u4', 'hanlin-7-u1', 'hanlin-7-u2', 'hanlin-7-u3', 'hanlin-7-u4', 'hanlin-8-u1', 'hanlin-8-u2', 'hanlin-8-u3', 'hanlin-8-u4'];
   ok(TBK.map(x => x.id).join() === IDS.join() && new Set(TBK.map(x => x.id)).size === TBK.length, 'textbook units in book/unit order: ' + TBK.map(x => x.id));
   ok(TBK.every(u => u.id === 'hanlin-5-u2' ? !u.draft : u.draft === true), 'draft flag: all units except U2 (Yoda textbook) are 待課本核對');
   const SECS = ['一、聽力', '二、選擇', '三、填空', '四、重組', '五、中翻英', '六、回答問句'];
@@ -273,7 +273,7 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
     for (let k = 0; k < 10; k++) {
       const a = E.tbPractice(U, { speak: true }), b = E.tbPractice(U, { speak: false }), rank = a.map(KE.typedRank);
       const cards = a.map(q => E.byId[q.id].card).filter(c => c != null);
-      ok(a.length === 13 && b.length === 12 && !b.some(q => q.type === 'speak') && rank.every((r, i) => !i || r >= rank[i - 1]) && (u.sents.length < 30 || new Set(cards).size === cards.length) && a.every(q => q.module === 'textbook'), 'tbPractice 13/12, typed last, cards unique' + tag);
+      ok(a.length === 13 && b.length === 12 && !b.some(q => q.type === 'speak') && rank.every((r, i) => !i || r >= rank[i - 1]) && new Set(cards).size === cards.length && a.every(q => q.module === 'textbook'), 'tbPractice 13/12, typed last, cards unique' + tag); // 2026-11-01 起句子少的單元也不准重複（engine tbBlanks 先換家族再放寬）
       ok(['tb-fill', 'tb-fill-type', 'tb-answer', 'tb-answer-type', 'reorder', 'speak', 'tb-listen'].every(t => a.some(q => q.type === t)), 'tbPractice covers blanks, answers, reorder, speak, listening' + tag);
     }
     // 考試：20 題、每題 5 分、六大題照順序、不出 🎤、每次隨機；回答問句兩題的 kind 不同

@@ -169,8 +169,9 @@
     ['you-re-welcome', 'my-pleasure'], ['hold-on', 'wait-a-minute'], ['right-now', 'right-away']].forEach(([a, b]) => { addSyn(a, b); addSyn(b, a); });
   addSyn('after-you', 'go-ahead'); // 單向：「你先請」打 go ahead 對；go ahead 意思比較廣（請便；儘管做吧）
 })();
-// 課本單元標記：六上（第 7 冊，2026-11-01，依學校課程計畫整理）。片語分在 phrases.js、phrases-2.js 兩個檔，這裡兩邊都載完了才標
+// 課本單元標記：六上（第 7 冊）、六下（第 8 冊）（2026-11-01，依學校課程計畫整理）。片語分在 phrases.js、phrases-2.js 兩個檔，這裡兩邊都載完了才標
 (function () {
   const TB7 = { 'by-bus': ['hanlin-7-u2'], 'on-foot': ['hanlin-7-u2'], 'play-baseball': ['hanlin-7-u3'], 'play-basketball': ['hanlin-7-u3'], 'ride-a-bike': ['hanlin-7-u3'], 'listen-to-music': ['hanlin-7-u3'], 'surf-the-internet': ['hanlin-7-u3'], 'watch-tv': ['hanlin-7-u3'], 'get-up': ['hanlin-7-u4'], 'go-to-school': ['hanlin-7-u4'], 'have-lunch': ['hanlin-7-u4'], 'go-home': ['hanlin-7-u4'], 'do-homework': ['hanlin-7-u4'], 'take-a-shower': ['hanlin-7-u4'], 'go-to-bed': ['hanlin-7-u4'] };
-  (window.DATA_PHRASES || []).forEach(p => { if (TB7[p.id]) p.tb = (p.tb || []).concat(TB7[p.id]); });
+  const TB8 = { 'at-home': ['hanlin-8-u1'], 'clean-your-room': ['hanlin-8-u2'], 'walk-the-dog': ['hanlin-8-u2'], 'listen-to-music': ['hanlin-8-u2'], 'play-basketball': ['hanlin-8-u2'] };  // 六下（第 8 冊）
+  (window.DATA_PHRASES || []).forEach(p => { [TB7, TB8].forEach(T => { if (T[p.id]) p.tb = (p.tb || []).concat(T[p.id]); }); });
 })();

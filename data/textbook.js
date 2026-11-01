@@ -412,10 +412,10 @@
         sents.push({ key: `${p.k}:${a.k}`, g: 'he', en: `${p.S} ${a.s} in ${p.own} free time.`, zh: `${p.zh}空閒的時候${a.zh}。`, why,
           blanks: [{ fam: 's3', w: s0, opts: [s0, w0, a.ing.split(' ')[0], 'is ' + a.ing.split(' ')[0]], why: `${p.en} 是一個人，${w0} 要變 ${s0}。` },
             { fam: 'own', w: p.own, opts: p.k === 'he' ? ['his', 'he', 'him', 'her'] : ['her', 'she', 'hers', 'his'], why: `${p.en} 的＝${p.own}` }], ask: { prompt: `說說看：${p.zh}空閒的時候${a.zh}。`, hint: `${p.S} ${s0} …` } });
-        replies.push({ key: `h:${p.k}:${a.k}`, card: 'wq:' + p.k, q: `What does ${p.en} do in ${p.own} free time?`, cue: `🎈 ${a.zh}`, en: `${p.S} ${a.s} in ${p.own} free time.`, alts: [`${p.S} ${a.s}.`], kind: p.k, why,
+        replies.push({ key: `h:${p.k}:${a.k}`, card: `${p.k}:${a.k}`, q: `What does ${p.en} do in ${p.own} free time?`, cue: `🎈 ${a.zh}`, en: `${p.S} ${a.s} in ${p.own} free time.`, alts: [`${p.S} ${a.s}.`], kind: p.k, why,
           wrong: [`${p.S} ${a.v} in ${p.own} free time.`, `${p.S} ${a2.s} in ${p.own} free time.`, `${p.S} is ${a.ing} in ${p.own} free time.`] });
       });
-      replies.push({ key: 'w:' + a.k, card: 'wq:you', q: 'What do you do on weekends?', cue: `🎈 ${a.zh}`, en: `I ${a.v} on weekends.`, alts: [`I ${a.v}.`], kind: 'w', why,
+      replies.push({ key: 'w:' + a.k, card: 'i:' + a.k, q: 'What do you do on weekends?', cue: `🎈 ${a.zh}`, en: `I ${a.v} on weekends.`, alts: [`I ${a.v}.`], kind: 'w', why,
         wrong: [`I ${a.s} on weekends.`, `I ${a2.v} on weekends.`, `I ${a.v} in weekends.`] });
     });
     U.push({ id: 'hanlin-7-u3', book: '六上', no: 3, title: '六上 Unit 3 What Do You Do on Weekends?', theme: 'What do you do on weekends?', themeZh: '你週末做什麼？', draft: true,
@@ -467,6 +467,165 @@
         tip: { en: 'have → [has]、do → [does]、go → [goes]', note: 'he、she 後面的動詞要變化；my 換成 his／her' } },
       qa: [{ q: 'What time do you get up?', qz: '你幾點起床？', a: 'I get up at six thirty.', az: '我六點半起床。' }, { q: 'What time does she do her homework?', qz: '她幾點寫功課？', a: 'She does her homework at five.', az: '她五點寫功課。' },
         { q: 'What time does he go to bed?', qz: '他幾點上床睡覺？', a: 'He goes to bed at nine thirty.', az: '他九點半上床睡覺。' }],
+      sents, replies });
+  })();
+
+  // ================= 六下（第 8 冊）：依學校公開的課程計畫整理（屏東縣 114 學年度六年級英語 Here We Go 7／8 教學計畫），待課本核對 =================
+  // 計畫列了四課（第 16 週旅遊計畫、第 18 週文化單元是活動週，不是新課）；只有單字與句型，沒有日常用語和對話。
+  // ================= 六下 Unit 1 Where Were You Yesterday? =================
+  (() => {
+    const ps = [['at home', '在家', 'home'], ['at school', '在學校', 'school'], ['at the mall', '在購物中心', 'mall'], ['at the movie theater', '在電影院', 'theater'], ['at the restaurant', '在餐廳', 'restaurant'], ['at the zoo', '在動物園', 'zoo']]
+      .map(([en, zh, w]) => ({ en, zh, w, k: slug(en) }));
+    const ppl = [{ k: 'he', S: 'He', en: 'he', zh: '他' }, { k: 'she', S: 'She', en: 'she', zh: '她' }];
+    const why = '過去（yesterday）的 be 動詞：I、he、she 用 was；you、we、they 用 were。';
+    const sents = [{ key: 'wq:you', g: 'wq', en: 'Where were you yesterday?', zh: '你昨天在哪裡？', why, blanks: [{ fam: 'was', w: 'were', opts: ['were', 'was', 'are', 'did'], why: 'you 的過去式 be 動詞是 were。' }], ask: { prompt: '問對方：你昨天在哪裡？', hint: 'Where … yesterday?' } }];
+    ppl.forEach(p => sents.push({ key: 'wq:' + p.k, g: 'wq', en: `Where was ${p.en} yesterday?`, zh: `${p.zh}昨天在哪裡？`, why, blanks: [{ fam: 'was', w: 'was', opts: ['was', 'were', 'is', 'did'] }], ask: { prompt: `問：${p.zh}昨天在哪裡？`, hint: `Where … ${p.en} yesterday?` } }));
+    const replies = [];
+    ps.forEach((x, i) => {
+      const x2 = next(ps, i), pOpts = [x.w].concat(others(ps, i).map(y => y.w));
+      sents.push({ key: 'i:' + x.k, g: 'i', en: `I was ${x.en} yesterday.`, zh: `我昨天${x.zh}。`, why,
+        blanks: [{ fam: 'was', w: 'was', opts: ['was', 'were', 'am', 'is'] }, { fam: 'pl', w: x.w, opts: pOpts, cue: x.zh }], ask: { prompt: `說說看：我昨天${x.zh}。`, hint: 'I was … yesterday.' } });
+      sents.push({ key: 'q:' + x.k, g: 'q', en: `Were you ${x.en} yesterday?`, zh: `你昨天${x.zh}嗎？`, why: 'you 用 Were 問；回答 Yes, I was. / No, I wasn\'t.',
+        blanks: [{ fam: 'wq', w: 'Were', opts: ['Were', 'Was', 'Are', 'Did'] }], ask: { prompt: `問對方：你昨天${x.zh}嗎？`, hint: 'Were you … yesterday?' } });
+      replies.push({ key: 'w:' + x.k, card: 'i:' + x.k, q: 'Where were you yesterday?', cue: `📍 ${x.zh}`, en: `I was ${x.en} yesterday.`, alts: [`I was ${x.en}.`], kind: 'w', why,
+        wrong: [`I were ${x.en} yesterday.`, `I was ${x2.en} yesterday.`, `I am ${x.en} yesterday.`] });
+      replies.push({ key: 'y:' + x.k, card: 'q:' + x.k, q: `Were you ${x.en} yesterday?`, cue: '⭕ 是', en: 'Yes, I was.', kind: 'y', why: 'Were you …? 對的話：Yes, I was.', wrong: ['Yes, I were.', 'Yes, I did.', "No, I wasn't."] });
+      replies.push({ key: 'n:' + x.k, card: 'q:' + x.k, q: `Were you ${x.en} yesterday?`, cue: `❌ 不是，${x2.zh}`, en: `No, I wasn't. I was ${x2.en}.`, alts: [`No, I was not. I was ${x2.en}.`], kind: 'n', why: "不對的話：No, I wasn't. 再說你在哪裡。",
+        wrong: [`No, I weren't. I was ${x2.en}.`, `No, I didn't. I was ${x2.en}.`, `Yes, I was. I was ${x2.en}.`] });
+      ppl.forEach(p => {
+        sents.push({ key: `${p.k}:${x.k}`, g: 'he', en: `${p.S} was ${x.en} yesterday.`, zh: `${p.zh}昨天${x.zh}。`, why,
+          blanks: [{ fam: 'was', w: 'was', opts: ['was', 'were', 'is', 'are'] }], ask: { prompt: `說說看：${p.zh}昨天${x.zh}。`, hint: `${p.S} was …` } });
+        sents.push({ key: `q:${p.k}:${x.k}`, g: 'q', en: `Was ${p.en} ${x.en} yesterday?`, zh: `${p.zh}昨天${x.zh}嗎？`, why: 'he、she 用 Was 問。',
+          blanks: [{ fam: 'wq', w: 'Was', opts: ['Was', 'Were', 'Is', 'Did'] }], ask: { prompt: `問：${p.zh}昨天${x.zh}嗎？`, hint: `Was ${p.en} … yesterday?` } });
+        replies.push({ key: `h:${p.k}:${x.k}`, card: `${p.k}:${x.k}`, q: `Where was ${p.en} yesterday?`, cue: `📍 ${x.zh}`, en: `${p.S} was ${x.en} yesterday.`, alts: [`${p.S} was ${x.en}.`], kind: 'he', why,
+          wrong: [`${p.S} were ${x.en} yesterday.`, `${p.S} was ${x2.en} yesterday.`, `${p.S} is ${x.en} yesterday.`] });
+      });
+    });
+    U.push({ id: 'hanlin-8-u1', book: '六下', no: 1, title: '六下 Unit 1 Where Were You Yesterday?', theme: 'Where were you yesterday?', themeZh: '你昨天在哪裡？', draft: true,
+      groups: [{ key: 'place', title: '地點', icon: '📍', words: ['home', 'school', 'mall', 'theater', 'restaurant', 'zoo'] }, { key: 'time', title: '時間・片語', icon: '📅', words: ['yesterday'], phrases: ['at-home'] }],
+      tz: { home: '家（at home 在家）', school: '學校（at school 在學校）', mall: '購物中心（at the mall）', theater: '電影院（at the movie theater）', restaurant: '餐廳（at the restaurant）', zoo: '動物園（at the zoo）', yesterday: '昨天', 'at-home': '在家' },
+      patterns: ['where-were-you-yesterday', 'were-you-at-yesterday'], grammar: ['past-be'],
+      visual: { xs: [{ t: 'I was at home yesterday.', ok: true }, { t: 'I were at home yesterday.', ok: false, note: 'I 用 was' }, { t: 'Were you at the zoo yesterday?', ok: true }, { t: 'Was you at the zoo?', ok: false, note: 'you 用 were' }],
+        table: { head: ['人稱', '過去的 be 動詞', '例句'], rows: [['I／he／she', '[was]', 'I was at the mall yesterday.'], ['you／we／they', '[were]', 'Were you at school yesterday?'], ['簡答', "was／wasn't", "Yes, I was. / No, I wasn't."]] },
+        tip: { en: "Were you at school yesterday? → No, I [wasn't]. I was at home.", note: 'at home 不加 the；at the mall、at the zoo 要加 the' } },
+      qa: [{ q: 'Where were you yesterday?', qz: '你昨天在哪裡？', a: 'I was at the mall yesterday.', az: '我昨天在購物中心。' }, { q: 'Were you at school yesterday?', qz: '你昨天在學校嗎？', a: 'Yes, I was.', az: '是的。' },
+        { q: 'Were you at school yesterday?', qz: '你昨天在學校嗎？', a: "No, I wasn't. I was at home.", az: '不是，我在家。' }],
+      sents, replies });
+  })();
+
+  // ================= 六下 Unit 2 What Did You Do Last Night? =================
+  (() => {
+    const as = [['clean my room', 'cleaned my room', '打掃房間'], ['listen to music', 'listened to music', '聽音樂'], ['play basketball', 'played basketball', '打籃球'], ['walk the dog', 'walked the dog', '遛狗'], ['watch videos', 'watched videos', '看影片'], ['visit a friend', 'visited a friend', '拜訪朋友']]
+      .map(([v, d, zh]) => ({ v, d, zh, k: slug(v.replace(' my', '')), b0: v.split(' ')[0], d0: d.split(' ')[0] }));
+    const ppl = [{ k: 'he', S: 'He', en: 'he', own: 'his', zh: '他' }, { k: 'she', S: 'She', en: 'she', own: 'her', zh: '她' }];
+    const own = (s, p) => s.replace(' my ', ` ${p.own} `);
+    const why = '過去的事（last night）動詞加 ed：play → played；問句用 Did，後面動詞用原形。';
+    const s3 = w => (/(ch|sh|s|x)$/.test(w) ? w + 'es' : w + 's'), opts4 = a => [a.d0, a.b0, s3(a.b0), a.b0 + 'ing'];
+    const sents = [{ key: 'wq:you', g: 'wq', en: 'What did you do last night?', zh: '你昨晚做了什麼？', why, blanks: [{ fam: 'did', w: 'did', opts: ['did', 'do', 'does', 'were'], why: '問過去做什麼用 did。' }], ask: { prompt: '問對方：你昨晚做了什麼？', hint: 'What … last night?' } }];
+    ppl.forEach(p => sents.push({ key: 'wq:' + p.k, g: 'wq', en: `What did ${p.en} do last night?`, zh: `${p.zh}昨晚做了什麼？`, why, blanks: [{ fam: 'did', w: 'did', opts: ['did', 'do', 'does', 'was'] }], ask: { prompt: `問：${p.zh}昨晚做了什麼？`, hint: `What did ${p.en} …?` } }));
+    const replies = [];
+    as.forEach((a, i) => {
+      const a2 = next(as, i);
+      sents.push({ key: 'i:' + a.k, g: 'i', en: `I ${a.d} last night.`, zh: `我昨晚${a.zh}。`, why, blanks: [{ fam: 'ed', w: a.d0, opts: opts4(a), why: `過去式：${a.b0} → ${a.d0}` }], ask: { prompt: `說說看：我昨晚${a.zh}。`, hint: `I ${a.d0} …` } });
+      sents.push({ key: 'q:' + a.k, g: 'q', en: `Did you ${a.v} last night?`, zh: `你昨晚${a.zh}嗎？`, why: 'Did 問句後面的動詞用原形。',
+        blanks: [{ fam: 'did', w: 'Did', opts: ['Did', 'Do', 'Were', 'Does'] }, { fam: 'base', w: a.b0, opts: opts4(a).slice(1).concat(a.d0).sort(), why: 'Did 後面用原形動詞。' }], ask: { prompt: `問對方：你昨晚${a.zh}嗎？`, hint: 'Did you … last night?' } });
+      replies.push({ key: 'w:' + a.k, card: 'i:' + a.k, q: 'What did you do last night?', cue: `🌙 ${a.zh}`, en: `I ${a.d} last night.`, alts: [`I ${a.d}.`], kind: 'w', why,
+        wrong: [`I ${a.v} last night.`, `I ${a2.d} last night.`, `I did ${a.d} last night.`] });
+      replies.push({ key: 'y:' + a.k, card: 'q:' + a.k, q: `Did you ${a.v} last night?`, cue: '⭕ 有', en: 'Yes, I did.', kind: 'y', why: 'Did you …? 有的話：Yes, I did.', wrong: ['Yes, I do.', 'Yes, I was.', "No, I didn't."] });
+      replies.push({ key: 'n:' + a.k, card: 'q:' + a.k, q: `Did you ${a.v} last night?`, cue: `❌ 沒有，${a2.zh}`, en: `No, I didn't. I ${a2.d} last night.`, alts: [`No, I did not. I ${a2.d} last night.`], kind: 'n', why: "沒有的話：No, I didn't. 再說你做了什麼（動詞加 ed）。",
+        wrong: [`No, I don't. I ${a2.d} last night.`, `No, I didn't. I ${a2.v} last night.`, `Yes, I did. I ${a2.d} last night.`] });
+      ppl.forEach(p => {
+        sents.push({ key: `${p.k}:${a.k}`, g: 'he', en: `${p.S} ${own(a.d, p)} last night.`, zh: `${p.zh}昨晚${a.zh}。`, why, blanks: [{ fam: 'ed', w: a.d0, opts: opts4(a) }], ask: { prompt: `說說看：${p.zh}昨晚${a.zh}。`, hint: `${p.S} ${a.d0} …` } });
+        replies.push({ key: `h:${p.k}:${a.k}`, card: `${p.k}:${a.k}`, q: `What did ${p.en} do last night?`, cue: `🌙 ${a.zh}`, en: `${p.S} ${own(a.d, p)} last night.`, alts: [`${p.S} ${own(a.d, p)}.`], kind: 'he', why,
+          wrong: [`${p.S} ${own(a.v, p)} last night.`, `${p.S} ${own(a2.d, p)} last night.`, `${p.S} did ${own(a.d, p)} last night.`] });
+      });
+    });
+    U.push({ id: 'hanlin-8-u2', book: '六下', no: 2, title: '六下 Unit 2 What Did You Do Last Night?', theme: 'What did you do last night?', themeZh: '你昨晚做了什麼？', draft: true,
+      groups: [{ key: 'word', title: '單字', icon: '🌙', words: ['clean', 'room', 'walk', 'dog', 'video', 'visit', 'friend', 'night'] }, { key: 'phrase', title: '做了什麼', icon: '🏀', words: [], phrases: ['clean-your-room', 'walk-the-dog', 'listen-to-music', 'play-basketball'] }],
+      tz: { clean: '打掃（cleaned my room 打掃了房間）', room: '房間', walk: '走路（walked the dog 遛了狗）', dog: '狗', video: '影片（watched videos 看了影片）', visit: '拜訪（visited a friend 拜訪了朋友）', friend: '朋友', night: '晚上（last night 昨晚）',
+        'clean-your-room': '打掃房間', 'walk-the-dog': '遛狗', 'listen-to-music': '聽音樂', 'play-basketball': '打籃球' },
+      patterns: ['what-did-you-do-last-night', 'did-you-last-night'], grammar: ['past'],
+      visual: { xs: [{ t: 'I played basketball last night.', ok: true }, { t: 'I play basketball last night.', ok: false, note: 'last night 要用過去式' }, { t: 'Did you walk the dog?', ok: true }, { t: 'Did you walked the dog?', ok: false, note: 'Did 後面用原形' }],
+        table: { head: ['原形', '過去式'], rows: [['clean', '[cleaned]'], ['listen', '[listened]'], ['play', '[played]'], ['walk', '[walked]'], ['watch', '[watched]'], ['visit', '[visited]']] },
+        tip: { en: "Did you play basketball last night? → No, I [didn't]. I walked the dog.", note: '問句、否定用 did／didn\'t，後面的動詞用原形' } },
+      qa: [{ q: 'What did you do last night?', qz: '你昨晚做了什麼？', a: 'I visited a friend last night.', az: '我昨晚拜訪了朋友。' }, { q: 'Did you play basketball last night?', qz: '你昨晚打籃球了嗎？', a: 'Yes, I did.', az: '有。' },
+        { q: 'Did you play basketball last night?', qz: '你昨晚打籃球了嗎？', a: "No, I didn't. I walked the dog last night.", az: '沒有，我昨晚去遛狗。' }],
+      sents, replies });
+  })();
+
+  // ================= 六下 Unit 3 How Much Is the T-shirt? =================
+  (() => {
+    const sg = [['coat', '外套'], ['dress', '洋裝'], ['hat', '帽子'], ['jacket', '夾克'], ['skirt', '裙子'], ['T-shirt', 'T恤']].map(([en, zh]) => ({ en, zh, k: slug(en) }));
+    const pl = [['jeans', '牛仔褲'], ['pants', '長褲'], ['shorts', '短褲']].map(([en, zh]) => ({ en, zh, k: slug(en) }));
+    const pr = [['ten', '十'], ['fifty', '五十'], ['one hundred', '一百'], ['two hundred', '兩百'], ['three hundred', '三百'], ['five hundred', '五百']].map(([en, zh]) => ({ en, zh }));
+    const why = '問價錢：一件用 How much is the …? 回答 It\'s … dollars.；長褲、牛仔褲、短褲是複數，用 How much are the …? 回答 They\'re … dollars.';
+    const sents = [], replies = [];
+    sg.concat(pl).forEach((it, i) => {
+      const isPl = pl.includes(it), be = isPl ? 'are' : 'is', P0 = isPl ? "They're" : "It's", P1 = isPl ? 'They are' : 'It is';
+      sents.push({ key: 'hm:' + it.k, g: 'hm', en: `How much ${be} the ${it.en}?`, zh: `這件${it.zh}多少錢？`, why,
+        blanks: [{ fam: 'much', w: 'much', opts: ['much', 'many', 'old', 'long'], why: '問價錢用 How much。' }, { fam: 'isare', w: be, opts: ['is', 'are', 'am', 'do'], why: isPl ? `${it.en} 是複數，用 are。` : '一件用 is。' }],
+        ask: { prompt: `問：這件${it.zh}多少錢？`, hint: `How much ${be} the …?` } });
+      const p = pr[i % pr.length], p2 = pr[(i + 2) % pr.length];
+      sents.push({ key: 'pr:' + it.k, g: 'pr', en: `The ${it.en} ${be} ${p.en} dollars.`, zh: `這件${it.zh}${p.zh}元。`, why,
+        blanks: [{ fam: 'isare', w: be, opts: ['is', 'are', 'am', 'do'] }, { fam: 'dollars', w: 'dollars', opts: ['dollars', 'dollar', 'cents', 'money'], why: '一元以上用複數 dollars。' }], ask: { prompt: `說說看：這件${it.zh}${p.zh}元。`, hint: `The ${it.en} ${be} …` } });
+      [p, p2, pr[(i + 4) % pr.length]].forEach((q, j) => replies.push({ key: `${isPl ? 'pl' : 'sg'}:${it.k}:${slug(q.en)}`, card: j ? null : 'hm:' + it.k, q: `How much ${be} the ${it.en}?`, cue: `💲 ${q.zh}元`, en: `${P0} ${q.en} dollars.`, alts: [`${P1} ${q.en} dollars.`], kind: isPl ? 'pl' : 'sg', why,
+        wrong: [`${isPl ? "It's" : "They're"} ${q.en} dollars.`, `${P0} ${q.en} dollar.`, `${P0} ${pr[(pr.indexOf(q) + 1) % pr.length].en} dollars.`] }));
+    });
+    pr.forEach(p => {
+      sents.push({ key: 'it:' + slug(p.en), g: 'it', en: `It's ${p.en} dollars.`, zh: `它${p.zh}元。`, alts: [`It is ${p.en} dollars.`], why, blanks: [{ fam: 'dollars', w: 'dollars', opts: ['dollars', 'dollar', 'cents', 'money'] }], ask: { prompt: `說說看：它${p.zh}元。`, hint: "It's … dollars." } });
+      sents.push({ key: 'they:' + slug(p.en), g: 'it', en: `They're ${p.en} dollars.`, zh: `它們（褲子）${p.zh}元。`, alts: [`They are ${p.en} dollars.`], why, blanks: [{ fam: 'dollars', w: 'dollars', opts: ['dollars', 'dollar', 'cents', 'money'] }], ask: { prompt: `說說看：這件褲子${p.zh}元。`, hint: "They're … dollars." } });
+    });
+    U.push({ id: 'hanlin-8-u3', book: '六下', no: 3, title: '六下 Unit 3 How Much Is the T-shirt?', theme: 'How much is the T-shirt?', themeZh: '這件T恤多少錢？', draft: true,
+      groups: [{ key: 'cloth', title: '衣物（一件）', icon: '👕', words: sg.map(x => x.k) }, { key: 'pants', title: '褲子（複數）', icon: '👖', words: pl.map(x => x.k).concat(['dollar']) }],
+      tz: Object.assign(Object.fromEntries(sg.concat(pl).map(x => [x.k, x.zh])), { dollar: '元（dollars）' }),
+      patterns: ['how-much-is-the', 'how-much-are-the'], grammar: ['countable'],
+      visual: { xs: [{ t: 'How much is the T-shirt?', ok: true }, { t: 'How much are the pants?', ok: true, note: 'pants 是複數' }, { t: 'How much is the jeans?', ok: false }, { t: "It's ten dollar.", ok: false, note: '要用 dollars' }],
+        table: { head: ['東西', '問句', '回答'], rows: [['一件（coat、dress…）', 'How much [is] the T-shirt?', "[It's] ten dollars."], ['複數（pants、jeans、shorts）', 'How much [are] the pants?', "[They're] one hundred dollars."]] },
+        tip: { en: 'pants／jeans／shorts → [are] … [They\'re]', note: '褲子一條也是複數；一元以上用 dollars' } },
+      qa: [{ q: 'How much is the T-shirt?', qz: '這件T恤多少錢？', a: "It's ten dollars.", az: '十元。' }, { q: 'How much are the pants?', qz: '這件長褲多少錢？', a: "They're one hundred dollars.", az: '一百元。' },
+        { q: 'How much is the jacket?', qz: '這件夾克多少錢？', a: "It's five hundred dollars.", az: '五百元。' }],
+      sents, replies });
+  })();
+
+  // ================= 六下 Unit 4 What's Your Favorite Season? =================
+  (() => {
+    const ss = [['spring', '春天', 'warm', 'wet', '溫暖又潮濕', 'snowy'], ['summer', '夏天', 'hot', 'wet', '又熱又潮濕', 'cold'], ['fall', '秋天', 'cool', 'dry', '涼爽又乾燥', 'wet'], ['winter', '冬天', 'cold', 'snowy', '寒冷又下雪', 'hot']]
+      .map(([en, zh, a, b, wz, no]) => ({ en, zh, a, b, wz, no, k: en === 'fall' ? 'fall-season' : en }));  // no＝跟這季節相反的天氣（否定回答用）
+    const ppl = [{ k: 'his', P: 'His', en: 'his', zh: '他' }, { k: 'her', P: 'Her', en: 'her', zh: '她' }];
+    const WX = ['dry', 'wet', 'foggy', 'snowy', 'cool', 'warm', 'hot', 'cold'];
+    const why = "問最喜歡的季節：What's your favorite season? 回答 My favorite season is ….；說天氣：It's cool and dry in fall.（季節前面用 in）";
+    const sents = [{ key: 'wq:your', g: 'wq', en: "What's your favorite season?", zh: '你最喜歡哪個季節？', alts: ['What is your favorite season?'], why, blanks: [{ fam: 'season', w: 'season', opts: ['season', 'seasons', 'day', 'color'] }], ask: { prompt: '問對方：你最喜歡哪個季節？', hint: "What's your …?" } }];
+    ppl.forEach(p => sents.push({ key: 'wq:' + p.k, g: 'wq', en: `What's ${p.en} favorite season?`, zh: `${p.zh}最喜歡哪個季節？`, alts: [`What is ${p.en} favorite season?`], why,
+      blanks: [{ fam: 'own', w: p.en, opts: p.k === 'his' ? ['his', 'he', 'him', 'her'] : ['her', 'she', 'hers', 'his'] }], ask: { prompt: `問：${p.zh}最喜歡哪個季節？`, hint: `What's ${p.en} …?` } }));
+    const replies = [];
+    ss.forEach((s, i) => {
+      const s2 = next(ss, i), sOpts = [s.en].concat(others(ss, i).map(x => x.en));
+      sents.push({ key: 'my:' + s.en, g: 'my', en: `My favorite season is ${s.en}.`, zh: `我最喜歡${s.zh}。`, why, blanks: [{ fam: 'ssn', w: s.en, opts: sOpts, cue: s.zh }], ask: { prompt: `說說看：我最喜歡${s.zh}。`, hint: 'My favorite season is …' } });
+      sents.push({ key: 'wx:' + s.en, g: 'wx', en: `It's ${s.a} and ${s.b} in ${s.en}.`, zh: `${s.zh}${s.wz}。`, alts: [`It is ${s.a} and ${s.b} in ${s.en}.`], why,
+        blanks: [{ fam: 'in', w: 'in', opts: ['in', 'on', 'at', 'to'], why: '季節前面用 in：in fall。' }, { fam: 'wx', w: s.b, opts: [s.b].concat(WX.filter(w => w !== s.b && w !== s.a).slice(i, i + 3)), cue: s.wz.slice(-2) }], ask: { prompt: `說說看：${s.zh}${s.wz}。`, hint: `It's … in ${s.en}.` } });
+      sents.push({ key: 'q:' + s.en, g: 'q', en: `Is it ${s.b} in ${s.en}?`, zh: `${s.zh}${s.wz.slice(-2)}嗎？`, why: 'Is it … in …? 回答 Yes, it is. / No, it isn\'t.', blanks: [{ fam: 'in', w: 'in', opts: ['in', 'on', 'at', 'to'] }], ask: { prompt: `問：${s.zh}${s.wz.slice(-2)}嗎？`, hint: `Is it … in ${s.en}?` } });
+      replies.push({ key: 'w:' + s.en, card: 'my:' + s.en, q: "What's your favorite season?", cue: `🍂 ${s.zh}`, en: `My favorite season is ${s.en}.`, alts: [`${s.en.charAt(0).toUpperCase() + s.en.slice(1)}.`], kind: 'w', why,
+        wrong: [`My favorite season is ${s2.en}.`, `My favorite seasons is ${s.en}.`, `I favorite season is ${s.en}.`] });
+      replies.push({ key: 'y:' + s.en, card: 'q:' + s.en, q: `Is it ${s.b} in ${s.en}?`, cue: '⭕ 是', en: 'Yes, it is.', kind: 'y', why: 'Is it …? 對的話：Yes, it is.', wrong: ['Yes, it does.', "Yes, it's.", "No, it isn't."] });
+      replies.push({ key: 'n:' + s.en, card: 'wx:' + s.en, q: `Is it ${s.no} in ${s.en}?`, cue: `❌ 不是，${s.wz}`, en: `No, it isn't. It's ${s.a} and ${s.b} in ${s.en}.`, alts: [`No, it is not. It is ${s.a} and ${s.b} in ${s.en}.`], kind: 'n', why: "不對的話：No, it isn't. 再說天氣怎麼樣。",
+        wrong: [`No, it doesn't. It's ${s.a} and ${s.b} in ${s.en}.`, `No, it isn't. It's ${s.a} and ${s.b} on ${s.en}.`, `Yes, it is. It's ${s.a} and ${s.b} in ${s.en}.`] });
+      ppl.forEach(p => {
+        sents.push({ key: `${p.k}:${s.en}`, g: 'my', en: `${p.P} favorite season is ${s.en}.`, zh: `${p.zh}最喜歡${s.zh}。`, why,
+          blanks: [{ fam: 'own', w: p.P, opts: p.k === 'his' ? ['His', 'He', 'Him', 'Her'] : ['Her', 'She', 'Hers', 'His'] }, { fam: 'ssn', w: s.en, opts: sOpts, cue: s.zh }], ask: { prompt: `說說看：${p.zh}最喜歡${s.zh}。`, hint: `${p.P} favorite season is …` } });
+        replies.push({ key: `h:${p.k}:${s.en}`, card: `${p.k}:${s.en}`, q: `What's ${p.en} favorite season?`, cue: `🍂 ${s.zh}`, en: `${p.P} favorite season is ${s.en}.`, alts: [`${s.en.charAt(0).toUpperCase() + s.en.slice(1)}.`], kind: 'he', why,
+          wrong: [`${p.k === 'his' ? 'He' : 'She'} favorite season is ${s.en}.`, `${p.k === 'his' ? 'Her' : 'His'} favorite season is ${s.en}.`, `${p.P} favorite season is ${s2.en}.`] });
+      });
+    });
+    U.push({ id: 'hanlin-8-u4', book: '六下', no: 4, title: "六下 Unit 4 What's Your Favorite Season?", theme: "What's your favorite season?", themeZh: '你最喜歡哪個季節？', draft: true,
+      groups: [{ key: 'season', title: '季節', icon: '🍂', words: ss.map(s => s.k) }, { key: 'weather', title: '天氣', icon: '🌫️', words: ['dry', 'wet', 'foggy', 'snowy', 'cool'] }],
+      tz: { spring: '春天', summer: '夏天', 'fall-season': '秋天（in fall）', winter: '冬天', dry: '乾燥的', wet: '潮濕的', foggy: '有霧的', snowy: '下雪的', cool: '涼爽的' },
+      patterns: ['whats-your-favorite-season', 'its-cool-and-dry-in'], grammar: ['prep'],
+      visual: { chips: { a: 'in', items: ['spring', 'summer', 'fall', 'winter'] },
+        xs: [{ t: 'My favorite season is fall.', ok: true }, { t: "It's cool and dry in fall.", ok: true }, { t: "It's cool and dry on fall.", ok: false, note: '季節用 in' }, { t: 'My favorite seasons is fall.', ok: false, note: 'season 不加 s' }],
+        table: { head: ['問句', '回答'], rows: [["What's [your] favorite season?", 'My favorite season is fall.'], ["What's [his] favorite season?", 'His favorite season is winter.'], ['Is it snowy [in] winter?', 'Yes, it is.']] },
+        tip: { en: "It's cool and dry [in] fall.", note: '季節前面用 in；兩種天氣中間用 and' } },
+      qa: [{ q: "What's your favorite season?", qz: '你最喜歡哪個季節？', a: 'My favorite season is fall.', az: '我最喜歡秋天。' }, { q: 'Is it hot in fall?', qz: '秋天熱嗎？', a: "No, it isn't. It's cool and dry in fall.", az: '不熱，秋天涼爽又乾燥。' },
+        { q: "What's her favorite season?", qz: '她最喜歡哪個季節？', a: 'Her favorite season is spring.', az: '她最喜歡春天。' }],
       sents, replies });
   })();
 

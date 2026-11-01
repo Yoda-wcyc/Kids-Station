@@ -118,6 +118,10 @@ BANKS.forEach(B => {
     [[41, 'I play baseball.'], [57, 'At seven.'], [10, 'Yes, he do.'], [76, 'I watch TV.']].forEach(([n, a]) => NO(n, a));
     [[19, 'At 6:30.'], [57, 'I get up at 6:30.'], [1, 'I watch TV.'], [42, 'He watches TV.'], [76, 'Go home.'], [76, 'I go home at 4.']].forEach(([n, a]) => YES(n, a));
   }
+  if (B.key === '8-u12') {
+    [[19, 'I play basketball.'], [19, 'I watch videos last night.'], [41, 'At the mall.'], [8, 'Yes, I did.']].forEach(([n, a]) => NO(n, a)); // 昨晚做的事要用過去式
+    [[19, 'I watched videos.'], [41, 'The zoo.'], [57, 'I watched videos.'], [1, 'At the movie theater.'], [8, 'No, I was not.']].forEach(([n, a]) => YES(n, a));
+  }
   // ---- 4. 線上一次 20 題（兩個單元都有入口、抽同一份題庫）----
   const seen = new Set();
   for (let k = 0; k < 200; k++) UNITS.forEach(U => {

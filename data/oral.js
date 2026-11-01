@@ -763,6 +763,130 @@
       note: '六上兩課都是依學校公開的課程計畫（翰林 Here We Go 7）整理，還沒拿課本核對；課程計畫沒有列日常用語和對話，所以題目只考單字和句型。' });
   })();
 
+  // ================= 六下 U1–U2（Where Were You Yesterday? ／ What Did You Do Last Night?；依學校課程計畫整理，待課本核對）=================
+  (() => {
+    const PL = 'home|school|mall|theater|restaurant|zoo', ACT = 'cleaned|listened|played|walked|watched|visited';
+    const WAS = (who) => [`Yes, ${who} was.`, `No, ${who} wasn't.`], WASK = (who) => [`Yes, ${who} was|No, ${who} wasn't`];
+    const WERE = (who) => [`Yes, ${who} were.`, `No, ${who} weren't.`], WEREK = (who) => [`Yes, ${who} were|No, ${who} weren't`];
+    const DID = (who) => [`Yes, ${who} did.`, `No, ${who} didn't.`], DIDK = (who) => [`Yes, ${who} did|No, ${who} didn't`];
+    const L1 = [
+      // ---- Unit 1：昨天在哪裡 ----
+      { u: 1, q: 'Where were you yesterday?', a: ['I was ___ yesterday.', 'At ___.', '___.'], k: [PL] },
+      { u: 1, q: 'Where was he yesterday?', a: ['He was ___ yesterday.', 'At ___.', '___.'], k: [PL] },
+      { u: 1, q: 'Where was she yesterday?', a: ['She was ___ yesterday.', 'At ___.', '___.'], k: [PL] },
+      { u: 1, q: 'Where were they yesterday?', a: ['They were ___ yesterday.', 'At ___.', '___.'], k: [PL] },
+      { u: 1, q: 'Where was Amy yesterday?', a: ['She was ___ yesterday.', 'At ___.', '___.'], k: [PL] },
+      { u: 1, q: 'Where were you and Ben yesterday?', a: ['We were ___ yesterday.', 'At ___.', '___.'], k: [PL] },
+      { u: 1, q: 'Where were Amy and Ben yesterday?', a: ['They were ___ yesterday.', 'At ___.', '___.'], k: [PL] },
+      { u: 1, q: 'Were you at school yesterday?', a: WAS('I'), k: WASK('I') },
+      { u: 1, q: 'Were you at home yesterday?', a: WAS('I'), k: WASK('I') },
+      { u: 1, q: 'Was he at the zoo yesterday?', a: WAS('he'), k: WASK('he') },
+      { u: 1, q: 'Was she at the mall yesterday?', a: WAS('she'), k: WASK('she') },
+      { u: 1, q: 'Was Ben at the restaurant yesterday?', a: WAS('he'), k: WASK('he') },
+      { u: 1, q: 'Was Amy at home yesterday?', a: WAS('she'), k: WASK('she') },
+      { u: 1, q: 'Were they at the movie theater yesterday?', a: WERE('they'), k: WEREK('they') },
+      { u: 1, q: 'Were you and Amy at the zoo yesterday?', a: WERE('we'), k: WEREK('we') },
+      { u: 1, q: 'Were you at home or at school yesterday?', a: ['I was at home.', 'I was at school.', 'At home.', 'At school.'], k: ['home|school'] },
+      { u: 1, q: 'Was he at the mall or at the zoo?', a: ['He was at the mall.', 'He was at the zoo.', 'At the mall.', 'At the zoo.'], k: ['mall|zoo'] },
+      { u: 1, q: 'Was she at the restaurant or at the movie theater?', a: ['She was at the restaurant.', 'She was at the movie theater.', 'At the restaurant.', 'At the movie theater.'], k: ['restaurant|theater'] },
+      // ---- Unit 2：昨晚做了什麼 ----
+      { u: 2, q: 'What did you do last night?', a: ['I ___ last night.', 'I ___.'], k: [ACT] },
+      { u: 2, q: 'What did he do last night?', a: ['He ___ last night.', 'He ___.'], k: [ACT] },
+      { u: 2, q: 'What did she do last night?', a: ['She ___ last night.', 'She ___.'], k: [ACT] },
+      { u: 2, q: 'What did they do last night?', a: ['They ___ last night.', 'They ___.'], k: [ACT] },
+      { u: 2, q: 'What did Ben do last night?', a: ['He ___ last night.', 'He ___.'], k: [ACT] },
+      { u: 2, q: 'What did Amy do last night?', a: ['She ___ last night.', 'She ___.'], k: [ACT] },
+      { u: 2, q: 'Did you play basketball last night?', a: DID('I'), k: DIDK('I') },
+      { u: 2, q: 'Did you watch videos last night?', a: DID('I'), k: DIDK('I') },
+      { u: 2, q: 'Did you clean your room last night?', a: DID('I'), k: DIDK('I') },
+      { u: 2, q: 'Did he walk the dog last night?', a: DID('he'), k: DIDK('he') },
+      { u: 2, q: 'Did she listen to music last night?', a: DID('she'), k: DIDK('she') },
+      { u: 2, q: 'Did Amy visit a friend last night?', a: DID('she'), k: DIDK('she') },
+      { u: 2, q: 'Did they play basketball last night?', a: DID('they'), k: DIDK('they') },
+      { u: 2, q: 'Did you and Ben watch videos last night?', a: DID('we'), k: DIDK('we') },
+      { u: 2, q: 'Did you walk the dog or clean your room last night?', a: ['I walked the dog.', 'I cleaned my room.'], k: ['walked|cleaned'] },
+      { u: 2, q: 'Did he play basketball or watch videos?', a: ['He played basketball.', 'He watched videos.'], k: ['played|watched'] },
+      { u: 2, q: 'Did she listen to music or visit a friend?', a: ['She listened to music.', 'She visited a friend.'], k: ['listened|visited'] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'Where were you last night?', a: ['I was ___ last night.', 'At ___.', '___.'], k: [PL] },
+      { u: 12, q: 'What did you do yesterday?', a: ['I ___ yesterday.', 'I ___.'], k: [ACT] },
+      { u: 12, q: 'Were you at home last night?', a: WAS('I'), k: WASK('I') },
+      { u: 12, q: 'Did you visit a friend yesterday?', a: DID('I'), k: DIDK('I') },
+      { u: 12, q: 'Was he at school yesterday? Did he play basketball?', a: DID('he'), k: DIDK('he') }
+    ];
+    const L2 = [
+      // ---- Unit 1 ----
+      { u: 1, q: 'Where were you yesterday?', zh: '你昨天在動物園。', a: ['I was at the zoo yesterday.', 'At the zoo.'], k: ['zoo'] },
+      { u: 1, q: 'Where was he yesterday?', zh: '他昨天在購物中心。', a: ['He was at the mall yesterday.', 'At the mall.'], k: ['mall'] },
+      { u: 1, q: 'Where was she yesterday?', zh: '她昨天在餐廳。', a: ['She was at the restaurant yesterday.', 'At the restaurant.'], k: ['restaurant'] },
+      { u: 1, q: 'Where were they yesterday?', zh: '他們昨天在電影院。', a: ['They were at the movie theater yesterday.', 'At the movie theater.'], k: ['theater'] },
+      { u: 1, q: 'Where was Amy yesterday?', zh: 'Amy 昨天在家。', a: ['She was at home yesterday.', 'At home.'], k: ['home'] },
+      { u: 1, q: 'Where was Ben yesterday?', zh: 'Ben 昨天在學校。', a: ['He was at school yesterday.', 'At school.'], k: ['school'] },
+      { u: 1, q: 'Were you at school yesterday?', zh: '對，你昨天在學校。', a: ['Yes, I was.'], k: ['Yes, I was'] },
+      { u: 1, q: 'Were you at the mall yesterday?', zh: '不是；你在家。', a: ["No, I wasn't. I was at home.", 'No. I was at home.'], k: ['No', 'home'] },
+      { u: 1, q: 'Was he at the zoo yesterday?', zh: '對，他在動物園。', a: ['Yes, he was.'], k: ['Yes, he was'] },
+      { u: 1, q: 'Was she at home yesterday?', zh: '不是；她在餐廳。', a: ["No, she wasn't. She was at the restaurant.", 'No. She was at the restaurant.'], k: ['No', 'restaurant'] },
+      { u: 1, q: 'Were they at the movie theater yesterday?', zh: '對，他們在電影院。', a: ['Yes, they were.'], k: ['Yes, they were'] },
+      { u: 1, q: 'Was Ben at the restaurant yesterday?', zh: '不是；他在學校。', a: ["No, he wasn't. He was at school.", 'No. He was at school.'], k: ['No', 'school'] },
+      { u: 1, q: 'Were you at home or at school yesterday?', zh: '你在學校。', a: ['I was at school.', 'At school.'], k: ['school'] },
+      { u: 1, q: 'Was she at the mall or at the zoo?', zh: '她在動物園。', a: ['She was at the zoo.', 'At the zoo.'], k: ['zoo'] },
+      { u: 1, q: 'Where were you and Ben yesterday?', zh: '你們兩個在電影院。', a: ['We were at the movie theater.', 'At the movie theater.'], k: ['theater'] },
+      { u: 1, q: 'Were you and Amy at the mall yesterday?', zh: '不是，你們不在購物中心。', a: ["No, we weren't."], k: ["No, we weren't"] },
+      // ---- Unit 2 ----
+      { u: 2, q: 'What did you do last night?', zh: '你看了影片。', a: ['I watched videos last night.', 'I watched videos.'], k: ['watched videos'] },
+      { u: 2, q: 'What did he do last night?', zh: '他遛了狗。', a: ['He walked the dog last night.', 'He walked the dog.'], k: ['walked the dog'] },
+      { u: 2, q: 'What did she do last night?', zh: '她打掃了房間。', a: ['She cleaned her room last night.', 'She cleaned her room.'], k: ['cleaned'] },
+      { u: 2, q: 'What did they do last night?', zh: '他們打了籃球。', a: ['They played basketball last night.', 'They played basketball.'], k: ['played basketball'] },
+      { u: 2, q: 'What did Amy do last night?', zh: 'Amy 拜訪了朋友。', a: ['She visited a friend last night.', 'She visited a friend.'], k: ['visited'] },
+      { u: 2, q: 'What did Ben do last night?', zh: 'Ben 聽了音樂。', a: ['He listened to music last night.', 'He listened to music.'], k: ['listened to music'] },
+      { u: 2, q: 'Did you play basketball last night?', zh: '有，你打了籃球。', a: ['Yes, I did.'], k: ['Yes, I did'] },
+      { u: 2, q: 'Did you watch videos last night?', zh: '沒有；你遛了狗。', a: ["No, I didn't. I walked the dog last night.", "No, I didn't. I walked the dog."], k: ["No, I didn't", 'walked the dog'] },
+      { u: 2, q: 'Did he clean his room last night?', zh: '有，他打掃了房間。', a: ['Yes, he did.'], k: ['Yes, he did'] },
+      { u: 2, q: 'Did she visit a friend last night?', zh: '沒有；她聽了音樂。', a: ["No, she didn't. She listened to music."], k: ["No, she didn't", 'listened'] },
+      { u: 2, q: 'Did they walk the dog last night?', zh: '有，他們遛了狗。', a: ['Yes, they did.'], k: ['Yes, they did'] },
+      { u: 2, q: 'Did Ben listen to music last night?', zh: '沒有；他打了籃球。', a: ["No, he didn't. He played basketball."], k: ["No, he didn't", 'played basketball'] },
+      { u: 2, q: 'Did you walk the dog or clean your room?', zh: '你打掃了房間。', a: ['I cleaned my room.', 'Cleaned my room.'], k: ['cleaned'] },
+      { u: 2, q: 'Did he play basketball or watch videos?', zh: '他看了影片。', a: ['He watched videos.'], k: ['watched'] },
+      { u: 2, q: 'What did you do yesterday?', zh: '你拜訪了朋友。', a: ['I visited a friend yesterday.', 'I visited a friend.'], k: ['visited'] },
+      { u: 2, q: 'Did you and Ben watch videos last night?', zh: '沒有，你們沒看影片。', a: ["No, we didn't."], k: ["No, we didn't"] },
+      { u: 2, q: 'Did Amy clean her room last night?', zh: '有，Amy 打掃了房間。', a: ['Yes, she did.'], k: ['Yes, she did'] },
+      { u: 2, q: 'What did you do last night?', zh: '你聽了音樂。', a: ['I listened to music last night.', 'I listened to music.'], k: ['listened'] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'Where were you last night?', zh: '你昨晚在家。', a: ['I was at home last night.', 'At home.'], k: ['home'] },
+      { u: 12, q: 'Were you at the zoo yesterday?', zh: '不是；你在家。', a: ["No, I wasn't. I was at home."], k: ['No', 'home'] },
+      { u: 12, q: 'Was he at school yesterday?', zh: '對，他在學校。', a: ['Yes, he was.'], k: ['Yes, he was'] },
+      { u: 12, q: 'Did you visit a friend yesterday?', zh: '有，你拜訪了朋友。', a: ['Yes, I did.'], k: ['Yes, I did'] },
+      { u: 12, q: 'Where was she last night?', zh: '她昨晚在電影院。', a: ['She was at the movie theater last night.', 'At the movie theater.'], k: ['theater'] },
+      { u: 12, q: 'What did they do yesterday?', zh: '他們遛了狗。', a: ['They walked the dog yesterday.', 'They walked the dog.'], k: ['walked'] }
+    ];
+    const L3 = [
+      { u: 1, q: 'Where were you yesterday?', zh: '你在購物中心。說完後，反問考官昨天在哪裡。', a: ['I was at the mall yesterday. Where were you yesterday?'], k: ['mall', 'Where were you'], f: 'I was at home.' },
+      { u: 1, q: 'I was at school yesterday.', zh: '換你問考官：她昨天在哪裡？', a: ['Where was she yesterday?'], k: ['Where was she', 'yesterday'], f: 'She was at the zoo.' },
+      { u: 1, q: 'He was at home.', zh: '換你問考官：他昨天在電影院嗎？', a: ['Was he at the movie theater yesterday?'], k: ['Was he', 'theater'], f: "No, he wasn't." },
+      { u: 1, q: 'Was she at the restaurant yesterday?', zh: '對；再問考官：你也在餐廳嗎？', a: ['Yes, she was. Were you at the restaurant, too?'], k: ['Yes, she was', 'Were you'], f: "No, I wasn't." },
+      { u: 1, q: 'Where were Amy and Ben yesterday?', zh: 'Amy 在購物中心，Ben 在學校。', a: ['Amy was at the mall. Ben was at school.'], k: ['Amy', 'mall', 'Ben', 'school'] },
+      { u: 1, q: 'Was Ben at home last night?', zh: '不是；他在餐廳。說完後，問考官昨晚在哪裡。', a: ["No, he wasn't. He was at the restaurant. Where were you last night?"], k: ['No', 'restaurant', 'Where were you'], f: 'I was at home.' },
+      { u: 2, q: 'What did you do last night?', zh: '你看了影片。說完後，反問考官昨晚做了什麼。', a: ['I watched videos last night. What did you do last night?'], k: ['watched', 'What did you do'], f: 'I listened to music.' },
+      { u: 2, q: 'I played basketball last night.', zh: '換你問考官：他昨晚遛狗了嗎？', a: ['Did he walk the dog last night?'], k: ['Did he', 'walk the dog'], f: 'Yes, he did.' },
+      { u: 2, q: 'She cleaned her room.', zh: '換你問考官：你昨晚做了什麼？', a: ['What did you do last night?'], k: ['What did you do', 'last night'], f: 'I visited a friend.' },
+      { u: 2, q: 'Did you play basketball last night?', zh: '沒有；你聽了音樂，也看了影片。', a: ["No, I didn't. I listened to music. I watched videos, too."], k: ["No, I didn't", 'listened', 'watched'] },
+      { u: 2, q: 'Did she walk the dog last night?', zh: '有；她也打掃了房間。', a: ['Yes, she did. She cleaned her room, too.'], k: ['Yes, she did', 'cleaned'] },
+      { u: 2, q: 'What did Amy and Ben do last night?', zh: 'Amy 拜訪了朋友，Ben 打了籃球。', a: ['Amy visited a friend. Ben played basketball.'], k: ['visited', 'played'] },
+      { u: 2, q: 'I watched videos.', zh: '換你問考官：你昨晚聽音樂了嗎？', a: ['Did you listen to music last night?'], k: ['Did you', 'listen to music'], f: 'Yes, I did.' },
+      { u: 2, q: 'What did you do yesterday?', zh: '你遛了狗，也打掃了房間。', a: ['I walked the dog and cleaned my room.', 'I walked the dog. I cleaned my room.'], k: ['walked', 'cleaned'] },
+      { u: 12, q: 'Were you at the zoo yesterday?', zh: '不是；你在家，你打掃了房間。', a: ["No, I wasn't. I was at home. I cleaned my room."], k: ['No', 'home', 'cleaned'] },
+      { u: 12, q: 'Where were you last night?', zh: '你在家；再說你看了影片。', a: ['I was at home. I watched videos.'], k: ['home', 'watched'] },
+      { u: 12, q: 'Were you at the mall yesterday?', zh: '對；再說你拜訪了朋友。', a: ['Yes, I was. I visited a friend.'], k: ['Yes, I was', 'visited'] },
+      { u: 12, q: 'What did he do yesterday?', zh: '他在學校打了籃球。', a: ['He played basketball at school.'], k: ['played', 'school'] },
+      { u: 12, q: 'Did they watch videos at home?', zh: '沒有；他們在電影院。', a: ["No, they didn't. They were at the movie theater."], k: ["No, they didn't", 'theater'] },
+      { u: 12, q: 'Did you visit a friend yesterday?', zh: '有；你們在購物中心。', a: ['Yes, I did. We were at the mall.'], k: ['Yes, I did', 'mall'] }
+    ];
+    build({ key: '8-u12', title: '六下 U1–U2 口語對話考試', file: '六下U1-U2', units: ['hanlin-8-u1', 'hanlin-8-u2'], labels: ['U1', 'U2'],
+      cls: { [PL]: '任一個地點（at home／at the mall…）', [ACT]: '任一個做過的事（過去式：played、watched…）' }, L: [L1, L2, L3],
+      scope: "Unit 1 Where Were You Yesterday?（at home、at school、at the mall、at the movie theater、at the restaurant、at the zoo；Where were you yesterday? I was ___ yesterday.、Were you at ___? Yes, I was. / No, I wasn't.）；Unit 2 What Did You Do Last Night?（cleaned my room、listened to music、played basketball、walked the dog、watched videos、visited a friend；What did you do last night?、Did you ___ last night? Yes, I did. / No, I didn't.）",
+      note: '六下兩課都是依學校公開的課程計畫（翰林 Here We Go 8）整理，還沒拿課本核對；課程計畫沒有列日常用語和對話，所以題目只考單字和句型。' });
+  })();
+
   window.DATA_ORALS = BANKS;
   BANKS.forEach(b => (window.DATA_TEXTBOOK || []).forEach(u => { if (b.units.includes(u.id)) u.oral = b; }));
 })();

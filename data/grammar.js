@@ -56,7 +56,7 @@ window.DATA_GRAMMAR = [
  {"type":"fill","s":"I ___ eating lunch now.","a":"am","opts":["am","is","are","be"],"why":"I 配 am：I am eating."},
  {"type":"fix","wrong":"She are dancing now.","right":"She is dancing now.","why":"She 是一個人，用 is。"}],
  typed:[{"zh":"他們正在游泳。","en":"They are swimming.","alts":["They're swimming."]},{"zh":"媽媽正在煮晚餐。","en":"Mom is cooking dinner.","alts":["Mom's cooking dinner.","My mom is cooking dinner.","My mother is cooking dinner."]}]},
-{id:"past",title:"過去式",
+{id:"past",tb:["hanlin-8-u2"],title:"過去式",
  rules:["已經發生的事用過去式，常和 yesterday、last week、ago 一起出現。","規則動詞加 ed：play → played、dance → danced。","不規則動詞要背：go → went、eat → ate、see → saw、have → had。","問句和否定句用 did / didn't，後面的動詞用原形。"],
  ex:[{en:"I played soccer yesterday.",zh:"我昨天踢足球。"},{en:"We went to the zoo last Sunday.",zh:"我們上星期天去動物園。"},{en:"She didn't eat breakfast this morning.",zh:"她今天早上沒吃早餐。"}],
  q:[
@@ -164,7 +164,7 @@ window.DATA_GRAMMAR = [
  {"type":"fill","s":"This is the ___ day of the year.","a":"longest","hint":"long","opts":["long","longer","longest","most long"],"why":"the ＋「最」，long 加 est：longest。"},
  {"type":"fix","wrong":"My bag is heavyer than yours.","right":"My bag is heavier than yours.","why":"heavy 是子音＋y 結尾，去 y 加 ier：heavier。"}],
  typed:[{"zh":"我比我弟弟高。","en":"I am taller than my brother.","alts":["I'm taller than my brother."]},{"zh":"大象比狗大。","en":"An elephant is bigger than a dog.","alts":["Elephants are bigger than dogs."]}]},
-{id:"prep",title:"介系詞 in / on / at",
+{id:"prep",tb:["hanlin-8-u4"],title:"介系詞 in / on / at",
  rules:["時間：幾點用 at（at 7:00）；星期幾、日期用 on（on Monday）；月份、年份、季節、早上下午用 in（in May、in the morning）。","地點：在裡面用 in（in the box）；在上面、貼著用 on（on the desk、on the wall）；在某個點用 at（at the bus stop、at home）。"],
  ex:[{en:"The cat is on the bed.",zh:"貓在床上。"},{en:"I get up at seven o'clock.",zh:"我七點起床。"},{en:"My birthday is in May.",zh:"我的生日在五月。"}],
  q:[
@@ -239,7 +239,7 @@ window.DATA_GRAMMAR = [
  {"type":"fix","wrong":"There was many people at the zoo yesterday.","right":"There were many people at the zoo yesterday.","why":"people 是複數，過去式要用 There were。"},
  {"type":"fix","wrong":"Is there any eggs in the fridge?","right":"Are there any eggs in the fridge?","why":"eggs 是複數，問句用 Are there…?"}],
  typed:[{"zh":"公園裡有很多樹。","en":"There are many trees in the park.","alts":["There are a lot of trees in the park.","There are lots of trees in the park."]},{"zh":"昨天桌上有一個蛋糕。","en":"There was a cake on the table yesterday.","alts":["Yesterday there was a cake on the table.","Yesterday, there was a cake on the table."]}]},
-{id:"past-be",title:"be 動詞過去式 was / were",
+{id:"past-be",tb:["hanlin-8-u1"],title:"be 動詞過去式 was / were",
  rules:["am、is 的過去式是 was；are 的過去式是 were。","I、he、she、it，或「一個」人／東西 → was；you、we、they，或「兩個以上」→ were。","問句把 was / were 移到最前面：Were you at home? Was it fun?","否定：wasn't（was not）、weren't（were not）。","句子裡有 be 動詞（形容詞、地點）就不用 did：Were you tired?（不是 Did you tired?）"],
  ex:[{"en":"I was at home yesterday.","zh":"我昨天在家。"},{"en":"They were very happy.","zh":"他們（那時）很開心。"},{"en":"Was the movie fun?","zh":"那部電影好看嗎？"}],
  q:[
@@ -259,7 +259,7 @@ window.DATA_GRAMMAR = [
  {"type":"fix","wrong":"We was late for school yesterday.","right":"We were late for school yesterday.","why":"We 配 were。"},
  {"type":"fix","wrong":"The movie is boring last night.","right":"The movie was boring last night.","why":"last night 是過去，is 要改成 was。"}],
  typed:[{"zh":"他們昨天在公園。","en":"They were in the park yesterday.","alts":["They were at the park yesterday.","Yesterday they were in the park.","Yesterday, they were in the park.","Yesterday they were at the park.","Yesterday, they were at the park."]},{"zh":"你昨晚在家嗎？","en":"Were you at home last night?","alts":["Were you home last night?"]}]},
-{id:"countable",tb:["hanlin-6-u3"],title:"可數／不可數：How many / How much、some / any",
+{id:"countable",tb:["hanlin-6-u3","hanlin-8-u3"],title:"可數／不可數：How many / How much、some / any",
  rules:["可以一個一個數的（apple、book、student）是可數名詞，兩個以上要變複數。","不能一個一個數的（water、milk、rice、money、bread）是不可數名詞：不加 s，也不用 a / an。","問數量：How many ＋複數名詞；問多少量或多少錢：How much ＋不可數名詞。","肯定句用 some；否定句和問句通常用 any（請別人吃喝的問句用 some：Would you like some tea?）。","不可數名詞要數的時候加單位：a glass of water、a piece of cake、a bowl of rice。"],
  ex:[{"en":"How many apples do you have?","zh":"你有幾顆蘋果？"},{"en":"How much milk do you want?","zh":"你要多少牛奶？"},{"en":"I have some bread, but I don't have any milk.","zh":"我有一些麵包，但是沒有牛奶。"}],
  q:[

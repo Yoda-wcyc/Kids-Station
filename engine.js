@@ -490,10 +490,10 @@
       return { words: D.words.filter(has), phrases: D.phrases.filter(has), patterns: D.patterns.filter(has), grammar: D.grammar.filter(has) };
     },
     // 從某幾類專屬題隨機挑 n 題（前一類不夠再用下一類）；同一輪裡同一個 card（同一句）不重複，重組和中翻英不會剛好是同一句、互相洩答案
-    tbPick(unitId, fams, n, used, f) {
-      // 句子少的單元（例如星期只有 15 句）同一句全用過了：第二輪只要求「同一題不重複」
+    tbPick(unitId, fams, n, used, f, strictOnly) {
+      // 句子少的單元（例如星期只有 15 句）同一句全用過了：第二輪只要求「同一題不重複」（strictOnly＝不要第二輪）
       const out = [], F = this.tbq[unitId] || {};
-      for (const strict of [true, false]) {
+      for (const strict of strictOnly ? [true] : [true, false]) {
         for (const fam of [].concat(fams)) {
           for (const id of shuffle(F[fam] || [])) {
             if (out.length >= n) return out;
@@ -510,7 +510,8 @@
     // 空格題：各種空格輪流挑（Do／Does、on、be 動詞…不會全是同一種）；typed＝打字版
     tbBlanks(unitId, n, used, typed) {
       const fams = shuffle(this.tbBlank[unitId] || []), out = [];
-      for (let round = 0; out.length < n && round < n; round++) fams.forEach(fm => { if (out.length < n) out.push(...this.tbPick(unitId, fm + (typed ? 'T' : ''), 1, used)); });
+      // 2026-11-01：先輪流在每個家族找「這一輪還沒用過的句子」；某個家族的句子都用過了就換別的家族（以前會直接重複同一句），全部都沒有才放寬
+      for (const strictOnly of [true, false]) for (let round = 0; out.length < n && round < n; round++) fams.forEach(fm => { if (out.length < n) out.push(...this.tbPick(unitId, fm + (typed ? 'T' : ''), 1, used, null, strictOnly)); });
       return out;
     },
     // ✏️ 專屬題一輪（練習）：聽力 1、選空格 2、選回答 1、重組 2、情境 1（沒有就再一題重組）、🎤 1（裝置支援才出）、打空格 1、打回答 1、造問句 1（沒有就選回答）、中翻英 2
