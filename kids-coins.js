@@ -116,8 +116,19 @@
   }
   function tickEvent(b) { return { event_id: b.id, type: 'tick', item: bucketItem(b.s), correct: b.c, total: b.n }; }
 
+  // 學習小助理（assistant-core.js）用的「最後練習時間」：每次作答記 {科:{t:最後作答, d:[最近 SEEN_DAYS 天有作答的台北日期]}}。
+  // localStorage kids_coin_seen，跟 kids_coin_* 一樣不同步（別台的時間由同步過來的錯題、作答、過關紀錄推回來）。
+  var SEEN_DAYS = 21;
+  function seenAdd(store, subj, now) {
+    var s = store && typeof store === 'object' && !Array.isArray(store) ? store : {}, e = s[subj] && typeof s[subj] === 'object' ? s[subj] : {};
+    var d = tpeDate(now), days = Array.isArray(e.d) ? e.d.slice() : [];
+    if (days[days.length - 1] !== d) days.push(d);
+    s[subj] = { t: now, d: days.slice(-SEEN_DAYS) };
+    return s;
+  }
+
   var core = {
-    BATCH_MAX: BATCH_MAX, QUEUE_MAX: QUEUE_MAX, MODES: MODES,
+    BATCH_MAX: BATCH_MAX, QUEUE_MAX: QUEUE_MAX, MODES: MODES, seenAdd: seenAdd,
     tpeParts: tpeParts, tpeDate: tpeDate, minuteId: minuteId, tickDate: tickDate,
     itemOk: itemOk, validEvent: validEvent, newEventId: newEventId, jwtSub: jwtSub, toWire: toWire,
     mergeQueue: mergeQueue, pruneQueue: pruneQueue, pickBatch: pickBatch, removeIds: removeIds,
@@ -336,6 +347,7 @@
     var h = topHost(); if (h) { try { h.answer(ok, subj); } catch (e) { } return; }
     try {
       if (!enabled() || !visible()) return;
+      try { lsSet('kids_coin_seen', JSON.stringify(seenAdd(lsJSON('kids_coin_seen', {}), SUBJECTS.indexOf(subj) >= 0 ? subj : 'english', Date.now()))); } catch (e) { }   // 學習小助理：最後練習時間（登入才記，跟其他 kids_coin_* 一樣）
       var now = Date.now(), id = minuteId(now), mid = curMid();
       if (bucket && (bucket.id !== id || bucket.mid !== mid)) closeBucket();
       if (!bucket) bucket = { id: id, mid: mid, n: 0, c: 0, s: {} };

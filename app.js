@@ -814,6 +814,7 @@
     app.innerHTML = top('家長專區') + `
       <section class="card"><h2>最近 7 天做題數</h2><div class="week">${days.map(d => `<div class="day"><div class="col"><i style="height:${(cnt[d] || 0) / mx * 100}%"></i></div><b>${cnt[d] || 0}</b><small>${d.slice(5)}</small></div>`).join('')}</div>
         <p class="muted">累計 ${S.log.length} 題・完成 ${S.progress.quizzes} 回練習・⭐ ${S.progress.stars}・錯題庫 ${mistakeIds().length} 題</p></section>
+      ${window.KidsAssistantUI ? KidsAssistantUI.parentHtml() : ''}
       <section class="card"><h2>最需要加強的 5 個主題</h2>${weak.length ? `<ol>${weak.map(r => `<li>${esc(r.label)}（${esc(r.mod)}）— 正確率 ${pct(r.acc)}，做了 ${r.n} 題</li>`).join('')}</ol>` : '<p class="muted">每個主題做滿 3 題後就會出現。</p>'}</section>
       <section class="card"><h2>各主題正確率（點標題排序）</h2><div class="tblwrap"><table class="tbl" id="tt"></table></div></section>
       <section class="card"><h2>學會紀錄（${E.learnedRows(S.learned).length} 項，點標題排序）</h2><div class="tblwrap"><table class="tbl" id="lt"></table></div></section>

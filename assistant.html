@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff8ec">
+<meta name="color-scheme" content="light">
+<meta name="format-detection" content="telephone=no">
+<title>學習小助理 · 小朋友學習站</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A6%89%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css?v=6b20a65f67">
+<style>
+/* 🦉 學習小助理完整頁（2026-11-01）：算法在 assistant-core.js、畫面在 assistant-ui.js */
+.mbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:3px solid var(--line);box-shadow:0 2px 10px rgba(38,52,69,.06)}
+.mbar-in{max-width:1000px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mbar-in .brand{flex:1;min-width:0;font-size:1.1rem;font-weight:800;color:var(--ink);text-decoration:none;white-space:nowrap}
+.mwrap{max-width:1000px;margin:0 auto;padding:14px 16px calc(40px + env(safe-area-inset-bottom));box-sizing:border-box}
+.kas-card{margin:0 0 16px}
+</style>
+</head>
+<body>
+<header class="mbar"><div class="mbar-in"><a class="brand" href="index.html">🎈 小朋友學習站</a><a class="btn" href="index.html" id="back">← 回學習站</a><span data-kids-auth-slot></span></div></header>
+<main class="mwrap" id="kas-page"><p class="center muted">載入中…</p></main>
+<script src="data/words.js?v=613cd2fd02"></script>
+<script src="data/words-2.js?v=34767a3c75"></script>
+<script src="data/words-3.js?v=6faafe77d7"></script>
+<script src="data/words-4.js?v=34137f0300"></script>
+<script src="data/words-5.js?v=47a85e4485"></script>
+<script src="data/words-6.js?v=65ac1a8a3e"></script>
+<script src="data/words-7.js?v=c98c412351"></script>
+<script src="data/phrases.js?v=e9ab1228d0"></script>
+<script src="data/phrases-2.js?v=ef9d95bca5"></script>
+<script src="data/roots.js?v=1a8d20c2ee"></script>
+<script src="data/grammar.js?v=dafbda5191"></script>
+<script src="data/patterns.js?v=cc4be495e1"></script>
+<script src="data/patterns-2.js?v=dc33afea60"></script>
+<script src="data/textbook.js?v=d6f2670a01"></script>
+<script src="chinese/data/catalog.js?v=6f0a2bfc84"></script>
+<script src="engine.js?v=be1900f80d"></script>
+<script src="kids-auth.js?v=761e025333"></script>
+<script src="kids-coins.js?v=84ee8c442b"></script>
+<script src="syncmerge.js?v=21c2504d27"></script>
+<script src="completion.js?v=1962755aef"></script>
+<script src="kids-done.js?v=dd165c9261"></script>
+<script src="syncauto.js?v=b7269eca71"></script>
+<script src="sync.js?v=3ac4bf39ac"></script>
+<script src="assistant-core.js?v=2f6ca2b8d5"></script>
+<script src="assistant-ui.js?v=329cf062ee"></script>
+<script>
+/* 免登入只顯示「去登入」；登入後 sync.js 跟帳號同步，合併到新資料（kids-sync-updated）或別的分頁改了紀錄（kids-done-changed）就重畫。 */
+(function () {
+  'use strict';
+  var el = document.getElementById('kas-page'), t = null;
+  function render() { try { window.KidsAssistantUI.page(el); } catch (e) { el.innerHTML = '<p class="center muted">小助理暫時打不開，回學習站繼續練習吧！</p>'; } }
+  function soon() { clearTimeout(t); t = setTimeout(render, 200); }
+  window.addEventListener('kids-done-changed', soon);
+  window.addEventListener('kids-sync-updated', soon);
+  window.addEventListener('pageshow', function (e) { if (e.persisted) render(); });
+  render();
+})();
+</script>
+</body>
+</html>
