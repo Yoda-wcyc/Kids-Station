@@ -17,6 +17,7 @@ const DAY = 864e5, NOW = Date.parse('2026-11-01T04:00:00Z');   // 台北 12:00
 const snap = o => Object.assign({ now: NOW, data: DATA, ctx: {}, mk: {}, keMk: {}, seen: {}, goal: { min: 0, met: false }, rand: () => 0.5 }, o || {});
 const uniq = xs => new Set(xs).size === xs.length;
 const mkE = (t, p) => ({ c: 0, w: 1, t, u: t, p: p || {} });
+const LATER = Math.floor((NOW + 8 * 3600e3) / DAY) + 3;   // 🔁 社會／自然錯題的 due（3 天後才到期）：這些舊測試看的是「錯題多」那條，不讓到期複習蓋過去
 
 // ---------- 路由檢查：只准指到站上真的有的頁面 ----------
 const appJs = fs.readFileSync(path.join(root, 'app.js'), 'utf8'), subJs = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
@@ -24,7 +25,7 @@ const PAGES = new Set((/const pages = \{([^}]+)\}/.exec(appJs)[1].match(/(\w+):/
 const LEARN = new Set(['words', 'phrases', 'roots', 'grammar', 'patterns'].filter(x => appJs.includes(`sub === '${x}'`) || x === 'phrases'));
 const SUBJ_K = new Set([...subJs.matchAll(/\{ k: '([a-z]+)', n:/g)].map(x => x[1]));
 const actIds = k => { const m = new RegExp(`\\n    ${k}: \\[([\\s\\S]*?)\\n    (?:[a-z]+: \\[|\\})|\\n    ${k}: \\[([\\s\\S]*?)\\]\\n  \\};`).exec(subJs); return m ? [...(m[1] || m[2]).matchAll(/id: '([a-z0-9-]+)'/g)].map(x => x[1]) : []; };
-const ACT = { chinese: actIds('chinese'), math: actIds('math'), ai: actIds('ai'), social: KC.MM_UNITS.social.map(x => x[0]), science: KC.MM_UNITS.science.map(x => x[0]) };
+const ACT = { chinese: actIds('chinese'), math: actIds('math'), ai: actIds('ai'), social: KC.MM_UNITS.social.map(x => x[0]).concat('review'), science: KC.MM_UNITS.science.map(x => x[0]).concat('review') };   // review＝🔁 今天要複習（subjects.js hidden 入口）
 const MK_SUBJ = (/const MK_SUBJ = \[([^\]]+)\]/.exec(subJs)[1].match(/'([a-z]+)'/g) || []).map(x => x.slice(1, -1));
 const TB = new Set(W.DATA_TEXTBOOK.map(u => u.id));
 function routeOk(href) {
@@ -65,7 +66,7 @@ const allLinks = r => [].concat(r.tasks.map(t => t.href), r.weak.flatMap(w => [w
 const T1 = NOW - 3600e3;
 const MANY = snap({
   mk: {
-    science: Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`n3|w|p${i}|詞${i}`, mkE(T1, { u: 'n3', k: 'w', s: '重點', a: '詞' })])),
+    science: Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`n3|w|p${i}|詞${i}`, Object.assign(mkE(T1, { u: 'n3', k: 'w', s: '重點', a: '詞' }), { due: LATER })])),
     math: Object.fromEntries([1, 2, 3, 4, 5].map(i => [`gcdword:t${i}:12-18`, mkE(T1, { type: 'gcdword', t: 't' + i, v: [12, 18] })])),
     ai: { 'secrets|1': { d: 1, w: 2, t: T1, u: T1 } }
   },
@@ -119,11 +120,35 @@ const MANY = snap({
   ok(w && /看重點/.test(w.steps[0]) && /只練錯題/.test(w.steps[1]) && /再考一次/.test(w.steps[2]), 'exam weak steps: 看重點 → 只練錯題 → 再考一次 ' + (w && w.steps));
   ok(r.weak.filter(x => x.sol === 'mmExam').length === 1 && !r.weak.some(x => /自然/.test(x.title)) && allLinks(r).every(routeOk), 'exam ≥ 70 / mock / _seen 不列弱點；links ok');
   // 同單元也有錯題 → 併成一項（分數＋錯題數），排在其他弱點前面
-  const mk = { social: Object.fromEntries([1, 2, 3, 4].map(i => [`u3|q|h${i}`, mkE(T1, { u: 'u3', k: 'X', s: '題', a: '答' })])), math: Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`mx:1${i}x7`, mkE(T1, { type: 'multiply', a: 10 + i, b: 7, lv: 'd21' })])) };
+  const mk = { social: Object.fromEntries([1, 2, 3, 4].map(i => [`u3|q|h${i}`, Object.assign(mkE(T1, { u: 'u3', k: 'X', s: '題', a: '答' }), { due: LATER })])), math: Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`mx:1${i}x7`, mkE(T1, { type: 'multiply', a: 10 + i, b: 7, lv: 'd21' })])) };
   const r2 = KA.analyze(snap({ exam, mk })), so = r2.weak.filter(x => x.k === 'social');
   ok(so.length === 1 && so[0].sol === 'mmExam' && so[0].text === '單元測驗 56 分・錯題 4 題' && r2.weak[0] === so[0], 'exam + mistakes same unit → merged, first ' + JSON.stringify(r2.weak.map(x => x.title + ':' + x.text)));
   const t = r2.tasks.find(x => x.k === 'social');
   ok(t && t.kind === 'mistakes' && /4 題/.test(t.title), 'exam weak does not change mistakes task ' + JSON.stringify(t));
+}
+
+// ---------- 2b. 🔁 今天要複習（社會／自然：錯題＋閃卡到期）→ 放在「錯題多」的位置 ----------
+{
+  const today = Math.floor((NOW + 8 * 3600e3) / DAY), mm = (u, k, due) => Object.assign(mkE(T1, { u, k, s: 'S', a: 'A' }), due == null ? {} : { due });
+  const mk = { social: { 'u1|w|a': mm('u1', 'w'), 'u1|F|u1-03': mm('u1', 'F', today), 'u2|q|b': mm('u2', 'q', today - 2), 'u2|a|c': mm('u2', 'a', today + 1), 'u2|q|gone': { d: 1, w: 1, t: T1, u: T1 } },
+    science: { 'n3|w|x': mm('n3', 'w', today + 3) }, math: Object.fromEntries([1, 2, 3, 4, 5].map(i => [`mx:1${i}x7`, mkE(T1, { type: 'multiply', a: 10 + i, b: 7, lv: 'd21' })])) };
+  const r = KA.analyze(snap({ mk, goal: null })), so = r._.cand.find(t => t.k === 'social');
+  ok(so && so.kind === 'review' && so.title === '今天有 3 題到期該複習' && so.n === 3 && so.href === 'index.html#s/social/review' && routeOk(so.href) && so.pri === KA.PRI.mistakes && so.min >= KA.MINUTES.mkMin,
+    'review task: old entry (no due) + flashcard due today + overdue = 3; not-yet-due / tombstone excluded ' + JSON.stringify(so));
+  ok(!r._.cand.some(t => t.k === 'science' && t.kind === 'review'), 'science: nothing due → no review task');
+  ok(r._.cand.find(t => t.k === 'math').kind === 'mistakes' && !r._.cand.some(t => t.k === 'math' && t.kind === 'review'), 'math (not spaced): still the 只練錯題 task, never review');
+  ok(r.tasks.some(t => t.kind === 'review') && allLinks(r).every(routeOk), 'review task makes it into the tasks; links valid ' + r.tasks.map(t => t.k + ':' + t.kind));
+  // 同一科有很多錯題（錯題多）又有到期的 → 🔁 今天要複習取代那一條（同一個位置，一科一項）
+  const many = { science: Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`n3|w|p${i}|詞${i}`, mm('n3', 'w', i <= 2 ? today : today + 3)])) };
+  const r2 = KA.analyze(snap({ mk: many, goal: null })), sc = r2._.cand.filter(t => t.k === 'science');
+  ok(sc.length === 1 && sc[0].kind === 'review' && /2 題/.test(sc[0].title), 'review replaces 錯題多 for the same subject: ' + JSON.stringify(sc));
+  // 輪到明天（台北時間）才到期：今天不出、明天出
+  const t1 = { social: { 'u1|w|z': mm('u1', 'w', today + 1) } };
+  ok(!KA.analyze(snap({ mk: t1 }))._.cand.some(t => t.kind === 'review') && KA.analyze(snap({ mk: t1, now: NOW + DAY }))._.cand.some(t => t.kind === 'review'), 'due tomorrow (Taipei day) → shows up the next day');
+  // 優先順序：跟錯題多一樣排在「很久沒練」「完成到一半」前面
+  const stale = { social: { 'u1|w|z': Object.assign(mkE(NOW - 9 * DAY, { u: 'u1', k: 'w', s: 'S', a: 'A' }), { due: today }) } }, seen = { social: { t: NOW - 9 * DAY, d: [] }, math: { t: NOW - 9 * DAY, d: [] }, english: { t: NOW - 9 * DAY, d: [] } };
+  const r3 = KA.analyze(snap({ mk: stale, seen, goal: null }));
+  ok(r3.tasks[0].kind === 'review' && r3.tasks[0].k === 'social', 'review (pri 2) ranks before stale reviews (pri 3): ' + r3.tasks.map(t => t.k + ':' + t.kind));
 }
 
 // ---------- 3. 很久沒練 → 複習一輪 ----------

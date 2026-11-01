@@ -6,7 +6,7 @@
    快照 snap（全部可省略；新帳號就是全部空的）：
      now           現在（毫秒）
      data, ctx     completion.js 的 build(data, ctx)（KidsDone.data()／ctx()：課本、單字…、ke_learned、ke_log、kids_done、kids_mm_progress、kids_mm_blanks）
-     mk            kids_mistakes（社會／自然／數學／AI／國語錯題，entry {c,w,t,u,p}，墓碑 {d:1}）
+     mk            kids_mistakes（社會／自然／數學／AI／國語錯題，entry {c,w,t,u,p,due?}，墓碑 {d:1}；社會、自然的 due＝🔁 下次到期的日子，沒有＝今天到期）
      keMk          ke_mistakes（英文錯題，key＝題號）
      seen          kids_coin_seen（kids-coins.js 每次作答補記：{科:{t:最後作答時間, d:[最近 21 天有作答的日期]}}；這台才有、不同步）
      zhLocal       kids_zh_reading（國語閱讀本機細節）
@@ -41,9 +41,10 @@
     FRESH_DAYS: 3,       // 3 天內練過、沒有錯題 → 很棒
     TODAY_PENALTY: 2     // 今天已經練過的科目，任務優先順序往後 2 級（各科輪流）
   };
-  const PRI = { goal: 1, mistakes: 2, stale: 3, finish: 4, start: 5 };   // 數字小＝先做
+  const PRI = { goal: 1, mistakes: 2, review: 2, stale: 3, finish: 4, start: 5 };   // 數字小＝先做；🔁 到期複習放在「錯題多」的位置
   const MINUTES = { stale: 10, finish: 10, start: 10, mkEach: 0.5, mkMin: 3, mkMax: 10 };
   const DAY = 864e5, TPE = 8 * 3600e3;
+  const SPACED = ['social', 'science'];   // 🔁 隔天複習（間隔 1 → 3 → 7 天，kids-mistakes.js）只開在社會、自然
 
   // ================= 科目 =================
   const SUBJ = [
@@ -61,7 +62,7 @@
   // ================= 解法庫（弱點類型 → 具體步驟；每一步都是站上真的有的功能） =================
   // {unit}＝那個單元的頁面、{mk}＝錯題庫；href／href2 是兩顆直達按鈕
   const SOLUTIONS = {
-    mm: { steps: ['📖 進單元先按「看重點」，把重點讀一遍', '🧠 再做「背架構」第 1 關，把卡片放回心智圖', '📕 最後到錯題庫按「只練錯題」，同一題連續答對 3 次就畢業 🎓'],
+    mm: { steps: ['📖 進單元先按「看重點」，把重點讀一遍', '🧠 再做「背架構」第 1 關，把卡片放回心智圖', '📕 最後到錯題庫按「只練錯題」；之後每天按「🔁 今天要複習」，隔 1、3、7 天都答對就畢業 🎓'],
       href: '{unit}', btn: '📖 去看重點', href2: '{mk}', btn2: '📕 只練錯題' },
     mathWord: { steps: ['✏️ 讀題時先把題目裡的數字圈起來（用紙筆或手指點）', '🖍️ 在紙上畫一張小圖：誰有多少、要分成幾份、問的是什麼', '⭐ 練習會從 ★ 最簡單的題目開始，先把簡單的穩穩做對，再往上', '📕 到數學錯題庫按「只練錯題」再做一次'],
       href: '{mk}', btn: '📕 只練錯題', href2: '{unit}', btn2: '✏️ 回去練習' },
@@ -103,7 +104,7 @@
     comeback: ['歡迎回來！隔了 {days} 天還願意回來練習，這份堅持很棒。', '好久不見！{days} 天沒來也沒關係，今天從一個小任務重新開始。', '你回來了 🎉 先複習一下之前學的，腦袋很快就會想起來。',
       '休息了 {days} 天，今天重新出發！先挑最簡單的一項暖身。', '回來就是最重要的一步！今天練一點點，就會接回之前的進度。'],
     manyWrong: ['今天有 {n} 題答錯，代表你正在挑戰新東西，錯題就是最好的老師。', '錯了 {n} 題沒關係！把錯題再練一次，下次就會記得更清楚。', '今天碰到比較難的題目，你還是繼續做下去，這份努力最重要。',
-      '答錯的題目都收進錯題庫了，連續答對 3 次它們就會畢業 🎓', '大腦在學新東西的時候本來就會答錯，慢慢看解說，你會越來越熟。'],
+      '答錯的題目都收進錯題庫了，再練幾次都答對，它們就會畢業 🎓', '大腦在學新東西的時候本來就會答錯，慢慢看解說，你會越來越熟。'],
     goalMet: ['今天的目標達成了！練了 {min} 分鐘，你真的說到做到。', '每日目標 ✅！認真練了 {min} 分鐘，給自己一個讚 👍', '達標了！每天練一點，累積起來就是很大的進步。',
       '今天的 15 分鐘完成了，想多練也可以，休息一下也很好。', '目標達成 🎯 你今天花時間練習，這就是會進步的方法。'],
     fewer: ['這週你的{subj}錯題從 {from} 題變成 {to} 題！把錯題練回來的方法有效喔。', '{subj}錯題從 {from} 題減到 {to} 題，這是你一題一題練出來的成果。', '看得出來你有在複習，{subj}這週只錯 {to} 題（上週 {from} 題）。',
@@ -276,10 +277,13 @@
     const cand = [];
     SUBJ.forEach(s => {
       const S = SB[s.k], us = U[s.k], list = [];
-      // ② 錯題多：社會／自然先看單元，其他整科
+      // ② 錯題多：社會／自然先看單元，其他整科。社會／自然有到期該複習的（錯題＋閃卡）→ 改成 🔁 今天要複習（同一個位置）
       const unitG = groups.filter(g => g.k === s.k && g.kind === 'mm' && g.unit && g.n >= RULES.MK_UNIT).sort((x, y) => y.n - x.n)[0];
-      if (unitG) list.push({ kind: 'mistakes', icon: '📕', title: `只練〈${mmTitle(s.k, unitG.unit)}〉的錯題（${unitG.n} 題）`, why: `這個單元錯了 ${unitG.n} 題，同一題連續答對 3 次就畢業 🎓`, href: unitG.mkHref, n: unitG.n });
-      else if (S.mistakes >= RULES.MK_SUBJ) list.push({ kind: 'mistakes', icon: '📕', title: `只練${s.name}錯題（${S.mistakes} 題）`, why: `${s.name}錯題庫有 ${S.mistakes} 題，同一題連續答對 3 次就畢業 🎓`, href: s.mk, n: S.mistakes });
+      const nDue = SPACED.includes(s.k) ? live(mk[s.k]).filter(id => !(+mk[s.k][id].due > today)).length : 0;
+      const grad = SPACED.includes(s.k) ? '隔 1、3、7 天各答對一次就畢業 🎓' : '同一題連續答對 3 次就畢業 🎓';
+      if (nDue) list.push({ kind: 'review', icon: '🔁', title: `今天有 ${nDue} 題到期該複習`, why: `${s.name}的錯題和閃卡隔 1、3、7 天再考一次，到期答對就往下一關`, href: `index.html#s/${s.k}/review`, n: nDue });
+      else if (unitG) list.push({ kind: 'mistakes', icon: '📕', title: `只練〈${mmTitle(s.k, unitG.unit)}〉的錯題（${unitG.n} 題）`, why: `這個單元錯了 ${unitG.n} 題，${grad}`, href: unitG.mkHref, n: unitG.n });
+      else if (S.mistakes >= RULES.MK_SUBJ) list.push({ kind: 'mistakes', icon: '📕', title: `只練${s.name}錯題（${S.mistakes} 題）`, why: `${s.name}錯題庫有 ${S.mistakes} 題，${grad}`, href: s.mk, n: S.mistakes });
       // ③ 很久沒碰：回到最近在做（或最後完成）的單元
       if (S.days != null && S.days > RULES.STALE_DAYS) {
         const u = us.filter(x => x.status === 'doing').sort((x, y) => y.pct - x.pct)[0] || us.filter(x => x.status === 'done').slice(-1)[0];
@@ -291,7 +295,7 @@
       // ⑤ 還沒開始：照順序的下一個
       const todo = us.find(x => x.status === 'todo') || (s.k === 'english' ? (U._englishAll || []).find(x => x.status === 'todo') : null);
       if (todo && !doing) list.push({ kind: 'start', icon: '🚀', title: `${isNew || !us.some(x => x.status !== 'todo') ? '從' : '開始'}〈${todo.title}〉${isNew || !us.some(x => x.status !== 'todo') ? '開始' : ''}`, why: isNew || !us.some(x => x.status !== 'todo') ? `${s.name}的第一個單元，從這裡出發` : `照順序，${s.name}的下一步是這個單元`, href: todo.href });
-      list.forEach(t => { t.pri = PRI[t.kind]; t.k = s.k; t.subj = s.name; t.min = t.kind === 'mistakes' ? clamp(Math.ceil(t.n * MINUTES.mkEach), MINUTES.mkMin, MINUTES.mkMax) : MINUTES[t.kind]; });
+      list.forEach(t => { t.pri = PRI[t.kind]; t.k = s.k; t.subj = s.name; t.min = t.kind === 'mistakes' || t.kind === 'review' ? clamp(Math.ceil(t.n * MINUTES.mkEach), MINUTES.mkMin, MINUTES.mkMax) : MINUTES[t.kind]; });
       list.sort((x, y) => x.pri - y.pri);
       if (list[0]) cand.push(list[0]);   // 同一科一天最多 1 項
     });

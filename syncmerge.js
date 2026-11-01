@@ -6,6 +6,7 @@
     done.zh:{'<篇id>':第一次完成的時間}   ← 國語〈閱讀素養〉完成的篇（2026-11-01 加，跟 fr 一樣不升版；聯集，留最早的時間；判定在 completion.js zh:L1～L4）
     done.cy:{'<成語／篇／單元測驗 id>':第一次完成的時間}   ← 國語〈成語故事〉完成的成語 cy001～cy100、素養閱讀 cyr01～cyr10、單元測驗 cyu01～cyu10、總測驗 cyall（2026-11-01 加，同 zh）
     mk.chinese                              ← 國語錯題庫（2026-11-01 加；舊版裝置的 normMk 會丟掉、新版下次同步從本機補回）
+    mk.<科>.<id>.due                         ← 🔁 隔天複習（社會／自然）下次到期的日子（台北時間第幾天；2026-11-01 加，不升版：舊版裝置會丟掉 → 那題當今天到期；一樣新時 墓碑 ＞ 有 due ＞ 沒 due）
    - mp、fr：各項取大。mx：acc 取大、sp 取小、ok 取最早（聯集）。舊版（v5）裝置的 normDone 會丟掉 mp／mx → 新版下次同步從本機補回來（跟 v4→v5 的 done 一樣）。
    文件格式 v5（2026-10-20 起；v4 欄位完全不變，只多一個 done 欄位，舊文件少了它就當空的）：
     done:{tb:{'<課本單元>':{best,last,at}}, mm:{'<科>:<單元>':{cz,qz}}, bal:{b1…b8:ms}, sd:{l20,l100,l3d,tri:%}, gw:{basic,adv:%}, ai:{'<頁>':ms}}
@@ -158,7 +159,9 @@
     if (!e || typeof e !== 'object' || Array.isArray(e)) return null;
     const t = nat(e.t), u = Math.max(nat(e.u), t);
     if (e.d) return { d: 1, w: nat(e.w), t, u };
-    return { c: Math.min(nat(e.c), MK_GRAD - 1), w: Math.max(1, nat(e.w)), t, u, p: normMkP(e.p) };
+    const o = { c: Math.min(nat(e.c), MK_GRAD - 1), w: Math.max(1, nat(e.w)), t, u, p: normMkP(e.p) };
+    if (nat(e.due)) o.due = nat(e.due);   // 🔁 隔天複習的下次到期日（社會／自然，2026-11-01；不升版：舊版裝置會丟掉，那題就當今天到期）
+    return o;
   }
   function normMkBook(b) {
     const o = {}, x = obj(b), dead = [];
@@ -169,9 +172,11 @@
   function normMk(x) { const o = {}, d = obj(x); MK_SUBJ.forEach(s => { const b = normMkBook(d[s]); if (Object.keys(b).length) o[s] = b; }); return o; }
   // 同一題：u 新的勝（墓碑＝已畢業也是，別台舊的那份不會把它救回來）；一樣新比內容（不含 w）；答錯次數 w 取較大
   const noW = e => { const o = Object.assign({}, e); delete o.w; return canon(o); };
+  // 一樣新時：墓碑 ＞ 有 due ＞ 沒 due（不讓畢業的題復活、舊版丟掉 due 也蓋不掉排程；三級全序，合併才能交換、結合；同 kids-mistakes.js pick）
+  const rkMk = e => e.d ? 2 : e.due ? 1 : 0;
   function pickMk(a, b) {
     if (!a) return b; if (!b) return a;
-    const x = a.u !== b.u ? (a.u > b.u ? a : b) : (noW(a) >= noW(b) ? a : b), w = Math.max(a.w, b.w);
+    const x = a.u !== b.u ? (a.u > b.u ? a : b) : rkMk(a) !== rkMk(b) ? (rkMk(a) > rkMk(b) ? a : b) : (noW(a) >= noW(b) ? a : b), w = Math.max(a.w, b.w);
     return x.w === w ? x : Object.assign({}, x, { w });
   }
   function mergeMk(a, b) {

@@ -188,3 +188,18 @@ body{overflow:hidden;overscroll-behavior:none;font-size:19px}
 .ex-sg{text-align:left;margin:14px 0 6px;background:#fffaf0;border:2px solid #f0e2c8;border-radius:14px;padding:10px 14px}
 .ex-sg ul{margin:6px 0 0;padding-left:20px}.ex-sg li{margin:8px 0;line-height:1.6}
 .n.focus{box-shadow:0 0 0 5px rgba(255,138,61,.55)}
+/* 🃏 閃卡（2026-11-01）：點一下 3D 翻面、左右滑動換卡（iPad）；🔁 今天要複習的閃卡題也用這組樣式 */
+.fc-stage{perspective:1200px;margin:14px auto;max-width:560px;touch-action:pan-y}
+.fc-card{display:block;width:100%;padding:0;border:0;background:none;font:inherit;color:var(--ink);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.fc-in{position:relative;display:block;width:100%;min-height:270px;transition:transform .45s;-webkit-transform-style:preserve-3d;transform-style:preserve-3d}
+.fc-card.flip .fc-in{transform:rotateY(180deg)}
+.fc-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px 24px;border:3px solid var(--line);border-radius:22px;background:#fff;box-shadow:0 4px 0 var(--line);-webkit-backface-visibility:hidden;backface-visibility:hidden;text-align:center}
+.fc-front b{font-size:2.3rem;line-height:1.3}
+.fc-front small{color:var(--muted);font-weight:700;font-size:.95rem}
+.fc-back{transform:rotateY(180deg);background:#fffaf0;border-color:#f0b429}
+.fc-back b{font-size:1.4rem;color:var(--pri)}
+.fc-back span{font-size:1.25rem;line-height:1.7;font-weight:600}
+.fc-row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.fc-ans .mm-b{flex:1 1 0;max-width:260px;min-height:64px;font-size:1.2rem}
+.mm-b.no{background:var(--no-bg);border-color:var(--no);color:#b3261e;box-shadow:0 3px 0 #f3b3b5}
+.fc-done{font-weight:800;margin:10px 0 0}

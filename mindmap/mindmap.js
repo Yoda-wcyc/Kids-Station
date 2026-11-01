@@ -3,7 +3,9 @@
  * 四模式：📖 看重點（免登入）／🧠 背架構／✏️ 考考自己／📝 練習題（後三者開始時 KidsAuth.requireLogin＋startActivity(科)）。
  * 🧩 素養題組（2026-11-01）：每單元 5 組「資料＋4 題」（data/<科>/lit*.js 的 <資料>.lit[單元id]），題目元件 ../quizkit.js、區塊畫面與判分 ../chinese/reading-core.js；不算單元完成。
  * 📄 單元測驗／📝 段考模擬（2026-11-01）：組卷與判分 exam.js（MMExam），新題在 data/<科>/exam1-4.js；段考頁＝?mock=1（首頁社會、自然各一張卡）；不算單元完成。
- * 學習幣：每次作答 KidsCoins.answer(ok, 科)；一輪結束 KidsCoins.report({type:'practice_round', item:'<科>:<arch|cloze|quiz>', correct, total})。
+ * 🃏 閃卡（2026-11-01）：每單元約 20～40 張名詞卡（data/<科>/cards.js 的 <資料>.cards[單元id]），一輪 15 張：沒看過 → 記不得的 → 到期該複習的；「再想想」收進錯題庫（k 'F'）。
+ * 🔁 今天要複習（2026-11-01，?review=1；首頁社會、自然的「今天要複習 N 題」）：錯題庫裡到期的題＋閃卡混成一輪，隔 1 → 3 → 7 天（規則在 ../kids-mistakes.js）。
+ * 學習幣：每次作答 KidsCoins.answer(ok, 科)（閃卡是自己判斷記不記得，不算學習幣）；一輪結束 KidsCoins.report({type:'practice_round', item:'<科>:<arch|cloze|quiz>', correct, total})。
  * 紀錄：localStorage kids_mm_progress／kids_mm_blanks（key＝'<科>:<單元id>'）、kids_mm_ui（key＝科）；舊的 kids_social_* 會自動搬過來。
  * 抽題規則與資料格式見 data/FORMAT.md。 */
 (function(){
@@ -71,7 +73,7 @@ function migrateOld(){
 migrateOld();
 
 /* ---------- 登入與學習幣（沿用全站規則；kids-auth.js／kids-coins.js 沒載入時一律放行、不計） ---------- */
-var WHY = {arch:'背架構', cloze:'考考自己', quiz:'做練習題', lit:'做素養題組', exam:'做單元測驗', mock:'做段考模擬'};
+var WHY = {arch:'背架構', cloze:'考考自己', quiz:'做練習題', lit:'做素養題組', exam:'做單元測驗', mock:'做段考模擬', card:'翻閃卡'};
 function loggedOK(){ var A = window.KidsAuth; try{ return !A || !A.configured() || A.isLoggedIn(); }catch(e){ return true; } }
 /* 開始一輪：先登入、再問練習額度（目前免費額度關閉＝照常放行）；retry＝額度閘門先擋、後端說可以時重來一次 */
 function gate(mode, retry){
@@ -87,7 +89,7 @@ function coinRound(mode, correct, total){ try{ if(window.KidsCoins && total > 0)
 
 /* ---------- 錯題庫（../kids-mistakes.js；沒載入就不記）----------
    考考自己答錯的詞（連同那句重點）、背架構答錯的節點（連同上層位置）、練習題答錯的題目 → kids_mistakes[科]；
-   在錯題庫裡的題連續答對 3 次就畢業（規則同英文）。id／p 的格式見 kids-mistakes.js 檔頭。 */
+   社會、自然的錯題走 🔁 隔天複習：隔 1、3、7 天各到期答對一次才畢業（2026-11-01，規則在 kids-mistakes.js）。id／p 的格式見 kids-mistakes.js 檔頭。 */
 function KMx(){ return window.KidsMistakes || null; }
 function mkRec(id, ok, p){ try{ var K = KMx(); return K ? K.record(SUBJ, id, ok, ok ? null : p) : null; }catch(e){ return null; } }
 /* 背架構節點的上層位置：「單元二 › 第一課 › ___」；第 1 層本身＝「單元二 › ___（第一課）」 */
@@ -110,7 +112,8 @@ function quizAns(q){
   return '';
 }
 function mkQuiz(q, ok){ if(!KMx() || MKMODE) return; var u = unit(); mkRec(u.id + '|q|' + KMx().hash(q.q), ok, {u:u.id, k:'q', s:q.q, a:quizAns(q)}); }
-var MKMODE = /[?&]mistakes=1/.test(location.search);
+var RVMODE = /[?&]review=1/.test(location.search);   // 🔁 今天要複習：只出到期的（錯題＋閃卡）；其他跟只練錯題一樣
+var MKMODE = RVMODE || /[?&]mistakes=1/.test(location.search);
 
 /* ---------- 狀態 ---------- */
 var UI = Object.assign({unit:0, layout:'tree', mode:'read'}, lsGet(UKEY, {})[SUBJ] || {});
@@ -711,12 +714,12 @@ function prepQ(q){ var o = {q:q, done:false, right:false};
   return o; }
 function renderQuiz(){
   var P = $('#panel'), u = unit();
-  if(!QZ.items.length){ P.innerHTML = QZ.mk ? '<div class="mm-wrap"><p class="mk-empty">目前沒有錯題 🎉</p><p><a class="mm-b on" target="_top" href="' + mkBack() + '">📕 回錯題庫</a></p></div>' : '<div class="mm-wrap"><p>這個單元還沒有練習題。</p></div>'; return; }
+  if(!QZ.items.length){ P.innerHTML = QZ.mk ? '<div class="mm-wrap"><p class="mk-empty" id="mkEmpty">' + (RVMODE ? '今天都複習完了 🎉' : '目前沒有錯題 🎉') + '</p><p><a class="mm-b on" target="_top" href="' + mkBack() + '">' + mkBackLab() + '</a></p></div>' : '<div class="mm-wrap"><p>這個單元還沒有練習題。</p></div>'; return; }
   if(QZ.i >= QZ.items.length && QZ.mk){
     var mn = QZ.items.length;
     P.innerHTML = '<div class="mm-wrap"><div class="card result center" id="mkResult"><div class="party">' + (QZ.ok === mn ? '🏆' : '💪') + '</div><div class="score">' + QZ.ok + ' / ' + mn + '</div>' +
-      (QZ.grad ? '<p>🎓 有 ' + QZ.grad + ' 題錯題畢業了！</p>' : '<p>同一題連續答對 3 次就會畢業喔！</p>') +
-      '<div class="share-row"><button class="mm-b on" data-act="mkAgain">🔁 再練一次</button><a class="mm-b" target="_top" href="' + mkBack() + '">📕 回錯題庫</a></div></div></div>';
+      (QZ.grad ? '<p>🎓 有 ' + QZ.grad + ' 題錯題畢業了！</p>' : '') + '<p>到期答對的題，會隔 3 天、7 天再考一次；第 3 次到期也答對就畢業。答錯的明天再複習。</p>' +
+      '<div class="share-row">' + (RVMODE ? '' : '<button class="mm-b on" data-act="mkAgain">🔁 再練一次</button>') + '<a class="mm-b' + (RVMODE ? ' on' : '') + '" target="_top" href="' + mkBack() + '">' + mkBackLab() + '</a></div></div></div>';
     return;
   }
   if(QZ.i >= QZ.items.length){
@@ -729,6 +732,9 @@ function renderQuiz(){
   if(q.type === 'fill'){
     body = it.done ? '' : '<div class="l3row"><input id="mkIn" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="空格裡是什麼？" enterkeyhint="done"></div>' +
       '<div class="share-row"><button class="mm-b on" data-act="qfill">✅ 確定</button><button class="mm-b" data-act="qfillSkip">👀 不會</button></div>';
+  } else if(q.type === 'card'){
+    body = '<div class="fc-stage">' + fcFace(q.f, q.b, it.flip || it.done, 'qcFlip') + '</div>' + (it.done ? '' : it.flip ? '<div class="fc-row fc-ans"><button class="mm-b no" data-act="qcAns" data-v="0">再想想 ✗</button><button class="mm-b ok" data-act="qcAns" data-v="1">我記得 ✓</button></div>' :
+      '<div class="fc-row"><button class="mm-b" data-act="qcSay">🔊 朗讀</button></div><p class="muted center">先想一想，再點卡片翻面</p>');
   } else if(q.type === 'mc'){
     body = '<div class="opts">' + it.ord.map(function(oi){ var cls = ''; if(it.done){ if(oi === q.a) cls = ' right'; else if(oi === it.pick) cls = ' wrong'; } return '<button class="opt' + cls + '" data-act="qmc" data-v="' + oi + '"' + (it.done ? ' disabled' : '') + '>' + esc(q.opts[oi]) + '</button>'; }).join('') + '</div>';
   } else if(q.type === 'tf'){
@@ -747,22 +753,22 @@ function renderQuiz(){
   var fb = '';
   if(it.done){
     var extra = q.type === 'order' && !it.right ? '<ol class="ord-list">' + q.items.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>' : q.type === 'match' && !it.right ? '<ul class="ord-list">' + q.pairs.map(function(pr){ return '<li>' + esc(pr[0]) + ' ↔ ' + esc(pr[1]) + '</li>'; }).join('') + '</ul>' : '';
-    fb = '<div class="fb ' + (it.right ? 'ok' : 'no') + '"><div class="fbh">' + (it.right ? '答對了！🎉' : '再看一次 👀') + '</div><div class="why">' + esc(q.why || '') + extra + '</div></div>' +
+    fb = '<div class="fb ' + (it.right ? 'ok' : 'no') + '"><div class="fbh">' + (q.type === 'card' ? (it.right ? '記得 👍' : '沒關係，明天再看一次 💪') : it.right ? '答對了！🎉' : '再看一次 👀') + '</div><div class="why">' + esc(q.why || '') + extra + '</div></div>' +
       '<button class="mm-b big on" style="width:100%;margin-top:12px" data-act="qNext">' + (QZ.i + 1 < QZ.items.length ? '下一題 ▶' : '看結果 🏁') + '</button>';
   }
   var mu = QZ.mk ? ALL_UNITS.filter(function(x){ return x.id === it.mu; })[0] : null;
-  var headL = QZ.mk ? '📕 錯題練習' + (mu ? '・' + esc(unitLabel(mu)) : '') : '📝 練習題・' + esc(unitLabel(u));
+  var headL = QZ.mk ? (RVMODE ? '🔁 今天要複習' : '📕 錯題練習') + (mu ? '・' + esc(unitLabel(mu)) : '') : '📝 練習題・' + esc(unitLabel(u));
   if(QZ.mk && it.done && !it.right && q.type === 'fill' && it.input) fb = fb.replace('<div class="why">', '<div class="why">你寫「' + esc(it.input) + '」。');
   P.innerHTML = '<div class="mm-wrap"><div class="qz-head"><span>' + headL + '</span><span>第 ' + (QZ.i + 1) + ' / ' + QZ.items.length + ' 題　答對 ' + QZ.ok + '</span></div>' +
     '<div class="bar"><i style="width:' + Math.round(QZ.i / QZ.items.length * 100) + '%"></i></div>' +
     (q.ctx ? '<details class="lit-ctx" open><summary>📖 看資料〈' + esc(q.ctx.title) + '〉</summary>' + litArt(q.ctx) + '</details>' : '') +
-    '<div class="card qcard" style="margin-top:12px;text-align:left"><span class="qtype">' + (q.tl || QTYPE[q.type]) + '</span><div class="qz-q">' + (q.type === 'fill' ? mkFillHTML(it) : esc(q.q)) + '</div>' + body + '</div>' + fb + '</div>';
+    '<div class="card qcard" style="margin-top:12px;text-align:left"><span class="qtype">' + (q.tl || QTYPE[q.type]) + '</span><div class="qz-q">' + (q.type === 'fill' ? mkFillHTML(it) : q.type === 'card' ? '' : esc(q.q)) + '</div>' + body + '</div>' + fb + '</div>';
   var mi = $('#mkIn'); if(mi){ try{ mi.focus(); }catch(e){} mi.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); ACT.qfill(); } }); }
 }
-function quizDone(right){ var it = QZ.items[QZ.i]; it.done = true; it.right = right; if(right) QZ.ok++; coinAnswer(right);
+function quizDone(right){ var it = QZ.items[QZ.i], card = it.q.type === 'card'; it.done = true; it.right = right; if(right) QZ.ok++; if(!card) coinAnswer(right);   // 閃卡自己判斷，不算學習幣
   if(QZ.mk){ try{ if(KMx().record(SUBJ, it.mk, right) === 'graduated') QZ.grad++; }catch(e){} }
   else { mkQuiz(it.q, right); if(right) qzOk(it.q); exMarkSeen(['q:' + qHash(it.q.q)]); }   // 單元測驗抽題時避開最近 7 天做過的
-  if(QZ.items.every(function(x){ return x.done; }) && !QZ.reported){ QZ.reported = true; coinRound(QZ.mk ? 'mistakes' : 'quiz', QZ.ok, QZ.items.length); if(!QZ.mk) doneRec('qz', Math.round(QZ.ok / QZ.items.length * 100)); }
+  if(QZ.items.every(function(x){ return x.done; }) && !QZ.reported){ QZ.reported = true; var qs = QZ.items.filter(function(x){ return x.q.type !== 'card'; }); coinRound(QZ.mk ? 'mistakes' : 'quiz', qs.filter(function(x){ return x.right; }).length, qs.length); if(!QZ.mk) doneRec('qz', Math.round(QZ.ok / QZ.items.length * 100)); }
   renderQuiz(); }
 
 /* ---------- 🧩 素養題組（2026-11-01）----------
@@ -833,9 +839,73 @@ document.addEventListener('click', function(e){   // quizkit 的作答按鈕（d
 });
 document.addEventListener('input', function(e){ var t = e.target; if(LT && t.classList && t.classList.contains('lit-draft')) LT.items[+t.closest('.zr-q').getAttribute('data-i')].text = t.value; });
 
+/* ---------- 🃏 閃卡（2026-11-01）----------
+   卡片在 data/<科>/cards.js（<資料>.cards[單元id] = [{id, f:名詞, b:說明, ref}]）。一輪 FCN 張：沒看過 → 記不得的（錯題庫裡、還在第 1 天那一關）→ 到期該複習的 → 其他看過的（最久沒看的先）。
+   點卡片翻面（🔊 朗讀 zh-TW），左右滑動或 ◀ ▶ 換卡；翻面後按「我記得 ✓」「再想想 ✗」→ 錯題庫 '<單元>|F|<卡id>'（社會、自然走 1 → 3 → 7 天的間隔，規則在 ../kids-mistakes.js）。
+   自己判斷記不記得，所以不算學習幣、不算單元完成。本機紀錄（不同步）：localStorage kids_mm_cards＝{'<科>:<卡id>': 最後翻面時間}（＝看過了）。 */
+var CKEY = 'kids_mm_cards', FCN = 15, FC = null;
+var FCTAG = ['🆕 沒看過', '🤔 記不得的', '🔁 該複習了', '👀 再看一次'];
+function cardsOf(u){ u = u || unit(); return (u && D.cards && D.cards[u.id]) || []; }
+function cardById(uid, id){ return ((D.cards && D.cards[uid]) || []).filter(function(c){ return c.id === id; })[0] || null; }
+function fcPick(){
+  var u = unit(), K = KMx(), seen = lsGet(CKEY, {}), book = {}, t = K && K.now ? K.now() : Date.now(), T = [[], [], [], []];
+  if(K) try{ K.list(SUBJ, u.id).forEach(function(e){ book[e.id] = e; }); }catch(e){}
+  cardsOf(u).forEach(function(c, i){
+    var e = book[u.id + '|F|' + c.id], sn = seen[SUBJ + ':' + c.id];
+    if(!e && !sn) T[0].push({c:c, tier:0, k:i});
+    else if(e && !e.c) T[1].push({c:c, tier:1, k:e.t});
+    else if(e && K._core.isDue(e, t)) T[2].push({c:c, tier:2, k:e.due || 0});
+    else T[3].push({c:c, tier:3, k:sn || 0});
+  });
+  return T.map(function(x, i){ return i ? x.sort(function(a, b){ return a.k - b.k; }) : x; }).reduce(function(a, x){ return a.concat(x); }, []).slice(0, FCN)
+    .map(function(x){ return {c:x.c, tier:x.tier, ans:null}; });
+}
+function startCards(){ sayStop(); FC = {i:0, flip:false, items:fcPick()}; renderCards(); }
+function fcFace(f, b, flip, act, tag){
+  return '<button type="button" class="fc-card' + (flip ? ' flip' : '') + '" data-act="' + act + '" aria-label="' + (flip ? '翻回正面' : '點一下翻面') + '"><span class="fc-in">' +
+    '<span class="fc-face fc-front">' + (tag ? '<small>' + tag + '</small>' : '') + '<b>' + esc(f) + '</b><small>👆 點一下翻面</small></span>' +
+    '<span class="fc-face fc-back"><b>' + esc(f) + '</b><span>' + esc(b) + '</span></span></span></button>';
+}
+function renderCards(){
+  var P = $('#panel'), u = unit(), n = FC.items.length;
+  if(!n){ P.innerHTML = '<div class="mm-wrap"><p>這個單元還沒有閃卡。</p></div>'; return; }
+  if(FC.i >= n){
+    var ok = FC.items.filter(function(x){ return x.ans === true; }).length, no = FC.items.filter(function(x){ return x.ans === false; }).length;
+    P.innerHTML = '<div class="mm-wrap"><div class="card result center" id="fcResult"><div class="party">🃏</div><div class="score">記得 ' + ok + ' 張・再想想 ' + no + ' 張</div>' +
+      '<p>按「再想想」的卡收進錯題庫，隔 1 天、3 天、7 天會出現在「🔁 今天要複習」；到期都記得就畢業 🎓</p>' +
+      '<div class="share-row"><button class="mm-b on" data-act="fcAgain">🔁 再來一輪</button><button class="mm-b" data-act="mode" data-v="read">📖 回去看重點</button></div></div></div>';
+    return;
+  }
+  var it = FC.items[FC.i];
+  P.innerHTML = '<div class="mm-wrap"><div class="qz-head"><span>🃏 閃卡・' + esc(unitLabel(u)) + '</span><span>第 ' + (FC.i + 1) + ' / ' + n + ' 張</span></div>' +
+    '<div class="bar"><i style="width:' + Math.round(FC.i / n * 100) + '%"></i></div>' +
+    '<div class="fc-stage" id="fcStage">' + fcFace(it.c.f, it.c.b, FC.flip, 'fcFlip', FCTAG[it.tier]) + '</div><div id="fcRows">' + fcRows() + '</div></div>';
+}
+function fcRows(){
+  var it = FC.items[FC.i];
+  var nav = '<div class="fc-row"><button class="mm-b" data-act="fcPrev" aria-label="上一張"' + (FC.i ? '' : ' disabled') + '>◀</button><button class="mm-b" data-act="fcSay">🔊 朗讀</button><button class="mm-b" data-act="fcNext" aria-label="下一張">▶</button></div>';
+  if(it.ans != null) return '<p class="center fc-done">' + (it.ans ? '✓ 這張你記得' : '✗ 這張明天再複習') + '</p>' + nav;
+  return (FC.flip ? '<div class="fc-row fc-ans"><button class="mm-b no" data-act="fcAns" data-v="0">再想想 ✗</button><button class="mm-b ok" data-act="fcAns" data-v="1">我記得 ✓</button></div>' : '<p class="muted center">想一想它是什麼意思，再點卡片翻面；左右滑動可以換卡</p>') + nav;
+}
+function fcSeen(c){ var all = lsGet(CKEY, {}); all[SUBJ + ':' + c.id] = Date.now(); lsSet(CKEY, all); }
+function fcGo(d){ sayStop(); FC.i = clamp(FC.i + d, 0, FC.items.length); FC.flip = false; renderCards(); }
+/* 朗讀：瀏覽器內建語音 zh-TW（同國語閱讀 chinese/reading.js） */
+function zhVoice(){ try{ var v = speechSynthesis.getVoices(); return v.filter(function(x){ return /^zh[-_]TW/i.test(x.lang); })[0] || v.filter(function(x){ return /^zh[-_](HK|Hant)/i.test(x.lang); })[0] || v.filter(function(x){ return /^zh/i.test(x.lang); })[0] || null; }catch(e){ return null; } }
+function say(text){ try{ if(!window.speechSynthesis) return; speechSynthesis.cancel(); var m = new SpeechSynthesisUtterance(text), v = zhVoice(); m.lang = 'zh-TW'; if(v) m.voice = v; m.rate = 0.9; speechSynthesis.speak(m); }catch(e){} }
+function sayStop(){ try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){} }
+function sayCard(c, back){ say(back ? c.f + '。' + c.b : c.f); }
+/* 左右滑動換卡（iPad）：水平移動 > 50px 且比垂直多 */
+var fcTouch = null;
+function fcSwipeInit(){
+  var P = $('#panel');
+  P.addEventListener('touchstart', function(e){ fcTouch = UI.mode === 'card' && FC && e.touches.length === 1 && e.target.closest('#fcStage') ? {x:e.touches[0].clientX, y:e.touches[0].clientY} : null; }, {passive:true});
+  P.addEventListener('touchend', function(e){ if(!fcTouch) return; var t = e.changedTouches[0], dx = t.clientX - fcTouch.x, dy = t.clientY - fcTouch.y; fcTouch = null;
+    if(Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)){ e.preventDefault(); fcGo(dx < 0 ? 1 : -1); } });
+}
+
 /* ---------- 📕 只練錯題（?mistakes=1；首頁錯題庫按「只練錯題」開這頁）----------
    把錯題庫裡的三種題混成一輪：考考自己的挖空詞（fill：那句重點挖掉那個詞，自己寫）、背架構的節點（選擇題：上層位置＋選標題，
-   干擾項不放同一上層的兄弟）、練習題（原題）。每題作答照錯題庫規則記（答錯歸零、連對 3 次畢業）；一輪結束送 practice_round '<科>:mistakes'。 */
+   干擾項不放同一上層的兄弟）、練習題（原題）。每題作答照錯題庫規則記（答錯回到 1 天、到期答對往 3 天、7 天走，第 3 次畢業）；一輪結束送 practice_round '<科>:mistakes'。 */
 function findPid(u, pid){ var hit = null; (function w(d){ if(hit) return; if(pid === d.id + '-s' || (pid.indexOf(d.id + '-p') === 0 && /^\d+$/.test(pid.slice(d.id.length + 2)))) hit = d; kidsData(d).forEach(w); })(u); return hit; }
 function mkQ(e){
   var p = e.p || {}, K = KMx(), u = ALL_UNITS.filter(function(x){ return x.id === p.u; })[0]; if(!u || !K) return null;
@@ -845,6 +915,7 @@ function mkQ(e){
   if(p.k === 'X'){ var xid = e.id.split('|X|')[1], E = D.exam && D.exam[u.id]; if(!E) return null;   // 單元測驗新題：原題重做（題組題連同資料）
     var xq = E.qs.filter(function(x){ return x.id === xid; })[0]; if(xq) return Object.assign({}, xq, {tl:'📄 單元測驗'});
     var gq = E.grp && E.grp.qs.filter(function(x){ return x.id === xid; })[0]; return gq ? Object.assign({}, gq, {tl:'📄 單元測驗・題組', ctx:E.grp}) : null; }
+  if(p.k === 'F'){ var cd = cardById(u.id, e.id.split('|F|')[1]) || {f:p.a, b:p.s}; return cd.f ? {type:'card', tl:'🃏 閃卡', q:cd.f, f:cd.f, b:cd.b || '', why:''} : null; }   // 閃卡：翻面、自己判斷記不記得
   if(p.k === 'a'){
     var nid = e.id.split('|a|')[1], seq = archSeq(u), it = seq.filter(function(s){ return s.id === nid; })[0]; if(!it || it.nq) return null;
     var sib = {}; seq.forEach(function(s){ if(s.par === it.par) sib[s.title] = 1; });   // 同一上層的兄弟也是對的 → 不當干擾項
@@ -864,7 +935,7 @@ function mkQ(e){
   return null;
 }
 function startMk(){
-  var K = KMx(), L = K ? K.list(SUBJ).filter(function(e){ return !ONLY || e.p.u === ONLY; }) : [], items = [];
+  var K = KMx(), L = K ? (RVMODE ? K.due(SUBJ) : K.list(SUBJ)).filter(function(e){ return !ONLY || e.p.u === ONLY; }) : [], items = [];
   L.forEach(function(e){ if(items.length >= ((K && K.ROUND) || 30)) return; var q = mkQ(e); if(!q) return; var o = prepQ(q); o.mk = e.id; o.mu = e.p.u; o.input = ''; items.push(o); });
   QZ = {i:0, ok:0, grad:0, items:shuffle(items), mk:true}; showPanel(); renderQuiz();
 }
@@ -876,7 +947,8 @@ function mkFillHTML(it){
     return it.done ? '<b class="kw">' + esc(s.c.w) + '</b>' : '<span class="tgt">＿＿＿</span>';
   }).join('');
 }
-function mkBack(){ return '../index.html#s/' + SUBJ + '/mistakes' + (ONLY ? '-' + ONLY : ''); }
+function mkBack(){ return '../index.html#s/' + SUBJ + (RVMODE ? '' : '/mistakes' + (ONLY ? '-' + ONLY : '')); }
+function mkBackLab(){ return RVMODE ? '← 回' + CFG.name : '📕 回錯題庫'; }
 
 /* ---------- 📄 單元測驗／📝 段考模擬（2026-11-01）----------
    組卷與判分在 exam.js（MMExam）：單元測驗 25 題、段考模擬 30 題（兩單元），配分 100；新題在 data/<科>/exam1-4.js，另一半從練習題庫挑，避開最近 7 天做過的題。
@@ -1009,17 +1081,20 @@ function updateChrome(){
   if(!mapOn){ $('#trayTop').hidden = true; $('#trayBot').hidden = true; }
   var lb = $('#modes [data-v=lit]'); if(lb) lb.hidden = !litOn();
   var xb = $('#modes [data-v=exam]'); if(xb) xb.hidden = !exOn(unit());
+  var cb = $('#modes [data-v=card]'); if(cb) cb.hidden = !cardsOf().length;
   if(MKMODE || MOCK){ $('#units').hidden = true; $('#modes').hidden = true; $('#layoutSeg').style.visibility = 'hidden'; }
   paintDone();
 }
 function enterMode(){
-  closePop(); closeModal(); arch = null; EXM = null; exStopTimer();
+  closePop(); closeModal(); arch = null; EXM = null; exStopTimer(); FC = null; sayStop();
   if(UI.mode === 'exam' && !exOn(unit())) UI.mode = 'read';
+  if(UI.mode === 'card' && !cardsOf().length) UI.mode = 'read';
   if(UI.mode === 'read' || UI.mode === 'cloze'){ showMap(); renderTray(); render(); fit(false, AUTO_MIN); }
   else if(UI.mode === 'arch'){ showPanel(); renderArchHome(); }
   else if(UI.mode === 'quiz'){ showPanel(); startQuiz(); }
   else if(UI.mode === 'lit'){ showPanel(); renderLitHome(); }
   else if(UI.mode === 'exam'){ showPanel(); renderExamHome(); }
+  else if(UI.mode === 'card'){ showPanel(); startCards(); }
   updateChrome();
 }
 var ACT = {
@@ -1078,7 +1153,17 @@ var ACT = {
   exGo:function(el){ if(!gate(MOCK ? 'mock' : 'exam', function(){ ACT.exGo(el); })) return; var tm = $('#exTimed'); startExam(el.dataset.v, tm && tm.checked); },
   exAgain:function(){ var v = EXM && EXM.v, tm = EXM && EXM.timed; if(!v) return; if(!gate(MOCK ? 'mock' : 'exam', function(){ ACT.exAgain(); })) return; startExam(v, tm); },
   exHome:function(){ if(!exLeaveOK()) return; renderExamHome(); $('#panel').scrollTop = 0; },
-  exSubmit:function(){ exSubmit(false); }
+  exSubmit:function(){ exSubmit(false); },
+  fcFlip:function(){ var it = FC && FC.items[FC.i], el = $('#fcStage .fc-card'); if(!it || !el) return; FC.flip = !FC.flip; el.classList.toggle('flip', FC.flip); el.setAttribute('aria-label', FC.flip ? '翻回正面' : '點一下翻面');
+    if(FC.flip){ fcSeen(it.c); sayCard(it.c, true); } $('#fcRows').innerHTML = fcRows(); },
+  fcAns:function(el){ var it = FC && FC.items[FC.i]; if(!it || it.ans != null || !FC.flip) return; var ok = el.dataset.v === '1', u = unit();
+    it.ans = ok; fcSeen(it.c); mkRec(u.id + '|F|' + it.c.id, ok, {u:u.id, k:'F', s:it.c.b, a:it.c.f}); fcGo(1); },
+  fcNext:function(){ fcGo(1); }, fcPrev:function(){ fcGo(-1); },
+  fcSay:function(){ var it = FC && FC.items[FC.i]; if(it) sayCard(it.c, FC.flip); },
+  fcAgain:function(){ if(!gate('card', function(){ ACT.fcAgain(); })) return; startCards(); $('#panel').scrollTop = 0; },
+  qcFlip:function(){ var it = QZ && QZ.items[QZ.i]; if(!it || it.done) return; it.flip = !it.flip; if(it.flip) sayCard(it.q, true); renderQuiz(); },
+  qcAns:function(el){ var it = QZ && QZ.items[QZ.i]; if(!it || it.done || !it.flip) return; quizDone(el.dataset.v === '1'); },
+  qcSay:function(){ var it = QZ && QZ.items[QZ.i]; if(it) sayCard(it.q, it.flip); }
 };
 /* 練錯題要登入（首頁錯題庫按「只練錯題」時已經問過登入與練習額度；直接開這頁沒登入就跳登入提示） */
 function gateMk(){ var A = window.KidsAuth; try{ if(A && !A.requireLogin('練錯題')) return false; }catch(e){} return true; }
@@ -1096,7 +1181,7 @@ function buildDOM(){
       '<span class="mm-auth" data-kids-auth-slot></span></div>' +
       '<div id="kdone" hidden></div>' +
       '<nav class="mm-units" id="units" aria-label="單元"></nav>' +
-      '<nav class="mm-modes" id="modes" aria-label="模式"><button class="mm-b" data-act="mode" data-v="read">📖 看重點</button><button class="mm-b" data-act="mode" data-v="arch">🧠 背架構</button><button class="mm-b" data-act="mode" data-v="cloze">✏️ 考考自己</button><button class="mm-b" data-act="mode" data-v="quiz">📝 練習題</button><button class="mm-b" data-act="mode" data-v="lit" hidden>🧩 素養題組</button><button class="mm-b" data-act="mode" data-v="exam" hidden>📄 單元測驗</button></nav></header>' +
+      '<nav class="mm-modes" id="modes" aria-label="模式"><button class="mm-b" data-act="mode" data-v="read">📖 看重點</button><button class="mm-b" data-act="mode" data-v="arch">🧠 背架構</button><button class="mm-b" data-act="mode" data-v="cloze">✏️ 考考自己</button><button class="mm-b" data-act="mode" data-v="quiz">📝 練習題</button><button class="mm-b" data-act="mode" data-v="lit" hidden>🧩 素養題組</button><button class="mm-b" data-act="mode" data-v="exam" hidden>📄 單元測驗</button><button class="mm-b" data-act="mode" data-v="card" hidden>🃏 閃卡</button></nav></header>' +
     '<main class="mm-main"><section class="mm-mapwrap" id="mapwrap"><div class="mm-tray tt" id="trayTop" hidden></div>' +
       '<div class="mm-vp" id="vp"><div class="mm-stage" id="stage"><svg id="lines" xmlns="http://www.w3.org/2000/svg"></svg><div id="nodes"></div></div>' +
         '<div class="mm-tools" id="tools"><button class="mm-b sm" data-act="expandAll">➕ 展開全部</button><button class="mm-b sm" data-act="collapseAll">➖ 收合全部</button><button class="mm-b sm" data-act="reshuffle" id="btnShuffle">🔀 換一組</button><span class="mm-score" id="score" hidden></span></div>' +
@@ -1115,10 +1200,12 @@ function init(){
   var lastW = window.innerWidth;
   window.addEventListener('resize', function(){ if(Math.abs(window.innerWidth - lastW) < 2) return; lastW = window.innerWidth; if(!$('#mapwrap').hidden){ fit(false, AUTO_MIN); } });
   if(!D.units.length){ $('#panel').hidden = false; $('#mapwrap').hidden = true; $('#panel').textContent = '找不到資料檔。'; return; }
-  if(MKMODE){   // 📕 只練錯題：不顯示單元列／模式列，只出錯題
-    var hm = $('.mm-home'); hm.href = mkBack(); hm.textContent = '← 回錯題庫'; hm.target = '_top';
-    $('.mm-top h1').textContent = '📕 ' + CFG.name + '錯題練習' + (ONLY && D.units[0] ? '・' + unitLabel(D.units[0]) : '');
-    document.title = CFG.name + '錯題練習｜小朋友學習站';
+  fcSwipeInit();
+  window.addEventListener('pagehide', sayStop);
+  if(MKMODE){   // 📕 只練錯題／🔁 今天要複習：不顯示單元列／模式列，只出錯題（複習＝只出到期的）
+    var hm = $('.mm-home'); hm.href = mkBack(); hm.textContent = RVMODE ? '← 回' + CFG.name : '← 回錯題庫'; hm.target = '_top';
+    $('.mm-top h1').textContent = RVMODE ? '🔁 ' + CFG.name + '今天要複習' : '📕 ' + CFG.name + '錯題練習' + (ONLY && D.units[0] ? '・' + unitLabel(D.units[0]) : '');
+    document.title = CFG.name + (RVMODE ? '今天要複習' : '錯題練習') + '｜小朋友學習站';
     if(gateMk()) startMk(); else { showPanel(); $('#panel').innerHTML = '<div class="mm-wrap"><p>要先登入，才可以練錯題喔！</p><button class="mm-b on" data-act="mkAgain">🔑 登入後開始</button></div>'; }
     return;
   }
@@ -1138,6 +1225,6 @@ function init(){
   window.addEventListener('storage', function(e){ if(e.key === PKEY || e.key === null) onSynced(); });
   window.addEventListener('kids-sync-updated', onSynced);   // 自動同步合併到新資料（首頁會把事件轉給子框）
 }
-window.MM = { refresh:function(){ if(!D.units[UI.unit]) UI.unit = 0; enterMode(); }, state:function(){ return {UI:UI, view:view, arch:arch, QZ:QZ, cloze:cloze, NODES:NODES, STAGE:STAGE}; }, act:function(name, data){ var el = document.createElement('button'); Object.keys(data || {}).forEach(function(k){ el.dataset[k] = data[k]; }); ACT[name](el); }, archSeq:archSeq, exState:function(){ return EXM; } };
+window.MM = { refresh:function(){ if(!D.units[UI.unit]) UI.unit = 0; enterMode(); }, state:function(){ return {UI:UI, view:view, arch:arch, QZ:QZ, FC:FC, cloze:cloze, NODES:NODES, STAGE:STAGE}; }, act:function(name, data){ var el = document.createElement('button'); Object.keys(data || {}).forEach(function(k){ el.dataset[k] = data[k]; }); ACT[name](el); }, archSeq:archSeq, exState:function(){ return EXM; } };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

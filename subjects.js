@@ -45,7 +45,14 @@
     ACTS[k] = MM_UNITS[k].map(([id, t], i) => ({ id, title: `單元${NUMS[i]}　${t}`, desc: () => mmDesc(k, id), icon: '🗺️', src: `mindmap/${k}.html?u=${id}`, dk: `mm:${k}:${id}` }));
     // 📝 段考模擬（2026-11-01，mindmap/exam.js）：單元一＋二、三＋四各一份 30 題；不算單元完成（沒有 dk）
     ACTS[k].push({ id: 'mock', title: '📝 段考模擬', desc: '兩個單元一份、30 題由易到難，可以選 40 分鐘限時', icon: '📝', src: `mindmap/${k}.html?mock=1` });
+    // 🔁 今天要複習（2026-11-01）：錯題庫裡到期的題＋閃卡（間隔 1 → 3 → 7 天，規則在 kids-mistakes.js）；入口是科目首頁上方的按鈕（reviewBar），不另列卡片
+    ACTS[k].push({ id: 'review', title: '今天要複習', icon: '🔁', src: `mindmap/${k}.html?review=1`, hidden: true });
   });
+  const reviewBar = k => {
+    if (!MM_UNITS[k] || !KM() || !KM().due) return '';
+    let n = 0; try { n = KM().due(k).length; } catch (e) { }
+    return n ? `<p class="center"><a class="btn primary big" id="mm-review" href="#s/${k}/review">🔁 今天要複習 ${n} 題</a></p>` : '<p class="center muted" id="mm-review">今天都複習完了 🎉</p>';
+  };
   // 📕 錯題庫（kids-mistakes.js）：有題目的科目各一張卡 → #s/<科>/mistakes（清單免登入）；「只練錯題」→ #s/<科>/mistakes-go[-<單元>]
   //   社會／自然 → iframe mindmap/<科>.html?mistakes=1[&u=單元]；數學 → iframe math/balance.html?mistakes=1（錯題全是短除法 p.type 'gcd'／應用題 'gcdword' 時改開
   //   math/short-division.html?mistakes=1（只有應用題時 ?mistakes=word）；都有時天平做完有「接著練短除法錯題」，短除法做完有「接著練應用題錯題」）；AI → 在這頁重答（KidsMistakes.aiPlay）
@@ -101,7 +108,7 @@
       window.scrollTo(0, 0); setH(); return;
     }
     if (a) box.innerHTML = `<div class="frame-top"><a class="btn" href="#s/${k}">← 回${s.n}</a><b>${a.icon} ${a.title}</b></div><div class="frame-wrap"><iframe src="${a.src}" title="${a.title}" allow="clipboard-write; web-share"></iframe></div>`;
-    else if (acts) box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header><div class="tiles">${acts.filter(x => !x.hidden).map((x, i) => `<a class="tile ${COLORS[i % COLORS.length]}" href="${x.href || `#s/${k}/${x.id}`}"><span class="ti">${x.icon}</span><b>${x.title}</b><small>${typeof x.desc === 'function' ? x.desc() : x.desc}</small>${doneTag(x.dk)}</a>`).join('')}</div><p class="center"><a class="btn" href="map.html">🗺️ 課程地圖：看哪些單元學完了</a></p>`;
+    else if (acts) box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header>${reviewBar(k)}<div class="tiles">${acts.filter(x => !x.hidden).map((x, i) => `<a class="tile ${COLORS[i % COLORS.length]}" href="${x.href || `#s/${k}/${x.id}`}"><span class="ti">${x.icon}</span><b>${x.title}</b><small>${typeof x.desc === 'function' ? x.desc() : x.desc}</small>${doneTag(x.dk)}</a>`).join('')}</div><p class="center"><a class="btn" href="map.html">🗺️ 課程地圖：看哪些單元學完了</a></p>`;
     else box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header><div class="card center soon"><div class="soon-i">${s.i}</div><h2>${s.n}準備中，敬請期待！</h2><p class="muted">先去其他科目玩玩看吧 😊</p></div>`;
     window.scrollTo(0, 0); setH();
   }

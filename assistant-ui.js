@@ -126,7 +126,7 @@
       + `<div class="kas-stat"><span>📅 這 7 天練習</span><b>${p.days} 天</b>${cmp(p.days, p.daysLast, '天')}</div>`
       + `<div class="kas-stat"><span>🏅 完成的關卡</span><b>${p.goals} 個</b>${cmp(p.goals, p.goalsLast, '個')}${p.goalItems.length ? `<small><br>${esc(p.goalItems.join('、'))}</small>` : ''}</div>`
       + `<div class="kas-stat"><span>✏️ 答錯的題目</span><b>${p.wrong} 題</b>${p.wrongLast || p.wrong ? cmp(p.wrong, p.wrongLast, '題', true) : '<small>還沒有紀錄</small>'}</div>`
-      + `<div class="kas-stat"><span>🎓 錯題畢業</span><b>${p.grad} 題</b><small>同一題連續答對 3 次就畢業</small></div>`
+      + `<div class="kas-stat"><span>🎓 錯題畢業</span><b>${p.grad} 題</b><small>社會、自然：隔 1、3、7 天各答對一次就畢業；其他科：同一題連續答對 3 次</small></div>`
       + `<div class="kas-stat"><span>✅ 已完成單元</span><b>${p.unitsDone} 個</b><small><a href="map.html">看課程地圖</a></small></div></div>`;
   }
   function page(el) {

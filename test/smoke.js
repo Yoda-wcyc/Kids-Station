@@ -839,6 +839,10 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   const big4 = {}; KMc.SUBJ.forEach(s => { const bk = {}; for (let i = 0; i < 300; i++) { bk[s + 'L' + i] = { c: 2, w: 9, t: 1.8e12, u: 1.8e12, p: { u: 'u1', k: 'w', pid: 'u1-l1-t1-p3', ci: 2, a: '荷蘭東印度公司', s: '十七世紀荷蘭東印度公司為了和中國、日本貿易，在臺灣南部建立據點並修築熱蘭遮城' } }; bk[s + 'D' + i] = { d: 1, w: 9, t: 1.8e12, u: 1.8e12 }; } big4[s] = bk; });
   const mkBytes = SM.bytes(SM.normMk(big4));
   ok(mkBytes < 500 * 1024, 'mk at maximum stays well under the 1MB server limit: ' + mkBytes + ' B');
+  // 2026-11-01 🔁 隔天複習：社會、自然每筆多一個 due（下次到期的日子）→ 塞滿時仍在 500KB 預算內
+  const big4d = JSON.parse(JSON.stringify(big4)); KMc.SPACED.forEach(s => Object.keys(big4d[s]).forEach(id => { if (!big4d[s][id].d) big4d[s][id].due = 20500; }));
+  const mkBytesD = SM.bytes(SM.normMk(big4d));
+  ok(mkBytesD < 500 * 1024 && SM.normMk(big4d).social[Object.keys(big4d.social)[0]].due === 20500 && SM.bytes(SM.compact({ log: big.log, mk: big4d })) < 1000 * 1000, 'mk at maximum with due (social/science) still < 500KB and whole doc < 1MB: ' + mkBytesD + ' B');
   const fullMk = SM.bytes(SM.compact({ log: big.log, mk: big4 }));
   ok(fullMk < 1000 * 1000, 'mk at maximum + English answers compacted: whole doc < 1MB server limit: ' + fullMk + ' B');
   // 頁面：每科頁有 📕 錯題庫卡、各頁載入 kids-mistakes.js、練錯題送 practice_round <科>:mistakes
@@ -953,7 +957,8 @@ const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 // 2026-10-27：數學多 1 張卡（分數比較大小 math/fraction.html）→ 10 個 src
 // 2026-11-01：國語 1 張卡（閱讀素養 100 篇 chinese/reading.html）→ 11 個 src
 // 2026-11-01：國語第 2 張卡（成語故事 100 chinese/idioms/idioms.html）→ 12 個 src
-ok(srcs.length === 12 && (sj.match(/hidden: true/g) || []).length === 1, 'activity cards: ' + srcs.length);
+// 2026-11-01：社會、自然各 1 個 hidden 入口（🔁 今天要複習 mindmap/<科>.html?review=1，樣板字串、不算在 srcs；入口按鈕在科目首頁上方）→ hidden 2 個
+ok(srcs.length === 12 && (sj.match(/hidden: true/g) || []).length === 2 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----
@@ -1130,6 +1135,10 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
 }
 // 社會、自然〈🧩 素養題組〉40 組 160 題（2026-11-01）：資料格式、題數、d 遞增、單選唯一正解、開放題要點、錯題 id、頁面接線 → test/mindmap-literacy.test.js
 require('./mindmap-literacy.test.js');
+// 社會、自然〈🃏 名詞閃卡〉＋〈🔁 隔天複習〉（2026-11-01）：卡片 ref 指得到、沒有籠統詞、id 唯一 → test/flashcards.test.js；1 → 3 → 7 天、答錯回 1 天、畢業、舊錯題當今天到期、台北時間 → test/spaced-review.test.js
+require('./flashcards.test.js');
+require('./spaced-review.test.js');
+['social', 'science'].forEach(k => { const h = fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8'); ok(h.includes(`<script src="data/${k}/cards.js`) && h.indexOf('kids-mistakes.js') < h.indexOf('<script src="mindmap.js'), `mindmap/${k}.html loads cards.js (flashcards) and kids-mistakes.js before mindmap.js`); });
 
 ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 6 && E.get('w:may-month:zh2en').answer === 'May' && E.get('w:may:zh2en').answer === 'may', 'May / may keep separate ids');
 // 2026-10-26：補 4 個名詞詞條（同拼字、不同 id）——中文跟同字其他詞條分得開；fall／autumn、kind／sort 互收；同拼字不互當干擾

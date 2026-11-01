@@ -14,7 +14,11 @@
        'mx:<a>x<b>'，p＝{type:'multiply', a, b, lv, q:'a×b'}（乘法快算，2026-10-21）；
        'frc:<題型>:<數字>'，p＝{type:'fraction', k:題型, v:[aw,an,ad,bw,bn,bd], q:顯示文字}（分數比較大小，math/fraction.js 用 k＋v 原題重做；清單用 v 畫上下排的分數，2026-10-27）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
-   同步（syncmerge v4 的 mk 欄位）：各科依題目 id 聯集；同一題 u 較新的勝（墓碑也是），答錯次數 w 取較大；墓碑每科最多留 300 筆（最新的）。
+   🔁 隔天複習（間隔重複，2026-11-01，只開在社會、自然＝SPACED；國語、數學、AI 照舊「連對 3 次」）：
+     答錯 → c＝0、due＝明天；到期（台北時間的日子 ≥ due）答對 → c＋1，due＝今天＋[1,3,7][c]（1 天 → 3 天 → 7 天）；7 天那次也答對（c 已經是 2）→ 畢業留墓碑。
+     還沒到期答對：不動（不算數）。舊錯題沒有 due → 當作今天到期。c 照舊 0～2（＝過了幾次間隔），錯題庫的 ●○○ 也照用。
+     閃卡按「再想想」也收進來：id＝'<單元>|F|<卡id>'，p＝{u, k:'F', s:背面說明, a:正面名詞}（mindmap/data/<科>/cards.js）。
+   同步（syncmerge v4 的 mk 欄位）：各科依題目 id 聯集；同一題 u 較新的勝（墓碑也是；一樣新時 墓碑 ＞ 有 due ＞ 沒 due），答錯次數 w 取較大；墓碑每科最多留 300 筆（最新的）。
    _core 是純函式（不碰 DOM），Node 可以直接 require 來測；畫面（錯題清單、AI 重答）由首頁 subjects.js 呼叫 page()／aiPlay()。 */
 (function (G) {
   'use strict';
@@ -22,6 +26,9 @@
   // ================= _core：純函式 =================
   var SUBJ = ['chinese', 'social', 'science', 'math', 'ai'];   // chinese（2026-11-01）：id＝'<篇id>:<題id>'，p＝{a:篇id, q:題id, t:篇名, s:題目, ans:正解文字}（chinese/reading.js）
   var GRAD = 3, MAX_DEL = 300, MAX_ID = 200, MAX_P = 4000, ROUND = 30;
+  var SPACED = ['social', 'science'], IV = [1, 3, 7], DAY = 864e5, TPE = 8 * 3600e3;
+  function dayIdx(t) { return Math.floor((+t + TPE) / DAY); }   // 台北時間的第幾天
+  function isDue(e, now) { return !!e && !e.d && !(e.due > dayIdx(now)); }
   function obj(x) { return x && typeof x === 'object' && !Array.isArray(x) ? x : null; }
   function nat(x) { x = +x; return isFinite(x) && x > 0 ? Math.floor(x) : 0; }
   function canon(x) {
@@ -38,7 +45,9 @@
     if (!obj(e)) return null;
     var t = nat(e.t), u = Math.max(nat(e.u), t);
     if (e.d) return { d: 1, w: nat(e.w), t: t, u: u };
-    return { c: Math.min(nat(e.c), GRAD - 1), w: Math.max(1, nat(e.w)), t: t, u: u, p: normP(e.p) };
+    var o = { c: Math.min(nat(e.c), GRAD - 1), w: Math.max(1, nat(e.w)), t: t, u: u, p: normP(e.p) };
+    if (nat(e.due)) o.due = nat(e.due);
+    return o;
   }
   function okId(k) { return typeof k === 'string' && k.length > 0 && k.length <= MAX_ID && k.charAt(0) !== '_'; }
   // 一科的錯題本：整理每筆、墓碑只留最新的 MAX_DEL 筆
@@ -57,9 +66,11 @@
   }
   // 兩筆取哪一筆：u 新的勝；一樣新比內容（不含 w，順序才跟 w 無關＝結合律成立）；w 一律取較大
   function noW(e) { var o = {}; Object.keys(e).forEach(function (k) { if (k !== 'w') o[k] = e[k]; }); return canon(o); }
+  // 一樣新時：墓碑 ＞ 有 due ＞ 沒 due（墓碑先勝＝不讓畢業的題復活；有 due 勝＝舊版裝置丟掉 due 也蓋不掉排程；三級全序，合併才能交換、結合）
+  function rk(e) { return e.d ? 2 : e.due ? 1 : 0; }
   function pick(a, b) {
     if (!a) return b; if (!b) return a;
-    var x = a.u !== b.u ? (a.u > b.u ? a : b) : (noW(a) >= noW(b) ? a : b), w = Math.max(a.w, b.w);
+    var x = a.u !== b.u ? (a.u > b.u ? a : b) : rk(a) !== rk(b) ? (rk(a) > rk(b) ? a : b) : (noW(a) >= noW(b) ? a : b), w = Math.max(a.w, b.w);
     if (x.w === w) return x;
     var o = {}; Object.keys(x).forEach(function (k) { o[k] = x[k]; }); o.w = w; return o;
   }
@@ -73,27 +84,32 @@
     var o = {}; SUBJ.forEach(function (s) { if (a[s] || b[s]) { var m = mergeBook(a[s] || {}, b[s] || {}); if (Object.keys(m).length) o[s] = m; } });
     return o;
   }
-  // 記一次作答（改 book）：回 'added'｜'counted'｜'graduated'｜null（答對、但不在錯題庫）
-  function mark(book, id, ok, p, now) {
+  // 記一次作答（改 book）：回 'added'｜'counted'｜'graduated'｜null（答對、但不在錯題庫；spaced 時還沒到期也是 null）
+  // spaced＝間隔制（社會、自然）：答錯 due＝明天；到期答對才 c＋1、排下一個間隔，第 3 次（7 天）到期答對畢業
+  function mark(book, id, ok, p, now, spaced) {
     var cur = book[id], live = cur && !cur.d ? cur : null, t = Math.max(nat(now), cur ? cur.u + 1 : 0);
-    if (!ok) { book[id] = { c: 0, w: ((cur && cur.w) || 0) + 1, t: t, u: t, p: obj(p) ? normP(p) : ((live && live.p) || {}) }; return 'added'; }
+    if (!ok) { book[id] = { c: 0, w: ((cur && cur.w) || 0) + 1, t: t, u: t, p: obj(p) ? normP(p) : ((live && live.p) || {}) }; if (spaced) book[id].due = dayIdx(now) + IV[0]; return 'added'; }
     if (!live) return null;
+    if (spaced && !isDue(live, now)) return null;
     live.c++; live.u = t; if (obj(p)) live.p = normP(p);
     if (live.c >= GRAD) { book[id] = { d: 1, w: live.w, t: live.t, u: t }; return 'graduated'; }
+    if (spaced) live.due = dayIdx(now) + IV[live.c];
     return 'counted';
   }
+  // 到期該複習的（社會／自然；沒有 due 的舊錯題＝今天到期）
+  function dueList(book, now, unit) { var b = obj(book) || {}; return liveList(b, unit).filter(function (e) { return isDue(b[e.id], now); }); }
   // 還在錯題庫裡的題（最近答錯的在前）；unit＝只看某單元（p.u）
   function liveList(book, unit) {
     var b = obj(book) || {};
     return Object.keys(b).filter(function (k) { var e = b[k]; return e && !e.d && (!unit || (e.p && e.p.u === unit)); })
       .sort(function (x, y) { return (b[y].t - b[x].t) || (x < y ? -1 : 1); })
-      .map(function (k) { var e = b[k]; return { id: k, c: e.c, w: e.w, t: e.t, u: e.u, p: e.p || {} }; });
+      .map(function (k) { var e = b[k]; return { id: k, c: e.c, w: e.w, t: e.t, u: e.u, due: e.due, p: e.p || {} }; });
   }
   // 小雜湊（練習題沒有 id，用題目文字算）
   function hash(s) { var h = 5381; s = String(s == null ? '' : s); for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h.toString(36); }
   function plain(s) { return String(s == null ? '' : s).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim(); }
 
-  var core = { SUBJ: SUBJ, GRAD: GRAD, MAX_DEL: MAX_DEL, ROUND: ROUND, canon: canon, normBook: normBook, normAll: normAll, mergeBook: mergeBook, mergeAll: mergeAll, mark: mark, liveList: liveList, hash: hash, plain: plain };
+  var core = { SUBJ: SUBJ, GRAD: GRAD, MAX_DEL: MAX_DEL, ROUND: ROUND, SPACED: SPACED, IV: IV, canon: canon, normBook: normBook, normAll: normAll, mergeBook: mergeBook, mergeAll: mergeAll, mark: mark, liveList: liveList, dueList: dueList, isDue: isDue, dayIdx: dayIdx, hash: hash, plain: plain };
   if (typeof module !== 'undefined' && module.exports) { module.exports = { _core: core }; return; }
 
   // ================= 瀏覽器：存取 =================
@@ -102,18 +118,22 @@
   function topWin() { try { var t = window.top; return t !== window && t.location.origin === location.origin ? t : null; } catch (e) { return null; } }
   function syncTouch() { try { var K = window.KESync || ((topWin() || {}).KESync); if (K) K.touch(); } catch (e) { } }
   function saveAll(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) { /* 空間不足或私密模式 */ } syncTouch(); }
+  // 現在時間；測試可以用 window.__KIDS_TEST_DAYS（首頁或本頁）把日子往後推，模擬「隔天」（同 __KIDS_TEST_GAS_URL，正式站不會有）
+  function now() { var d = 0; try { d = +(G.__KIDS_TEST_DAYS || (topWin() || {}).__KIDS_TEST_DAYS) || 0; } catch (e) { } return Date.now() + d * DAY; }
+  function spaced(subj) { return SPACED.indexOf(subj) >= 0; }
   function record(subj, id, ok, p) {
     if (SUBJ.indexOf(subj) < 0 || !okId(String(id || ''))) return null;
-    var a = loadAll(), b = a[subj] || (a[subj] = {}), r = mark(b, String(id), !!ok, p, Date.now());
+    var a = loadAll(), b = a[subj] || (a[subj] = {}), r = mark(b, String(id), !!ok, p, now(), spaced(subj));
     if (r) saveAll(a);
     return r;
   }
   function list(subj, unit) { return liveList(loadAll()[subj], unit); }
   function count(subj, unit) { return list(subj, unit).length; }
+  function due(subj, unit) { return spaced(subj) ? dueList(loadAll()[subj], now(), unit) : []; }   // 🔁 今天要複習（社會、自然）
 
   // ================= 瀏覽器：畫面（首頁 #s/<科>/mistakes） =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  var KLABEL = { w: '考考自己', a: '背架構', q: '練習題', L: '素養題組', X: '單元測驗' };
+  var KLABEL = { w: '考考自己', a: '背架構', q: '練習題', L: '素養題組', X: '單元測驗', F: '閃卡' };
   function badgeOf(subj, p) { if (subj === 'chinese') return p.t || '閱讀'; if (subj === 'math') return p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
   function textOf(subj, p) {
     if (subj === 'math') return p.q || '';
@@ -143,12 +163,14 @@
         var n = all.filter(function (e) { return e.p.u === x[0]; }).length;
         return '<a class="btn sm' + (unit === x[0] ? ' primary' : '') + '" href="#s/' + k + '/mistakes-' + x[0] + '" title="' + esc(x[1]) + '">' + ulab[x[0]] + '（' + n + '）</a>';
       })).join('') + '</div>' : '';
+    var sp = spaced(k), today = dayIdx(now());
+    function dueText(e) { var d = (e.due || today) - today; return d <= 0 ? '🔁 今天複習' : d === 1 ? '明天複習' : d + ' 天後複習'; }
     var lis = items.map(function (e) {
       var u = e.p.u && ulab[e.p.u] ? '<small class="muted">' + ulab[e.p.u] + '</small> ' : '';
-      return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf(k, e.p)) + '</span> ' + u + '<span>' + ((k === 'math' && e.p.type === 'fraction' && frItem(e.p.v)) || esc(textOf(k, e.p))) + '</span> <span class="dots">' + dots(e.c) + '</span> <small class="muted">錯 ' + e.w + ' 次</small></li>';
+      return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf(k, e.p)) + '</span> ' + u + '<span>' + ((k === 'math' && e.p.type === 'fraction' && frItem(e.p.v)) || esc(textOf(k, e.p))) + '</span> <span class="dots">' + dots(e.c) + '</span> <small class="muted">錯 ' + e.w + ' 次' + (sp ? '・' + dueText(e) : '') + '</small></li>';
     }).join('');
     box.innerHTML = '<header class="top"><a class="btn" href="#s/' + k + '">← 回' + esc(o.n) + '</a><h1>📕 ' + esc(o.n) + '錯題庫</h1></header>' +
-      '<div class="card"><p>答錯的題目會來這裡。同一題<b>連續答對 3 次</b>就會畢業離開 🎓</p>' + filt +
+      '<div class="card"><p>' + (sp ? '答錯的題目（還有閃卡按「再想想」的）會來這裡，隔 <b>1 天、3 天、7 天</b>各複習一次；到期都答對就畢業離開 🎓' : '答錯的題目會來這裡。同一題<b>連續答對 3 次</b>就會畢業離開 🎓') + '</p>' + filt +
       '<button class="btn primary big" id="mk-go" type="button"' + (items.length ? '' : ' disabled') + '>只練錯題（' + Math.min(items.length, ROUND) + ' 題）</button>' +
       (items.length > ROUND ? '<p class="muted">一輪最多 ' + ROUND + ' 題，先練最近答錯的。</p>' : '') + '</div>' +
       (items.length ? '<ul class="list card" id="mk-list">' + lis + '</ul>' : '<p class="center muted" id="mk-empty">目前沒有錯題 🎉</p>');
@@ -213,5 +235,5 @@
     draw();
   }
 
-  G.KidsMistakes = { _core: core, KEY: KEY, SUBJ: SUBJ, GRAD: GRAD, ROUND: ROUND, record: record, list: list, count: count, loadAll: loadAll, page: page, aiPlay: aiPlay, hash: hash, plain: plain, mathType: mathType, mathCount: mathCount, mathMore: mathMore };
+  G.KidsMistakes = { _core: core, KEY: KEY, SUBJ: SUBJ, GRAD: GRAD, ROUND: ROUND, SPACED: SPACED, now: now, record: record, list: list, count: count, due: due, loadAll: loadAll, page: page, aiPlay: aiPlay, hash: hash, plain: plain, mathType: mathType, mathCount: mathCount, mathMore: mathMore };
 })(typeof window !== 'undefined' ? window : globalThis);
