@@ -179,13 +179,14 @@
       out.chinese = [{ key: 'zh:all', title: '閱讀素養 100 篇', href: 'index.html#s/chinese/reading', status: n >= ZH_TOTAL ? 'done' : n ? 'doing' : 'todo', pct: Math.min(100, Math.round(n / ZH_TOTAL * 100)),
         checklist: [{ label: `讀完一篇再一篇（已完成 ${n} 篇）`, ok: n >= ZH_TOTAL, detail: '' }] }];
     }
-    // 英文：只算到「有練過的最後一冊」（至少第一冊），還沒上到的冊別不拉低完成度
-    const en = out.english || [];
-    if (en.length) {
+    // 英文、社會、自然（2026-11-02 五下起）：只算到「有練過的最後一冊」（至少第一冊），還沒上到的冊別不拉低完成度；全部冊別放 _all[科]（這一冊做完才接下一冊）
+    out._all = {};
+    ['english', 'social', 'science'].forEach(k => {
+      const en = out[k] || [];
       const books = [...new Set(en.map(u => u.group || ''))], last = Math.max(0, ...en.filter(u => u.status !== 'todo').map(u => books.indexOf(u.group || '')));
-      out.english = en.filter(u => books.indexOf(u.group || '') <= last);
-      out._englishAll = en;
-    } else out.english = [];
+      out[k] = en.filter(u => books.indexOf(u.group || '') <= last);
+      out._all[k] = en;
+    });
     SK.forEach(k => { if (!out[k]) out[k] = []; });
     return out;
   }
@@ -293,7 +294,7 @@
       const doing = us.filter(x => x.status === 'doing').sort((x, y) => y.pct - x.pct)[0];
       if (doing) { const miss = (doing.checklist || []).find(c => !c.ok); list.push({ kind: 'finish', icon: '🏁', title: `把〈${doing.title}〉完成`, why: `已經完成 ${doing.pct}%${miss ? '，還差：' + miss.label : ''}`, href: doing.href }); }
       // ⑤ 還沒開始：照順序的下一個
-      const todo = us.find(x => x.status === 'todo') || (s.k === 'english' ? (U._englishAll || []).find(x => x.status === 'todo') : null);
+      const todo = us.find(x => x.status === 'todo') || (U._all[s.k] || []).find(x => x.status === 'todo');
       if (todo && !doing) list.push({ kind: 'start', icon: '🚀', title: `${isNew || !us.some(x => x.status !== 'todo') ? '從' : '開始'}〈${todo.title}〉${isNew || !us.some(x => x.status !== 'todo') ? '開始' : ''}`, why: isNew || !us.some(x => x.status !== 'todo') ? `${s.name}的第一個單元，從這裡出發` : `照順序，${s.name}的下一步是這個單元`, href: todo.href });
       list.forEach(t => { t.pri = PRI[t.kind]; t.k = s.k; t.subj = s.name; t.min = t.kind === 'mistakes' || t.kind === 'review' ? clamp(Math.ceil(t.n * MINUTES.mkEach), MINUTES.mkMin, MINUTES.mkMax) : MINUTES[t.kind]; });
       list.sort((x, y) => x.pri - y.pri);
@@ -327,7 +328,7 @@
     // ---------- 還沒開始的：每科只列下一步 ----------
     const next = [];
     SUBJ.slice().sort((x, y) => ord(x.k) - ord(y.k)).forEach(s => {
-      const us = U[s.k], t = us.find(x => x.status === 'todo') || (s.k === 'english' && us.every(x => x.status === 'done') ? (U._englishAll || []).find(x => x.status === 'todo') : null);
+      const us = U[s.k], t = us.find(x => x.status === 'todo') || (us.every(x => x.status === 'done') ? (U._all[s.k] || []).find(x => x.status === 'todo') : null);
       if (t && next.length < RULES.NEXT_MAX) next.push({ k: s.k, icon: s.icon, subj: s.name, title: t.title, href: t.href, first: !us.some(x => x.status !== 'todo') });
     });
 

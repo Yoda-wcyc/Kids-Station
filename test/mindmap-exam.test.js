@@ -15,13 +15,20 @@ const EX = require(path.join(root, 'mindmap', 'exam.js'));
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('FAIL mindmap-exam:', m); } };
 
-const UNITS = { social: ['u1', 'u2', 'u3', 'u4'], science: ['n1', 'n2', 'n3', 'n4'] };
+// 資料檔＝頁面實際載入的（mindmap/<科>.html 的 data/<科>/*.js，照頁面順序），加單元不用改測試
+const pageData = (k, re) => [...fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8').matchAll(/src="data\/(\w+\/[\w-]+)\.js/g)].map(m => m[1]).filter(f => !re || re.test(f));
+// UNITS＝有單元測驗資料的單元；PAIRS＝段考的兩兩一組（同 mindmap.js mockPairs：全部單元照順序兩個一組、兩個都有測驗才算）
+// 新單元還沒有測驗資料 → 頁面的 📄 按鈕藏起來、段考不出那一組
+const UNITS = {}, PAIRS = {};
 const VAR = { social: 'DATA_SOCIAL', science: 'DATA_SCIENCE' };
 const DATA = {};
-Object.keys(UNITS).forEach(k => {
+['social', 'science'].forEach(k => {
   const ctx = { window: {} };
-  ['unit1-2.js', 'unit3-4.js', 'lit1-2.js', 'lit3-4.js', 'exam1-4.js'].forEach(f => vm.runInNewContext(fs.readFileSync(path.join(root, 'mindmap', 'data', k, f), 'utf8'), ctx));
-  DATA[k] = ctx.window[VAR[k]];
+  pageData(k, /\/(unit|lit|exam)/).forEach(f => vm.runInNewContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f + '.js'), 'utf8'), ctx));
+  const D = DATA[k] = ctx.window[VAR[k]], us = D.units.map(u => u.id);
+  UNITS[k] = us.filter(id => D.exam && D.exam[id]);
+  PAIRS[k] = []; for (let i = 0; i + 1 < us.length; i += 2) if (D.exam[us[i]] && D.exam[us[i + 1]]) PAIRS[k].push([us[i], us[i + 1]]);
+  ok(UNITS[k].length >= 4 && PAIRS[k].length >= 2 && Object.keys(D.exam).every(id => us.includes(id)), k + ' exam units exist: ' + UNITS[k] + '｜pairs ' + JSON.stringify(PAIRS[k]));
 });
 const kids = d => d.lessons || d.topics || d.children || [];
 const allIds = u => { const s = new Set(); (function w(d) { s.add(d.id); kids(d).forEach(w); })(u); return s; };
@@ -98,8 +105,8 @@ Object.keys(UNITS).forEach(k => {
       const nx = P.items.filter(it => it.src === 'x').length;
       ok(nx >= 11 && nx <= 14, tag + ' 新題約一半：' + nx);
     });
-    [[0, 1], [2, 3]].forEach(([a, b]) => {
-      const ids = [UNITS[k][a], UNITS[k][b]], tag = k + ':' + ids.join('-') + ' 段考 seed ' + seed, P = EX.mockPaper(D, ids, { hash, rand: rng(seed) });
+    PAIRS[k].forEach(ids => {
+      const tag = k + ':' + ids.join('-') + ' 段考 seed ' + seed, P = EX.mockPaper(D, ids, { hash, rand: rng(seed) });
       const r = checkPaper(P, 30, tag);
       ok(P.items.filter(it => it.pts === 3).length === 20 && P.items.slice(20).every(it => it.pts === 4), tag + ' 前 20 題 3 分、後 10 題 4 分');
       ids.forEach(id => ok(P.items.filter(it => it.u === id).length === 15, tag + ' ' + id + ' 各 15 題'));
@@ -176,6 +183,7 @@ ok(!/doneRec\(/.test(exSec), '單元測驗／段考不寫單元完成（不呼�
 ok(exSec.includes("'|X|'") || exSec.includes('it.mk'), '錯題 id 用 exam.js 的 mk（新題 |X|）');
 ok(mm.includes("p.k === 'X'"), '只練錯題認得單元測驗新題（p.k X）');
 ok(mm.includes("data-v=\"exam\""), '單元頁有 📄 單元測驗');
+ok(mm.includes('xb.hidden = !exOn(unit())') && mm.includes("if(UI.mode === 'exam' && !exOn(unit())) UI.mode = 'read';") && mm.includes('D.exam[ALL_UNITS[i].id] && D.exam[ALL_UNITS[i + 1].id]'), '沒有測驗資料的單元：📄 按鈕藏起來、段考不出那一組');
 ok(fs.readFileSync(path.join(root, 'subjects.js'), 'utf8').includes('html?mock=1'), '首頁社會、自然有 📝 段考模擬卡');
 
 console.log(`mindmap-exam: ${pass} passed, ${fail} failed`);

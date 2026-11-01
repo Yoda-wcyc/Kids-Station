@@ -29,11 +29,15 @@
     { id: 'kids-town', title: '小朋友鎮（試玩）', desc: '在小鎮用英文生活：看醫生、點餐、買東西', icon: '<svg viewBox="0 0 64 64" width="56" height="56" aria-hidden="true" style="display:block;border-radius:12px"><rect width="64" height="64" fill="#EFEBDD"/><polygon points="12,30 32,14 52,30" fill="#C2443A"/><rect x="16" y="30" width="32" height="24" fill="#D9A63A"/><rect x="28" y="40" width="8" height="14" fill="#26302A"/><rect x="20" y="35" width="6" height="6" fill="#EFEBDD"/><rect x="38" y="35" width="6" height="6" fill="#EFEBDD"/></svg>', href: 'game/kids-town/' }]
   };
   // 社會、自然：心智圖，每個單元一張卡 → iframe 開 mindmap/<科>.html?u=<單元id>（引擎與資料在 mindmap/；標題要跟 mindmap/data 一致，smoke 會對）
+  // 第 3 欄＝資料的 label（五下 2026-11-02 起，例「五下 單元一」）：有就照它顯示、開頭是冊別；沒有＝五上，顯示「單元X」
   const MM_UNITS = {
-    social: [['u1', '臺灣的位置與先民足跡'], ['u2', '臺灣登上國際舞臺'], ['u3', '成為清帝國的領土'], ['u4', '土地的利用與變遷']],
-    science: [['n1', '太陽與光'], ['n2', '植物世界'], ['n3', '水溶液'], ['n4', '力與運動']]
+    social: [['u1', '臺灣的位置與先民足跡'], ['u2', '臺灣登上國際舞臺'], ['u3', '成為清帝國的領土'], ['u4', '土地的利用與變遷'],
+      ['u5', '日本統治下的臺灣', '五下 單元一'], ['u6', '走向自由民主之路', '五下 單元二'], ['u7', '多元文化共存共榮', '五下 單元三'], ['u8', '各地的發展與特色', '五下 單元四'], ['u9', '經濟的變遷與展望', '五下 單元五']],
+    science: [['n1', '太陽與光'], ['n2', '植物世界'], ['n3', '水溶液'], ['n4', '力與運動'],
+      ['n5', '探索星空的奧祕', '五下 單元一'], ['n6', '空氣與燃燒', '五下 單元二'], ['n7', '防止生鏽與保存食物', '五下 單元三'], ['n8', '揭祕動物的世界', '五下 單元四']]
   };
-  const NUMS = ['一', '二', '三', '四', '五', '六', '七', '八'];
+  const NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+  const mmLab = (x, i) => x[2] || '單元' + NUMS[i], mmBook = x => x[2] ? x[2].split(' ')[0] : '五上';
   // 卡片小字：背架構過了幾關＋複習提醒（kids_mm_progress，key＝'<科>:<單元id>'；最後過關後第 1、3、7 天）
   const mmDesc = (k, id) => {
     let u = null; try { u = (JSON.parse(localStorage.getItem('kids_mm_progress')) || {})[k + ':' + id]; } catch (e) { /* 私密模式 */ }
@@ -42,7 +46,7 @@
     return '📖 看重點・🧠 背架構・✏️ 考考自己・📝 練習題' + (passed ? `｜架構過了 ${passed}/4 關` : '') + (due ? '｜⏰ 該複習架構囉' : '');
   };
   Object.keys(MM_UNITS).forEach(k => {
-    ACTS[k] = MM_UNITS[k].map(([id, t], i) => ({ id, title: `單元${NUMS[i]}　${t}`, desc: () => mmDesc(k, id), icon: '🗺️', src: `mindmap/${k}.html?u=${id}`, dk: `mm:${k}:${id}` }));
+    ACTS[k] = MM_UNITS[k].map((x, i) => ({ id: x[0], title: `${mmLab(x, i)}　${x[1]}`, grp: mmBook(x), desc: () => mmDesc(k, x[0]), icon: '🗺️', src: `mindmap/${k}.html?u=${x[0]}`, dk: `mm:${k}:${x[0]}` }));
     // 📝 段考模擬（2026-11-01，mindmap/exam.js）：單元一＋二、三＋四各一份 30 題；不算單元完成（沒有 dk）
     ACTS[k].push({ id: 'mock', title: '📝 段考模擬', desc: '兩個單元一份、30 題由易到難，可以選 40 分鐘限時', icon: '📝', src: `mindmap/${k}.html?mock=1` });
     // 🔁 今天要複習（2026-11-01）：錯題庫裡到期的題＋閃卡（間隔 1 → 3 → 7 天，規則在 kids-mistakes.js）；入口是科目首頁上方的按鈕（reviewBar），不另列卡片
@@ -108,7 +112,12 @@
       window.scrollTo(0, 0); setH(); return;
     }
     if (a) box.innerHTML = `<div class="frame-top"><a class="btn" href="#s/${k}">← 回${s.n}</a><b>${a.icon} ${a.title}</b></div><div class="frame-wrap"><iframe src="${a.src}" title="${a.title}" allow="clipboard-write; web-share"></iframe></div>`;
-    else if (acts) box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header>${reviewBar(k)}<div class="tiles">${acts.filter(x => !x.hidden).map((x, i) => `<a class="tile ${COLORS[i % COLORS.length]}" href="${x.href || `#s/${k}/${x.id}`}"><span class="ti">${x.icon}</span><b>${x.title}</b><small>${typeof x.desc === 'function' ? x.desc() : x.desc}</small>${doneTag(x.dk)}</a>`).join('')}</div><p class="center"><a class="btn" href="map.html">🗺️ 課程地圖：看哪些單元學完了</a></p>`;
+    else if (acts) {
+      // 連續同一冊（grp：五上／五下）的卡片放一區、上面標冊別；沒有 grp 的（段考模擬、錯題庫）自成一區不加標題
+      let ci = 0;
+      const secs = acts.filter(x => !x.hidden).reduce((a, x) => { const g = x.grp || ''; if (!a.length || a[a.length - 1].g !== g) a.push({ g, xs: [] }); a[a.length - 1].xs.push(x); return a; }, []);
+      box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header>${reviewBar(k)}${secs.map(sec => `${sec.g ? `<h2 class="tiles-h">📗 ${sec.g}</h2>` : ''}<div class="tiles">${sec.xs.map(x => `<a class="tile ${COLORS[ci++ % COLORS.length]}" href="${x.href || `#s/${k}/${x.id}`}"><span class="ti">${x.icon}</span><b>${x.title}</b><small>${typeof x.desc === 'function' ? x.desc() : x.desc}</small>${doneTag(x.dk)}</a>`).join('')}</div>`).join('')}<p class="center"><a class="btn" href="map.html">🗺️ 課程地圖：看哪些單元學完了</a></p>`;
+    }
     else box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header><div class="card center soon"><div class="soon-i">${s.i}</div><h2>${s.n}準備中，敬請期待！</h2><p class="muted">先去其他科目玩玩看吧 😊</p></div>`;
     window.scrollTo(0, 0); setH();
   }

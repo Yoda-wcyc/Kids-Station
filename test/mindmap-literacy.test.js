@@ -13,7 +13,9 @@ const ZR = require(path.join(root, 'chinese', 'reading-core.js'));
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('FAIL mindmap-literacy:', m); } };
 
-const UNITS = { social: ['u1', 'u2', 'u3', 'u4'], science: ['n1', 'n2', 'n3', 'n4'] };
+// 資料檔＝頁面實際載入的（mindmap/<科>.html 的 data/<科>/*.js，照頁面順序），加單元不用改測試
+const pageData = (k, re) => [...fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8').matchAll(/src="data\/(\w+\/[\w-]+)\.js/g)].map(m => m[1]).filter(f => !re || re.test(f));
+const UNITS = {};   // 有素養題組的單元（照資料算；新單元還沒有題組 → 頁面的 🧩 按鈕藏起來）
 const VAR = { social: 'DATA_SOCIAL', science: 'DATA_SCIENCE' };
 const kindOf = b => typeof b === 'string' ? '短文' : b.table ? '表格' : b.svg ? 'SVG' : b.timeline ? '時間軸' : b.box ? '短文' : b.h ? '' : '短文';
 
@@ -45,16 +47,16 @@ function check(st, uid, n) {
 
 // 載入資料（跟頁面一樣：單元檔 → lit 檔）
 const all = [], kinds = {}, svgIds = {};
-Object.keys(UNITS).forEach(k => {
+['social', 'science'].forEach(k => {
   const ctx = { window: {} }; vm.createContext(ctx);
-  ['unit1-2.js', 'unit3-4.js', 'lit1-2.js', 'lit3-4.js'].forEach(f => {
-    const p = path.join(root, 'mindmap', 'data', k, f);
-    ok(fs.existsSync(p), k + '/' + f + ' exists');
-    if (fs.existsSync(p)) vm.runInContext(fs.readFileSync(p, 'utf8'), ctx, { filename: k + '/' + f });
+  pageData(k, /\/(unit|lit)/).forEach(f => {
+    const p = path.join(root, 'mindmap', 'data', f + '.js');
+    ok(fs.existsSync(p), f + '.js exists');
+    if (fs.existsSync(p)) vm.runInContext(fs.readFileSync(p, 'utf8'), ctx, { filename: f });
   });
   const D = ctx.window[VAR[k]] || {}, lit = D.lit || {};
-  ok(Object.keys(lit).sort().join() === UNITS[k].join(), k + ' lit units = ' + UNITS[k].join() + ': ' + Object.keys(lit).join());
-  ok((D.units || []).map(u => u.id).join() === UNITS[k].join(), k + ' unit files still load 4 units');
+  UNITS[k] = (D.units || []).map(u => u.id).filter(id => lit[id]);
+  ok(UNITS[k].length >= 4 && Object.keys(lit).every(id => UNITS[k].includes(id)), k + ' lit units exist in unit data: ' + Object.keys(lit).join());
   UNITS[k].forEach(uid => {
     const sets = lit[uid] || [];
     ok(sets.length === 5, uid + ' has exactly 5 sets: ' + sets.length);
@@ -66,8 +68,9 @@ Object.keys(UNITS).forEach(k => {
     });
   });
 });
-ok(all.length === 40, '40 sets in total: ' + all.length);
-ok(all.reduce((n, x) => n + (x.st.qs || []).length, 0) === 160, '160 questions in total');
+const nLit = UNITS.social.length + UNITS.science.length;
+ok(all.length === 5 * nLit, (5 * nLit) + ' sets in total: ' + all.length);
+ok(all.reduce((n, x) => n + (x.st.qs || []).length, 0) === 20 * nLit, (20 * nLit) + ' questions in total');
 const sids = all.map(x => x.st.id);
 ok(new Set(sids).size === sids.length, 'set ids unique');
 const mk = all.flatMap(x => (x.st.qs || []).map(q => x.uid + '|L|' + x.st.id + ':' + q.id));
@@ -106,6 +109,7 @@ const litSrc = mm.slice(mm.indexOf('/* ---------- 🧩 素養題組'), mm.indexO
 ok(litSrc.length > 500 && !/doneRec\(|KidsDone/.test(litSrc), 'mindmap.js literacy block does not touch unit completion');
 ok(litSrc.includes("mkRec(u.id + '|L|' + LT.st.id + ':' + q.id") && litSrc.includes('coinAnswer(ok)') && !litSrc.includes('coinRound('), 'mindmap.js literacy: mistakes id, per-answer coins, no practice_round (sets < 5 questions)');
 ok(mm.includes("data-v=\"lit\" hidden>🧩 素養題組</button>") && mm.includes("if(p.k === 'L')") && mm.includes("lit:'做素養題組'"), 'mindmap.js: 🧩 mode button next to 練習題, mistakes redo, login reason');
+ok(mm.includes('lb.hidden = !litOn()') && mm.includes('litSets().length'), 'mindmap.js hides 🧩 for units without sets');
 ok(fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("L: '素養題組'"), 'kids-mistakes.js: badge 素養題組');
 ok(typeof ZR.blockHTML === 'function' && /<table>/.test(ZR.blockHTML({ table: { cap: 'c', head: ['a'], rows: [['1']] } })) && ZR.blockHTML('<b>').indexOf('&lt;b&gt;') > 0, 'reading-core blockHTML shared and escapes text');
 

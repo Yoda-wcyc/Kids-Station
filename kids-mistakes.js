@@ -157,8 +157,8 @@
   /* page(box, {k, n, i, units:[[id,標題]], unit, back}) — 錯題清單（免登入）；按「只練錯題」才要登入＋練習額度，通過就 location.hash＝'#s/<k>/mistakes-go[-<單元>]' */
   function page(box, o) {
     var k = o.k, unit = o.unit || '', all = list(k), items = unit ? all.filter(function (e) { return e.p.u === unit; }) : all;
-    var nums = ['一', '二', '三', '四', '五', '六', '七', '八'], ulab = {};
-    (o.units || []).forEach(function (x, i) { ulab[x[0]] = '單元' + nums[i]; });
+    var nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'], ulab = {};
+    (o.units || []).forEach(function (x, i) { ulab[x[0]] = x[2] || '單元' + nums[i]; });   // x[2]＝資料的 label（五下「五下 單元一」）
     var filt = (o.units && o.units.length) ? '<div class="seg mk-units" role="group" aria-label="依單元篩選">' +
       ['<a class="btn sm' + (unit ? '' : ' primary') + '" href="#s/' + k + '/mistakes">全部（' + all.length + '）</a>'].concat(o.units.map(function (x) {
         var n = all.filter(function (e) { return e.p.u === x[0]; }).length;

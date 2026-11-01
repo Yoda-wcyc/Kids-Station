@@ -7,6 +7,7 @@ const ctx = { window: {} }; vm.createContext(ctx);
 const W = ctx.window.DATA_WORDS, PH = ctx.window.DATA_PHRASES, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS, TBK = ctx.window.DATA_TEXTBOOK;
 const KE = require(path.join(root, 'engine.js'));
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
+const mmUnitFiles = k => [...fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8').matchAll(/src="data\/(\w+\/unit[\w-]*\.js)/g)].map(m => m[1]);   // 心智圖單元資料檔＝頁面實際載入的，加單元不用改測試
 
 // ---- 資料格式 ----
 // 2026-10-18：words-5.js 加入教育部表二「其他常用 800 字」（lv 4，src moe800）
@@ -760,7 +761,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 超過時 sync.js 改用一般 PUT、沒送到就留「待上傳」下次開網站補送，紀錄不會掉。mmBlanks 是每個挖空詞的作答統計（不是題目內容），
   // 下面的「塞滿」假設題庫每個候選詞都答過 999 次，所以會跟著題庫變大。
   const mmData = { window: {} }; vm.createContext(mmData);
-  ['social/unit1-2.js', 'social/unit3-4.js', 'science/unit1-2.js', 'science/unit3-4.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f), 'utf8'), mmData));
+  mmUnitFiles('social').concat(mmUnitFiles('science')).forEach(f => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f), 'utf8'), mmData));
   const SBk = require(path.join(root, 'mindmap', 'blanks.js')), kidsOf = d => d.lessons || d.topics || d.children || [];
   const maxDoc = { mm: {}, mmBlanks: {}, scratch: {}, ctr: {} };
   [['social', 'DATA_SOCIAL'], ['science', 'DATA_SCIENCE']].forEach(([s, g]) => mmData.window[g].units.forEach(u => {
@@ -778,7 +779,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   for (let d = 0; d < 5; d++) maxDoc.ctr['d' + d + 'mgk2x9abc'] = { stars: 99999, quizzes: 9999 };
   maxDoc.eq = { at: 1.8e12, items: many(30).map(it => Object.assign({ t: 1.8e12 }, it)), del: Object.fromEntries(Array.from({ length: 150 }, (_, i) => ['(x+' + i + ')−(' + i + '−2)=' + (i + 100), 1.7e12])) };
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
-  ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === 100, 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
+  // 2026-11-02 五下上線（社會 9、自然 8 單元）：塞滿約 156KB，超過原本 1/4（125KB）→ 放寬到 1/3（英文 log 仍留 ≥2/3）；再加一冊前要先想怎麼縮 mmBlanks
+  ok(secBytes <= SM.MAX_BYTES / 3 && Object.keys(sec.eq.del).length === 100, 'v3 sections at maximum leave ≥2/3 of the 500KB doc for English answers: ' + secBytes + ' bytes');
   const bigAll = SM.compact(Object.assign({}, maxDoc, { log: big.log.concat(big.log.map(e => Object.assign({}, e, { t: e.t + 1e7, a: e.a + '-again' }))) }));
   ok(SM.bytes(bigAll) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq), 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(bigAll));
   console.log('sync v3 doc size: sections max ' + secBytes + ' B; 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
@@ -962,13 +964,14 @@ ok(srcs.length === 12 && (sj.match(/hidden: true/g) || []).length === 2 && sj.in
 srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----
-ok(sj.includes('src: `mindmap/${k}.html?u=${id}`'), 'mindmap unit card src template');
-['mindmap/social.html', 'mindmap/science.html', 'mindmap/mindmap.js', 'mindmap/mindmap.css', 'mindmap/blanks.js',
-  'mindmap/data/social/unit1-2.js', 'mindmap/data/social/unit3-4.js', 'mindmap/data/science/unit1-2.js', 'mindmap/data/science/unit3-4.js']
+ok(sj.includes('src: `mindmap/${k}.html?u=${x[0]}`'), 'mindmap unit card src template');
+['mindmap/social.html', 'mindmap/science.html', 'mindmap/mindmap.js', 'mindmap/mindmap.css', 'mindmap/blanks.js'].concat(['social', 'science'].flatMap(k => mmUnitFiles(k).map(f => 'mindmap/data/' + f)))
   .forEach(rel => ok(nonEmpty(rel), rel + ' exists and is non-empty'));
 const mmUnits = {};
 ['social', 'science'].forEach(k => { const m = new RegExp(k + ': \\[(.*?)\\]\\]', 's').exec(sj); mmUnits[k] = m ? [...m[1].matchAll(/\['([a-z0-9-]+)', '[^']+'/g)].map(x => x[1]) : []; });
-ok(mmUnits.social.join() === 'u1,u2,u3,u4' && mmUnits.science.join() === 'n1,n2,n3,n4', 'mindmap unit cards: ' + JSON.stringify(mmUnits));
+// 單元卡＝頁面載入的資料裡的單元（照順序：五上在前、五下在後）
+{ const mmD0 = { window: {} }; vm.createContext(mmD0); ['social', 'science'].forEach(k => mmUnitFiles(k).forEach(f => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f), 'utf8'), mmD0)));
+  ok(mmUnits.social.join() === mmD0.window.DATA_SOCIAL.units.map(u => u.id).join() && mmUnits.science.join() === mmD0.window.DATA_SCIENCE.units.map(u => u.id).join() && mmUnits.social.length >= 4 && mmUnits.science.length >= 4, 'mindmap unit cards: ' + JSON.stringify(mmUnits)); }
 ['social', 'science'].forEach(k => {
   const h = fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8');
   ok(h.includes(`data-subj="${k}"`) && h.includes('../kids-auth.js') && h.includes('../kids-coins.js') && h.includes('mindmap.js'), `mindmap/${k}.html loads auth/coins/engine`);
@@ -994,7 +997,7 @@ const mmJs = fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8');
   const small = qs.slice(0, 9).concat([{ q: 'q0' }]);
   ok(SBq.pickQuiz(small, 15, hq, {}, {}, SBq.rng(3)).map(q => q.q).sort().join() === qs.slice(0, 9).map(q => q.q).sort().join(), 'pickQuiz: unit with < 15 questions → all of them once');
   const mmQ = { window: {} }; vm.createContext(mmQ);
-  ['social/unit1-2.js', 'social/unit3-4.js', 'science/unit1-2.js', 'science/unit3-4.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f), 'utf8'), mmQ));
+  mmUnitFiles('social').concat(mmUnitFiles('science')).forEach(f => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f), 'utf8'), mmQ));
   const KMh = require(path.join(root, 'kids-mistakes.js'))._core.hash;
   mmQ.window.DATA_SOCIAL.units.concat(mmQ.window.DATA_SCIENCE.units).forEach(u => {
     ok(new Set(u.quiz.map(q => KMh(q.q))).size === u.quiz.length, u.id + ': quiz texts hash-unique (' + u.quiz.length + ')');
@@ -1234,6 +1237,8 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
   ok(appSrc.includes('const list = E.round(cfg);') && appSrc.includes('每回最後至少 3 題打字（含 2 題中翻英）'), 'app.js: every round goes through E.round + settings note');
   console.log(`typed rule: ${stat.set} item sets, ${stat.tb} textbook units (practice+exam ×30), ${stat.round} round configs ×50 — all pass`);
 }
+// 五下社會／自然資料檢查（2026-11-02）：作者的兩支檢查也跑一遍
+['g5b-social.test.js', 'g5b-science.test.js'].forEach(f => { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'mindmap', 'test', f)], { encoding: 'utf8' }); ok(r.status === 0, 'mindmap/test/' + f + ' passes: ' + (r.stdout || '').slice(-1500) + (r.stderr || '').slice(-1500)); });
 console.log(`bank build: engine ${msEngine.toFixed(0)} ms, all ${allQs.length} questions ${msBank.toFixed(0)} ms`);
 console.log(`OK  ${checks} checks | words ${W.length} (lv ${lvCount.join('/')}/${W800.length}) | phrases ${PH.length} (${[1, 2, 3].map(l => PH.filter(p => p.lv === l).length).join('/')}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
 console.log('pool per type:', JSON.stringify(counts));

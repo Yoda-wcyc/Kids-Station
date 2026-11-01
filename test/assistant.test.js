@@ -217,6 +217,19 @@ const MANY = snap({
   ok(r.next.length <= KA.RULES.NEXT_MAX && uniq(r.next.map(n => n.k)), 'next: at most one per subject');
   ok(r.progress.goals === 2 && r.progress.goalItems.join() === '背架構過了 2 關', 'progress: 2 levels passed this week: ' + JSON.stringify(r.progress.goalItems));
 }
+// 五下（2026-11-02）：照冊別循序漸進——五上還沒做完，五下不拉低完成度、不搶下一步；五上全部完成 → 下一步是〈五下 單元一〉
+{
+  const full = id => ({ unlocked: 5, best: { 1: 100, 2: 100, 3: 100, 4: 100 }, passedAt: { 1: NOW - DAY, 2: NOW - DAY, 3: NOW - DAY, 4: NOW - DAY }, lastPassAt: NOW - DAY });
+  const up = KC.MM_UNITS.social.filter(x => !x[2]).map(x => x[0]), mm = {}, mmd = {};
+  up.forEach(id => { mm['social:' + id] = full(id); mmd['social:' + id] = { czFirst: 90, qz: 90 }; });
+  const r0 = KA.analyze(snap({ goal: null })), s0 = r0.subjects.find(s => s.k === 'social');
+  ok(s0.unitsTotal === up.length && r0.next.concat(r0.tasks).filter(x => x.k === 'social').every(x => /單元一　臺灣的位置/.test(x.title)), 'g5b: new kid → social counts 五上 only, starts at 五上 單元一: ' + s0.unitsTotal);
+  const r1 = KA.analyze(snap({ ctx: { mm, done: { mm: mmd } }, goal: null })), s1 = r1.subjects.find(s => s.k === 'social');
+  const t1 = r1._.cand.find(t => t.k === 'social'), n1 = r1.next.find(n => n.k === 'social');
+  ok(s1.unitsDone === up.length && t1 && t1.kind === 'start' && /五下 單元一/.test(t1.title) && t1.href === 'index.html#s/social/u5' && (!n1 || /五下 單元一/.test(n1.title)), 'g5b: 五上 all done → next is 五下 單元一: ' + JSON.stringify(t1) + ' ' + JSON.stringify(n1));
+  const r2 = KA.analyze(snap({ ctx: { mm: Object.assign({ 'social:u5': { passedAt: { 1: NOW - DAY }, lastPassAt: NOW - DAY } }, mm), done: { mm: mmd } }, goal: null }));
+  ok(r2.subjects.find(s => s.k === 'social').unitsTotal === KC.MM_UNITS.social.length, 'g5b: started 五下 → counts every unit: ' + r2.subjects.find(s => s.k === 'social').unitsTotal);
+}
 
 // ---------- 7. 進步：錯題變少、連續天數 ----------
 {

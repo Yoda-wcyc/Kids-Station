@@ -178,7 +178,17 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
 // ---------- 地圖：目錄、整體完成率、題庫 ----------
 {
   const M = KC.build(DATA, {});
-  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:' + DATA.textbook.length + ',social:4,science:4,math:6,ai:3,scratch:7' && M.total === 24 + DATA.textbook.length && M.done === 0 && M.pct === 0, 'map: judgeable units (英文課本單元數照 textbook.js，11-01 加六上 4 課): ' + M.subjects.map(s => s.k + ':' + s.total).join());
+  const nS = KC.MM_UNITS.social.length, nN = KC.MM_UNITS.science.length;   // 社會／自然單元數照 MM_UNITS（11-02 加五下：社會 9、自然 8）
+  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:' + DATA.textbook.length + `,social:${nS},science:${nN},math:6,ai:3,scratch:7` && M.total === 16 + nS + nN + DATA.textbook.length && M.done === 0 && M.pct === 0, 'map: judgeable units (英文課本單元數照 textbook.js，11-01 加六上 4 課): ' + M.subjects.map(s => s.k + ':' + s.total).join());
+  // 五上／五下分冊（2026-11-02）：沒 label 的＝五上「單元X」照舊；有 label 的照 label 顯示、group＝冊別；五上排在五下前面
+  [['social', 1], ['science', 2]].forEach(([k, i]) => {
+    const us = M.subjects[i].units, up = us.filter(u => u.group === '五上'), dn = us.filter(u => u.group === '五下');
+    ok(up.length >= 4 && dn.length >= 1 && us.indexOf(dn[0]) === up.length && up.every((u, j) => u.title.startsWith('單元' + '一二三四五六七八九十'[j] + '　')) && dn.every(u => /^五下 單元/.test(u.title)), 'map: ' + k + ' 五上 then 五下, titles: ' + us.map(u => u.title.split('　')[0]).join('/'));
+  });
+  // 加單元不會讓已完成的五上單元掉回未完成：u1 全部達標 → 還是 done，社會完成 1 個
+  { const Kd = 'social:u1', ctxU1 = { mm: { [Kd]: { unlocked: 5, best: { 1: 100, 2: 100, 3: 100, 4: 100 }, passedAt: { 1: T0, 2: T0, 3: T0, 4: T0 } } }, done: { mm: { [Kd]: { czFirst: 90, qz: 90 } } } };
+    const M3 = KC.build(DATA, ctxU1), so = M3.subjects[1];
+    ok(so.units[0].status === 'done' && so.done === 1 && so.total === nS && so.units.slice(1).every(u => u.status === 'todo') && M3.done === 1, 'map: 五上 u1 done stays done after 五下 added (社會 1/' + nS + ')'); }
   ok(M.subjects.every(s => s.units.every(u => u.href && u.title && ['done', 'doing', 'todo'].includes(u.status))), 'map: every cell has href, title, status');
   const ctx = { learned: Object.fromEntries(KC.tbItems(DATA, 'hanlin-5-u2', KE).map(x => [x.id, { at: '2026-10-20T01:00:00Z' }])), done: { tb: { 'hanlin-5-u2': { best: 85, last: 85, at: T0 } }, ai: { secrets: T0 } } };
   const M2 = KC.build(DATA, ctx);
@@ -189,12 +199,13 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   ok(KC.statusText({ status: 'doing', pct: 42 }) === '🟡 進行中 42%' && KC.statusText({ status: 'done' }) === '✅ 已完成' && KC.statusText({ status: 'todo' }) === '⚪ 還沒開始', 'status text');
   // 目錄要跟各頁一致：心智圖單元（subjects.js、mindmap/data）、天平內建題、AI 頁
   const sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
-  Object.keys(KC.MM_UNITS).forEach(k => KC.MM_UNITS[k].forEach(([id, t]) => ok(sj.includes(`['${id}', '${t}']`), 'MM unit matches subjects.js: ' + k + ' ' + id)));
+  Object.keys(KC.MM_UNITS).forEach(k => KC.MM_UNITS[k].forEach(x => ok(sj.includes('[' + x.map(v => `'${v}'`).join(', ') + ']'), 'MM unit matches subjects.js: ' + k + ' ' + x[0])));
   const mmD = { window: {} }; vm.createContext(mmD);
-  ['social/unit1-2.js', 'social/unit3-4.js', 'science/unit1-2.js', 'science/unit3-4.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f), 'utf8'), mmD));
+  // 單元資料檔＝頁面實際載入的（mindmap/<科>.html 的 data/<科>/unit*.js），加單元不用改測試
+  ['social', 'science'].forEach(k => [...fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8').matchAll(/src="data\/(\w+\/unit[\w-]*\.js)/g)].forEach(m => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', 'data', m[1]), 'utf8'), mmD)));
   [['social', 'DATA_SOCIAL'], ['science', 'DATA_SCIENCE']].forEach(([k, g]) => {
     const us = mmD.window[g].units;
-    ok(us.map(u => u.id).join() === KC.MM_UNITS[k].map(x => x[0]).join(), 'MM unit ids match mindmap data: ' + k);
+    ok(us.map(u => u.id + '=' + (u.label || '')).join() === KC.MM_UNITS[k].map(x => x[0] + '=' + (x[2] || '')).join(), 'MM unit ids + labels match mindmap data: ' + k);
     ok(us.every(u => (u.quiz || []).length > 0), 'every ' + k + ' unit has 練習題 (so qz is reachable)');
   });
   const bh = fs.readFileSync(path.join(root, 'math', 'balance.html'), 'utf8'), bm = /var BUILTIN = (\[[^\]]+\]);/.exec(bh);

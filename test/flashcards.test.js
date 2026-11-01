@@ -11,7 +11,10 @@ const SB = require(path.join(MM, 'blanks.js'));
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('FAIL flashcards:', m); } };
 const ctx = { window: {} }; vm.createContext(ctx);
-['social/unit1-2', 'social/unit3-4', 'social/cards', 'science/unit1-2', 'science/unit3-4', 'science/cards']
+// 資料檔＝頁面實際載入的（mindmap/<科>.html 的 data/<科>/*.js，照頁面順序），加單元不用改測試
+const pageData = (k, re) => [...fs.readFileSync(path.join(MM, k + '.html'), 'utf8').matchAll(/src="data\/(\w+\/[\w-]+)\.js/g)].map(m => m[1]).filter(f => !re || re.test(f));
+// 單元檔＋cards（新單元還沒有閃卡：頁面的 🃏 按鈕會藏起來，這裡只檢查有卡的單元）
+['social', 'science'].flatMap(k => pageData(k, /\/(unit|cards)/))
   .forEach(f => vm.runInContext(fs.readFileSync(path.join(MM, 'data', f + '.js'), 'utf8'), ctx, { filename: f }));
 const SUBJ = { social: ctx.window.DATA_SOCIAL, science: ctx.window.DATA_SCIENCE };
 const norm = s => String(s || '').replace(/[\s　、，,。．.·・\-－—~～（）()「」『』:：;；!！?？"'“”‘’\/【】\[\]→＝÷]/g, '').replace(/臺/g, '台').replace(/溼/g, '濕').toLowerCase();
@@ -23,8 +26,8 @@ const ids = new Set(), counts = {};
 Object.keys(SUBJ).forEach(k => {
   const D = SUBJ[k], fronts = new Set();
   ok(D && D.cards && typeof D.cards === 'object', k + ': cards loaded');
-  ok(Object.keys(D.cards).sort().join() === D.units.map(u => u.id).sort().join(), k + ': every unit has cards, no extra units: ' + Object.keys(D.cards));
-  D.units.forEach(u => {
+  ok(Object.keys(D.cards).length >= 4 && Object.keys(D.cards).every(id => D.units.some(u => u.id === id)), k + ': card units exist in unit data: ' + Object.keys(D.cards));
+  D.units.filter(u => D.cards[u.id]).forEach(u => {
     // 這個單元的所有 ref 目標：節點 id → 標題；重點句 pid → 句子
     const T = {};
     (function w(d) { T[d.id] = d.title; (d.points || []).forEach((p, i) => { T[d.id + '-p' + i] = typeof p === 'string' ? p : p.t; }); kids(d).forEach(w); })(u);
@@ -47,5 +50,8 @@ Object.keys(SUBJ).forEach(k => {
 });
 const tot = k => Object.keys(counts).filter(x => x.startsWith(k)).reduce((n, x) => n + counts[x], 0);
 console.log('cards per unit: ' + Object.keys(counts).map(x => x + ' ' + counts[x]).join('、') + `｜社會 ${tot('social')}、自然 ${tot('science')}、共 ${tot('social') + tot('science')}`);
+// 沒有閃卡的單元（例：五下）：模式按鈕藏起來、記住的模式退回看重點（不會點進去才看到空白）
+{ const mm = fs.readFileSync(path.join(MM, 'mindmap.js'), 'utf8');
+  ok(mm.includes("cb.hidden = !cardsOf().length") && mm.includes("if(UI.mode === 'card' && !cardsOf().length) UI.mode = 'read';"), 'mindmap.js hides 🃏 for units without cards'); }
 console.log(`flashcards: ${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

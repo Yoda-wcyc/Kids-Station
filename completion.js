@@ -37,12 +37,16 @@
   const PASS = 80;
 
   // ---------- 課程目錄（單元清單；英文課本單元從 DATA_TEXTBOOK 來）----------
-  // 社會／自然：id、標題要跟 subjects.js 的 MM_UNITS、mindmap/data 一致（smoke 會對）
+  // 社會／自然：id、標題要跟 subjects.js 的 MM_UNITS、mindmap/data 一致（smoke 會對）；第 3 欄＝資料的 label（五下），沒有＝五上「單元X」
+  // 五下接在五上後面（課程地圖、小助理的下一步照這個順序）；只加不刪不改 id，舊的完成紀錄（mm:<科>:<單元>）照算
   const MM_UNITS = {
-    social: [['u1', '臺灣的位置與先民足跡'], ['u2', '臺灣登上國際舞臺'], ['u3', '成為清帝國的領土'], ['u4', '土地的利用與變遷']],
-    science: [['n1', '太陽與光'], ['n2', '植物世界'], ['n3', '水溶液'], ['n4', '力與運動']]
+    social: [['u1', '臺灣的位置與先民足跡'], ['u2', '臺灣登上國際舞臺'], ['u3', '成為清帝國的領土'], ['u4', '土地的利用與變遷'],
+      ['u5', '日本統治下的臺灣', '五下 單元一'], ['u6', '走向自由民主之路', '五下 單元二'], ['u7', '多元文化共存共榮', '五下 單元三'], ['u8', '各地的發展與特色', '五下 單元四'], ['u9', '經濟的變遷與展望', '五下 單元五']],
+    science: [['n1', '太陽與光'], ['n2', '植物世界'], ['n3', '水溶液'], ['n4', '力與運動'],
+      ['n5', '探索星空的奧祕', '五下 單元一'], ['n6', '空氣與燃燒', '五下 單元二'], ['n7', '防止生鏽與保存食物', '五下 單元三'], ['n8', '揭祕動物的世界', '五下 單元四']]
   };
-  const NUMS = ['一', '二', '三', '四', '五', '六', '七', '八'];
+  const NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+  const mmCells = k => MM_UNITS[k].map((x, i) => ({ key: `mm:${k}:${x[0]}`, group: x[2] ? x[2].split(' ')[0] : '五上', title: `${x[2] || '單元' + NUMS[i]}　${x[1]}`, href: `index.html#s/${k}/${x[0]}` }));
   // 天平內建 8 題（要跟 math/balance.html 的 BUILTIN 一樣，smoke 會對）
   const BAL = ['x+5=12', 'x−3=9', '12+x=20', 'x+8−2=15', '(x+3)−2=10', '(x−5)+4=12', 'x−(6−2)=7', 'x+(10−4)=15'];
   const SD_LV = [['l20', '20 以內'], ['l100', '100 以內'], ['l3d', '三位數'], ['tri', '三個數']];
@@ -243,8 +247,8 @@
       units: [1, 2, 3, 4].map(lv => ({ key: 'cy:L' + lv, title: `L${lv}　${CY_LV[lv]}`, sub: `${cy.filter(c => c.lv === lv).length} 個成語`, href: 'index.html#s/chinese/idioms' }))
         .concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(k => ({ key: 'cy:U' + k, title: `第 ${k} 單元　${cy.filter(c => c.unit === k).map(c => c.word).slice(0, 2).join('、')}…`, href: 'index.html#s/chinese/idioms' }))) }] : []).concat([
       { k: 'english', name: '英文課本', icon: '📘', units: tb.map(u => ({ key: 'tb:' + u.id, group: u.book || '', title: u.title.replace(/^[五六][上下] /, ''), sub: u.theme || '', href: `index.html#tb/${u.id}/learn` })) },
-      { k: 'social', name: '社會', icon: '🌏', units: MM_UNITS.social.map(([id, t], i) => ({ key: 'mm:social:' + id, title: `單元${NUMS[i]}　${t}`, href: `index.html#s/social/${id}` })) },
-      { k: 'science', name: '自然', icon: '🔬', units: MM_UNITS.science.map(([id, t], i) => ({ key: 'mm:science:' + id, title: `單元${NUMS[i]}　${t}`, href: `index.html#s/science/${id}` })) },
+      { k: 'social', name: '社會', icon: '🌏', units: mmCells('social') },
+      { k: 'science', name: '自然', icon: '🔬', units: mmCells('science') },
       { k: 'math', name: '數學', icon: '🔢', units: [
         { key: 'math:balance', title: '天平解方程式', href: 'index.html#s/math/balance' },
         { key: 'math:sd', title: '短除法：換你算', href: 'index.html#s/math/short-division' },

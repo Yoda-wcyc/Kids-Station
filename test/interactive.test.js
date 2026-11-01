@@ -11,7 +11,9 @@ const IA = require(path.join(MM, 'interactive.js'));
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('FAIL interactive:', m); } };
 const ctx = { window: {} }; vm.createContext(ctx);
-['social/unit1-2', 'social/unit3-4', 'social/interactive', 'science/unit1-2', 'science/unit3-4', 'science/interactive']
+// 資料檔＝頁面實際載入的（mindmap/<科>.html 的 data/<科>/*.js，照頁面順序），加單元不用改測試
+const pageData = (k, re) => [...fs.readFileSync(path.join(MM, k + '.html'), 'utf8').matchAll(/src="data\/(\w+\/[\w-]+)\.js/g)].map(m => m[1]).filter(f => !re || re.test(f));
+['social', 'science'].flatMap(k => pageData(k, /\/(unit|interactive)/))
   .forEach(f => vm.runInContext(fs.readFileSync(path.join(MM, 'data', f + '.js'), 'utf8'), ctx, { filename: f }));
 const SUBJ = { social: ctx.window.DATA_SOCIAL, science: ctx.window.DATA_SCIENCE };
 const ids = new Set(), cnt = {};
