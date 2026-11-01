@@ -18,7 +18,7 @@ const BANKS = Wd.DATA_ORALS;
 const BASIC = 'i you he she it we they me my your his her a an the cannot this that these those and or not no yes too is are am do does have on in at to of with what when who where how can let s please amy ben'.split(' ');
 // 課本例句以外、逐一確認過可以用的字（理由）。has 在五上 U2 文法重點「不能用 has」裡、算範圍內；
 // 出自本課單字例句的字（favorite、like、bye…）跑的時候會列出備查
-const OK_EXTRA = { thanks: '「No, thank you.」的口語說法（五下 U3 課本也有 No, thanks.）；只是多收的答法，孩子說 No, thank you. 就對' };
+const OK_EXTRA = { metro: '六上 U2：學校課程計畫寫「by metro / MRT」（捷運），只是多收的說法', thanks: '「No, thank you.」的口語說法（五下 U3 課本也有 No, thanks.）；只是多收的答法，孩子說 No, thank you. 就對' };
 const toks = s => KE.expandContr(String(s)).toLowerCase().replace(/_+/g, ' ').split(/[^a-z]+/).filter(Boolean);
 const ok20 = {};
 
@@ -59,7 +59,8 @@ BANKS.forEach(B => {
   });
   const used = new Map();
   QS.forEach(o => [o.q, o.f || ''].concat(o.a, o.k.flatMap(k => k.split('|'))).forEach(s => toks(s).forEach(t => { if (!used.has(t)) used.set(t, new Set()); used.get(t).add(o.n); })));
-  const outside = [...used.keys()].filter(t => !core.has(t) && !BASIC.includes(t));
+  // 單一字母是縮寫的辨識寫法（U.K.、M.R.T.、P.E. 拆開後的 u、k、m…），不算單字
+  const outside = [...used.keys()].filter(t => t.length > 1 && !core.has(t) && !BASIC.includes(t));
   const fromEx = outside.filter(t => ex.has(t)), none = outside.filter(t => !ex.has(t));
   const show = ts => ts.map(t => `${t}（第 ${[...used.get(t)].join('、')} 題）`).join('；');
   console.log(`${B.title}：用到的英文字 ${used.size} 個；本課單字／片語例句裡的字（範圍內，列出備查）：${show(fromEx) || '無'}`);
@@ -108,6 +109,10 @@ BANKS.forEach(B => {
   if (B.key === '6-u34') {
     [[41, 'Some salad.'], [47, 'No, thank you.'], [59, "It's his backpack."], [61, "It's Amy's umbrella."], [21, "It's backpack."], [7, 'Yes, I do.']].forEach(([n, a]) => NO(n, a));
     [[1, 'Bread.'], [1, 'I would like some soup.'], [5, 'She would like some salad.'], [21, "It's Tony's backpack."], [21, 'My backpack.'], [59, 'My backpack.'], [61, "Tony's."], [7, 'No, thanks.']].forEach(([n, a]) => YES(n, a));
+  }
+  if (B.key === '7-u12') {
+    [[41, 'Japan.'], [8, 'Yes, he does.'], [18, 'I go to school.'], [57, 'By bike.'], [64, 'No, he does not. He goes to school by bus.']].forEach(([n, a]) => NO(n, a));
+    [[1, 'I am from the U.K.'], [1, 'Japan.'], [18, 'On foot.'], [18, 'I go to school by metro.'], [59, 'By M.R.T.'], [45, 'The U.S.A.'], [64, "No, he doesn't. He goes to school by scooter."]].forEach(([n, a]) => YES(n, a));
   }
   // ---- 4. 線上一次 20 題（兩個單元都有入口、抽同一份題庫）----
   const seen = new Set();

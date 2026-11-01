@@ -2,7 +2,7 @@
    題組會把幾題填空改成「打字」（看不到選項）：答案不唯一時加 hint（原形字或中文意思，顯示在打字題提示裡），
    或把其他也對的答案放 alts（不可出現在 opts 裡，選擇題才不會兩個都對）。2026-10-18 */
 window.DATA_GRAMMAR = [
-{id:"be",tb:["hanlin-5-u3"],title:"be 動詞 am / is / are",
+{id:"be",tb:["hanlin-5-u3","hanlin-7-u1"],title:"be 動詞 am / is / are",
  rules:["I 配 am。","he、she、it，或「一個」人／東西，配 is。","you、we、they，或「兩個以上」，配 are。","過去式：am、is → was；are → were。"],
  ex:[{en:"I am ten years old.",zh:"我十歲。"},{en:"They are my friends.",zh:"他們是我的朋友。"},{en:"The cat is very cute.",zh:"這隻貓很可愛。"}],
  q:[
@@ -20,7 +20,7 @@ window.DATA_GRAMMAR = [
  {"type":"fill","s":"I ___ happy now.","a":"am","opts":["am","is","are","be"],"why":"I 配 am。"},
  {"type":"fix","wrong":"We is in the classroom.","right":"We are in the classroom.","why":"We 是「我們」很多人，用 are。"}],
  typed:[{"zh":"我是一個學生。","en":"I am a student.","alts":["I'm a student."]},{"zh":"他們在公園裡。","en":"They are in the park.","alts":["They're in the park."]}]},
-{id:"present",tb:["hanlin-5-u4","hanlin-6-u2"],title:"現在簡單式（第三人稱單數加 s）",
+{id:"present",tb:["hanlin-5-u4","hanlin-6-u2","hanlin-7-u2","hanlin-7-u3","hanlin-7-u4"],title:"現在簡單式（第三人稱單數加 s）",
  rules:["每天、常常會做的事，用現在簡單式。","主詞是 he、she、it 或「一個」人／東西時，動詞要加 s 或 es。","字尾是 s、sh、ch、x、o 的動詞加 es：go → goes、watch → watches。","子音＋y 結尾：去 y 加 ies，study → studies；have 要變成 has。"],
  ex:[{en:"She goes to school by bus.",zh:"她搭公車上學。"},{en:"My dad watches TV every night.",zh:"我爸爸每天晚上看電視。"},{en:"I play basketball after school.",zh:"我放學後打籃球。"}],
  q:[

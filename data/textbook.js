@@ -306,5 +306,168 @@
       sents, replies });
   })();
 
+  // ================= 六上（第 7 冊）：依學校公開的課程計畫整理（屏東縣 114 學年度六年級英語 Here We Go 7 教學計畫），待課本核對 =================
+  // 計畫只列各課單字與句型（沒有日常用語），所以這四課沒有「日常用語」片語組；對話、情境也還沒有，等課本核對再補。
+  // ================= 六上 Unit 1 Where Are You From? =================
+  (() => {
+    const cs = [['Australia', '澳洲', 'australia'], ['India', '印度', 'india'], ['Japan', '日本', 'japan'], ['Spain', '西班牙', 'spain'], ['Taiwan', '台灣', 'taiwan'], ['the UK', '英國', 'uk', 'UK'], ['the USA', '美國', 'usa', 'USA']]
+      .map(([en, zh, k, w]) => ({ en, zh, k, w: w || en }));
+    const ppl = [{ k: 'he', en: 'he', S: 'He', c: "He's", zh: '他' }, { k: 'she', en: 'she', S: 'She', c: "She's", zh: '她' }];
+    const BE = ['are', 'is', 'am', 'do'], why = 'I 配 am（I\'m）；you 配 are；he、she 配 is。問來自哪裡：Where are you from? / Where is he from?';
+    const sents = [
+      { key: 'wq:you', g: 'wq', en: 'Where are you from?', zh: '你來自哪裡？', why, blanks: [{ fam: 'be', w: 'are', opts: BE }, { fam: 'from', w: 'from', opts: ['from', 'to', 'in', 'at'], why: '來自＝from。' }], ask: { prompt: '問對方：你來自哪裡？', hint: 'Where … from?' } },
+      { key: 'wq:he', g: 'wq', en: 'Where is he from?', zh: '他來自哪裡？', why, blanks: [{ fam: 'be', w: 'is', opts: BE }], ask: { prompt: '問：他來自哪裡？', hint: 'Where … he from?' } },
+      { key: 'wq:she', g: 'wq', en: 'Where is she from?', zh: '她來自哪裡？', why, blanks: [{ fam: 'be', w: 'is', opts: BE }], ask: { prompt: '問：她來自哪裡？', hint: 'Where … she from?' } }];
+    const replies = [];
+    cs.forEach((c, i) => {
+      const c2 = next(cs, i), cOpts = [c.w].concat(others(cs, i).map(x => x.w));
+      sents.push({ key: 'i:' + c.k, g: 'i', en: `I'm from ${c.en}.`, zh: `我來自${c.zh}。`, alts: [`I am from ${c.en}.`], why,
+        blanks: [{ fam: 'ctry', w: c.w, opts: cOpts, cue: c.zh, why: `${c.zh}＝${c.en}（國名第一個字母大寫）` }, { fam: 'from', w: 'from', opts: ['from', 'to', 'in', 'at'], why: '來自＝from。' }], ask: { prompt: `說說看：我來自${c.zh}。`, hint: "I'm from …" } });
+      ppl.forEach(p => {
+        sents.push({ key: `${p.k}:${c.k}`, g: 'he', en: `${p.c} from ${c.en}.`, zh: `${p.zh}來自${c.zh}。`, alts: [`${p.S} is from ${c.en}.`], why,
+          blanks: [{ fam: 'ctry', w: c.w, opts: cOpts, cue: c.zh }], ask: { prompt: `說說看：${p.zh}來自${c.zh}。`, hint: `${p.c} from …` } });
+        sents.push({ key: `q:${p.k}:${c.k}`, g: 'q', en: `Is ${p.en} from ${c.en}?`, zh: `${p.zh}來自${c.zh}嗎？`, why: 'he、she 用 Is 問：Is he from …? 回答 Yes, he is. / No, he isn\'t.',
+          blanks: [{ fam: 'isq', w: 'Is', opts: ['Is', 'Are', 'Do', 'Does'] }], ask: { prompt: `問：${p.zh}來自${c.zh}嗎？`, hint: `Is ${p.en} from …?` } });
+        replies.push({ key: `y:${p.k}:${c.k}`, card: `q:${p.k}:${c.k}`, q: `Is ${p.en} from ${c.en}?`, cue: `⭕ 是`, en: `Yes, ${p.en} is.`, kind: 'y', why: 'Is he …? 對的話：Yes, he is.（句尾不縮寫）',
+          wrong: [`Yes, ${p.en} does.`, `Yes, ${p.en}'s.`, `No, ${p.en} isn't.`] });
+        replies.push({ key: `n:${p.k}:${c.k}`, card: `q:${p.k}:${c.k}`, q: `Is ${p.en} from ${c.en}?`, cue: `❌ 不是，${p.zh}來自${c2.zh}`, en: `No, ${p.en} isn't. ${p.c} from ${c2.en}.`, alts: [`No, ${p.en} is not. ${p.S} is from ${c2.en}.`], kind: 'n',
+          why: "不對的話：No, he isn't. 再說他來自哪裡。", wrong: [`No, ${p.en} doesn't. ${p.c} from ${c2.en}.`, `No, ${p.en} isn't. ${p.c} from ${c.en}.`, `Yes, ${p.en} is. ${p.c} from ${c2.en}.`] });
+      });
+      replies.push({ key: `w:${c.k}`, card: 'wq:you', q: 'Where are you from?', cue: `🌏 ${c.zh}`, en: `I'm from ${c.en}.`, alts: [`I am from ${c.en}.`], kind: 'w', why,
+        wrong: [`I from ${c.en}.`, `I'm from ${c2.en}.`, `I'm come from ${c.en}.`] });
+    });
+    U.push({ id: 'hanlin-7-u1', book: '六上', no: 1, title: '六上 Unit 1 Where Are You From?', theme: 'Where are you from?', themeZh: '你來自哪裡？', draft: true,
+      groups: [{ key: 'country', title: '國家', icon: '🌏', words: cs.slice(0, 4).map(c => c.k) }, { key: 'country2', title: '國家（續）', icon: '🗺️', words: cs.slice(4).map(c => c.k) }],
+      tz: Object.fromEntries(cs.map(c => [c.k, c.zh + (c.en !== c.w ? `（${c.en}）` : '')])),
+      patterns: ['where-are-you-from', 'is-he-from'], grammar: ['be'],
+      visual: { xs: [{ t: "I'm from Taiwan.", ok: true }, { t: 'I from Taiwan.', ok: false, note: '要有 be 動詞 am' }, { t: "She's from the UK.", ok: true }, { t: 'She from UK.', ok: false, note: '要有 is；the UK 前面有 the' }],
+        table: { head: ['問句', '回答'], rows: [['Where [are] you from?', "I'm from Taiwan."], ['Where [is] he from?', "He's from Japan."], ['[Is] she from India?', "Yes, she is. / No, she isn't. She's from Spain."]] },
+        tip: { en: "I'm from [the] USA. / I'm from Japan.", note: 'the UK、the USA 前面要加 the；其他國名不加' } },
+      qa: [{ q: 'Where are you from?', qz: '你來自哪裡？', a: "I'm from Taiwan.", az: '我來自台灣。' }, { q: 'Is he from India?', qz: '他來自印度嗎？', a: 'Yes, he is.', az: '是的，他是。' },
+        { q: 'Is she from India?', qz: '她來自印度嗎？', a: "No, she isn't. She's from the UK.", az: '不是，她來自英國。' }],
+      sents, replies });
+  })();
+
+  // ================= 六上 Unit 2 How Do You Go to School? =================
+  (() => {
+    const ms = [['bike', 'by bike', '騎腳踏車'], ['bus', 'by bus', '搭公車'], ['car', 'by car', '坐車'], ['MRT', 'by MRT', '搭捷運'], ['scooter', 'by scooter', '騎機車'], ['taxi', 'by taxi', '搭計程車'], ['train', 'by train', '搭火車'], ['foot', 'on foot', '走路']]
+      .map(([w, by, zh]) => ({ w, by, zh, k: slug(by) }));
+    const ppl = [{ k: 'he', en: 'he', S: 'He', zh: '他' }, { k: 'she', en: 'she', S: 'She', zh: '她' }];
+    const why = 'I、you 配 go；he、she 配 goes。交通方式：by bus、by MRT…，走路是 on foot。';
+    const sents = [
+      { key: 'hq:you', g: 'hq', en: 'How do you go to school?', zh: '你怎麼去上學？', why, blanks: [{ fam: 'dd', w: 'do', opts: ['do', 'does', 'is', 'are'], why: 'I、you 用 do 問。' }], ask: { prompt: '問對方：你怎麼去上學？', hint: 'How … go to school?' } },
+      { key: 'hq:he', g: 'hq', en: 'How does he go to school?', zh: '他怎麼去上學？', why, blanks: [{ fam: 'dd', w: 'does', opts: ['does', 'do', 'is', 'are'] }], ask: { prompt: '問：他怎麼去上學？', hint: 'How … he go to school?' } },
+      { key: 'hq:she', g: 'hq', en: 'How does she go to school?', zh: '她怎麼去上學？', why, blanks: [{ fam: 'dd', w: 'does', opts: ['does', 'do', 'is', 'are'] }], ask: { prompt: '問：她怎麼去上學？', hint: 'How … she go to school?' } }];
+    const replies = [];
+    ms.forEach((m, i) => {
+      const m2 = next(ms, i), pw = m.by.split(' ')[0], wrongBy = m.by === 'on foot' ? 'by foot' : 'on ' + m.w;
+      sents.push({ key: 'i:' + m.k, g: 'i', en: `I go to school ${m.by}.`, zh: `我${m.zh}上學。`, why,
+        blanks: [{ fam: 'by', w: pw, opts: ['by', 'on', 'in', 'at'], why: m.by === 'on foot' ? '走路是 on foot。' : `搭交通工具用 by：${m.by}。` }], ask: { prompt: `說說看：我${m.zh}上學。`, hint: `I go to school ${pw} …` } });
+      ppl.forEach(p => {
+        sents.push({ key: `${p.k}:${m.k}`, g: 'he', en: `${p.S} goes to school ${m.by}.`, zh: `${p.zh}${m.zh}上學。`, why,
+          blanks: [{ fam: 'goes', w: 'goes', opts: ['go', 'goes', 'going', 'gos'], why: 'he、she 後面 go 要變 goes。' }], ask: { prompt: `說說看：${p.zh}${m.zh}上學。`, hint: `${p.S} goes …` } });
+        sents.push({ key: `q:${p.k}:${m.k}`, g: 'q', en: `Does ${p.en} go to school ${m.by}?`, zh: `${p.zh}${m.zh}上學嗎？`, why: 'he、she 用 Does 問，後面 go 用原形。',
+          blanks: [{ fam: 'does', w: 'Does', opts: ['Does', 'Do', 'Is', 'Are'] }], ask: { prompt: `問：${p.zh}${m.zh}上學嗎？`, hint: `Does ${p.en} go to school …?` } });
+        replies.push({ key: `hw:${p.k}:${m.k}`, card: `hq:${p.k}`, q: `How does ${p.en} go to school?`, cue: `🚌 ${m.zh}`, en: `${p.S} goes to school ${m.by}.`, kind: 'hw', why,
+          wrong: [`${p.S} go to school ${m.by}.`, `${p.S} goes to school ${m2.by}.`, `${p.S} goes to school ${wrongBy}.`] });
+        replies.push({ key: `y:${p.k}:${m.k}`, card: `q:${p.k}:${m.k}`, q: `Does ${p.en} go to school ${m.by}?`, cue: '⭕ 是', en: `Yes, ${p.en} does.`, kind: 'y', why: 'Does …? 對的話：Yes, he does.',
+          wrong: [`Yes, ${p.en} do.`, `Yes, ${p.en} goes.`, `No, ${p.en} doesn't.`] });
+        replies.push({ key: `n:${p.k}:${m.k}`, card: `q:${p.k}:${m.k}`, q: `Does ${p.en} go to school ${m.by}?`, cue: `❌ 不是，${m2.zh}`, en: `No, ${p.en} doesn't. ${p.S} goes to school ${m2.by}.`, alts: [`No, ${p.en} does not. ${p.S} goes to school ${m2.by}.`], kind: 'n',
+          why: "不對的話：No, he doesn't. 再說他怎麼去（goes 要加 es）。", wrong: [`No, ${p.en} doesn't. ${p.S} go to school ${m2.by}.`, `No, ${p.en} don't. ${p.S} goes to school ${m2.by}.`, `Yes, ${p.en} does. ${p.S} goes to school ${m2.by}.`] });
+      });
+      replies.push({ key: `w:${m.k}`, card: 'hq:you', q: 'How do you go to school?', cue: `🚌 ${m.zh}`, en: `I go to school ${m.by}.`, kind: 'w', why,
+        wrong: [`I goes to school ${m.by}.`, `I go to school ${m2.by}.`, `I go to school ${wrongBy}.`] });
+    });
+    U.push({ id: 'hanlin-7-u2', book: '六上', no: 2, title: '六上 Unit 2 How Do You Go to School?', theme: 'How do you go to school?', themeZh: '你怎麼去上學？', draft: true,
+      groups: [{ key: 'transport', title: '交通工具', icon: '🚌', words: ['bike', 'bus', 'car', 'mrt', 'scooter', 'taxi', 'train'] }, { key: 'phrase', title: '交通方式', icon: '🚶', words: [], phrases: ['by-bus', 'on-foot'] }],
+      tz: { bike: '腳踏車（by bike 騎腳踏車）', bus: '公車（by bus 搭公車）', car: '汽車（by car 坐車）', mrt: '捷運（by MRT 搭捷運）', scooter: '機車（by scooter 騎機車）', taxi: '計程車（by taxi 搭計程車）', train: '火車（by train 搭火車）', 'by-bus': '搭公車', 'on-foot': '走路' },
+      patterns: ['how-do-you-go-to-school', 'does-he-go-to-school-by'], grammar: ['present'],
+      visual: { chips: { a: 'by', items: ['bike', 'bus', 'car', 'MRT', 'scooter', 'taxi', 'train'] },
+        xs: [{ t: 'I go to school by bus.', ok: true }, { t: 'I go to school on foot.', ok: true, note: '走路用 on foot' }, { t: 'I go to school by foot.', ok: false }, { t: 'She go to school by MRT.', ok: false, note: 'she 要用 goes' }],
+        table: { head: ['人稱', '問句', '回答'], rows: [['I／you', 'How [do] you go to school?', 'I [go] to school by bike.'], ['he／she', 'How [does] she go to school?', 'She [goes] to school by bus.'], ['he／she', '[Does] he go to school by car?', "No, he doesn't. He goes to school on foot."]] },
+        tip: { en: 'by bus / by MRT / [on] foot', note: '搭交通工具用 by（中間不加 a、the）；走路是 on foot' } },
+      qa: [{ q: 'How do you go to school?', qz: '你怎麼去上學？', a: 'I go to school by bike.', az: '我騎腳踏車上學。' }, { q: 'Does she go to school by bus?', qz: '她搭公車上學嗎？', a: 'Yes, she does.', az: '是的。' },
+        { q: 'Does he go to school by car?', qz: '他坐車上學嗎？', a: "No, he doesn't. He goes to school on foot.", az: '不是，他走路上學。' }],
+      sents, replies });
+  })();
+
+  // ================= 六上 Unit 3 What Do You Do on Weekends? =================
+  (() => {
+    const acts = [['go jogging', 'goes jogging', '去慢跑', 'going jogging'], ['play baseball', 'plays baseball', '打棒球', 'playing baseball'], ['play basketball', 'plays basketball', '打籃球', 'playing basketball'], ['ride a bike', 'rides a bike', '騎腳踏車', 'riding a bike'],
+      ['listen to music', 'listens to music', '聽音樂', 'listening to music'], ['study English', 'studies English', '讀英文', 'studying English'], ['surf the Internet', 'surfs the Internet', '上網', 'surfing the Internet'], ['watch TV', 'watches TV', '看電視', 'watching TV']]
+      .map(([v, s, zh, ing]) => ({ v, s, zh, ing, k: slug(v) }));
+    const ppl = [{ k: 'he', en: 'he', S: 'He', own: 'his', zh: '他' }, { k: 'she', en: 'she', S: 'She', own: 'her', zh: '她' }];
+    const why = 'I、you 用原形（play、watch）；he、she 動詞要加 s／es（plays、watches、studies、goes）。';
+    const sents = [
+      { key: 'wq:you', g: 'wq', en: 'What do you do on weekends?', zh: '你週末做什麼？', why, blanks: [{ fam: 'on', w: 'on', opts: ['on', 'in', 'at', 'to'], why: '週末用 on weekends。' }], ask: { prompt: '問對方：你週末做什麼？', hint: 'What … on weekends?' } }];
+    ppl.forEach(p => sents.push({ key: 'wq:' + p.k, g: 'wq', en: `What does ${p.en} do in ${p.own} free time?`, zh: `${p.zh}空閒的時候做什麼？`, why,
+      blanks: [{ fam: 'dd', w: 'does', opts: ['does', 'do', 'is', 'are'], why: 'he、she 用 does 問。' }, { fam: 'own', w: p.own, opts: p.k === 'he' ? ['his', 'he', 'him', 'her'] : ['her', 'she', 'hers', 'his'], why: `${p.en} 的＝${p.own}` }],
+      ask: { prompt: `問：${p.zh}空閒的時候做什麼？`, hint: `What does ${p.en} do …?` } }));
+    const replies = [];
+    acts.forEach((a, i) => {
+      const a2 = next(acts, i), w0 = a.v.split(' ')[0], s0 = a.s.split(' ')[0];
+      sents.push({ key: 'i:' + a.k, g: 'i', en: `I ${a.v} on weekends.`, zh: `我週末${a.zh}。`, why,
+        blanks: [{ fam: 'on', w: 'on', opts: ['on', 'in', 'at', 'to'], why: '週末用 on weekends。' }], ask: { prompt: `說說看：我週末${a.zh}。`, hint: `I ${w0} … on weekends.` } });
+      ppl.forEach(p => {
+        sents.push({ key: `${p.k}:${a.k}`, g: 'he', en: `${p.S} ${a.s} in ${p.own} free time.`, zh: `${p.zh}空閒的時候${a.zh}。`, why,
+          blanks: [{ fam: 's3', w: s0, opts: [s0, w0, a.ing.split(' ')[0], 'is ' + a.ing.split(' ')[0]], why: `${p.en} 是一個人，${w0} 要變 ${s0}。` }], ask: { prompt: `說說看：${p.zh}空閒的時候${a.zh}。`, hint: `${p.S} ${s0} …` } });
+        replies.push({ key: `h:${p.k}:${a.k}`, card: 'wq:' + p.k, q: `What does ${p.en} do in ${p.own} free time?`, cue: `🎈 ${a.zh}`, en: `${p.S} ${a.s} in ${p.own} free time.`, alts: [`${p.S} ${a.s}.`], kind: p.k, why,
+          wrong: [`${p.S} ${a.v} in ${p.own} free time.`, `${p.S} ${a2.s} in ${p.own} free time.`, `${p.S} is ${a.ing} in ${p.own} free time.`] });
+      });
+      replies.push({ key: 'w:' + a.k, card: 'wq:you', q: 'What do you do on weekends?', cue: `🎈 ${a.zh}`, en: `I ${a.v} on weekends.`, alts: [`I ${a.v}.`], kind: 'w', why,
+        wrong: [`I ${a.s} on weekends.`, `I ${a2.v} on weekends.`, `I ${a.v} in weekends.`] });
+    });
+    U.push({ id: 'hanlin-7-u3', book: '六上', no: 3, title: '六上 Unit 3 What Do You Do on Weekends?', theme: 'What do you do on weekends?', themeZh: '你週末做什麼？', draft: true,
+      groups: [{ key: 'act', title: '休閒活動（單字）', icon: '⚾', words: ['jog', 'baseball', 'basketball', 'internet', 'tv', 'weekend'] }, { key: 'phrase', title: '休閒活動（片語）', icon: '🎧', words: [], phrases: ['play-baseball', 'play-basketball', 'ride-a-bike', 'listen-to-music', 'surf-the-internet', 'watch-tv'] }],
+      tz: { jog: '慢跑（go jogging 去慢跑）', baseball: '棒球', basketball: '籃球', internet: '網際網路（surf the Internet 上網）', tv: '電視', weekend: '週末（on weekends 每逢週末）',
+        'play-baseball': '打棒球', 'play-basketball': '打籃球', 'ride-a-bike': '騎腳踏車', 'listen-to-music': '聽音樂', 'surf-the-internet': '上網', 'watch-tv': '看電視' },
+      patterns: ['what-do-you-do-on-weekends', 'what-does-she-do-free-time'], grammar: ['present'],
+      visual: { xs: [{ t: 'I watch TV on weekends.', ok: true }, { t: 'He watches TV in his free time.', ok: true, note: 'he 要加 es' }, { t: 'She study English.', ok: false, note: 'she 要用 studies' }, { t: 'I go jogging in weekends.', ok: false, note: '週末用 on' }],
+        table: { head: ['動詞', 'he／she 用', '規則'], rows: [['play', '[plays]', '一般加 s'], ['watch', '[watches]', 'ch、sh、s、x 結尾加 es'], ['go', '[goes]', 'o 結尾加 es'], ['study', '[studies]', '子音＋y：去 y 加 ies']] },
+        tip: { en: 'What [does] she do in [her] free time?', note: 'he 配 his、she 配 her；問 he、she 用 does，後面的 do 是原形' } },
+      qa: [{ q: 'What do you do on weekends?', qz: '你週末做什麼？', a: 'I go jogging on weekends.', az: '我週末去慢跑。' }, { q: 'What does she do in her free time?', qz: '她空閒的時候做什麼？', a: 'She watches TV in her free time.', az: '她空閒的時候看電視。' },
+        { q: 'What does he do in his free time?', qz: '他空閒的時候做什麼？', a: 'He studies English in his free time.', az: '他空閒的時候讀英文。' }],
+      sents, replies });
+  })();
+
+  // ================= 六上 Unit 4 What Time Do You Get Up? =================
+  (() => {
+    const rs = [['get up', 'gets up', '起床', 'six thirty', '六點半'], ['go to school', 'goes to school', '去上學', 'seven thirty', '七點半'], ['have lunch', 'has lunch', '吃午餐', 'twelve', '十二點'], ['go home', 'goes home', '回家', 'four', '四點'],
+      ['do my homework', 'does * homework', '寫功課', 'five', '五點'], ['take a shower', 'takes a shower', '洗澡', 'eight', '八點'], ['go to bed', 'goes to bed', '上床睡覺', 'nine thirty', '九點半']]
+      .map(([v, s, zh, t, tz]) => ({ v, s, zh, t, tz, k: slug(v.replace(' my', '')) }));
+    const ppl = [{ k: 'he', en: 'he', S: 'He', own: 'his', zh: '他' }, { k: 'she', en: 'she', S: 'She', own: 'her', zh: '她' }];
+    const vP = (r, p) => r.v.replace(' my ', ` ${p.own} `), sP = (r, p) => r.s.replace('*', p.own);
+    const why = '問幾點做某事：What time do you …? 回答用 at＋時間；he、she 動詞要加 s／es（gets、goes、has、does）。';
+    const sents = [], replies = [];
+    rs.forEach((r, i) => {
+      const r2 = next(rs, i), w0 = r.v.split(' ')[0], s0 = r.s.split(' ')[0];
+      sents.push({ key: 'wq:you:' + r.k, g: 'wq', en: `What time do you ${r.v}?`, zh: `你幾點${r.zh}？`, why,
+        blanks: [{ fam: 'time', w: 'time', opts: ['time', 'day', 'old', 'many'], why: '問幾點用 What time。' }, { fam: 'dd', w: 'do', opts: ['do', 'does', 'is', 'are'] }], ask: { prompt: `問對方：你幾點${r.zh}？`, hint: `What time do you ${w0} …?` } });
+      sents.push({ key: 'i:' + r.k, g: 'i', en: `I ${r.v} at ${r.t}.`, zh: `我${r.tz}${r.zh}。`, why,
+        blanks: [{ fam: 'at', w: 'at', opts: ['at', 'on', 'in', 'to'], why: '幾點用 at：at six thirty。' }], ask: { prompt: `說說看：我${r.tz}${r.zh}。`, hint: `I ${w0} … at …` } });
+      replies.push({ key: 'w:' + r.k, card: 'wq:you:' + r.k, q: `What time do you ${r.v}?`, cue: `⏰ ${r.tz}`, en: `I ${r.v} at ${r.t}.`, alts: [`At ${r.t}.`], kind: 'w', why,
+        wrong: [`I ${r.s.replace('*', 'my')} at ${r.t}.`, `I ${r.v} on ${r.t}.`, `I ${r.v} at ${r2.t}.`] });
+      ppl.forEach(p => {
+        sents.push({ key: `wq:${p.k}:${r.k}`, g: 'wq', en: `What time does ${p.en} ${vP(r, p)}?`, zh: `${p.zh}幾點${r.zh}？`, why,
+          blanks: [{ fam: 'dd', w: 'does', opts: ['does', 'do', 'is', 'are'] }], ask: { prompt: `問：${p.zh}幾點${r.zh}？`, hint: `What time does ${p.en} …?` } });
+        sents.push({ key: `${p.k}:${r.k}`, g: 'he', en: `${p.S} ${sP(r, p)} at ${r.t}.`, zh: `${p.zh}${r.tz}${r.zh}。`, why,
+          blanks: [{ fam: 's3', w: s0, opts: [s0, w0, { get: 'getting', go: 'going', have: 'having', do: 'doing', take: 'taking' }[w0], 'is'], why: `${p.en} 是一個人，${w0} 要變 ${s0}。` }], ask: { prompt: `說說看：${p.zh}${r.tz}${r.zh}。`, hint: `${p.S} ${s0} …` } });
+        replies.push({ key: `h:${p.k}:${r.k}`, card: `wq:${p.k}:${r.k}`, q: `What time does ${p.en} ${vP(r, p)}?`, cue: `⏰ ${r.tz}`, en: `${p.S} ${sP(r, p)} at ${r.t}.`, alts: [`At ${r.t}.`], kind: p.k, why,
+          wrong: [`${p.S} ${vP(r, p)} at ${r.t}.`, `${p.S} ${sP(r, p)} in ${r.t}.`, `${p.S} ${sP(r, p)} at ${r2.t}.`] });
+      });
+    });
+    U.push({ id: 'hanlin-7-u4', book: '六上', no: 4, title: '六上 Unit 4 What Time Do You Get Up?', theme: 'What time do you get up?', themeZh: '你幾點起床？', draft: true,
+      groups: [{ key: 'word', title: '單字', icon: '🏠', words: ['homework', 'shower', 'bed', 'home'] }, { key: 'phrase', title: '一天的作息', icon: '⏰', words: [], phrases: ['get-up', 'go-to-school', 'have-lunch', 'go-home', 'do-homework', 'take-a-shower', 'go-to-bed'] }],
+      tz: { homework: '功課（do my homework 寫功課）', shower: '淋浴（take a shower 洗澡）', bed: '床（go to bed 上床睡覺）', home: '家（go home 回家）',
+        'get-up': '起床', 'go-to-school': '去上學', 'have-lunch': '吃午餐', 'go-home': '回家', 'do-homework': '寫功課（do my homework）', 'take-a-shower': '洗澡', 'go-to-bed': '上床睡覺' },
+      patterns: ['what-time-do-you-get-up', 'what-time-does-he'], grammar: ['present'],
+      visual: { xs: [{ t: 'I get up at six thirty.', ok: true }, { t: 'She gets up at seven.', ok: true }, { t: 'He have lunch at twelve.', ok: false, note: 'he 要用 has' }, { t: 'I go to bed on nine.', ok: false, note: '幾點用 at' }],
+        table: { head: ['人稱', '問句', '回答'], rows: [['I／you', 'What time [do] you get up?', 'I get up [at] six thirty.'], ['he／she', 'What time [does] she do her homework?', 'She [does] her homework at five.']] },
+        tip: { en: 'have → [has]、do → [does]、go → [goes]', note: 'he、she 後面的動詞要變化；my 換成 his／her' } },
+      qa: [{ q: 'What time do you get up?', qz: '你幾點起床？', a: 'I get up at six thirty.', az: '我六點半起床。' }, { q: 'What time does she do her homework?', qz: '她幾點寫功課？', a: 'She does her homework at five.', az: '她五點寫功課。' },
+        { q: 'What time does he go to bed?', qz: '他幾點上床睡覺？', a: 'He goes to bed at nine thirty.', az: '他九點半上床睡覺。' }],
+      sents, replies });
+  })();
+
   window.DATA_TEXTBOOK = U;
 })();

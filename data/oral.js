@@ -517,6 +517,130 @@
       note: '五下 Unit 3、Unit 4 都是依學校課程計畫整理、還沒拿課本逐字核對。' });
   })();
 
+  // ================= 六上 U1–U2（Where Are You From? ／ How Do You Go to School?；依學校課程計畫整理，待課本核對）=================
+  (() => {
+    const CTRY = 'Australia|India|Japan|Spain|Taiwan|UK|USA|U.K.|U.S.A.', BY = 'bike|bus|car|MRT|M.R.T.|metro|scooter|taxi|train|foot';
+    const UKK = 'UK|U.K.', USK = 'USA|U.S.A.', MRT = 'MRT|M.R.T.|metro';
+    const IS = (who) => [`Yes, ${who} is.`, `No, ${who} isn't.`], ISK = (who) => [`Yes, ${who} is|No, ${who} isn't`];
+    const ARE = (who) => [`Yes, ${who} are.`, `No, ${who} aren't.`], AREK = (who) => [`Yes, ${who} are|No, ${who} aren't`];
+    const L1 = [
+      // ---- Unit 1：國家、Where are you from? ----
+      { u: 1, q: 'Where are you from?', a: ["I'm from ___.", 'From ___.', '___.'], k: [CTRY] },
+      { u: 1, q: 'Where is he from?', a: ["He's from ___.", 'From ___.', '___.'], k: [CTRY] },
+      { u: 1, q: 'Where is she from?', a: ["She's from ___.", 'From ___.', '___.'], k: [CTRY] },
+      { u: 1, q: 'Where are Amy and Ben from?', a: ["They're from ___.", 'From ___.', '___.'], k: [CTRY] },
+      { u: 1, q: 'Where is Amy from?', a: ["She's from ___.", 'From ___.', '___.'], k: [CTRY] },
+      { u: 1, q: 'Where is Ben from?', a: ["He's from ___.", 'From ___.', '___.'], k: [CTRY] },
+      { u: 1, q: 'Are you from Taiwan?', a: ['Yes, I am.', "No, I'm not."], k: ["Yes, I am|No, I'm not"] },
+      { u: 1, q: 'Is he from Japan?', a: IS('he'), k: ISK('he') },
+      { u: 1, q: 'Is she from the USA?', a: IS('she'), k: ISK('she') },
+      { u: 1, q: 'Is Amy from Australia?', a: IS('she'), k: ISK('she') },
+      { u: 1, q: 'Is Ben from the UK?', a: IS('he'), k: ISK('he') },
+      { u: 1, q: 'Are they from Spain?', a: ARE('they'), k: AREK('they') },
+      { u: 1, q: 'Are you and Ben from Taiwan?', a: ARE('we'), k: AREK('we') },
+      { u: 1, q: 'Is Ben from India?', a: IS('he'), k: ISK('he') },
+      { u: 1, q: 'Are you from Japan or Taiwan?', a: ["I'm from Japan.", "I'm from Taiwan.", 'Japan.', 'Taiwan.'], k: ['Japan|Taiwan'] },
+      { u: 1, q: 'Is he from India or Spain?', a: ["He's from India.", "He's from Spain.", 'India.', 'Spain.'], k: ['India|Spain'] },
+      { u: 1, q: 'Is she from the UK or the USA?', a: ["She's from the UK.", "She's from the USA.", 'The UK.', 'The USA.'], k: ['UK|USA|U.K.|U.S.A.'] },
+      // ---- Unit 2：交通方式、How do you go to school? ----
+      { u: 2, q: 'How do you go to school?', a: ['I go to school by ___.', 'I go to school on foot.', 'By ___.', 'On foot.'], k: [BY] },
+      { u: 2, q: 'How does he go to school?', a: ['He goes to school by ___.', 'He goes to school on foot.', 'By ___.'], k: [BY] },
+      { u: 2, q: 'How does she go to school?', a: ['She goes to school by ___.', 'She goes to school on foot.', 'By ___.'], k: [BY] },
+      { u: 2, q: 'How does Amy go to school?', a: ['She goes to school by ___.', 'She goes to school on foot.', 'By ___.'], k: [BY] },
+      { u: 2, q: 'How do they go to school?', a: ['They go to school by ___.', 'They go to school on foot.', 'By ___.'], k: [BY] },
+      { u: 2, q: 'How do Amy and Ben go to school?', a: ['They go to school by ___.', 'They go to school on foot.', 'By ___.'], k: [BY] },
+      { u: 2, q: 'Do you go to school by bus?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Do you go to school on foot?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Do you go to school by scooter?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Does he go to school by car?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 2, q: 'Does she go to school by MRT?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 2, q: 'Does Ben go to school by bike?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 2, q: 'Does Amy go to school by taxi?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 2, q: 'Do they go to school by train?', a: Y('they', 'do'), k: YK('they', 'do') },
+      { u: 2, q: 'Do you and Amy go to school by bus?', a: Y('we', 'do'), k: YK('we', 'do') },
+      { u: 2, q: 'Do you go to school by bus or by bike?', a: ['I go to school by bus.', 'I go to school by bike.', 'By bus.', 'By bike.'], k: ['bus|bike'] },
+      { u: 2, q: 'Does he go to school by car or on foot?', a: ['He goes to school by car.', 'He goes to school on foot.', 'By car.', 'On foot.'], k: ['car|foot'] },
+      { u: 2, q: 'Does she go to school by train or by MRT?', a: ['She goes to school by train.', 'She goes to school by MRT.', 'By train.', 'By MRT.'], k: ['train|' + MRT] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'Are you from Taiwan? Do you go to school by MRT?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 12, q: "He's from Japan. Does he go to school by train?", a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 12, q: "She's from India. How does she go to school?", a: ['She goes to school by ___.', 'She goes to school on foot.', 'By ___.'], k: [BY] },
+      { u: 12, q: "I'm from Taiwan. Where are you from?", a: ["I'm from ___.", 'From ___.', '___.'], k: [CTRY] },
+      { u: 12, q: 'I go to school by bike. How do you go to school?', a: ['I go to school by ___.', 'I go to school on foot.', 'By ___.', 'On foot.'], k: [BY] }
+    ];
+    const L2 = [
+      // ---- Unit 1 ----
+      { u: 1, q: 'Where are you from?', zh: '你來自台灣。', a: ["I'm from Taiwan.", 'From Taiwan.', 'Taiwan.'], k: ['Taiwan'] },
+      { u: 1, q: 'Where is he from?', zh: '他來自日本。', a: ["He's from Japan.", 'From Japan.', 'Japan.'], k: ['Japan'] },
+      { u: 1, q: 'Where is she from?', zh: '她來自澳洲。', a: ["She's from Australia.", 'From Australia.', 'Australia.'], k: ['Australia'] },
+      { u: 1, q: 'Where are they from?', zh: '他們來自西班牙。', a: ["They're from Spain.", 'From Spain.', 'Spain.'], k: ['Spain'] },
+      { u: 1, q: 'Where is Amy from?', zh: 'Amy 來自美國。', a: ["She's from the USA.", 'From the USA.', 'The USA.'], k: [USK] },
+      { u: 1, q: 'Where is Ben from?', zh: 'Ben 來自英國。', a: ["He's from the UK.", 'From the UK.', 'The UK.'], k: [UKK] },
+      { u: 1, q: 'Is he from India?', zh: '對，他來自印度。', a: ['Yes, he is.'], k: ['Yes, he is'] },
+      { u: 1, q: 'Is she from Japan?', zh: '不是；她來自英國。', a: ["No, she isn't. She's from the UK.", "No. She's from the UK."], k: ['No', UKK] },
+      { u: 1, q: 'Are you from the USA?', zh: '不是；你來自台灣。', a: ["No, I'm not. I'm from Taiwan.", "No. I'm from Taiwan."], k: ['No', 'Taiwan'] },
+      { u: 1, q: 'Is Amy from Spain?', zh: '對，Amy 來自西班牙。', a: ['Yes, she is.'], k: ['Yes, she is'] },
+      { u: 1, q: 'Is Ben from Australia?', zh: '不是；他來自印度。', a: ["No, he isn't. He's from India.", "No. He's from India."], k: ['No', 'India'] },
+      { u: 1, q: 'Are they from Japan?', zh: '對，他們來自日本。', a: ['Yes, they are.'], k: ['Yes, they are'] },
+      { u: 1, q: 'Are you from Taiwan or Japan?', zh: '你來自台灣。', a: ["I'm from Taiwan.", 'Taiwan.'], k: ['Taiwan'] },
+      { u: 1, q: 'Is she from India or Spain?', zh: '她來自印度。', a: ["She's from India.", 'India.'], k: ['India'] },
+      { u: 1, q: 'Where are you and Ben from?', zh: '你們兩個都來自台灣。', a: ["We're from Taiwan.", 'Taiwan.'], k: ['Taiwan'] },
+      { u: 1, q: 'Is he from the UK?', zh: '不是；他來自美國。', a: ["No, he isn't. He's from the USA.", "No. He's from the USA."], k: ['No', USK] },
+      // ---- Unit 2 ----
+      { u: 2, q: 'How do you go to school?', zh: '你搭公車上學。', a: ['I go to school by bus.', 'By bus.'], k: ['bus'] },
+      { u: 2, q: 'How does he go to school?', zh: '他走路上學。', a: ['He goes to school on foot.', 'On foot.'], k: ['foot'] },
+      { u: 2, q: 'How does she go to school?', zh: '她搭捷運上學。', a: ['She goes to school by MRT.', 'By MRT.'], k: [MRT] },
+      { u: 2, q: 'How do you go to school?', zh: '你騎腳踏車上學。', a: ['I go to school by bike.', 'By bike.'], k: ['bike'] },
+      { u: 2, q: 'How does Amy go to school?', zh: 'Amy 搭火車上學。', a: ['She goes to school by train.', 'By train.'], k: ['train'] },
+      { u: 2, q: 'How does Ben go to school?', zh: 'Ben 坐車上學。', a: ['He goes to school by car.', 'By car.'], k: ['car'] },
+      { u: 2, q: 'Do you go to school by bus?', zh: '對，你搭公車上學。', a: ['Yes, I do.'], k: ['Yes, I do'] },
+      { u: 2, q: 'Does he go to school by taxi?', zh: '不是；他騎機車上學。', a: ["No, he doesn't. He goes to school by scooter."], k: ["No, he doesn't", 'scooter'] },
+      { u: 2, q: 'Does she go to school on foot?', zh: '對，她走路上學。', a: ['Yes, she does.'], k: ['Yes, she does'] },
+      { u: 2, q: 'Does Ben go to school by car?', zh: '不是；他搭公車上學。', a: ["No, he doesn't. He goes to school by bus."], k: ["No, he doesn't", 'bus'] },
+      { u: 2, q: 'Do they go to school by train?', zh: '對，他們搭火車上學。', a: ['Yes, they do.'], k: ['Yes, they do'] },
+      { u: 2, q: 'Do you go to school by MRT?', zh: '不是；你走路上學。', a: ["No, I don't. I go to school on foot."], k: ["No, I don't", 'foot'] },
+      { u: 2, q: 'Do you go to school by bus or by bike?', zh: '你騎腳踏車。', a: ['I go to school by bike.', 'By bike.'], k: ['bike'] },
+      { u: 2, q: 'Does she go to school by car or on foot?', zh: '她走路。', a: ['She goes to school on foot.', 'On foot.'], k: ['foot'] },
+      { u: 2, q: 'How do they go to school?', zh: '他們搭計程車上學。', a: ['They go to school by taxi.', 'By taxi.'], k: ['taxi'] },
+      { u: 2, q: 'Does Amy go to school by scooter?', zh: '對，Amy 騎機車上學。', a: ['Yes, she does.'], k: ['Yes, she does'] },
+      { u: 2, q: 'Do you and Amy go to school by bike?', zh: '不是，你們都不是騎腳踏車。', a: ["No, we don't."], k: ["No, we don't"] },
+      { u: 2, q: 'How do Amy and Ben go to school?', zh: '他們搭捷運上學。', a: ['They go to school by MRT.', 'By MRT.'], k: [MRT] },
+      // ---- 兩課混合 ----
+      { u: 12, q: "He's from Japan. How does he go to school?", zh: '他搭火車上學。', a: ['He goes to school by train.', 'By train.'], k: ['train'] },
+      { u: 12, q: "She's from India. Does she go to school by bus?", zh: '對，她搭公車上學。', a: ['Yes, she does.'], k: ['Yes, she does'] },
+      { u: 12, q: "I'm from the USA. Where are you from?", zh: '你來自台灣。', a: ["I'm from Taiwan.", 'Taiwan.'], k: ['Taiwan'] },
+      { u: 12, q: 'I go to school by car. How do you go to school?', zh: '你走路上學。', a: ['I go to school on foot.', 'On foot.'], k: ['foot'] },
+      { u: 12, q: 'Is Ben from Spain?', zh: '不是；他來自澳洲。', a: ["No, he isn't. He's from Australia.", "No. He's from Australia."], k: ['No', 'Australia'] },
+      { u: 12, q: 'Does Amy go to school by train?', zh: '不是；她搭公車上學。', a: ["No, she doesn't. She goes to school by bus."], k: ["No, she doesn't", 'bus'] }
+    ];
+    const L3 = [
+      { u: 1, q: 'Where are you from?', zh: '你來自台灣。說完後，反問考官來自哪裡。', a: ["I'm from Taiwan. Where are you from?"], k: ['Taiwan', 'Where are you from'], f: "I'm from the USA." },
+      { u: 1, q: "I'm from Australia.", zh: '換你問考官：他（旁邊那個男生）來自哪裡？', a: ['Where is he from?'], k: ['Where is he', 'from'], f: "He's from Japan." },
+      { u: 1, q: "He's from Spain.", zh: '換你問考官：她來自英國嗎？', a: ['Is she from the UK?'], k: ['Is she from', UKK], f: "No, she isn't. She's from India." },
+      { u: 1, q: 'Are you from the UK?', zh: '不是；你來自台灣。說完後，反問考官是不是來自英國。', a: ["No, I'm not. I'm from Taiwan. Are you from the UK?"], k: ['No', 'Taiwan', 'Are you from'], f: 'Yes, I am.' },
+      { u: 1, q: 'Where is she from?', zh: '她來自日本。說完後，再問考官：他來自哪裡？', a: ["She's from Japan. Where is he from?"], k: ['Japan', 'Where is he from'], f: "He's from Spain." },
+      { u: 2, q: 'How do you go to school?', zh: '你搭捷運。說完後，反問考官怎麼去上學。', a: ['I go to school by MRT. How do you go to school?'], k: [MRT, 'How do you go to school'], f: 'I go to school by car.' },
+      { u: 2, q: 'I go to school by bus.', zh: '換你問考官：她怎麼去上學？', a: ['How does she go to school?'], k: ['How does she', 'go to school'], f: 'She goes to school on foot.' },
+      { u: 2, q: 'She goes to school on foot.', zh: '換你問考官：他騎腳踏車上學嗎？', a: ['Does he go to school by bike?'], k: ['Does he go', 'bike'], f: "No, he doesn't. He goes to school by bus." },
+      { u: 2, q: 'Do you go to school by taxi?', zh: '不是；你和 Ben 都走路上學。', a: ["No, I don't. Ben and I go to school on foot.", "No, I don't. We go to school on foot."], k: ["No, I don't", 'foot'] },
+      { u: 2, q: 'How does Amy go to school?', zh: 'Amy 搭火車；再說 Ben 搭公車。', a: ['She goes to school by train. Ben goes to school by bus.'], k: ['train', 'Ben', 'bus'] },
+      { u: 2, q: 'Does she go to school by car?', zh: '對；再問考官：你也坐車上學嗎？', a: ['Yes, she does. Do you go to school by car?'], k: ['Yes, she does', 'Do you go to school by car'], f: "No, I don't." },
+      { u: 2, q: 'Do you go to school by bus or by MRT?', zh: '兩個你都會搭。', a: ['I go to school by bus and by MRT.', 'By bus and by MRT.'], k: ['bus', MRT] },
+      { u: 2, q: "I'm in Taiwan.", zh: '換你問考官：你怎麼去上學？', a: ['How do you go to school?'], k: ['How do you', 'go to school'], f: 'I go to school by scooter.' },
+      { u: 12, q: 'Is she from Japan?', zh: '不是；她來自印度，再說她搭公車上學。', a: ["No, she isn't. She's from India. She goes to school by bus."], k: ['No', 'India', 'goes to school by bus'] },
+      { u: 12, q: 'Where is Ben from?', zh: '他來自美國；再說他坐車上學。', a: ["He's from the USA. He goes to school by car."], k: [USK, 'car'] },
+      { u: 12, q: 'Does he go to school by train?', zh: '不是；他騎機車上學，再說他來自西班牙。', a: ["No, he doesn't. He goes to school by scooter. He's from Spain."], k: ["No, he doesn't", 'scooter', 'Spain'] },
+      { u: 12, q: 'Are they from Japan?', zh: '對；再說他們搭捷運上學。', a: ['Yes, they are. They go to school by MRT.'], k: ['Yes, they are', MRT] },
+      { u: 12, q: 'Is Amy from Australia?', zh: '對；再說她騎腳踏車上學。', a: ['Yes, she is. She goes to school by bike.'], k: ['Yes, she is', 'bike'] },
+      { u: 12, q: 'Where are you from? How do you go to school?', zh: '你來自台灣，走路上學。', a: ["I'm from Taiwan. I go to school on foot."], k: ['Taiwan', 'foot'] },
+      { u: 12, q: 'Is Ben from the USA?', zh: '不是；他來自英國，再說他搭計程車上學。', a: ["No, he isn't. He's from the UK. He goes to school by taxi."], k: ['No', UKK, 'taxi'] }
+    ];
+    build({ key: '7-u12', title: '六上 U1–U2 口語對話考試', file: '六上U1-U2', units: ['hanlin-7-u1', 'hanlin-7-u2'], labels: ['U1', 'U2'],
+      cls: { [CTRY]: '任一個國家', [BY]: '任一種交通方式（by bus／on foot…）' }, L: [L1, L2, L3],
+      scope: "Unit 1 Where Are You From?（Australia、India、Japan、Spain、Taiwan、the UK、the USA；Where are you from? I'm from ___.、Is he/she from ___? Yes, he is. / No, she isn't.）；Unit 2 How Do You Go to School?（by bike／bus／car／MRT／scooter／taxi／train、on foot；How do you go to school? I go to school by ___.、Does he/she go to school by ___?）",
+      note: '六上兩課都是依學校公開的課程計畫（翰林 Here We Go 7）整理，還沒拿課本核對；課程計畫沒有列日常用語和對話，所以題目只考單字和句型。' });
+  })();
+
   window.DATA_ORALS = BANKS;
   BANKS.forEach(b => (window.DATA_TEXTBOOK || []).forEach(u => { if (b.units.includes(u.id)) u.oral = b; }));
 })();

@@ -14,7 +14,7 @@ let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 // 2026-10-25：words-7.js 第 4 批（節日／地名 12 字 lv2–3；初級「國一以上」抽象字 102 字 lv4、src gept1）
 const GEPT = W.filter(w => /^gept/.test(w.src)), W1200 = W.filter(w => w.lv <= 3 && !GEPT.includes(w)), W800 = W.filter(w => w.lv === 4);
 ok(W1200.length >= 1200 && W1200.length <= 1230, 'words lv1-3 (教育部) ≈ 1200: ' + W1200.length);
-ok(W.filter(w => w.lv <= 3).length === 1368, 'words lv1-3 total (含英檢補充字) = 1364＋10-26 補 4 名詞詞條（fall 秋天、watch 手錶、kind 種類、second 秒）= 1368: ' + W.filter(w => w.lv <= 3).length);
+ok(W.filter(w => w.lv <= 3).length === 1371, 'words lv1-3 total (含英檢補充字) = 1364＋10-26 補 4 名詞詞條（fall 秋天、watch 手錶、kind 種類、second 秒）＋11-01 六上課本 India、Spain、USA = 1371: ' + W.filter(w => w.lv <= 3).length);
 ok(W800.length === 893 && W800.filter(w => w.src === 'moe800').length === 791 && W800.filter(w => w.src === 'gept1').length === 102, 'words lv4 = 893 (moe800 791 + gept1 102): ' + W800.length);
 ok(GEPT.length === 245 && GEPT.filter(w => w.src === 'geptkids').length === 19 && GEPT.filter(w => w.lv === 4).length === 102, 'GEPT words: 245 (geptkids 19; lv4 102): ' + GEPT.length);
 ok(W800.every(w => w.src === 'moe800' || w.src === 'gept1'), 'lv4 → src moe800 or gept1');
@@ -48,7 +48,7 @@ ok(!W.some(w => /（＝[A-Za-z]/.test(w.zh) && w.w !== "let's"), '中文不寫�
 ok(W.find(w => w.w === 'stress').alts.includes('pressure') && W.find(w => w.w === 'pressure').alts.includes('stress') && W.find(w => w.w === 'happen').alts.includes('occur'), '10-25 校對：stress／pressure、occur／happen 互收');
 ok(W.find(w => w.w === 'football').zh === '美式足球；（英國）足球', 'football zh');
 const lvCount = [1, 2, 3].map(l => W.filter(w => w.lv === l).length);
-ok(lvCount.join() === '401,479,488', 'levels (含英檢補充字) 401/479/488（10-26 +fall 秋天 lv1、watch／kind／second 名詞 lv2）: ' + lvCount);
+ok(lvCount.join() === '401,482,488', 'levels (含英檢補充字) 401/482/488（10-26 +fall 秋天 lv1、watch／kind／second 名詞 lv2；11-01 六上課本 India、Spain、USA lv2）: ' + lvCount);
 ['cat', 'apple', 'happy', 'Monday', 'noodles'].forEach(w => ok(W.find(x => x.w === w && x.src === 'moe1200'), 'original word kept: ' + w));
 const seenM = new Set();
 R.forEach(r => {
@@ -71,9 +71,9 @@ G.forEach(g => {
     else { ok(q.type === 'fix' && q.wrong && q.right && q.wrong !== q.right, 'fix ' + q.right); }
   });
 });
-ok(P.length === 185 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 185 with 5 examples each'); // 2026-10-25 第 5 批 +40（patterns-2.js） // 2026-10-25 第 2 批 +40 // 2026-10-18 +2（翰林五上 Unit 2）＋13（翰林五上 U1/U3/U4、五下 U1–U4）
-ok(new Set(P.map(p => p.id)).size === 185, 'pattern ids unique');
-ok(P.filter(p => p.lv === 1).length === 74 && P.filter(p => p.lv === 2).length === 64 && P.filter(p => p.lv === 3).length === 47, 'pattern levels 74/64/47');
+ok(P.length === 193 && P.every(p => p.id && p.pattern && p.zh && p.ex.length === 5 && p.ex.every(e => e.en && e.zh)), 'patterns: 185 with 5 examples each'); // 2026-10-25 第 5 批 +40（patterns-2.js） // 2026-10-25 第 2 批 +40 // 2026-10-18 +2（翰林五上 Unit 2）＋13（翰林五上 U1/U3/U4、五下 U1–U4）
+ok(new Set(P.map(p => p.id)).size === 193, 'pattern ids unique'); // 11-01 六上課本句型 +8 → 193
+ok(P.filter(p => p.lv === 1).length === 80 && P.filter(p => p.lv === 2).length === 66 && P.filter(p => p.lv === 3).length === 47, 'pattern levels 80/66/47'); // 11-01 六上課本句型 lv1 +6、lv2 +2
 // 課本句型：同一個句型裡的中文不重複（看中文選句子才不會兩個都對）
 P.filter(p => p.tb).forEach(p => { const z = p.ex.concat(p.extra).map(e => e.zh); ok(new Set(z).size === z.length, 'textbook pattern zh unique: ' + p.id); });
 ['there-is', 'want-to', 'like-ing', 'time-to', 'how-many', 'can-you', 'lets', 'have-to', 'it-is-to', 'what-do', 'i-think', 'dont'].forEach(id => ok(P.find(p => p.id === id && p.lv === 2), 'original pattern kept as 基本: ' + id));
@@ -242,13 +242,13 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
 
 // ---- 📘 課本單元（2026-10-18 翰林 Here We Go! 五上／五下）----
 {
-  const IDS = ['hanlin-5-u1', 'hanlin-5-u2', 'hanlin-5-u3', 'hanlin-5-u4', 'hanlin-6-u1', 'hanlin-6-u2', 'hanlin-6-u3', 'hanlin-6-u4'];
+  const IDS = ['hanlin-5-u1', 'hanlin-5-u2', 'hanlin-5-u3', 'hanlin-5-u4', 'hanlin-6-u1', 'hanlin-6-u2', 'hanlin-6-u3', 'hanlin-6-u4', 'hanlin-7-u1', 'hanlin-7-u2', 'hanlin-7-u3', 'hanlin-7-u4'];
   ok(TBK.map(x => x.id).join() === IDS.join() && new Set(TBK.map(x => x.id)).size === TBK.length, 'textbook units in book/unit order: ' + TBK.map(x => x.id));
   ok(TBK.every(u => u.id === 'hanlin-5-u2' ? !u.draft : u.draft === true), 'draft flag: all units except U2 (Yoda textbook) are 待課本核對');
   const SECS = ['一、聽力', '二、選擇', '三、填空', '四、重組', '五、中翻英', '六、回答問句'];
   TBK.forEach(u => {
     const U = u.id, it = E.tbItems(U), tag = ' [' + U + ']';
-    ok(E.tbUnit(U) === u && /^五[上下] Unit \d /.test(u.title) && u.groups.length >= 2, 'unit title / groups' + tag);
+    ok(E.tbUnit(U) === u && /^[五六][上下] Unit \d /.test(u.title) && u.groups.length >= 2, 'unit title / groups' + tag);
     // 分組裡的每個字都有 tb 標記，有 tb 標記的字都在分組裡（不重複新增：一個字只有一筆）
     const wk = it.words.map(KE.wordKey).sort().join(), gw = u.groups.flatMap(g => g.words || []), gp = u.groups.flatMap(g => g.phrases || []);
     ok(gw.slice().sort().join() === wk && gp.slice().sort().join() === it.phrases.map(x => x.id).sort().join() && new Set(gw).size === gw.length, 'unit groups == tb-tagged words/phrases' + tag + ' ' + wk);

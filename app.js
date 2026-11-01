@@ -380,7 +380,7 @@
     if (!u) {
       // 單元卡依冊別分組（五上、五下…）；draft＝依學校課程計畫整理、還沒拿課本核對
       const books = [...new Set(D.textbook.map(x => x.book || ''))];
-      app.innerHTML = top('📘 課本進度') + `<p class="muted">翰林 Here We Go!：每一課都有 📖 教學、✏️ 練習、📝 考試。</p>` + (books.map(b => `<h2 class="tb-book">${esc(b || '課本')}</h2><div class="tiles">${D.textbook.filter(x => (x.book || '') === b).map(x => `<button class="tile c2 tb-unit" data-go="#tb/${esc(x.id)}/learn"><span class="ti">📘</span><b>${esc(x.title.replace(/^五[上下] /, ''))}</b><small class="en">${esc(x.theme)}</small>${x.draft ? '<small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}${tbBadge(x.id)}</button>`).join('')}</div>`).join('') || '<p class="muted">準備中</p>');
+      app.innerHTML = top('📘 課本進度') + `<p class="muted">翰林 Here We Go!：每一課都有 📖 教學、✏️ 練習、📝 考試。</p>` + (books.map(b => `<h2 class="tb-book">${esc(b || '課本')}</h2><div class="tiles">${D.textbook.filter(x => (x.book || '') === b).map(x => `<button class="tile c2 tb-unit" data-go="#tb/${esc(x.id)}/learn"><span class="ti">📘</span><b>${esc(x.title.replace(/^[五六][上下] /, ''))}</b><small class="en">${esc(x.theme)}</small>${x.draft ? '<small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}${tbBadge(x.id)}</button>`).join('')}</div>`).join('') || '<p class="muted">準備中</p>');
       return;
     }
     if (!TB_TABS.some(t => t[0] === tab)) tab = 'learn';

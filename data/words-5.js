@@ -463,7 +463,7 @@ window.DATA_WORDS = (window.DATA_WORDS || []).concat([
 {w:"mosquito",ipa:"/məˈskitoʊ/",pos:"n",zh:"蚊子",lv:4,tags:["animal"],ex:"A mosquito bit my arm.",exZh:"一隻蚊子叮了我的手臂。",src:"moe800"},
 {w:"motion",ipa:"/ˈmoʊʃən/",pos:"n",zh:"移動；擺動",lv:4,tags:["thing"],ex:"Watch the motion of the swing.",exZh:"看看鞦韆擺動的樣子。",src:"moe800"},
 {w:"movement",ipa:"/ˈmuvmənt/",pos:"n",zh:"動作；移動",lv:4,tags:["thing"],ex:"The dancer's movements are beautiful.",exZh:"舞者的動作很優美。",src:"moe800",form:"movements"},
-{w:"MRT",ipa:"/ˌɛm ɑr ˈti/",pos:"n",zh:"捷運",lv:4,tags:["transport"],ex:"We take the MRT to school.",exZh:"我們搭捷運上學。",src:"moe800"},
+{w:"MRT",ipa:"/ˌɛm ɑr ˈti/",pos:"n",zh:"捷運",lv:4,tags:["transport"],ex:"We take the MRT to school.",exZh:"我們搭捷運上學。",src:"moe800",tb:["hanlin-7-u2"]},
 {w:"musician",ipa:"/mjuˈzɪʃən/",pos:"n",zh:"音樂家",lv:4,tags:["job"],ex:"My cousin wants to be a musician.",exZh:"我表哥想當音樂家。",src:"moe800"},
 {w:"napkin",ipa:"/ˈnæpkɪn/",pos:"n",zh:"餐巾；紙巾",lv:4,tags:["thing", "food"],ex:"Please wipe your mouth with a napkin.",exZh:"請用餐巾紙擦嘴巴。",src:"moe800"},
 {w:"narrow",ipa:"/ˈnæroʊ/",pos:"adj",zh:"窄的",lv:4,tags:["adj"],ex:"The street near my house is narrow.",exZh:"我家附近的街道很窄。",src:"moe800"},

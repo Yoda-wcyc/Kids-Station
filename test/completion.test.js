@@ -178,7 +178,7 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
 // ---------- 地圖：目錄、整體完成率、題庫 ----------
 {
   const M = KC.build(DATA, {});
-  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:8,social:4,science:4,math:6,ai:3,scratch:7' && M.total === 32 && M.done === 0 && M.pct === 0, 'map: 32 judgeable units: ' + M.subjects.map(s => s.k + ':' + s.total).join());
+  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:' + DATA.textbook.length + ',social:4,science:4,math:6,ai:3,scratch:7' && M.total === 24 + DATA.textbook.length && M.done === 0 && M.pct === 0, 'map: judgeable units (英文課本單元數照 textbook.js，11-01 加六上 4 課): ' + M.subjects.map(s => s.k + ':' + s.total).join());
   ok(M.subjects.every(s => s.units.every(u => u.href && u.title && ['done', 'doing', 'todo'].includes(u.status))), 'map: every cell has href, title, status');
   const ctx = { learned: Object.fromEntries(KC.tbItems(DATA, 'hanlin-5-u2', KE).map(x => [x.id, { at: '2026-10-20T01:00:00Z' }])), done: { tb: { 'hanlin-5-u2': { best: 85, last: 85, at: T0 } }, ai: { secrets: T0 } } };
   const M2 = KC.build(DATA, ctx);
