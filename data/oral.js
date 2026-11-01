@@ -128,7 +128,7 @@
   ];
   // ================= 共用：組題庫 =================
   // 縮寫補展開版（保留大小寫）：don't → do not、It's → It is、I'm → I am、He's → He is、There's → There is、We're → We are…（Let's 不動）
-  const full = s => s.replace(/\b(\w+)n't\b/g, '$1 not').replace(/\b(It|it|What|what|He|he|She|she|There|there|Where|where)'s\b/g, '$1 is')
+  const full = s => s.replace(/\b([Cc])an't\b/g, '$1annot').replace(/\b(\w+)n't\b/g, '$1 not').replace(/\b(It|it|What|what|He|he|She|she|There|there|Where|where)'s\b/g, '$1 is')
     .replace(/\bI'm\b/g, 'I am').replace(/\b(We|we|They|they|You|you)'re\b/g, '$1 are');
   const BANKS = [];
   // def：{key, title, file（紙本檔名用）, units:[第一課, 第二課], labels:['U1','U2'], cls:{類別關鍵字: 中文}, scope（紙本範圍說明）, note（核對狀態）, L:[難度1, 2, 3]}
@@ -269,6 +269,129 @@
       cls: { [PLACE]: '任一個地點', [STREET]: '任一條街（Blue／Green／Red／Yellow）', [NUM]: '任一個數字（one～ten）' }, L: [L1, L2, L3],
       scope: "Unit 3 Where Are You Going?（八個地點、Where are you going? I'm going to the ___.、Where's the ___? It's on ___ Street.、Say cheese!、Excuse me.）；Unit 4 How Many Koalas Are There?（八種動物＋複數、How many ___ are there? There are ___.／There's one ___.、Does he/she like ___?、Take care.、Calm down.）",
       note: 'Unit 3、Unit 4 都是依學校課程計畫整理、還沒拿課本逐字核對。' });
+  })();
+
+  // ================= 五下 U1–U2（What's Wrong? ／ Do You Have a Headache?；兩課都待課本核對）=================
+  (() => {
+    const PART = 'eye|eyes|ear|ears|nose|mouth|hand|hands|arm|arms|leg|legs|foot|feet', ILL = 'cold|fever|runny nose|sore throat|headache|toothache|stomachache';
+    const IT = ['Yes, it does.', "No, it doesn't."], ITK = ["Yes, it does|No, it doesn't"];
+    const THEY = ['Yes, they do.', "No, they don't."], THEYK = ["Yes, they do|No, they don't"];
+    const L1 = [
+      // ---- Unit 1：身體部位、What's wrong? My ___ hurts. ----
+      { u: 1, q: "What's wrong?", a: ['My ___ hurts.', 'My ___ hurt.', 'My ___.'], k: [PART] },
+      { u: 1, q: "What's wrong, Amy?", a: ['My ___ hurts.', 'My ___ hurt.', 'My ___.'], k: [PART] },
+      { u: 1, q: 'Does your foot hurt?', a: IT, k: ITK },
+      { u: 1, q: 'Do your eyes hurt?', a: THEY, k: THEYK },
+      { u: 1, q: 'Does his arm hurt?', a: IT, k: ITK },
+      { u: 1, q: 'Do her legs hurt?', a: THEY, k: THEYK },
+      { u: 1, q: "Does Ben's hand hurt?", a: IT, k: ITK },
+      { u: 1, q: 'Do your feet hurt?', a: THEY, k: THEYK },
+      { u: 1, q: 'Does your mouth hurt?', a: IT, k: ITK },
+      { u: 1, q: 'Do his ears hurt?', a: THEY, k: THEYK },
+      { u: 1, q: 'Does your nose hurt?', a: IT, k: ITK },
+      { u: 1, q: 'Does your arm or your leg hurt?', a: ['My arm hurts.', 'My leg hurts.', 'My arm.', 'My leg.'], k: ['arm|leg'] },
+      { u: 1, q: 'Do your hands or your feet hurt?', a: ['My hands hurt.', 'My feet hurt.', 'My hands.', 'My feet.'], k: ['hands|feet|hand|foot'] },
+      { u: 1, q: 'Can you give me a hand?', a: ['Yes, I can.', "No, I can't."], k: ["Yes, I can|No, I can't"] },
+      // ---- Unit 2：病症、Do you have a ___? ----
+      { u: 2, q: 'Do you have a fever?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Do you have a cold?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Do you have a headache?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Do you have a sore throat?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Do you have a runny nose?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Does he have a toothache?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 2, q: 'Does she have a runny nose?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 2, q: 'Does Amy have a stomachache?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 2, q: 'Does Ben have a cold?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 2, q: 'Does she have a fever?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 2, q: 'Does he have a sore throat?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 2, q: 'Do they have a cold?', a: Y('they', 'do'), k: YK('they', 'do') },
+      { u: 2, q: 'Do you and Ben have a fever?', a: Y('we', 'do'), k: YK('we', 'do') },
+      { u: 2, q: 'Do Amy and Ben have a headache?', a: Y('they', 'do'), k: YK('they', 'do') },
+      { u: 2, q: 'Do you have a cold or a fever?', a: ['I have a cold.', 'I have a fever.', 'A cold.', 'A fever.'], k: ['cold|fever'] },
+      { u: 2, q: 'Does he have a headache or a toothache?', a: ['He has a headache.', 'He has a toothache.', 'A headache.', 'A toothache.'], k: ['headache|toothache'] },
+      { u: 2, q: 'Does she have a cold or a runny nose?', a: ['She has a cold.', 'She has a runny nose.', 'A cold.', 'A runny nose.'], k: ['cold|runny nose'] },
+      { u: 2, q: 'May I help you?', a: ['Yes, please.', 'No, thank you.'], k: ['Yes, please|No, thank you|No, thanks'] },
+      { u: 2, q: 'Thank you!', a: ["You're welcome."], k: ["You're welcome"] },
+      { u: 2, q: 'Do you have a toothache?', a: Y('I', 'do'), k: YK('I', 'do') },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'Does your throat hurt?', a: IT, k: ITK },
+      { u: 12, q: "What's wrong? Do you have a fever?", a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 12, q: 'Does his eye hurt?', a: IT, k: ITK },
+      { u: 12, q: "Do Amy's feet hurt?", a: THEY, k: THEYK },
+      { u: 12, q: "What's the matter?", a: ['I have a ___.', 'My ___ hurts.', 'A ___.'], k: [ILL + '|' + PART] },
+      { u: 12, q: 'Does she have a stomachache?', a: Y('she', 'does'), k: YK('she', 'does') }
+    ];
+    const L2 = [
+      // ---- Unit 1 ----
+      { u: 1, q: "What's wrong?", zh: '你的一隻腳很痛。', a: ['My foot hurts.', 'My foot.'], k: ['foot'] },
+      { u: 1, q: "What's the matter?", zh: '你兩隻眼睛都很痛。', a: ['My eyes hurt.', 'My eyes.'], k: ['eyes'] },
+      { u: 1, q: 'What is wrong?', zh: '你的嘴巴痛。', a: ['My mouth hurts.', 'My mouth.'], k: ['mouth'] },
+      { u: 1, q: 'Does his leg hurt?', zh: '他的腿很痛。', a: ['Yes, it does.'], k: ['Yes, it does'] },
+      { u: 1, q: 'Do her ears hurt?', zh: '她的耳朵不痛。', a: ["No, they don't."], k: ["No, they don't"] },
+      { u: 1, q: 'Does your hand hurt?', zh: '不是手，是你的手臂痛。', a: ["No, it doesn't. My arm hurts.", 'No. My arm hurts.'], k: ['No', 'arm'] },
+      { u: 1, q: 'Do your feet hurt?', zh: '你兩隻腳都痛。', a: ['Yes, they do.'], k: ['Yes, they do'] },
+      { u: 1, q: 'Does her nose hurt?', zh: '她的鼻子痛。', a: ['Yes, it does.'], k: ['Yes, it does'] },
+      { u: 1, q: 'Do his eyes hurt?', zh: '他的眼睛不痛；他的耳朵痛。', a: ["No, they don't. His ears hurt.", 'No. His ears hurt.'], k: ['No', 'ears'] },
+      { u: 1, q: 'Does your arm hurt?', zh: '不痛。', a: ["No, it doesn't."], k: ["No, it doesn't"] },
+      { u: 1, q: 'Can you give me a hand?', zh: '可以，你很樂意幫忙。', a: ['Yes, I can.'], k: ['Yes, I can'] },
+      { u: 1, q: 'My leg hurts.', zh: '提醒他要小心。', a: ['Be careful!'], k: ['be careful'] },
+      { u: 1, q: "What's wrong?", zh: '你搬不動東西，請考官幫你一下。', a: ['Can you give me a hand?'], k: ['give me a hand'] },
+      { u: 1, q: "What's wrong with Amy?", zh: 'Amy 的腿痛，幫她回答。', a: ['Her leg hurts.', 'Her legs hurt.', 'Her leg.'], k: ['Her', 'leg|legs'] },
+      { u: 1, q: "What's wrong with Ben?", zh: 'Ben 的手痛，幫他回答。', a: ['His hand hurts.', 'His hands hurt.', 'His hand.'], k: ['His', 'hand|hands'] },
+      { u: 1, q: 'Can you give me a hand?', zh: '不行，你在忙。', a: ["No, I can't."], k: ["No, I can't"] },
+      // ---- Unit 2 ----
+      { u: 2, q: 'Do you have a fever?', zh: '你發燒了。', a: ['Yes, I do.'], k: ['Yes, I do'] },
+      { u: 2, q: 'Do you have a headache?', zh: '你沒有頭痛；你喉嚨痛。', a: ["No, I don't. I have a sore throat."], k: ["No, I don't", 'sore throat'] },
+      { u: 2, q: 'Does he have a cold?', zh: '他感冒了。', a: ['Yes, he does.'], k: ['Yes, he does'] },
+      { u: 2, q: 'Does she have a toothache?', zh: '她沒有牙痛；她肚子痛。', a: ["No, she doesn't. She has a stomachache."], k: ["No, she doesn't", 'stomachache'] },
+      { u: 2, q: 'Do you have a cold?', zh: '不是感冒；你流鼻水。', a: ["No, I don't. I have a runny nose."], k: ["No, I don't", 'runny nose'] },
+      { u: 2, q: 'Does Ben have a fever?', zh: 'Ben 發燒了。', a: ['Yes, he does.'], k: ['Yes, he does'] },
+      { u: 2, q: 'Does Amy have a headache?', zh: 'Amy 沒有頭痛。', a: ["No, she doesn't."], k: ["No, she doesn't"] },
+      { u: 2, q: "What's wrong?", zh: '你牙痛。', a: ['I have a toothache.', 'A toothache.'], k: ['toothache'] },
+      { u: 2, q: "What's wrong, Ben?", zh: '你當 Ben：你感冒了。', a: ['I have a cold.', 'A cold.'], k: ['cold'] },
+      { u: 2, q: "What's the matter?", zh: '你肚子痛。', a: ['I have a stomachache.', 'A stomachache.'], k: ['stomachache'] },
+      { u: 2, q: 'Do you have a cold or a fever?', zh: '你發燒了。', a: ['I have a fever.', 'A fever.'], k: ['fever'] },
+      { u: 2, q: 'Does he have a headache or a toothache?', zh: '他頭痛。', a: ['He has a headache.', 'A headache.'], k: ['headache'] },
+      { u: 2, q: 'May I help you?', zh: '你需要幫忙。', a: ['Yes, please.'], k: ['Yes, please'] },
+      { u: 2, q: 'May I help you?', zh: '你不用幫忙，有禮貌地拒絕。', a: ['No, thank you.', 'No, thanks.'], k: ['No, thank you|No, thanks'] },
+      { u: 2, q: 'Do they have a runny nose?', zh: '他們都流鼻水。', a: ['Yes, they do.'], k: ['Yes, they do'] },
+      { u: 2, q: 'Do you and Ben have a sore throat?', zh: '你們兩個都沒有喉嚨痛。', a: ["No, we don't."], k: ["No, we don't"] },
+      { u: 2, q: 'Does she have a fever?', zh: '她發燒了。', a: ['Yes, she does.'], k: ['Yes, she does'] },
+      { u: 2, q: "What's wrong, Amy?", zh: '你當 Amy：你喉嚨痛。', a: ['I have a sore throat.', 'A sore throat.'], k: ['sore throat'] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'What is the matter?', zh: '你頭痛。', a: ['I have a headache.', 'A headache.'], k: ['headache'] },
+      { u: 12, q: 'Does your throat hurt?', zh: '會痛，你喉嚨痛。', a: ['Yes, it does.', 'Yes, it does. I have a sore throat.'], k: ['Yes, it does'] },
+      { u: 12, q: 'Do your eyes hurt?', zh: '不痛；你流鼻水。', a: ["No, they don't. I have a runny nose."], k: ["No, they don't", 'runny nose'] },
+      { u: 12, q: "Does Ben's foot hurt?", zh: 'Ben 的腳不痛；他的腿痛。', a: ["No, it doesn't. His leg hurts.", 'No. His leg hurts.'], k: ['No', 'leg'] },
+      { u: 12, q: 'Do you have a stomachache?', zh: '你沒有肚子痛；你的嘴巴痛。', a: ["No, I don't. My mouth hurts."], k: ["No, I don't", 'mouth'] },
+      { u: 12, q: 'Hello! May I help you?', zh: '要；你頭痛。', a: ['Yes, please. I have a headache.'], k: ['Yes, please', 'headache'] }
+    ];
+    const L3 = [
+      { u: 1, q: "What's the matter?", zh: '你的腳痛。說完後，問考官怎麼了。', a: ["My foot hurts. What's wrong?", "My foot hurts. What's wrong with you?"], k: ['foot', "What's wrong"], f: 'My arm hurts.' },
+      { u: 1, q: "What's wrong with you?", zh: '你的手臂痛。說完後，請考官幫你一下。', a: ['My arm hurts. Can you give me a hand?'], k: ['arm', 'give me a hand'], f: 'Yes, I can.' },
+      { u: 1, q: 'Can you give me a hand?', zh: '好；再提醒他要小心。', a: ['Yes, I can. Be careful!'], k: ['Yes, I can', 'be careful'] },
+      { u: 1, q: 'Do your ears hurt?', zh: '不痛；你的眼睛痛。說完後，問考官的眼睛痛不痛。', a: ["No, they don't. My eyes hurt. Do your eyes hurt?"], k: ["No, they don't", 'My eyes', 'Do your eyes hurt'], f: "No, they don't." },
+      { u: 1, q: "Ben's arm hurts.", zh: '換你問考官：他的手痛嗎？', a: ['Does his hand hurt?', "Does Ben's hand hurt?"], k: ['Does', 'hand', 'hurt'], f: "No, it doesn't." },
+      { u: 1, q: "What's wrong, Amy?", zh: '你當 Amy：你的手痛，腿也痛。', a: ['My hand hurts. My legs hurt, too.', 'My hand and my legs hurt.'], k: ['hand', 'legs|leg'] },
+      { u: 2, q: 'My leg hurts.', zh: '換你問考官：你發燒了嗎？', a: ['Do you have a fever?'], k: ['Do you have', 'fever'], f: "No, I don't." },
+      { u: 2, q: 'I have a cold.', zh: '換你問考官：你喉嚨痛嗎？', a: ['Do you have a sore throat?'], k: ['Do you have', 'sore throat'], f: 'Yes, I do.' },
+      { u: 2, q: 'Ben has a fever.', zh: '換你問考官：他頭痛嗎？', a: ['Does he have a headache?', 'Does Ben have a headache?'], k: ['Does', 'have a headache'], f: "No, he doesn't." },
+      { u: 2, q: "Amy's eyes hurt.", zh: '換你問考官：她感冒了嗎？', a: ['Does she have a cold?', 'Does Amy have a cold?'], k: ['Does', 'have a cold'], f: 'Yes, she does.' },
+      { u: 2, q: 'Does she have a fever?', zh: '是的；她也流鼻水。', a: ['Yes, she does. She has a runny nose, too.', 'Yes, she does. She has a runny nose.'], k: ['Yes, she does', 'runny nose'] },
+      { u: 2, q: 'May I help you?', zh: '要；你喉嚨痛，也流鼻水。', a: ['Yes, please. I have a sore throat and a runny nose.'], k: ['Yes, please', 'sore throat', 'runny nose'] },
+      { u: 2, q: 'Thank you!', zh: '說不客氣，再問考官：你頭痛嗎？', a: ["You're welcome. Do you have a headache?"], k: ["You're welcome", 'Do you have a headache'], f: "No, I don't." },
+      { u: 2, q: 'Does he have a cold or a fever?', zh: '他兩個都有。', a: ['He has a cold and a fever.', 'A cold and a fever.'], k: ['cold', 'fever'] },
+      { u: 2, q: 'Do they have a fever?', zh: '沒有；他們都感冒了。', a: ["No, they don't. They have a cold."], k: ["No, they don't", 'cold'] },
+      { u: 12, q: 'Do you have a headache?', zh: '不是；你牙痛，嘴巴也痛。', a: ["No, I don't. I have a toothache. My mouth hurts, too.", "No, I don't. I have a toothache. My mouth hurts."], k: ["No, I don't", 'toothache', 'mouth'] },
+      { u: 12, q: 'My feet hurt.', zh: '提醒考官要小心，再問他是不是發燒了。', a: ['Be careful! Do you have a fever?'], k: ['be careful', 'Do you have a fever'], f: "No, I don't." },
+      { u: 12, q: 'Does Ben have a stomachache?', zh: '沒有；他的腿痛。', a: ["No, he doesn't. His leg hurts."], k: ["No, he doesn't", 'leg'] },
+      { u: 12, q: "What's wrong, Ben?", zh: '你當 Ben：你感冒了，頭也痛。', a: ['I have a cold and a headache.', 'I have a cold. I have a headache.'], k: ['cold', 'headache'] },
+      { u: 12, q: 'I have a toothache.', zh: '換你問考官：你的嘴巴痛嗎？', a: ['Does your mouth hurt?'], k: ['Does your mouth', 'hurt'], f: 'Yes, it does.' }
+    ];
+    build({ key: '6-u12', title: '五下 U1–U2 口語對話考試', file: '五下U1-U2', units: ['hanlin-6-u1', 'hanlin-6-u2'], labels: ['U1', 'U2'],
+      cls: { [PART]: '任一個身體部位', [ILL + '|' + PART]: '任一個病症或身體部位' }, L: [L1, L2, L3],
+      scope: "Unit 1 What's Wrong?（身體部位＋複數 eyes／feet、What's wrong? My ___ hurts.／My ___ hurt.、my／his／her、Can you give me a hand?、Be careful!）；Unit 2 Do You Have a Headache?（七個病症、Do you / Does he/she have a ___?、I have a ___.／She has a ___.、May I help you?、You're welcome.）",
+      note: '五下 Unit 1、Unit 2 都是依學校課程計畫整理、還沒拿課本逐字核對。' });
   })();
 
   window.DATA_ORALS = BANKS;

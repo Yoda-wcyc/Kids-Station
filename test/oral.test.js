@@ -15,10 +15,10 @@ const E = new KE.Engine({ words: Wd.DATA_WORDS, phrases: Wd.DATA_PHRASES, roots:
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
 const BANKS = Wd.DATA_ORALS;
 // 基礎字：代名詞、指示詞、be／do 動詞、冠詞、連接詞、介系詞、疑問詞、yes／no、too、課本人物名 Amy／Ben（五年級前就會的）
-const BASIC = 'i you he she it we they me my your his her a an the this that these those and or not no yes too is are am do does have on in at to of what when who where how can let s please amy ben'.split(' ');
+const BASIC = 'i you he she it we they me my your his her a an the cannot this that these those and or not no yes too is are am do does have on in at to of with what when who where how can let s please amy ben'.split(' ');
 // 課本例句以外、逐一確認過可以用的字（理由）。has 在五上 U2 文法重點「不能用 has」裡、算範圍內；
 // 出自本課單字例句的字（favorite、like、bye…）跑的時候會列出備查
-const OK_EXTRA = {};
+const OK_EXTRA = { thanks: '「No, thank you.」的口語說法（五下 U3 課本也有 No, thanks.）；只是多收的答法，孩子說 No, thank you. 就對' };
 const toks = s => KE.expandContr(String(s)).toLowerCase().replace(/_+/g, ' ').split(/[^a-z]+/).filter(Boolean);
 const ok20 = {};
 
@@ -40,7 +40,7 @@ BANKS.forEach(B => {
   ok(QS.filter(o => o.f).every(o => o.lv === 3), 'examiner follow-up lines only in lv3' + tag);
   const byQ = {}; QS.forEach(o => { byQ[o.q] = (byQ[o.q] || 0) + 1; });
   ok(Object.values(byQ).every(n => n <= 4), 'same examiner line at most 4 times (different situations): ' + JSON.stringify(Object.entries(byQ).filter(([, n]) => n > 2)) + tag);
-  ok(QS.every(o => o.a.every(a => !/n't|\b(It|What|He|She|There|Where)'s|I'm|'re\b/.test(a) || o.a.includes(a.replace(/\b(\w+)n't\b/g, '$1 not').replace(/\b(It|What|He|She|There|Where)'s\b/g, '$1 is').replace(/\bI'm\b/g, 'I am').replace(/\b(We|They|You)'re\b/g, '$1 are')))), 'every contracted answer also listed expanded' + tag);
+  ok(QS.every(o => o.a.every(a => /can't/i.test(a) ? o.a.some(x => /cannot/i.test(x)) : !/n't|\b(It|What|He|She|There|Where)'s|I'm|'re\b/.test(a) || o.a.includes(a.replace(/\b(\w+)n't\b/g, '$1 not').replace(/\b(It|What|He|She|There|Where)'s\b/g, '$1 is').replace(/\bI'm\b/g, 'I am').replace(/\b(We|They|You)'re\b/g, '$1 are')))), 'every contracted answer also listed expanded' + tag);
 
   // ---- 2. 用字範圍 ----
   const core = new Set(), ex = new Set();
@@ -100,6 +100,11 @@ BANKS.forEach(B => {
       [46, 'It is on Green Street.'], [56, '3.'], [57, "There's one koala."], [66, 'No, she does not. She likes zebras.'], [72, 'Tigers.'], [99, 'Cheese! 1, 2, 3!']].forEach(([n, a]) => YES(n, a));
   }
 
+  if (B.key === '6-u12') {
+    [[1, 'I have a fever.'], [3, 'Yes, it do.'], [3, 'Yes, they do.'], [4, 'Yes, it does.'], [41, 'My eyes hurt.'], [57, "No, I don't."], [58, 'No, I don\'t. I have a cold.'], [60, 'No, she doesn\'t. She has a toothache.'],
+      [46, 'Yes, it does.'], [54, 'His leg hurts.'], [81, 'My foot hurts.']].forEach(([n, a]) => NO(n, a));
+    [[1, 'My legs hurt.'], [1, 'My leg.'], [41, 'My foot.'], [58, 'No, I do not. I have a sore throat.'], [14, "No, I can't."], [14, 'No, I cannot.'], [32, 'No, thanks.'], [39, 'I have a cold.'], [39, 'My arm hurts.']].forEach(([n, a]) => YES(n, a));
+  }
   // ---- 4. 線上一次 20 題（兩個單元都有入口、抽同一份題庫）----
   const seen = new Set();
   for (let k = 0; k < 200; k++) UNITS.forEach(U => {
