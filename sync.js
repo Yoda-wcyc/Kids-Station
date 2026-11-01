@@ -95,7 +95,7 @@
     const c = new Set(ld('ke_correct', [])); SM.correctIds(d).forEach(id => c.add(id)); sv('ke_correct', [...c]);
     // 社會／自然：同步到的單元整個換成合併結果；'_' 開頭的（示範時鐘）留著
     if (Object.keys(d.mm || {}).length) { const p = ld(K_MM, {}); svIf(K_MM, Object.assign(isObj(p) ? p : {}, d.mm)); }
-    if (Object.keys(d.mmBlanks || {}).length) { const b = ld(K_MMB, {}); svIf(K_MMB, Object.assign(isObj(b) ? b : {}, d.mmBlanks)); }
+    if (Object.keys(d.mmBlanks || {}).length) { const b = ld(K_MMB, {}); svIf(K_MMB, Object.assign(isObj(b) ? b : {}, SM.expandBl(d.mmBlanks))); }   // v7 文件裡是壓縮字串，本機照舊存物件
     // 天平：清單＝合併後還活著的題（照合併後的順序）；本機本來沒有清單、合併後也是空的就不建
     const eq = d.eq || SM.normEq(null);
     sv(K_EQS, eq);

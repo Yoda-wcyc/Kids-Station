@@ -629,7 +629,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   };
   // 相容：舊文件（v1 伺服器新建、v2 只有英文）讀進來不會壞，新欄位都是空的
   const v1 = SM.normalize({ v: 1, created: '2026-10-09T00:00:00Z', log: [], learned: {}, mistakes: {} }), v2 = SM.normalize(devA);
-  ok(v1.v === 6 && SM.VERSION === 6 &&   /* 2026-10-21 文件 v6（done 多 mp、mx）*/ same(v1.mk, {}) && same(v1.mm, {}) && same(v1.mmBlanks, {}) && same(v1.scratch, {}) && same(v1.ctr, {}) && v1.eq.items.length === 0 && same(v1.eq.del, {}), 'v1 doc → v3 with empty sections');
+  ok(v1.v === 7 && SM.VERSION === 7 &&   /* 2026-11-02 文件 v7（mmBlanks 紀錄壓成字串）*/ same(v1.mk, {}) && same(v1.mm, {}) && same(v1.mmBlanks, {}) && same(v1.scratch, {}) && same(v1.ctr, {}) && v1.eq.items.length === 0 && same(v1.eq.del, {}), 'v1 doc → v3 with empty sections');
   ok(v2.log.length === 3 && same(SM.normalize(undefined).mm, {}) && same(SM.normalize({ mm: 5, mmBlanks: [1], eq: 'x', scratch: null, ctr: 7 }).eq, SM.normEq(null)), 'v2 / garbage sections do not throw');
   ok(same(SM.merge(v2, v1).log, SM.merge(devA, {}).log), 'v2 English fields unchanged by v3');
   // 社會／自然過關（kids_mm_progress）：過關聯集＋最佳成績＋最新過關時間；複習跟著最新那次
@@ -645,11 +645,21 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   const bA = { mmBlanks: { 'social:u1': { sess: 5, w: { '臺南': { ok: 4, wrong: 1, streak: 2, last: 'ok', lastShown: 5 }, '1624': { ok: 0, wrong: 1, streak: 0, last: 'wrong', lastShown: 2 } }, a: { 'l1': { ok: 1, wrong: 0, streak: 1, last: 'ok' } } } } };
   const bB = { mmBlanks: { 'social:u1': { sess: 2, w: { '臺南': { ok: 1, wrong: 0, streak: 1, last: 'ok', lastShown: 2 }, '荷蘭': { ok: 2, wrong: 0, streak: 2, last: 'ok', lastShown: 2 } }, a: { 'l1': { ok: 0, wrong: 3, streak: 0, last: 'wrong' } } } } };
   const bC = { mmBlanks: { 'social:u1': { sess: 9, w: { '荷蘭': { ok: 1, wrong: 1, streak: 0, last: 'wrong', lastShown: 9 } }, a: {} } } };
-  const bAB = SM.merge(bA, bB).mmBlanks['social:u1'];
+  const X = d => SM.expandBl(d.mmBlanks), bAB = X(SM.merge(bA, bB))['social:u1'];
   ok(bAB.sess === 5 && bAB.w['臺南'].ok === 4 && bAB.w['1624'].wrong === 1 && bAB.w['荷蘭'].ok === 2 && bAB.a.l1.wrong === 3, 'mmBlanks: per word the record with more answers wins, sess max');
-  ok(SM.merge(SM.merge(bAB && bA, bB), bB).mmBlanks['social:u1'].w['臺南'].ok === 4, 'mmBlanks: syncing again does not add up counts');
-  ok(SM.merge(bB, bC).mmBlanks['social:u1'].w['荷蘭'].lastShown === 9, 'mmBlanks: tie on answers → newer lastShown');
+  ok(X(SM.merge(SM.merge(bA, bB), bB))['social:u1'].w['臺南'].ok === 4, 'mmBlanks: syncing again does not add up counts');
+  ok(X(SM.merge(bB, bC))['social:u1'].w['荷蘭'].lastShown === 9, 'mmBlanks: tie on answers → newer lastShown');
   props(bA, bB, bC, 'mmBlanks');
+  // v7（2026-11-02）：紀錄壓成 "ok,wrong,streak,last,lastShown"。舊格式（物件）升級、還原回本機一模一樣、新舊混著合併結果相同
+  const nA = SM.normalize(bA);
+  ok(nA.mmBlanks['social:u1'].w['臺南'] === '4,1,2,o,5' && nA.mmBlanks['social:u1'].a.l1 === '1,0,1,o,' && same(SM.normalize(nA), nA), 'mmBlanks v7: old object records upgrade to compact strings, normalize idempotent');
+  ok(same(X(nA), bA.mmBlanks) && same(X(SM.normalize(bC)), bC.mmBlanks), 'mmBlanks v7: expandBl restores the exact local (object) shape');
+  ok(same(SM.merge(bA, SM.normalize(bB)), SM.merge(bA, bB)) && same(SM.merge(SM.normalize(bA), bB), SM.merge(bA, bB)), 'mmBlanks v7: old + new format mixed merge = same result');
+  props(bA, SM.normalize(bB), bC, 'mmBlanks old/new mixed');
+  ok(SM.normalize({ mmBlanks: { 'social:u1': { sess: 1, w: { x: '1,2', y: 5, z: null }, a: {} } } }).mmBlanks['social:u1'].w.x === undefined, 'mmBlanks v7: broken records dropped, do not throw');
+  // 兩台：A 還是舊版本機紀錄（物件）、B 是 v7 文件 → 合併後兩邊的詞都在、A 本機還原後還是物件
+  const mixAB = X(SM.merge(bA, SM.normalize(bB)))['social:u1'];
+  ok(mixAB.w['臺南'].ok === 4 && mixAB.w['1624'].wrong === 1 && mixAB.w['荷蘭'].ok === 2 && mixAB.w['荷蘭'].last === 'ok' && typeof mixAB.a.l1 === 'object', 'mmBlanks v7: mixed devices keep every word, local stays objects');
   // 練習題答對過（kids_mm_blanks[單元].q，2026-10-29）：聯集；沒有 q 的舊紀錄形狀不變
   const qA = { mmBlanks: { 'science:n4': { sess: 1, w: {}, a: {}, q: { h1: 1, h2: 1 } } } }, qB = { mmBlanks: { 'science:n4': { sess: 2, w: {}, a: {}, q: { h3: 1, _x: 1 } } } }, qC = { mmBlanks: { 'science:n4': { sess: 0, w: {}, a: {} } } };
   ok(same(SM.merge(qA, qB).mmBlanks['science:n4'].q, { h1: 1, h2: 1, h3: 1 }) && same(SM.merge(qA, qC).mmBlanks['science:n4'].q, { h1: 1, h2: 1 }) && !('q' in SM.merge(bA, bB).mmBlanks['social:u1']), 'mmBlanks.q: answered-right quiz hashes union, absent when empty');
@@ -779,8 +789,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   for (let d = 0; d < 5; d++) maxDoc.ctr['d' + d + 'mgk2x9abc'] = { stars: 99999, quizzes: 9999 };
   maxDoc.eq = { at: 1.8e12, items: many(30).map(it => Object.assign({ t: 1.8e12 }, it)), del: Object.fromEntries(Array.from({ length: 150 }, (_, i) => ['(x+' + i + ')−(' + i + '−2)=' + (i + 100), 1.7e12])) };
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
-  // 2026-11-02 五下上線（社會 9、自然 8 單元）：塞滿約 156KB，超過原本 1/4（125KB）→ 放寬到 1/3（英文 log 仍留 ≥2/3）；再加一冊前要先想怎麼縮 mmBlanks
-  ok(secBytes <= SM.MAX_BYTES / 3 && Object.keys(sec.eq.del).length === 100, 'v3 sections at maximum leave ≥2/3 of the 500KB doc for English answers: ' + secBytes + ' bytes');
+  // 2026-11-02 五下上線（社會 9、自然 8 單元）塞滿約 156KB 超過 1/4 → 文件 v7 把 mmBlanks 紀錄壓成字串，回到 1/4 以內
+  ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === 100, 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
   const bigAll = SM.compact(Object.assign({}, maxDoc, { log: big.log.concat(big.log.map(e => Object.assign({}, e, { t: e.t + 1e7, a: e.a + '-again' }))) }));
   ok(SM.bytes(bigAll) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq), 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(bigAll));
   console.log('sync v3 doc size: sections max ' + secBytes + ' B; 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
