@@ -102,12 +102,15 @@
   }
   // 縮寫／展開互收：原樣比一次、兩邊都展開（expandContr）再比一次，任一個對就算（辨識結果寫 I'm、小朋友說 I am 也對）
   const speakForms = s => [...new Set([speakNorm(s), speakNorm(expandContr(s))])].filter(Boolean);
-  function speakGrade(answer, alts, heard, mode) {
+  // mode 'keys'（🎤 口語對話考試，2026-11-01）：keys 每一個都要說到（整個字／整組字，「A|B」任一個），其他字（開放欄 ___）不檢查
+  const hasWords = (ns, s) => speakForms(s).some(t => ns.some(n => (' ' + n + ' ').includes(' ' + t + ' ')));
+  function speakGrade(answer, alts, heard, mode, keys) {
     const targets = [...new Set([answer].concat(alts || []).flatMap(speakForms))];
     const list = (Array.isArray(heard) ? heard : [heard]).map(h => String(h == null ? '' : h));
     const at = list.findIndex(h => {
       const ns = speakForms(h);
       if (!ns.length) return false;
+      if (mode === 'keys') return (keys || []).length > 0 && keys.every(k => String(k).split('|').some(s => hasWords(ns, s)));
       return ns.some(n => targets.some(t => n === t || (mode === 'word' && (' ' + n + ' ').includes(' ' + t + ' '))));
     });
     return { ok: at >= 0, at, heard: at >= 0 ? list[at] : (list[0] || '') };
@@ -412,6 +415,11 @@
         reg('dlsp', `${base}:dl:${i}:speak`, 'speak', l.en, null, () => ({ prompt: l.en, en: true, sub: l.zh, input: 'mic', play: true, options: null, answer: l.en, alts: (l.alts || []).slice(), speakMode: 'sentence', speakText: l.en, why }));
         reg('dlty', `${base}:dl:${i}:type`, 'zh2en-type', l.en, null, () => ({ prompt: l.zh, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: l.en, alts: (l.alts || []).slice(), speakText: l.en, why }));
       });
+      // 🎤 口語對話考試（data/oral.js 掛在 u.oral，兩課共用一份；每題只註冊在自己那課 o.tb）：考官的話 TTS 唸、畫面只給中文提示，
+      // keys 都說到就對、開放欄 ___ 不判；setOnly，只在口語考試（tbOral）和錯題庫出
+      ((u.oral && u.oral.qs) || []).filter(o => o.tb === u.id).forEach(o => reg('oral', `${base}:oral:${o.n}`, 'speak', `${o.q} → ${o.a[0]}`, null, () => ({
+        prompt: o.zh || '聽考官說的英文，用英文回答', sub: o.zh ? '照提示，用英文回答考官' : '', input: 'mic', play: true, auto: true, options: null, oral: true,
+        answer: o.a[0], alts: o.a.slice(1), speakMode: 'keys', keys: o.k.slice(), speakText: o.q, why: `要說到：${o.k.join('、')}（___ 可以自由說）` }), { lv: o.lv, n: o.n }));
       ((u.dialog && u.dialog.choose) || []).forEach(c => reg('dc', `${base}:dc:${c.id}`, 'tb-answer', `${c.prompt} → ${c.answer}`, null, () => ({ prompt: c.prompt, en: /[a-z]/i.test(c.prompt), play: /[a-z]/i.test(c.prompt), sub: c.sub, options: shuffle(c.options), answer: c.answer, speakText: /[a-z]/i.test(c.answer) ? c.answer : c.prompt, why: c.why || '' })));
     });
 
@@ -525,6 +533,14 @@
         ['五、中翻英', W('type', 1).concat(P('zh', 2))], ['六、回答問句', a1.concat(a2.length ? a2 : P('anst', 1))]];
       // 不給提示：聽力以外的題不放 🔊（填空拼字、打字題的發音等於提示）
       return secs.flatMap(([sec, ids]) => shuffle(ids).map(id => this.get(id)).filter(Boolean).map(q => Object.assign(q, { sec, pts: 5 }, sec === secs[0][0] ? {} : { play: false, auto: false })));
+    },
+    // 🎤 口語對話考試：從整份題庫（兩課共用）照難度抽 pick（難度 1 八題、2 八題、3 四題），由易到難、同難度照題號；每題 5 分。
+    // 純口語：不套打字保底（那條規則是書寫練習用的）
+    tbOral(unitId) {
+      const u = this.tbUnit(unitId), bank = u && u.oral; if (!bank) return [];
+      const L = { 1: '難度 1・簡短問答', 2: '難度 2・照提示回答', 3: '難度 3・小對話' };
+      return [1, 2, 3].flatMap(lv => shuffle(bank.qs.filter(o => o.lv === lv)).slice(0, bank.pick[lv]).sort((a, b) => a.n - b.n)
+        .map(o => Object.assign(this.get(`tb:${o.tb}:oral:${o.n}`), { sec: L[lv], pts: 5 })));
     },
     // ---- 打字保底（2026-10-25）：題號 → 學習項目；項目 → 打字題（zh＝中翻英打字、typed＝其他打字）----
     itemOfQ(id) {
@@ -678,7 +694,7 @@
     },
     check(q, input) {
       // 🎤 說說看：input 可以是辨識結果的 alternatives 陣列或一個字串；單字題含有目標字就算，片語／句子要整句一樣
-      if (q.type === 'speak') return speakGrade(q.answer, q.alts, input, q.speakMode || (/\s/.test(q.answer) ? 'sentence' : 'word'));
+      if (q.type === 'speak') return speakGrade(q.answer, q.alts, input, q.speakMode || (/\s/.test(q.answer) ? 'sentence' : 'word'), q.keys);
       if (q.type === 'word-gap') return gapGrade(q.answer, q.gaps, input);
       if (isTyped(q)) return typeGrade(q.answer, q.alts, input);
       if (q.type === 'reorder') return { ok: norm(input) === norm(q.answer) };

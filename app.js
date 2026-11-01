@@ -256,7 +256,7 @@
     go('#quiz');
   }
   function startQuiz(cfg) {
-    if (cfg && cfg.tb) return startTb(cfg.tb, cfg.mode, cfg.back); // 課本專屬題／考試「再一次」：重新隨機組題
+    if (cfg && cfg.tb) return startTb(cfg.tb, cfg.mode, cfg.back, cfg.oral); // 課本專屬題／考試「再一次」：重新隨機組題
     if (!authOK('practice')) return;
     const list = E.round(cfg); // 抽題＋打字保底（每回最後至少 3 題打字、含 2 題中翻英；2026-10-25）
     if (!list.length) { alert('沒有符合條件的題目，換個選擇試試看！'); return; }
@@ -432,12 +432,13 @@
     redraw = draw; draw();
   }
   // 課本專屬題一輪（mode textbook）／考試（mode test）：要登入；練習問 english 額度、考試問 test 額度
-  function startTb(unitId, mode, back) {
+  // oral＝🎤 口語對話考試（mode 也是 test：問 test 額度、送 english:test；不記單元完成，見 finish）
+  function startTb(unitId, mode, back, oral) {
     if (!authOK(mode === 'test' ? '開始考試' : 'practice')) return;
-    const list = mode === 'test' ? E.tbExam(unitId) : E.tbPractice(unitId, { speak: canSpeak });
+    const list = oral ? E.tbOral(unitId) : mode === 'test' ? E.tbExam(unitId) : E.tbPractice(unitId, { speak: canSpeak });
     if (!list.length) return;
-    if (!quotaOK(mode === 'test' ? 'test' : 'english', () => startTb(unitId, mode, back))) return;
-    Q = { list, i: 0, answers: [], answered: false, cfg: { mode, tb: unitId, back: back || '#tb/' + unitId + '/learn' }, graduated: 0, result: null, exam: mode === 'test' };
+    if (!quotaOK(mode === 'test' ? 'test' : 'english', () => startTb(unitId, mode, back, oral))) return;
+    Q = { list, i: 0, answers: [], answered: false, cfg: { mode, tb: unitId, back: back || '#tb/' + unitId + '/learn', oral: !!oral }, graduated: 0, result: null, exam: mode === 'test' };
     go('#quiz');
   }
   // 📝 考試：模擬段考 20 題（每題 5 分），每次隨機組合；不給提示、答完才看結果；錯題進英文錯題庫；送 english:test
@@ -445,12 +446,18 @@
     const back = rendered;
     body.innerHTML = `<section class="card"><h2>📝 模擬段考：${esc(u.title)}</h2><ul class="rules"><li>共 20 題，每題 5 分，滿分 100 分。</li><li>一、聽力 4 題　二、選擇 5 題　三、填空 3 題　四、重組 3 題　五、中翻英 3 題　六、回答問句 2 題</li><li>考試中不給提示、不說對錯，全部答完才看分數和每一題的正確答案。</li><li>答錯的題目會收進 🩹 錯題庫，可以再練。</li></ul><button class="btn primary big" id="tbtest">📝 開始考試</button></section>`;
     $('#tbtest').onclick = () => startTb(u.id, 'test', back);
+    if (!u.oral) return;
+    const sec = document.createElement('section'); sec.className = 'card'; sec.id = 'tboralcard';
+    sec.innerHTML = `<h2>🎤 口語對話考試（${esc(u.oral.title.replace(/口語對話考試$/, '').trim())}）</h2><ul class="rules"><li>電腦當考官，會唸一句英文；你按 🎤，用英文回答。</li><li>共 20 題，由易到難：難度 1（簡短問答）8 題 → 難度 2（照提示回答）8 題 → 難度 3（小對話）4 題，每題 5 分。</li><li>說到關鍵句型就算對，___ 的地方可以自由說；沒說對可以重講，每題最多 3 次。</li><li>答錯的題目會收進 🩹 錯題庫。</li></ul>${canSpeak ? '<button class="btn primary big" id="tboral">🎤 開始口語考試</button>' : `<p class="muted">🎤 ${esc(NO_SPEAK_MSG)}</p>`}`;
+    body.appendChild(sec);
+    const ob = $('#tboral'); if (ob) ob.onclick = () => startTb(u.id, 'test', back, true);
   }
   function pExamResult() {
     const r = Q.result, score = r.tot ? Math.round(r.ok / r.tot * 100) : 0, msg = score >= 90 ? '超級厲害！🏆' : score >= 70 ? '做得很好！👍' : '多練幾次會更棒！💪';
     let sec = '';
     const rows = Q.answers.map((a, i) => {
       const q = a.q, head = q.sec !== sec ? (sec = q.sec, `<li class="tb-sec"><b>${esc(q.sec)}</b></li>`) : '';
+      if (q.oral) return head + `<li class="${a.ok ? 'ok' : 'no'}"><b>${i + 1}. ${a.ok ? '✓' : '✗'}</b> 考官：<b class="say en" data-say="${esc(q.speakText)}">${esc(q.speakText)}</b> 🔊${q.sub ? `<div><small>${esc(q.prompt)}</small></div>` : ''}${a.ok ? '' : `<div>我聽到的是：<span class="en">${esc(a.skip ? '（沒有作答）' : a.input || '（沒有聲音）')}</span></div>`}<div>參考答案：<b class="en">${esc([q.answer].concat(q.alts || []).join(' ／ '))}</b></div><div class="muted">${esc(q.why)}</div></li>`;
       const mine = a.skip ? '（沒有作答）' : String(a.input == null ? '' : a.input) || '（空白）';
       return head + `<li class="${a.ok ? 'ok' : 'no'}"><b>${i + 1}. ${a.ok ? '✓' : '✗'}</b> <span class="badge">${KE.TYPES[q.type]}</span> <span class="${q.en ? 'en' : ''}">${esc(q.prompt)}</span>${a.ok ? '' : `<div>你的答案：<span class="en">${esc(mine)}</span></div>`}<div>正確答案：<b class="say en" data-say="${esc(q.speakText || q.answer)}">${esc(q.answer)}</b> 🔊</div></li>`;
     }).join('');
@@ -492,11 +499,12 @@
     if (!canSpeak) return `<div class="card center" id="spno"><p>🎤 ${NO_SPEAK_MSG}</p></div><div class="row"><button class="btn big" id="spwaive">先跳過 ➜</button></div>`;
     const st = spkState(q), n = st.tries.length, last = n ? st.tries[n - 1].heard : null;
     // 練習這組：跳過＝算答錯、等一下重排再出；裝置問題（連續 2 次網路／麥克風錯誤）→ 多一顆「這題先跳過」（這次不算進解鎖）
-    return `<div class="row wrap"><button class="btn primary big" id="mic">🎤 ${n ? '再試一次' : '按我說說看'}</button><button class="btn" id="skip">${Q.drill ? '跳過（算答錯，等一下再來）' : '跳過'}</button><button class="btn" id="spwaive" ${st.dev >= 2 ? '' : 'hidden'}>這題先跳過（裝置有狀況，這次不算）</button></div>
-      <p class="center" id="heard" role="status" aria-live="polite">${n ? `我聽到的是：「<b class="en">${esc(last || '（聽不清楚）')}</b>」，再試一次！` : '按 🎤 之後，大聲說出上面的英文'}</p><p class="muted center" id="tries">${n ? `還可以試 ${SPEAK_TRIES - n} 次` : `每題可以試 ${SPEAK_TRIES} 次`}</p>${n ? '' : `<p class="muted center" id="micallow">${MIC_ALLOW}</p>`}`;
+    return `<div class="row wrap"><button class="btn primary big" id="mic">🎤 ${n ? '再試一次' : '按我說說看'}</button><button class="btn" id="skip">${Q.drill ? '跳過（算答錯，等一下再來）' : Q.exam ? '跳過（算答錯）' : '跳過'}</button><button class="btn" id="spwaive" ${st.dev >= 2 ? '' : 'hidden'}>這題先跳過（裝置有狀況，這次不算）</button></div>
+      <p class="center" id="heard" role="status" aria-live="polite">${n ? `我聽到的是：「<b class="en">${esc(last || '（聽不清楚）')}</b>」，再試一次！` : (q.oral ? '按 🎤 之後，用英文回答考官' : '按 🎤 之後，大聲說出上面的英文')}</p><p class="muted center" id="tries">${n ? `還可以試 ${SPEAK_TRIES - n} 次` : `每題可以試 ${SPEAK_TRIES} 次`}</p>${n ? '' : `<p class="muted center" id="micallow">${MIC_ALLOW}</p>`}`;
   }
   function bindMic(q) {
-    const sk = $('#skip'); if (sk) sk.onclick = () => { stopRec(); if (Q.drill) answer(q, ''); else answer(q, '', true); };
+    // 考試（口語考試）跳過＝答錯，不能靠跳過拉高分數
+    const sk = $('#skip'); if (sk) sk.onclick = () => { stopRec(); if (Q.drill || Q.exam) answer(q, ''); else answer(q, '', true); };
     const wv = $('#spwaive'); if (wv) wv.onclick = () => { stopRec(); E.speakWaive.add(q.id); answer(q, '', true); };
     const mic = $('#mic'); if (!mic) return;
     const heard = $('#heard'), say = h => { heard.innerHTML = h; };
@@ -561,10 +569,11 @@
     else body = `<div class="opts ${q.options.some(o => o.length > 14) ? 'one' : ''}">${q.options.map(o => `<button class="opt" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
     app.innerHTML = (Q.gate ? top('通過小測驗才能標記學會 ✨', Q.gate.back) + `<p class="gate-note">「${esc(E.itemInfo(Q.gate.itemId).item)}」小測驗：${Q.gate.total} 題要答對 ${Q.gate.need} 題</p>`
       : Q.drill ? top('練習這組', Q.drill.back) + `<p class="drill-note">「${esc(E.itemInfo(Q.drill.itemId).item)}」${drillLine()}</p>`
-      : Q.cfg && Q.cfg.tb ? top(Q.exam ? '📝 考試' : '✏️ 課本專屬題', Q.cfg.back) + `<p class="drill-note">${esc((E.tbUnit(Q.cfg.tb) || {}).title || '')}${Q.exam ? `・${esc(q.sec || '')}（每題 5 分，答完才看結果）` : ''}</p>` : top('練習中', '#practice')) + `<div class="bar"><i style="width:${Q.i / n * 100}%"></i></div><p class="count">第 ${Q.i + 1} / ${n} 題</p>
-      <div class="card qcard" data-qid="${esc(q.id)}"><div class="qtype">${KE.TYPES[q.type]}</div><div class="prompt ${q.en ? 'en say' : ''}">${esc(q.prompt)}</div>${q.sub ? `<div class="sub ${q.subEn ? 'en' : ''}">${esc(q.sub)}</div>` : ''}${q.play ? `<button class="btn sound" id="play">🔊 ${q.type === 'speak' ? '聽示範' : '再聽一次'}</button>` : ''}</div>
+      : Q.cfg && Q.cfg.tb ? top(Q.cfg.oral ? '🎤 口語對話考試' : Q.exam ? '📝 考試' : '✏️ 課本專屬題', Q.cfg.back) + `<p class="drill-note">${esc(Q.cfg.oral ? ((E.tbUnit(Q.cfg.tb) || {}).oral || {}).title || '' : (E.tbUnit(Q.cfg.tb) || {}).title || '')}${Q.exam ? `・${esc(q.sec || '')}（每題 5 分，答完才看結果）` : ''}</p>` : top('練習中', '#practice')) + `<div class="bar"><i style="width:${Q.i / n * 100}%"></i></div><p class="count">第 ${Q.i + 1} / ${n} 題</p>
+      <div class="card qcard" data-qid="${esc(q.id)}"><div class="qtype">${KE.TYPES[q.type]}</div><div class="prompt ${q.en ? 'en say' : ''}">${esc(q.prompt)}</div>${q.sub ? `<div class="sub ${q.subEn ? 'en' : ''}">${esc(q.sub)}</div>` : ''}${q.play ? `<button class="btn sound" id="play">🔊 ${q.type === 'speak' && !q.oral ? '聽示範' : '再聽一次'}</button>` : ''}${q.oral ? `<button class="btn sm" id="oralen">👀 看英文題目</button><div class="sub en" id="oraltext" hidden>${esc(q.speakText)}</div>` : ''}</div>
       ${body}<div id="fb"></div>`;
     const p = $('#play'); if (p) p.onclick = () => speak(q.speakText);
+    const oe = $('#oralen'); if (oe) oe.onclick = () => { $('#oraltext').hidden = false; oe.hidden = true; };
     $$('.opt').forEach(b => b.onclick = () => answer(q, b.dataset.v));
     if (q.input === 'type') {
       const inp = $('#ans'), send = () => { if (inp.value.trim()) answer(q, inp.value); else inp.focus(); };
@@ -643,7 +652,7 @@
     const stars = tot ? (pct >= 0.9 ? 3 : pct >= 0.6 ? 2 : 1) : 0;
     S.progress.stars += stars; S.progress.quizzes++; save('ke_progress', S.progress);
     Q.result = { ok, tot, stars, wrong: Q.answers.filter(a => !a.ok && !a.skip).map(a => a.q) };
-    if (Q.exam && Q.cfg && Q.cfg.tb && tot && window.KidsDone) KidsDone.record('tb', Q.cfg.tb, Math.round(ok / tot * 100)); // 單元完成：考試最高分＋最近一次
+    if (Q.exam && Q.cfg && Q.cfg.tb && !Q.cfg.oral && tot && window.KidsDone) KidsDone.record('tb', Q.cfg.tb, Math.round(ok / tot * 100)); // 單元完成：考試最高分＋最近一次
     if (window.KESync) KESync.now(); // 一回合結束 → 馬上同步
     // 學習幣：一回練習結束就回報（給幾枚、門檻、少於 5 題不給，都由後端決定）
     if (window.KidsCoins && !Q.gate) KidsCoins.report({ type: 'practice_round', item: 'english:' + (Q.drill ? 'drill' : (Q.cfg && Q.cfg.mode) || 'practice'), correct: ok, total: tot });

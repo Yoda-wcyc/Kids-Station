@@ -3,7 +3,7 @@
 const vm = require('vm'), fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
 const ctx = { window: {} }; vm.createContext(ctx);
-['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
+['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook', 'oral'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
 const W = ctx.window.DATA_WORDS, PH = ctx.window.DATA_PHRASES, R = ctx.window.DATA_ROOTS, G = ctx.window.DATA_GRAMMAR, P = ctx.window.DATA_PATTERNS, TBK = ctx.window.DATA_TEXTBOOK;
 const KE = require(path.join(root, 'engine.js'));
 let checks = 0; const ok = (c, m) => { checks++; assert.ok(c, m); };
@@ -316,7 +316,7 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
   ok(E.list({ modules: ['textbook'] }).length === 0 && E.buildQuiz({ count: 300, allowSpeak: true }).every(q => q.module !== 'textbook') && E.list({ ids: ['tb:hanlin-5-u2:zh:you:math:monday'] }).length === 1, 'textbook questions only in textbook pages (but redo by id works)');
   { const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
     ok(CK.validEvent(ev('english:textbook')) && CK.validEvent(ev('english:test')) && !CK.validEvent(ev('english:textbooks')) && !CK.validEvent(ev('math:test')), 'kids-coins: english:textbook / english:test valid'); }
-  ok(['learn', 'practice', 'test'].every(k => fs.readFileSync(path.join(root, 'app.js'), 'utf8').includes(`['${k}',`)) && /<script src="data\/textbook\.js(\?v=[0-9a-f]+)?"><\/script>/.test(fs.readFileSync(path.join(root, 'index.html'), 'utf8')), 'app tabs + index loads textbook.js');
+  ok(['learn', 'practice', 'test'].every(k => fs.readFileSync(path.join(root, 'app.js'), 'utf8').includes(`['${k}',`)) && /<script src="data\/textbook\.js(\?v=[0-9a-f]+)?"><\/script>\s*<script src="data\/oral\.js(\?v=[0-9a-f]+)?"><\/script>/.test(fs.readFileSync(path.join(root, 'index.html'), 'utf8')), 'app tabs + index loads textbook.js then oral.js');
 }
 
 // ---- 學會紀錄 ----
@@ -1117,6 +1117,11 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
     ok(a.length === 13 && b.length === 12 && rule(a, 3, 2) && rule(b, 3, 2), 'tb practice typed≥3 zh≥2 typed last ' + u.id);
     ok(ex.length === 20 && ex.reduce((s, q) => s + q.pts, 0) === 100 && ex.filter(q => KE.isTyped(q)).length >= 3 && ex.filter(isZ).length >= 2, 'tb exam typed≥3 zh≥2, 100 pts ' + u.id);
   } stat.tb++; });
+  // 🎤 口語對話考試（E.tbOral，五上 U1–U2，2026-11-01）明確排除在打字保底之外：這是純口語考試，打字保底（打字 ≥ 3、中翻英 ≥ 2）的本意是書寫練習，
+  // 口語考試不適用。這裡反過來斷言它一題打字都沒有、20 題全是 🎤；題庫、用字範圍、判分的細項在 test/oral.test.js
+  TBK.filter(u => u.oral).forEach(u => { for (let k = 0; k < 30; k++) { const o = E.tbOral(u.id);
+    ok(o.length === 20 && o.every(q => q.type === 'speak' && q.oral && !KE.isTyped(q)) && o.reduce((s, q) => s + q.pts, 0) === 100, 'oral exam: 20 🎤, no typing (excluded from typed rule on purpose) ' + u.id); } });
+  ok(TBK.filter(u => u.oral).map(u => u.id).join() === 'hanlin-5-u1,hanlin-5-u2', 'oral exam only on 五上 U1, U2');
   // 4) 一般練習回合：各種勾選組合各 50 回
   const NT = t => !KE.TYPED_TYPES.includes(t) && t !== 'speak' && !KE.SET_ONLY_TYPES.includes(t);
   const choiceT = m => KE.MOD_TYPES[m].filter(NT), mids1 = E.list({ modules: ['words'], types: ['listen-choose'] }).slice(0, 1).map(m => m.id);
