@@ -236,7 +236,8 @@
   // 輪詢／回到前景／focus／重新連上網路：有待上傳的就完整同步一次，沒有就只問伺服器有沒有變
   function check(why) {
     if (!st.code) { if (acctId() && why !== 'poll') syncNow('full'); return; }
-    if (why !== 'poll' && (running || Date.now() - lastCheck < 1500)) return;   // visibilitychange＋focus 會連發
+    // visibilitychange＋focus 會連發；online 不擋：剛失敗的上傳（1.5 秒內）會排 40 秒退避，擋掉就要等退避才補傳（同步中則 syncNow 排 want 接著跑）
+    if (why !== 'poll' && why !== 'online' && (running || Date.now() - lastCheck < 1500)) return;
     if (navigator.onLine === false) { netDown = true; paintCloud(); schedule(); return; }
     return syncNow(st.pending ? 'full' : 'poll');
   }
