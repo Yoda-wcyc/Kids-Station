@@ -68,10 +68,12 @@ QS.forEach(o => {
   const q = qOf(o);
   ok(q && q.type === 'speak' && q.input === 'mic' && q.oral && q.speakText === o.q && q.speakMode === 'keys' && E.byId[q.id].setOnly && E.byId[q.id].module === 'textbook', 'registered as 🎤 set-only ' + o.n);
   o.a.forEach(a => {
-    ok(E.check(q, a).ok, `answer passes: #${o.n} ${a}`);
-    ok(E.check(q, a.replace(/___/g, 'Monday')).ok && E.check(q, a.replace(/___/g, 'social studies')).ok, `filled blank passes: #${o.n} ${a}`);
-    ok(E.check(q, a.replace(/[.,!?]/g, '').toLowerCase()).ok, `recognizer style (no punctuation, lower case): #${o.n}`);
-    ok(E.check(q, ['banana', a]).ok && E.check(q, ['banana', a]).at === 1, `alternatives: second one matches #${o.n}`);
+    // ___ 開放欄：關鍵字是類別（任一個星期／科目）就要填了才對，填哪一個都可以；其他題 ___ 原樣、填什麼都對
+    const cls = o.kz.some(z => /^任一個/.test(z)), fills = ['Monday', 'Friday', 'art', 'social studies'], f = a.includes('___') ? fills.filter(w => E.check(q, a.replace(/___/g, w)).ok) : fills;
+    ok(cls ? f.length >= 1 && E.check(q, a).ok === !a.includes('___') : E.check(q, a).ok && f.length === 4, `answer passes (blank open): #${o.n} ${a} → ${f}`);
+    const a1 = a.replace(/___/g, f[0]);
+    ok(E.check(q, a1.replace(/[.,!?]/g, '').toLowerCase()).ok, `recognizer style (no punctuation, lower case): #${o.n}`);
+    ok(E.check(q, ['banana', a1]).ok && E.check(q, ['banana', a1]).at === 1, `alternatives: second one matches #${o.n}`);
   });
   ok(!E.check(q, 'banana').ok && !E.check(q, ['banana', 'bananas', '']).ok && !E.check(q, '').ok, 'unrelated answer fails #' + o.n);
 });
@@ -80,6 +82,9 @@ const neg = [[11, 'Yes, he does.'], [15, 'Yes, she does.'], [15, 'Yes, he do.'],
   [57, 'Yes, I do.'], [87, 'Do he have art class on Tuesday?'], [87, 'Does he have art class on Monday?'], [83, 'No, I don\'t.'], [90, 'Sure, follow me.'], [100, 'Have a good time!'], [94, 'I have art class.']];
 neg.forEach(([n, a]) => ok(!E.check(N(n), a).ok, `wrong answer fails: #${n} ${a}`));
 ok(E.check(N(98), 'Do you have P.E. class today?').ok && E.check(N(98), 'do you have pe today').ok && E.check(N(13), "no I don't").ok, 'PE / P.E. and lower case');
+ok(['Monday.', 'monday', 'On Monday.', 'I have English class on Monday.'].every(x => E.check(N(25), x).ok) && !E.check(N(25), 'On.').ok && !E.check(N(25), 'I have English class.').ok, 'When…? accepts day only / on + day / full sentence (any day: lv1 is open)');
+ok(['Wednesday.', "It's Wednesday."].every(x => E.check(N(41), x).ok) && !E.check(N(41), 'Thursday.').ok && ['Tuesday.', 'On Tuesday.'].every(x => E.check(N(67), x).ok) && !E.check(N(67), 'Monday.').ok, 'lv2 short answer must be the right day');
+ok(['Art.', 'art class', 'I have music class.'].every(x => E.check(N(29), x).ok) && E.check(N(32), 'Math.').ok && !E.check(N(32), 'Art.').ok && E.check(N(70), 'Science.').ok && !E.check(N(70), 'Music.').ok, 'What class…? short answers');
 ok(E.check(N(11), 'No, I do not.').ok && E.check(N(1), 'It is Friday.').ok && E.check(N(1), "it's friday").ok && E.check(N(92), 'My favorite day is Friday. What is your favorite day?').ok, 'contractions both ways');
 
 // ---- 4. 線上一次 20 題 ----

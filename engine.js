@@ -419,7 +419,7 @@
       // keys 都說到就對、開放欄 ___ 不判；setOnly，只在口語考試（tbOral）和錯題庫出
       ((u.oral && u.oral.qs) || []).filter(o => o.tb === u.id).forEach(o => reg('oral', `${base}:oral:${o.n}`, 'speak', `${o.q} → ${o.a[0]}`, null, () => ({
         prompt: o.zh || '聽考官說的英文，用英文回答', sub: o.zh ? '照提示，用英文回答考官' : '', input: 'mic', play: true, auto: true, options: null, oral: true,
-        answer: o.a[0], alts: o.a.slice(1), speakMode: 'keys', keys: o.k.slice(), speakText: o.q, why: `要說到：${o.k.join('、')}（___ 可以自由說）` }), { lv: o.lv, n: o.n }));
+        answer: o.a[0], alts: o.a.slice(1), speakMode: 'keys', keys: o.k.slice(), speakText: o.q, why: `要說到：${(o.kz || o.k).join('、')}（___ 可以自由說）` }), { lv: o.lv, n: o.n }));
       ((u.dialog && u.dialog.choose) || []).forEach(c => reg('dc', `${base}:dc:${c.id}`, 'tb-answer', `${c.prompt} → ${c.answer}`, null, () => ({ prompt: c.prompt, en: /[a-z]/i.test(c.prompt), play: /[a-z]/i.test(c.prompt), sub: c.sub, options: shuffle(c.options), answer: c.answer, speakText: /[a-z]/i.test(c.answer) ? c.answer : c.prompt, why: c.why || '' })));
     });
 

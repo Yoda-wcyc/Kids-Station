@@ -264,7 +264,8 @@ ok(E.check(E.get('w:shop:type'), 'store').ok && E.check(E.get('w:store:type'), '
       const q = m.make();
       if (q.options && q.input !== 'chips') ok(q.options.length === 4 && new Set(q.options).size === 4 && q.options.includes(q.answer), 'tb options ' + q.id);
       if (m.type === 'tb-fill' || m.type === 'tb-fill-type') ok((q.prompt.match(/___/g) || []).length === 1, 'one blank ' + q.id + ' ' + q.prompt);
-      ok(E.check(q, q.answer).ok && (q.alts || []).every(x => E.check(q, x).ok), 'tb self/alts ' + q.id);
+      // 🎤 口語考試的參考答案含開放欄 ___（類別關鍵字要填了才判對），自我檢查改在 test/oral.test.js 填字後做
+      if (!q.oral) ok(E.check(q, q.answer).ok && (q.alts || []).every(x => E.check(q, x).ok), 'tb self/alts ' + q.id);
       if (KE.isTyped(q)) { const full = KE.expandContr(q.answer); if (full !== q.answer.toLowerCase()) ok(E.check(q, full).ok && E.check(q, full.toUpperCase()).ok, 'tb typed accepts expansion: ' + q.id + ' → ' + full); }
       if (/^tb:[^:]+:anst?:/.test(q.id)) ok(!q.speakText.includes(q.answer), 'short-answer audio does not read the answer ' + q.id);
     });

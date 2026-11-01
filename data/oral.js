@@ -12,14 +12,16 @@
   const Y = (who, aux) => [`Yes, ${who} ${aux}.`, `No, ${who} ${aux === 'do' ? "don't" : "doesn't"}.`];
   const YK = (who, aux) => [`Yes, ${who} ${aux}|No, ${who} ${aux === 'do' ? "don't" : "doesn't"}`];
   const ISIT = ['Yes, it is.', "No, it isn't."], ISITK = ["Yes, it is|No, it isn't"];
+  // 開放欄的類別關鍵字：說到任一個星期／科目就算（「只說關鍵答案」也對，例如 When…? → Monday.）；紙本顯示成「任一個星期／科目」
+  const DAY = 'Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday', SUBJ = 'art|Chinese|English|math|music|PE|P.E.|science|social studies';
   const L1 = [
     // ---- Unit 1：星期 ----
-    { u: 1, q: 'What day is today?', a: ["It's ___.", "Today is ___.", "It's ___ today."], k: ['It is|Today is'] },
-    { u: 1, q: 'What day is tomorrow?', a: ["It's ___.", 'Tomorrow is ___.'], k: ['It is|Tomorrow is'] },
+    { u: 1, q: 'What day is today?', a: ["It's ___.", "Today is ___.", "It's ___ today.", '___.'], k: [DAY] },
+    { u: 1, q: 'What day is tomorrow?', a: ["It's ___.", 'Tomorrow is ___.', '___.'], k: [DAY] },
     { u: 1, q: 'Is it Monday today?', a: ISIT.concat(["No, it isn't. It's ___."]), k: ISITK },
-    { u: 1, q: 'Is it Friday or Saturday today?', a: ["It's ___.", 'Today is ___.'], k: ['It is|Today is'] },
+    { u: 1, q: 'Is it Friday or Saturday today?', a: ["It's Friday.", "It's Saturday.", 'Today is Friday.', 'Today is Saturday.', 'Friday.', 'Saturday.'], k: ['Friday|Saturday'] },
     { u: 1, q: 'Is tomorrow Saturday?', a: ISIT.concat(["No, it isn't. It's ___."]), k: ISITK },
-    { u: 1, q: "What's your favorite day?", a: ['My favorite day is ___.', '___ is my favorite day.', "It's ___."], k: ['favorite day|It is'] },
+    { u: 1, q: "What's your favorite day?", a: ['My favorite day is ___.', '___ is my favorite day.', "It's ___.", '___.'], k: [DAY] },
     { u: 1, q: 'Is Friday your favorite day?', a: ISIT, k: ISITK },
     { u: 1, q: "Let's go to the park!", a: ['Good idea!', "Good idea. Let's go!", 'Sure.'], k: ['Good idea|Sure'] },
     // ---- Unit 2：科目＋Do／Does ----
@@ -40,16 +42,16 @@
     { u: 2, q: 'Does Ben have class on Sunday?', a: Y('he', 'does'), k: YK('he', 'does') },
     { u: 2, q: 'Does she have PE class tomorrow?', a: Y('she', 'does'), k: YK('she', 'does') },
     // ---- 兩課混合：When／What day／What class ----
-    { u: 12, q: 'When do you have English class?', a: ['On ___.', 'I have English class on ___.'], k: ['on'] },
-    { u: 12, q: 'What day do you have music class?', a: ['On ___.', 'I have music class on ___.'], k: ['on'] },
-    { u: 12, q: 'When does she have PE class?', a: ['On ___.', 'She has PE class on ___.'], k: ['on'] },
-    { u: 12, q: 'What day is your art class?', a: ["It's on ___.", 'On ___.'], k: ['on'] },
-    { u: 2, q: 'What class do you have on Monday?', a: ['I have ___ class.', 'I have ___ class on Monday.'], k: ['I have'] },
-    { u: 2, q: 'What class do you have today?', a: ['I have ___ class today.', 'I have ___ class.'], k: ['I have'] },
-    { u: 2, q: 'What class do we have tomorrow?', a: ['We have ___ class tomorrow.', 'We have ___ class.'], k: ['We have'] },
-    { u: 2, q: 'Do you have English class or math class today?', a: ['I have English class.', 'I have math class.', 'I have ___ class today.'], k: ['I have'] },
+    { u: 12, q: 'When do you have English class?', a: ['On ___.', '___.', 'I have English class on ___.'], k: [DAY] },
+    { u: 12, q: 'What day do you have music class?', a: ['On ___.', '___.', 'I have music class on ___.'], k: [DAY] },
+    { u: 12, q: 'When does she have PE class?', a: ['On ___.', '___.', 'She has PE class on ___.'], k: [DAY] },
+    { u: 12, q: 'What day is your art class?', a: ["It's on ___.", 'On ___.', '___.'], k: [DAY] },
+    { u: 2, q: 'What class do you have on Monday?', a: ['I have ___ class.', 'I have ___ class on Monday.', '___ class.', '___.'], k: [SUBJ] },
+    { u: 2, q: 'What class do you have today?', a: ['I have ___ class today.', 'I have ___ class.', '___.'], k: [SUBJ] },
+    { u: 2, q: 'What class do we have tomorrow?', a: ['We have ___ class tomorrow.', 'We have ___ class.', '___.'], k: [SUBJ] },
+    { u: 2, q: 'Do you have English class or math class today?', a: ['I have English class.', 'I have math class.', 'English class.', 'Math class.', 'English.', 'Math.'], k: ['English|math'] },
     { u: 12, q: 'Is your PE class on Tuesday?', a: ISIT.concat(["No, it isn't. It's on ___."]), k: ISITK },
-    { u: 2, q: "What's your favorite subject?", a: ['My favorite subject is ___.', '___ is my favorite subject.', 'I like ___.'], k: ['favorite subject|I like'] },
+    { u: 2, q: "What's your favorite subject?", a: ['My favorite subject is ___.', '___ is my favorite subject.', 'I like ___.', '___.'], k: [SUBJ] },
     { u: 2, q: 'Do you like art class?', a: Y('I', 'do'), k: YK('I', 'do') },
     { u: 2, q: 'Does she like music class?', a: Y('she', 'does'), k: YK('she', 'does') },
     { u: 2, q: 'Do you study English every day?', a: Y('I', 'do'), k: YK('I', 'do') },
@@ -59,16 +61,16 @@
   ];
   const L2 = [
     // ---- Unit 1 ----
-    { u: 1, q: 'What day is today?', zh: '月曆上，今天是星期三。', a: ["It's Wednesday.", 'Today is Wednesday.', "It's Wednesday today."], k: ['Wednesday'] },
-    { u: 1, q: 'What day is tomorrow?', zh: '今天是星期五。', a: ["It's Saturday.", 'Tomorrow is Saturday.'], k: ['Saturday'] },
-    { u: 1, q: 'What day is it today?', zh: '昨天是星期日。', a: ["It's Monday.", 'Today is Monday.'], k: ['Monday'] },
-    { u: 1, q: 'What day is it?', zh: '明天是星期五。', a: ["It's Thursday.", 'Today is Thursday.'], k: ['Thursday'] },
+    { u: 1, q: 'What day is today?', zh: '月曆上，今天是星期三。', a: ["It's Wednesday.", 'Today is Wednesday.', "It's Wednesday today.", 'Wednesday.'], k: ['Wednesday'] },
+    { u: 1, q: 'What day is tomorrow?', zh: '今天是星期五。', a: ["It's Saturday.", 'Tomorrow is Saturday.', 'Saturday.'], k: ['Saturday'] },
+    { u: 1, q: 'What day is it today?', zh: '昨天是星期日。', a: ["It's Monday.", 'Today is Monday.', 'Monday.'], k: ['Monday'] },
+    { u: 1, q: 'What day is it?', zh: '明天是星期五。', a: ["It's Thursday.", 'Today is Thursday.', 'Thursday.'], k: ['Thursday'] },
     { u: 1, q: 'Is it Thursday today?', zh: '月曆上，今天就是星期四。', a: ['Yes, it is.'], k: ['Yes, it is'] },
     { u: 1, q: 'Is it Tuesday today?', zh: '今天是星期三。說「不是」，再說今天星期幾。', a: ["No, it isn't. It's Wednesday.", "No. It's Wednesday."], k: ['No', 'Wednesday'] },
     { u: 1, q: 'Is tomorrow Friday?', zh: '今天是星期四。', a: ['Yes, it is.'], k: ['Yes, it is'] },
     { u: 1, q: 'Is tomorrow Sunday?', zh: '今天是星期日。說「不是」，再說明天星期幾。', a: ["No, it isn't. It's Monday.", "No, it isn't. Tomorrow is Monday."], k: ['No', 'Monday'] },
-    { u: 1, q: 'Is it Monday or Tuesday today?', zh: '今天是星期二。', a: ["It's Tuesday.", 'Today is Tuesday.'], k: ['Tuesday'] },
-    { u: 1, q: "What's your favorite day?", zh: '你最喜歡星期五。', a: ['My favorite day is Friday.', 'Friday is my favorite day.', "It's Friday."], k: ['Friday'] },
+    { u: 1, q: 'Is it Monday or Tuesday today?', zh: '今天是星期二。', a: ["It's Tuesday.", 'Today is Tuesday.', 'Tuesday.'], k: ['Tuesday'] },
+    { u: 1, q: "What's your favorite day?", zh: '你最喜歡星期五。', a: ['My favorite day is Friday.', 'Friday is my favorite day.', "It's Friday.", 'Friday.'], k: ['Friday'] },
     { u: 1, q: 'Is Saturday your favorite day?', zh: '沒錯，你最喜歡星期六。', a: ['Yes, it is.'], k: ['Yes, it is'] },
     { u: 1, q: "Let's go to the park on Sunday.", zh: '你覺得這個點子很好。', a: ['Good idea!', "Good idea. Let's go!"], k: ['Good idea'] },
     { u: 1, q: 'We go to the park on Saturday.', zh: '朋友星期六要去公園，祝他們玩得愉快。', a: ['Have a good time!'], k: ['have a good time'] },
@@ -86,20 +88,20 @@
     { u: 2, q: 'Do you and Ben have art class today?', zh: '你和 Ben 今天都有美術課。', a: ['Yes, we do.'], k: ['Yes, we do'] },
     { u: 2, q: 'Do Amy and Ben have PE class on Wednesday?', zh: 'Amy 和 Ben 星期三都沒有體育課。', a: ["No, they don't."], k: ["No, they don't"] },
     { u: 2, q: 'Do you have class on Saturday?', zh: '星期六不用上課。', a: ["No, I don't."], k: ["No, I don't"] },
-    { u: 12, q: 'When do you have PE class?', zh: '你的體育課在星期二。', a: ['On Tuesday.', 'I have PE class on Tuesday.', "It's on Tuesday."], k: ['Tuesday'] },
-    { u: 12, q: 'When does Amy have music class?', zh: 'Amy 的音樂課在星期四。', a: ['On Thursday.', 'She has music class on Thursday.'], k: ['Thursday'] },
-    { u: 12, q: 'What day is your art class?', zh: '你的美術課在星期五。', a: ["It's on Friday.", 'On Friday.'], k: ['Friday'] },
-    { u: 2, q: 'What class do you have on Wednesday?', zh: '看課表：星期三有自然課。', a: ['I have science class.', 'I have science class on Wednesday.'], k: ['science'] },
-    { u: 2, q: 'What class do we have today?', zh: '我們今天有國語課。', a: ['We have Chinese class.', 'We have Chinese class today.'], k: ['Chinese'] },
-    { u: 2, q: 'Do you have English class or Chinese class today?', zh: '今天有英文課。', a: ['I have English class.', 'I have English class today.'], k: ['English'] },
-    { u: 2, q: "What's your favorite subject?", zh: '你最喜歡數學。', a: ['My favorite subject is math.', 'Math is my favorite subject.', 'I like math.'], k: ['math'] },
+    { u: 12, q: 'When do you have PE class?', zh: '你的體育課在星期二。', a: ['On Tuesday.', 'Tuesday.', 'I have PE class on Tuesday.', "It's on Tuesday."], k: ['Tuesday'] },
+    { u: 12, q: 'When does Amy have music class?', zh: 'Amy 的音樂課在星期四。', a: ['On Thursday.', 'Thursday.', 'She has music class on Thursday.'], k: ['Thursday'] },
+    { u: 12, q: 'What day is your art class?', zh: '你的美術課在星期五。', a: ["It's on Friday.", 'On Friday.', 'Friday.'], k: ['Friday'] },
+    { u: 2, q: 'What class do you have on Wednesday?', zh: '看課表：星期三有自然課。', a: ['I have science class.', 'I have science class on Wednesday.', 'Science class.', 'Science.'], k: ['science'] },
+    { u: 2, q: 'What class do we have today?', zh: '我們今天有國語課。', a: ['We have Chinese class.', 'We have Chinese class today.', 'Chinese class.', 'Chinese.'], k: ['Chinese'] },
+    { u: 2, q: 'Do you have English class or Chinese class today?', zh: '今天有英文課。', a: ['I have English class.', 'I have English class today.', 'English class.', 'English.'], k: ['English'] },
+    { u: 2, q: "What's your favorite subject?", zh: '你最喜歡數學。', a: ['My favorite subject is math.', 'Math is my favorite subject.', 'I like math.', 'Math.'], k: ['math'] },
     { u: 2, q: 'Do you like PE class?', zh: '你不喜歡。', a: ["No, I don't."], k: ["No, I don't"] },
     { u: 12, q: 'Is your music class on Monday?', zh: '沒錯，你的音樂課在星期一。', a: ['Yes, it is.'], k: ['Yes, it is'] },
     { u: 12, q: 'Is your science class on Tuesday?', zh: '不是，你的自然課在星期四。', a: ["No, it isn't. It's on Thursday.", "No. It's on Thursday."], k: ['No', 'Thursday'] },
     { u: 12, q: 'Do you have math class today?', zh: '今天星期二，你星期二有數學課。', a: ['Yes, I do.'], k: ['Yes, I do'] },
     { u: 12, q: 'Does he have art class tomorrow?', zh: '今天星期三，他星期四有美術課。', a: ['Yes, he does.'], k: ['Yes, he does'] },
-    { u: 12, q: "Let's play in the park on Tuesday.", zh: '你星期二有英文課，不能去。', a: ['I have English class on Tuesday.', 'No, I have English class on Tuesday.'], k: ['English', 'Tuesday'] },
-    { u: 12, q: 'What day is tomorrow?', zh: '明天要上體育課，你的體育課在星期一。', a: ["It's Monday.", 'Tomorrow is Monday.'], k: ['Monday'] }
+    { u: 12, q: "Let's play in the park on Tuesday.", zh: '你星期二有英文課，不能去。', a: ['I have English class on Tuesday.', 'No, I have English class on Tuesday.', 'I have English class.'], k: ['English'] },
+    { u: 12, q: 'What day is tomorrow?', zh: '明天要上體育課，你的體育課在星期一。', a: ["It's Monday.", 'Tomorrow is Monday.', 'Monday.'], k: ['Monday'] }
   ];
   const L3 = [
     { u: 12, q: 'Is it Tuesday today?', zh: '今天是星期三。先回答，再問考官星期三有沒有數學課。', a: ["No, it isn't. It's Wednesday. Do you have math class on Wednesday?"], k: ['No', 'Wednesday', 'Do you have', 'math'], f: 'Yes, I do.' },
@@ -115,8 +117,8 @@
     { u: 2, q: 'Are you in a hurry?', zh: '是的，你等一下有數學課。', a: ['Yes, I am. I have math class.', "Yes, I'm in a hurry. I have math class."], k: ['Yes, I am', 'math'] },
     { u: 1, q: "What's your favorite day?", zh: '你最喜歡星期五。說完後，反問考官最喜歡哪一天。', a: ["My favorite day is Friday. What's your favorite day?", "Friday is my favorite day. What's your favorite day?"], k: ['Friday', "What's your favorite day"], f: 'My favorite day is Sunday.' },
     { u: 1, q: 'Is Friday your favorite day?', zh: '不是；你最喜歡的是星期日。', a: ["No, it isn't. My favorite day is Sunday.", 'No. Sunday is my favorite day.'], k: ['No', 'Sunday'] },
-    { u: 2, q: 'What class do you have on Tuesday?', zh: '看課表：星期二有美術課，也有音樂課。', a: ['I have art class and music class.', 'I have art and music.'], k: ['art', 'music'] },
-    { u: 12, q: 'When do you have science class?', zh: '你的自然課在星期一和星期四。', a: ['On Monday and Thursday.', 'I have science class on Monday and Thursday.'], k: ['Monday', 'Thursday'] },
+    { u: 2, q: 'What class do you have on Tuesday?', zh: '看課表：星期二有美術課，也有音樂課。', a: ['I have art class and music class.', 'I have art and music.', 'Art and music.'], k: ['art', 'music'] },
+    { u: 12, q: 'When do you have science class?', zh: '你的自然課在星期一和星期四。', a: ['On Monday and Thursday.', 'Monday and Thursday.', 'I have science class on Monday and Thursday.'], k: ['Monday', 'Thursday'] },
     { u: 12, q: 'Does Ben have PE class tomorrow?', zh: '今天星期二，Ben 星期三有體育課。先回答，再說明天星期幾。', a: ['Yes, he does. Tomorrow is Wednesday.', "Yes, he does. It's Wednesday tomorrow."], k: ['Yes, he does', 'Wednesday'] },
     { u: 2, q: 'Do we have social studies class today?', zh: '今天沒有社會課，今天有的是自然課。', a: ["No, we don't. We have science class today.", "No, we don't. We have science today."], k: ["No, we don't", 'science'] },
     { u: 2, q: "I'm in a hurry!", zh: '換你問考官：你今天有體育課嗎？', a: ['Do you have PE class today?', 'Do you have PE today?'], k: ['Do you have', 'PE|P.E.', 'today'], f: "Yes, I do. Follow me!" },
@@ -129,7 +131,8 @@
     const a = [...new Set(x.a.flatMap(s => [s, full(s)]))];
     // 科目 PE：辨識常寫成 P.E.，關鍵字兩種都收
     const k = x.k.map(s => (/\bPE\b/.test(s) && !/P\.E\./.test(s) ? s + '|' + s.replace(/\bPE\b/g, 'P.E.') : s));
-    return Object.assign({}, x, { n: i + 1, a, k, tb: x.u === 1 ? 'hanlin-5-u1' : 'hanlin-5-u2' });
+    const kz = k.map(s => (s === DAY ? '任一個星期' : s === SUBJ ? '任一個科目' : s));
+    return Object.assign({}, x, { n: i + 1, a, k, kz, tb: x.u === 1 ? 'hanlin-5-u1' : 'hanlin-5-u2' });
   });
   const bank = { key: '5-u12', title: '五上 U1–U2 口語對話考試', units: ['hanlin-5-u1', 'hanlin-5-u2'], pick: { 1: 8, 2: 8, 3: 4 }, qs };
   window.DATA_ORAL = bank;
