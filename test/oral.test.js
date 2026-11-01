@@ -33,14 +33,14 @@ BANKS.forEach(B => {
   const sig = QS.map(o => o.q + '｜' + (o.zh || ''));
   ok(new Set(sig).size === 100, 'no duplicate question (examiner line + hint): ' + sig.filter((s, i) => sig.indexOf(s) !== i) + tag);
   ok(QS.every(o => o.lv === 1 ? !o.zh : o.zh && /[一-鿿]/.test(o.zh)), 'lv1 no hint; lv2/3 Chinese hint' + tag);
-  ok(QS.every(o => !o.zh || !/[A-Za-z]/.test(o.zh.replace(/\b(Amy|Ben)\b/g, ''))), 'hints never contain English (except the names Amy, Ben)' + tag);
+  ok(QS.every(o => !o.zh || !/[A-Za-z]/.test(o.zh.replace(/\b(Amy|Ben|Tony)\b/g, ''))), 'hints never contain English (except the names Amy, Ben, Tony)' + tag);
   ok(QS.every(o => o.a.length && o.k.length && o.k.every(k => k && !k.includes('___')) && [1, 2, 12].includes(o.u) && UNITS.includes(o.tb)), 'answers / keys / unit shape' + tag);
   ok(QS.filter(o => o.lv === 1).every(o => o.a.some(a => /___/.test(a)) || o.a.length >= 2), 'lv1: fixed pattern with open blank, choices or yes/no pair' + tag);
   ok(QS.filter(o => o.lv === 3).every(o => o.k.length >= 2), 'lv3: at least two key points (two parts / own question)' + tag);
   ok(QS.filter(o => o.f).every(o => o.lv === 3), 'examiner follow-up lines only in lv3' + tag);
   const byQ = {}; QS.forEach(o => { byQ[o.q] = (byQ[o.q] || 0) + 1; });
   ok(Object.values(byQ).every(n => n <= 4), 'same examiner line at most 4 times (different situations): ' + JSON.stringify(Object.entries(byQ).filter(([, n]) => n > 2)) + tag);
-  ok(QS.every(o => o.a.every(a => /can't/i.test(a) ? o.a.some(x => /cannot/i.test(x)) : !/n't|\b(It|What|He|She|There|Where)'s|I'm|'re\b/.test(a) || o.a.includes(a.replace(/\b(\w+)n't\b/g, '$1 not').replace(/\b(It|What|He|She|There|Where)'s\b/g, '$1 is').replace(/\bI'm\b/g, 'I am').replace(/\b(We|They|You)'re\b/g, '$1 are')))), 'every contracted answer also listed expanded' + tag);
+  ok(QS.every(o => o.a.every(a => /can't/i.test(a) ? o.a.some(x => /cannot/i.test(x)) : !/n't|\b(It|What|He|She|There|Where)'s|I'm|'re\b/.test(a) || o.a.includes(a.replace(/\b(\w+)n't\b/g, '$1 not').replace(/\b(It|What|He|She|There|Where)'s\b/g, '$1 is').replace(/\bI'm\b/g, 'I am').replace(/\b(I|He|She|We|They|You)'d\b/g, '$1 would').replace(/\b(We|They|You)'re\b/g, '$1 are')))), 'every contracted answer also listed expanded' + tag);
 
   // ---- 2. 用字範圍 ----
   const core = new Set(), ex = new Set();
@@ -104,6 +104,10 @@ BANKS.forEach(B => {
     [[1, 'I have a fever.'], [3, 'Yes, it do.'], [3, 'Yes, they do.'], [4, 'Yes, it does.'], [41, 'My eyes hurt.'], [57, "No, I don't."], [58, 'No, I don\'t. I have a cold.'], [60, 'No, she doesn\'t. She has a toothache.'],
       [46, 'Yes, it does.'], [54, 'His leg hurts.'], [81, 'My foot hurts.']].forEach(([n, a]) => NO(n, a));
     [[1, 'My legs hurt.'], [1, 'My leg.'], [41, 'My foot.'], [58, 'No, I do not. I have a sore throat.'], [14, "No, I can't."], [14, 'No, I cannot.'], [32, 'No, thanks.'], [39, 'I have a cold.'], [39, 'My arm hurts.']].forEach(([n, a]) => YES(n, a));
+  }
+  if (B.key === '6-u34') {
+    [[41, 'Some salad.'], [47, 'No, thank you.'], [59, "It's his backpack."], [61, "It's Amy's umbrella."], [21, "It's backpack."], [7, 'Yes, I do.']].forEach(([n, a]) => NO(n, a));
+    [[1, 'Bread.'], [1, 'I would like some soup.'], [5, 'She would like some salad.'], [21, "It's Tony's backpack."], [21, 'My backpack.'], [59, 'My backpack.'], [61, "Tony's."], [7, 'No, thanks.']].forEach(([n, a]) => YES(n, a));
   }
   // ---- 4. 線上一次 20 題（兩個單元都有入口、抽同一份題庫）----
   const seen = new Set();

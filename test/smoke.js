@@ -133,7 +133,7 @@ Object.keys(KE.TYPES).forEach(type => {
       ok(new Set(q.options).size === q.options.length, 'dup options ' + q.id + ' ' + q.options);
       ok(q.options.length >= 2, 'option count ' + q.id);
     }
-    ok(E.check(q, q.answer).ok, 'check self ' + q.id);
+    ok(q.oral || E.check(q, q.answer).ok, 'check self ' + q.id); // 🎤 口語考試的參考答案有開放欄 ___，填字後的自我檢查在 test/oral.test.js
   });
 });
 // 判分細節

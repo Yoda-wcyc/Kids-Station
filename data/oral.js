@@ -129,7 +129,7 @@
   // ================= 共用：組題庫 =================
   // 縮寫補展開版（保留大小寫）：don't → do not、It's → It is、I'm → I am、He's → He is、There's → There is、We're → We are…（Let's 不動）
   const full = s => s.replace(/\b([Cc])an't\b/g, '$1annot').replace(/\b(\w+)n't\b/g, '$1 not').replace(/\b(It|it|What|what|He|he|She|she|There|there|Where|where)'s\b/g, '$1 is')
-    .replace(/\bI'm\b/g, 'I am').replace(/\b(We|we|They|they|You|you)'re\b/g, '$1 are');
+    .replace(/\bI'm\b/g, 'I am').replace(/\b(I|He|She|We|They|You)'d\b/g, '$1 would').replace(/\b(We|we|They|they|You|you)'re\b/g, '$1 are');
   const BANKS = [];
   // def：{key, title, file（紙本檔名用）, units:[第一課, 第二課], labels:['U1','U2'], cls:{類別關鍵字: 中文}, scope（紙本範圍說明）, note（核對狀態）, L:[難度1, 2, 3]}
   // 題目的 u：1＝第一課、2＝第二課、12＝兩課混合（線上題號掛第一課或第二課）
@@ -392,6 +392,129 @@
       cls: { [PART]: '任一個身體部位', [ILL + '|' + PART]: '任一個病症或身體部位' }, L: [L1, L2, L3],
       scope: "Unit 1 What's Wrong?（身體部位＋複數 eyes／feet、What's wrong? My ___ hurts.／My ___ hurt.、my／his／her、Can you give me a hand?、Be careful!）；Unit 2 Do You Have a Headache?（七個病症、Do you / Does he/she have a ___?、I have a ___.／She has a ___.、May I help you?、You're welcome.）",
       note: '五下 Unit 1、Unit 2 都是依學校課程計畫整理、還沒拿課本逐字核對。' });
+  })();
+
+  // ================= 五下 U3–U4（What Would You Like for Dinner? ／ Whose Backpack Is That?；兩課都待課本核對）=================
+  (() => {
+    const FOOD = 'bread|chicken|salad|soup|noodles', OWN = "my|your|his|her|Tony's|Amy's|Ben's";
+    const WY = ['Yes, please.', 'No, thank you.', 'No, thanks.'], WYK = ['Yes, please|No, thank you|No, thanks'];
+    const ISIT = ['Yes, it is.', "No, it isn't."], ISITK = ["Yes, it is|No, it isn't"], ARE = ['Yes, they are.', "No, they aren't."], AREK = ["Yes, they are|No, they aren't"];
+    const L1 = [
+      // ---- Unit 3：三餐、食物、What would you like for ___? ----
+      { u: 1, q: 'What would you like for breakfast?', a: ["I'd like some ___.", 'Some ___.', '___.'], k: [FOOD] },
+      { u: 1, q: 'What would you like for lunch?', a: ["I'd like some ___.", 'Some ___.', '___.'], k: [FOOD] },
+      { u: 1, q: 'What would you like for dinner?', a: ["I'd like some ___.", 'Some ___.', '___.'], k: [FOOD] },
+      { u: 1, q: 'What would you like?', a: ["I'd like some ___.", 'Some ___.', '___.'], k: [FOOD] },
+      { u: 1, q: 'What would she like for lunch?', a: ["She'd like some ___.", 'Some ___.', '___.'], k: [FOOD] },
+      { u: 1, q: 'What would he like for breakfast?', a: ["He'd like some ___.", 'Some ___.', '___.'], k: [FOOD] },
+      { u: 1, q: 'Would you like some soup?', a: WY, k: WYK },
+      { u: 1, q: 'Would you like some bread for breakfast?', a: WY, k: WYK },
+      { u: 1, q: 'Would you like some chicken for dinner?', a: WY, k: WYK },
+      { u: 1, q: 'Would you like some noodles for lunch?', a: WY, k: WYK },
+      { u: 1, q: 'Would you like some bread or some noodles?', a: ["I'd like some bread.", "I'd like some noodles.", 'Bread.', 'Noodles.'], k: ['bread|noodles'] },
+      { u: 1, q: 'Would you like soup or salad for lunch?', a: ["I'd like some soup.", "I'd like some salad.", 'Soup.', 'Salad.'], k: ['soup|salad'] },
+      { u: 1, q: 'Would you like chicken or noodles for dinner?', a: ["I'd like some chicken.", "I'd like some noodles.", 'Chicken.', 'Noodles.'], k: ['chicken|noodles'] },
+      { u: 1, q: 'Do you like chicken?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 1, q: 'Does he like salad?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 1, q: 'Does she like noodles?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 1, q: "There's no soup.", a: ['Too bad!', 'Oh, too bad.'], k: ['too bad'] },
+      { u: 1, q: 'We have noodles for dinner.', a: ['I see.', 'Oh, I see.'], k: ['I see'] },
+      { u: 1, q: 'Is the soup for lunch or dinner?', a: ["It's for lunch.", "It's for dinner.", 'For lunch.', 'For dinner.'], k: ['lunch|dinner'] },
+      { u: 1, q: 'Is it breakfast or lunch?', a: ["It's breakfast.", "It's lunch.", 'Breakfast.', 'Lunch.'], k: ['breakfast|lunch'] },
+      // ---- Unit 4：物品、Whose ___ is this／that? ----
+      { u: 2, q: 'Whose backpack is this?', a: ["It's ___ backpack.", '___ backpack.'], k: [OWN] },
+      { u: 2, q: 'Whose cap is that?', a: ["It's ___ cap.", '___ cap.'], k: [OWN] },
+      { u: 2, q: 'Whose umbrella is this?', a: ["It's ___ umbrella.", '___ umbrella.'], k: [OWN] },
+      { u: 2, q: 'Whose lunchbox is that?', a: ["It's ___ lunchbox.", '___ lunchbox.'], k: [OWN] },
+      { u: 2, q: 'Whose water bottle is that?', a: ["It's ___ water bottle.", '___ water bottle.'], k: [OWN] },
+      { u: 2, q: 'Whose workbook is this?', a: ["It's ___ workbook.", '___ workbook.'], k: [OWN] },
+      { u: 2, q: 'Whose glasses are these?', a: ['They are ___ glasses.', "They're ___ glasses.", '___ glasses.'], k: [OWN] },
+      { u: 2, q: 'Whose shoes are those?', a: ['They are ___ shoes.', "They're ___ shoes.", '___ shoes.'], k: [OWN] },
+      { u: 2, q: 'Is this your water bottle?', a: ISIT, k: ISITK },
+      { u: 2, q: 'Is that his workbook?', a: ISIT, k: ISITK },
+      { u: 2, q: "Is this Tony's cap?", a: ISIT, k: ISITK },
+      { u: 2, q: 'Is this her backpack?', a: ISIT, k: ISITK },
+      { u: 2, q: 'Are these your shoes?', a: ARE, k: AREK },
+      { u: 2, q: 'Are those her glasses?', a: ARE, k: AREK },
+      { u: 2, q: "Are these Amy's shoes?", a: ARE, k: AREK },
+      { u: 2, q: "Is that Amy's umbrella or Ben's umbrella?", a: ["It's Amy's umbrella.", "It's Ben's umbrella.", "Amy's.", "Ben's."], k: ["Amy's|Ben's"] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'Whose soup is this?', a: ["It's ___ soup.", '___ soup.'], k: [OWN] },
+      { u: 12, q: 'Whose noodles are these?', a: ['They are ___ noodles.', "They're ___ noodles.", '___ noodles.'], k: [OWN] },
+      { u: 12, q: 'Is this your salad?', a: ISIT, k: ISITK },
+      { u: 12, q: "Would you like some bread? It's in my backpack.", a: WY, k: WYK }
+    ];
+    const L2 = [
+      // ---- Unit 3 ----
+      { u: 1, q: 'What would you like for breakfast?', zh: '你想吃麵包。', a: ["I'd like some bread.", 'Some bread.', 'Bread.'], k: ['bread'] },
+      { u: 1, q: 'What would you like for lunch?', zh: '你想吃沙拉。', a: ["I'd like some salad.", 'Some salad.', 'Salad.'], k: ['salad'] },
+      { u: 1, q: 'What would you like for dinner?', zh: '你想吃雞肉。', a: ["I'd like some chicken.", 'Some chicken.', 'Chicken.'], k: ['chicken'] },
+      { u: 1, q: 'What would you like?', zh: '你想喝湯。', a: ["I'd like some soup.", 'Some soup.', 'Soup.'], k: ['soup'] },
+      { u: 1, q: 'Would you like some noodles for lunch?', zh: '你要。', a: ['Yes, please.'], k: ['Yes, please'] },
+      { u: 1, q: 'Would you like some chicken for dinner?', zh: '你不要，有禮貌地拒絕。', a: ['No, thank you.', 'No, thanks.'], k: ['No, thank you|No, thanks'] },
+      { u: 1, q: 'Would you like some bread for lunch?', zh: '不要麵包；你想喝湯。', a: ["No, thank you. I'd like some soup.", "No, thanks. I'd like some soup."], k: ['No, thank you|No, thanks', 'soup'] },
+      { u: 1, q: 'Would you like some salad for breakfast?', zh: '不要沙拉；你想吃麵包。', a: ["No, thank you. I'd like some bread.", "No, thanks. I'd like some bread."], k: ['No, thank you|No, thanks', 'bread'] },
+      { u: 1, q: 'Would you like soup or salad?', zh: '你要沙拉。', a: ["I'd like some salad.", 'Salad.'], k: ['salad'] },
+      { u: 1, q: 'Would you like chicken or noodles for dinner?', zh: '你要麵。', a: ["I'd like some noodles.", 'Noodles.'], k: ['noodles'] },
+      { u: 1, q: 'What would he like for lunch?', zh: '他想吃雞肉。', a: ["He'd like some chicken.", 'Some chicken.', 'Chicken.'], k: ['chicken'] },
+      { u: 1, q: 'What would she like for breakfast?', zh: '她想吃麵包。', a: ["She'd like some bread.", 'Some bread.', 'Bread.'], k: ['bread'] },
+      { u: 1, q: 'Do you like soup?', zh: '你喜歡。', a: ['Yes, I do.'], k: ['Yes, I do'] },
+      { u: 1, q: 'Does he like salad?', zh: '他不喜歡。', a: ["No, he doesn't."], k: ["No, he doesn't"] },
+      { u: 1, q: "There's no chicken.", zh: '說「太可惜了」。', a: ['Too bad!'], k: ['too bad'] },
+      { u: 1, q: 'We have soup for lunch.', zh: '說「我懂了」。', a: ['I see.', 'Oh, I see.'], k: ['I see'] },
+      { u: 1, q: 'Is the soup for lunch?', zh: '不是，是晚餐要喝的。', a: ["No, it isn't. It's for dinner.", 'No. For dinner.'], k: ['No', 'dinner'] },
+      { u: 1, q: 'Would you like some salad?', zh: '你要，有禮貌地說。', a: ['Yes, please.'], k: ['Yes, please'] },
+      // ---- Unit 4 ----
+      { u: 2, q: 'Whose backpack is this?', zh: '是你的。', a: ["It's my backpack.", 'My backpack.'], k: ['my'] },
+      { u: 2, q: 'Whose cap is that?', zh: '是他的。', a: ["It's his cap.", 'His cap.'], k: ['his'] },
+      { u: 2, q: 'Whose umbrella is this?', zh: '是 Tony 的。', a: ["It's Tony's umbrella.", "Tony's umbrella.", "Tony's."], k: ["Tony's"] },
+      { u: 2, q: 'Whose lunchbox is that?', zh: '是她的。', a: ["It's her lunchbox.", 'Her lunchbox.'], k: ['her'] },
+      { u: 2, q: 'Whose glasses are these?', zh: '是 Amy 的。', a: ["They are Amy's glasses.", "Amy's glasses.", "Amy's."], k: ["Amy's"] },
+      { u: 2, q: 'Whose shoes are those?', zh: '是你的。', a: ['They are my shoes.', 'My shoes.'], k: ['my'] },
+      { u: 2, q: 'Whose water bottle is this?', zh: '是考官的（考官的＝「你的」）。', a: ["It's your water bottle.", 'Your water bottle.'], k: ['your'] },
+      { u: 2, q: 'Whose workbook is that?', zh: '是 Ben 的。', a: ["It's Ben's workbook.", "Ben's workbook.", "Ben's."], k: ["Ben's"] },
+      { u: 2, q: 'Is this your cap?', zh: '不是，是他的。', a: ["No, it isn't. It's his cap.", "No. It's his cap."], k: ['No', 'his'] },
+      { u: 2, q: 'Are these your glasses?', zh: '是你的。', a: ['Yes, they are.'], k: ['Yes, they are'] },
+      { u: 2, q: 'Are those her shoes?', zh: '不是，是 Amy 的。', a: ["No, they aren't. They are Amy's shoes.", "No. They're Amy's shoes."], k: ['No', "Amy's"] },
+      { u: 2, q: "Is that Tony's backpack?", zh: '對，是 Tony 的。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      { u: 2, q: "It's my umbrella. It's a cap, too!", zh: '這把雨傘也是帽子，你覺得太神奇了。', a: ['Amazing!'], k: ['amazing'] },
+      { u: 2, q: 'My lunchbox!', zh: '考官好像很著急，問他「怎麼回事？」', a: ["What's the matter?"], k: ["What's the matter"] },
+      { u: 2, q: "Is this Amy's water bottle or Ben's water bottle?", zh: '是 Ben 的。', a: ["It's Ben's water bottle.", "Ben's."], k: ["Ben's"] },
+      { u: 2, q: 'Whose shoes are these?', zh: '是他的。', a: ['They are his shoes.', 'His shoes.'], k: ['his'] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'Whose soup is this?', zh: '是她的。', a: ["It's her soup.", 'Her soup.'], k: ['her'] },
+      { u: 12, q: 'Whose noodles are those?', zh: '是 Tony 的。', a: ["They are Tony's noodles.", "Tony's noodles.", "Tony's."], k: ["Tony's"] },
+      { u: 12, q: 'What would you like for lunch?', zh: '你想吃麵。', a: ["I'd like some noodles.", 'Some noodles.', 'Noodles.'], k: ['noodles'] },
+      { u: 12, q: 'Is this your bread?', zh: '不是，是她的。', a: ["No, it isn't. It's her bread.", "No. It's her bread."], k: ['No', 'her'] },
+      { u: 12, q: "Would you like some soup? It's in my lunchbox.", zh: '你要。', a: ['Yes, please.'], k: ['Yes, please'] },
+      { u: 12, q: 'Whose salad is that?', zh: '是你的。', a: ["It's my salad.", 'My salad.'], k: ['my'] }
+    ];
+    const L3 = [
+      { u: 1, q: 'What would you like for lunch?', zh: '你想喝湯。說完後，反問考官午餐想吃什麼。', a: ["I'd like some soup. What would you like for lunch?", "I'd like some soup. What would you like?"], k: ['soup', 'What would you like'], f: "I'd like some noodles." },
+      { u: 1, q: 'Would you like some bread for breakfast?', zh: '不要；你想吃沙拉。說完後，問考官要不要一些沙拉。', a: ["No, thank you. I'd like some salad. Would you like some salad?"], k: ['No, thank you|No, thanks', 'salad', 'Would you like'], f: 'Yes, please.' },
+      { u: 1, q: "I'd like some chicken.", zh: '換你問考官：你晚餐想吃什麼？', a: ['What would you like for dinner?'], k: ['What would you like', 'dinner'], f: "I'd like some noodles." },
+      { u: 1, q: "I'd like some soup.", zh: '換你問考官：你要不要一些麵包？', a: ['Would you like some bread?'], k: ['Would you like', 'bread'], f: 'No, thank you.' },
+      { u: 1, q: "There's no soup.", zh: '說太可惜了，再說你想吃一些麵。', a: ["Too bad! I'd like some noodles."], k: ['too bad', 'noodles'] },
+      { u: 1, q: 'Would you like chicken or noodles for dinner?', zh: '兩個都要。', a: ["I'd like some chicken and some noodles.", 'Chicken and noodles.'], k: ['chicken', 'noodles'] },
+      { u: 1, q: 'What would he like for breakfast?', zh: '他想要麵包，也想喝湯。', a: ["He'd like some bread and some soup.", 'Some bread and some soup.'], k: ['bread', 'soup'] },
+      { u: 1, q: 'Do you like salad?', zh: '不喜歡；你喜歡雞肉。', a: ["No, I don't. I like chicken."], k: ["No, I don't", 'chicken'] },
+      { u: 2, q: 'Whose backpack is that?', zh: '是你的。說完後，問考官這頂帽子是誰的。', a: ["It's my backpack. Whose cap is this?"], k: ['my', 'Whose cap'], f: "It's Tony's cap." },
+      { u: 2, q: 'This is my umbrella.', zh: '換你問考官：那是誰的水壺？', a: ['Whose water bottle is that?'], k: ['Whose water bottle', 'that'], f: "It's Amy's water bottle." },
+      { u: 2, q: 'These are my glasses.', zh: '換你問考官：那些是誰的鞋子？', a: ['Whose shoes are those?'], k: ['Whose shoes', 'those'], f: "They are Ben's shoes." },
+      { u: 2, q: 'Is this your workbook?', zh: '不是，是她的；再說你的習作在你的背包裡。', a: ["No, it isn't. It's her workbook. My workbook is in my backpack."], k: ['No', 'her', 'in my backpack'] },
+      { u: 2, q: 'Are those your shoes?', zh: '不是，是 Tony 的。說完後，反問考官這些是不是他的鞋子。', a: ["No, they aren't. They are Tony's shoes. Are these your shoes?"], k: ['No', "Tony's", 'Are these your shoes'], f: 'Yes, they are.' },
+      { u: 2, q: "It's my cap.", zh: '說你懂了，再問考官：那些是誰的眼鏡？', a: ['I see. Whose glasses are those?'], k: ['I see', 'Whose glasses'], f: 'They are my glasses, too.' },
+      { u: 2, q: 'This lunchbox is a backpack, too!', zh: '說太神奇了，再問考官：這是你的便當盒嗎？', a: ['Amazing! Is it your lunchbox?', 'Amazing! Is this your lunchbox?'], k: ['amazing', 'your lunchbox'], f: 'Yes, it is.' },
+      { u: 2, q: "Whose umbrella is this? Is it Ben's?", zh: '不是 Ben 的，是 Amy 的。', a: ["No, it isn't. It's Amy's umbrella.", "No. It's Amy's."], k: ['No', "Amy's"] },
+      { u: 12, q: 'Whose lunchbox is this?', zh: '是你的；裡面有一些雞肉。', a: ["It's my lunchbox. There's some chicken in it."], k: ['my lunchbox', 'chicken'] },
+      { u: 12, q: 'Whose soup is this?', zh: '是他的；他晚餐想喝一些湯。', a: ["It's his soup. He'd like some soup for dinner."], k: ['his', 'dinner'] },
+      { u: 12, q: 'Would you like some noodles?', zh: '不要；你想喝湯，湯在你的便當盒裡。', a: ["No, thank you. I'd like some soup. It's in my lunchbox."], k: ['No, thank you|No, thanks', 'soup', 'lunchbox'] },
+      { u: 12, q: 'Would you like some salad for lunch?', zh: '要；再問考官：那是誰的便當盒？', a: ['Yes, please. Whose lunchbox is that?'], k: ['Yes, please', 'Whose lunchbox'], f: "It's my lunchbox." }
+    ];
+    build({ key: '6-u34', title: '五下 U3–U4 口語對話考試', file: '五下U3-U4', units: ['hanlin-6-u3', 'hanlin-6-u4'], labels: ['U3', 'U4'],
+      cls: { [FOOD]: '任一種食物', [OWN]: '任一個「誰的」（my／your／his／her／名字＋\'s）' }, L: [L1, L2, L3],
+      scope: "Unit 3 What Would You Like for Dinner?（三餐、五種食物、What would you like for ___? I'd like some ___.、Would you like some ___? Yes, please. / No, thank you.、I see.、Too bad!）；Unit 4 Whose Backpack Is That?（八樣物品、Whose ___ is this/that? It's my/his/Tony's ___.、Whose ___ are these/those? They are ___.、Amazing!、What's the matter?）",
+      note: '五下 Unit 3、Unit 4 都是依學校課程計畫整理、還沒拿課本逐字核對。' });
   })();
 
   window.DATA_ORALS = BANKS;
