@@ -1122,7 +1122,7 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
   // 口語考試不適用。這裡反過來斷言它一題打字都沒有、20 題全是 🎤；題庫、用字範圍、判分的細項在 test/oral.test.js
   TBK.filter(u => u.oral).forEach(u => { for (let k = 0; k < 30; k++) { const o = E.tbOral(u.id);
     ok(o.length === 20 && o.every(q => q.type === 'speak' && q.oral && !KE.isTyped(q)) && o.reduce((s, q) => s + q.pts, 0) === 100, 'oral exam: 20 🎤, no typing (excluded from typed rule on purpose) ' + u.id); } });
-  ok(TBK.filter(u => u.oral).map(u => u.id).join() === 'hanlin-5-u1,hanlin-5-u2', 'oral exam only on 五上 U1, U2');
+  ok(TBK.filter(u => u.oral).map(u => u.id).join() === ctx.window.DATA_ORALS.flatMap(b => b.units).join(), 'oral exam on exactly the units of data/oral.js banks');
   // 4) 一般練習回合：各種勾選組合各 50 回
   const NT = t => !KE.TYPED_TYPES.includes(t) && t !== 'speak' && !KE.SET_ONLY_TYPES.includes(t);
   const choiceT = m => KE.MOD_TYPES[m].filter(NT), mids1 = E.list({ modules: ['words'], types: ['listen-choose'] }).slice(0, 1).map(m => m.id);

@@ -1,12 +1,13 @@
-/* 🎤 口語對話考試題庫：五上 U1–U2（翰林 Here We Go! 第 5 冊；2026-11-01）
+/* 🎤 口語對話考試題庫（翰林 Here We Go!；2026-11-01 起）：每兩課一份 100 題（五上 U1–U2、U3–U4…），下面先寫五上 U1–U2，其他冊別在後面各自一段
    一題＝考官說一句英文（q）→ 小孩用英文口頭回答。100 題照難度排好：1–40 難度 1、41–80 難度 2、81–100 難度 3。
      lv 1：簡短問答，答案是固定句型（不給中文提示）
      lv 2：照中文情境回答（zh＝給小孩看的提示，不寫英文答案）
      lv 3：一題要說兩句（回答＋反問／更正／補充），或照情境自己換字造問句；f＝考官接著回的話（紙本用）
    a：參考答案（___＝開放欄，自由填、不判分）；縮寫自動補展開版（don't → do not、It's → It is）
    k：評分重點＝關鍵字／句型，每一個都要說到才算對；「A|B」＝說到其中一個就好。關鍵字不可以放在 ___ 裡（開放欄不檢查）
-   u：1＝Unit 1（星期）、2＝Unit 2（科目＋Do／Does）、12＝兩課混合；線上題號掛在 hanlin-5-u1（u=1）或 hanlin-5-u2（u=2、12）
-   掛法：這支在 textbook.js 後面載入，把題庫掛到兩個單元的 u.oral；engine.js 註冊成 🎤 題（tb:<單元>:oral:<n>），E.tbOral() 一次抽 20 題。
+   u：1＝第一課、2＝第二課、12＝兩課混合；線上題號掛在第一課（u=1）或第二課（u=2、12）
+   類別關鍵字（任一個星期／科目／地點／數字…）：開放欄 ___ 要說出一個同類的字，只說這個關鍵答案（例如 Monday.）也算對
+   掛法：這支在 textbook.js 後面載入，window.DATA_ORALS＝全部題庫，每份掛到自己兩個單元的 u.oral；engine.js 註冊成 🎤 題（tb:<單元>:oral:<n>），E.tbOral() 一次抽 20 題。
    紙本考卷由 考卷\gen_oral.js 用這份資料產生（考卷只留本機）。 */
 (function () {
   const Y = (who, aux) => [`Yes, ${who} ${aux}.`, `No, ${who} ${aux === 'do' ? "don't" : "doesn't"}.`];
@@ -125,16 +126,151 @@
     { u: 1, q: "Let's go to the park on Saturday.", zh: '說這是好主意，再請對方跟你走。', a: ['Good idea! Follow me.', 'Good idea. Follow me, please.'], k: ['Good idea', 'follow me'] },
     { u: 1, q: 'Is it Sunday today? I go to the park on Sunday.', zh: '今天真的是星期日。先回答，再祝考官玩得愉快。', a: ['Yes, it is. Have a good time!'], k: ['Yes, it is', 'have a good time'] }
   ];
-  // 縮寫補展開版（保留大小寫）：don't → do not、isn't → is not、It's → It is、What's → What is、I'm → I am（Let's 不動）
-  const full = s => s.replace(/\b(\w+)n't\b/g, '$1 not').replace(/\b(It|it|What|what)'s\b/g, '$1 is').replace(/\bI'm\b/g, 'I am');
-  const qs = [[1, L1], [2, L2], [3, L3]].flatMap(([lv, L]) => L.map(x => Object.assign({ lv }, x))).map((x, i) => {
-    const a = [...new Set(x.a.flatMap(s => [s, full(s)]))];
-    // 科目 PE：辨識常寫成 P.E.，關鍵字兩種都收
-    const k = x.k.map(s => (/\bPE\b/.test(s) && !/P\.E\./.test(s) ? s + '|' + s.replace(/\bPE\b/g, 'P.E.') : s));
-    const kz = k.map(s => (s === DAY ? '任一個星期' : s === SUBJ ? '任一個科目' : s));
-    return Object.assign({}, x, { n: i + 1, a, k, kz, tb: x.u === 1 ? 'hanlin-5-u1' : 'hanlin-5-u2' });
-  });
-  const bank = { key: '5-u12', title: '五上 U1–U2 口語對話考試', units: ['hanlin-5-u1', 'hanlin-5-u2'], pick: { 1: 8, 2: 8, 3: 4 }, qs };
-  window.DATA_ORAL = bank;
-  (window.DATA_TEXTBOOK || []).forEach(u => { if (bank.units.includes(u.id)) u.oral = bank; });
+  // ================= 共用：組題庫 =================
+  // 縮寫補展開版（保留大小寫）：don't → do not、It's → It is、I'm → I am、He's → He is、There's → There is、We're → We are…（Let's 不動）
+  const full = s => s.replace(/\b(\w+)n't\b/g, '$1 not').replace(/\b(It|it|What|what|He|he|She|she|There|there|Where|where)'s\b/g, '$1 is')
+    .replace(/\bI'm\b/g, 'I am').replace(/\b(We|we|They|they|You|you)'re\b/g, '$1 are');
+  const BANKS = [];
+  // def：{key, title, file（紙本檔名用）, units:[第一課, 第二課], labels:['U1','U2'], cls:{類別關鍵字: 中文}, scope（紙本範圍說明）, note（核對狀態）, L:[難度1, 2, 3]}
+  // 題目的 u：1＝第一課、2＝第二課、12＝兩課混合（線上題號掛第一課或第二課）
+  function build(def) {
+    const qs = def.L.flatMap((L, j) => L.map(x => Object.assign({ lv: j + 1 }, x))).map((x, i) => {
+      const a = [...new Set(x.a.flatMap(s => [s, full(s)]))];
+      // 科目 PE：辨識常寫成 P.E.，關鍵字兩種都收
+      const k = x.k.map(s => (/\bPE\b/.test(s) && !/P\.E\./.test(s) ? s + '|' + s.replace(/\bPE\b/g, 'P.E.') : s));
+      const kz = k.map(s => def.cls[s] || s);
+      return Object.assign({}, x, { n: i + 1, a, k, kz, tb: x.u === 1 ? def.units[0] : def.units[1] });
+    });
+    BANKS.push({ key: def.key, title: def.title, file: def.file, units: def.units, labels: def.labels, scope: def.scope, note: def.note, pick: { 1: 8, 2: 8, 3: 4 }, qs });
+  }
+  build({ key: '5-u12', title: '五上 U1–U2 口語對話考試', file: '五上U1-U2', units: ['hanlin-5-u1', 'hanlin-5-u2'], labels: ['U1', 'U2'], cls: { [DAY]: '任一個星期', [SUBJ]: '任一個科目' }, L: [L1, L2, L3],
+    scope: "Unit 1 What Day Is Today?（星期、What day is today? / Is it ___ today?、Good idea!、Have a good time!）；Unit 2 Do You Have PE Class on Monday?（八個科目、Do you / Does he/she have ___ class on ___?、Can we go to the park? Sure, follow me. I'm in a hurry.）",
+    note: 'Unit 1 是依學校課程計畫整理、還沒拿課本逐字核對；Unit 2 依課本原文。' });
+
+  // ================= 五上 U3–U4（Where Are You Going? ／ How Many Koalas Are There?；兩課都待課本核對）=================
+  (() => {
+    const PLACE = 'bank|bookstore|hospital|library|museum|park|post office|supermarket', STREET = 'Blue|Green|Red|Yellow';
+    const NUM = 'one|two|three|four|five|six|seven|eight|nine|ten';
+    const BE = (who, be) => [`Yes, ${who} ${be}.`, `No, ${who} ${be === 'am' ? "'m not" : be + "n't"}.`.replace(" 'm", "'m")];
+    const BEK = (who, be) => [`Yes, ${who} ${be}|No, ${who} ${be === 'am' ? "'m not" : be + "n't"}`.replace(" 'm", "'m")];
+    const L1 = [
+      // ---- Unit 3：地點、Where are you going?、Where's the ___? ----
+      { u: 1, q: 'Where are you going?', a: ["I'm going to the ___.", 'To the ___.', 'The ___.'], k: [PLACE] },
+      { u: 1, q: 'Where is he going?', a: ["He's going to the ___.", 'To the ___.'], k: [PLACE] },
+      { u: 1, q: 'Where is she going?', a: ["She's going to the ___.", 'To the ___.'], k: [PLACE] },
+      { u: 1, q: 'Where are you and Amy going?', a: ["We're going to the ___.", 'To the ___.'], k: [PLACE] },
+      { u: 1, q: 'Where are Amy and Ben going?', a: ["They're going to the ___.", 'To the ___.'], k: [PLACE] },
+      { u: 1, q: "Where's the park?", a: ["It's on ___ Street.", 'On ___ Street.'], k: [STREET] },
+      { u: 1, q: 'Where is the library?', a: ["It's on ___ Street.", 'On ___ Street.'], k: [STREET] },
+      { u: 1, q: "Excuse me. Where's the post office?", a: ["It's on ___ Street.", 'On ___ Street.'], k: [STREET] },
+      { u: 1, q: 'Excuse me. Where is the hospital?', a: ["It's on ___ Street.", 'On ___ Street.'], k: [STREET] },
+      { u: 1, q: 'Are you going to the park?', a: BE('I', 'am'), k: BEK('I', 'am') },
+      { u: 1, q: 'Is she going to the museum?', a: BE('she', 'is'), k: BEK('she', 'is') },
+      { u: 1, q: 'Is he going to the hospital?', a: BE('he', 'is'), k: BEK('he', 'is') },
+      { u: 1, q: 'Are we going to the supermarket?', a: BE('we', 'are'), k: BEK('we', 'are') },
+      { u: 1, q: 'Is Amy going to the post office?', a: BE('she', 'is'), k: BEK('she', 'is') },
+      { u: 1, q: 'Is the bookstore on Green Street?', a: BE('it', 'is'), k: BEK('it', 'is') },
+      { u: 1, q: 'Is the museum on Red Street or Blue Street?', a: ["It's on Red Street.", "It's on Blue Street.", 'Red Street.', 'Blue Street.'], k: ['Red|Blue'] },
+      { u: 1, q: 'Are you going to the bank or the post office?', a: ["I'm going to the bank.", "I'm going to the post office.", 'The bank.', 'The post office.'], k: ['bank|post office'] },
+      { u: 1, q: 'Are you going to the library or the bookstore?', a: ["I'm going to the library.", "I'm going to the bookstore.", 'The library.', 'The bookstore.'], k: ['library|bookstore'] },
+      { u: 1, q: 'Say cheese!', a: ['Cheese!', 'Say cheese!'], k: ['cheese'] },
+      // ---- Unit 4：動物、How many ___ are there?、Does he/she like ___? ----
+      { u: 2, q: 'How many lions are there?', a: ['There are ___ lions.', "There's one lion.", '___.'], k: [NUM] },
+      { u: 2, q: 'How many koalas are there?', a: ['There are ___ koalas.', "There's one koala.", '___.'], k: [NUM] },
+      { u: 2, q: 'How many elephants are there?', a: ['There are ___ elephants.', "There's one elephant.", '___.'], k: [NUM] },
+      { u: 2, q: 'How many horses are there?', a: ['There are ___ horses.', "There's one horse.", '___.'], k: [NUM] },
+      { u: 2, q: 'How many monkeys are there?', a: ['There are ___ monkeys.', "There's one monkey.", '___.'], k: [NUM] },
+      { u: 2, q: 'Is there one tiger?', a: ['Yes, there is.', "No, there isn't."], k: ["Yes, there is|No, there isn't"] },
+      { u: 2, q: 'Are there two horses?', a: ['Yes, there are.', "No, there aren't."], k: ["Yes, there are|No, there aren't"] },
+      { u: 2, q: 'Is there one zebra or two zebras?', a: ["There's one zebra.", 'There are two zebras.', 'One.', 'Two.'], k: ['one|two'] },
+      { u: 2, q: 'Do you like turtles?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Do you like zebras?', a: Y('I', 'do'), k: YK('I', 'do') },
+      { u: 2, q: 'Does he like tigers?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 2, q: 'Does she like elephants?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 2, q: 'Does Ben like horses?', a: Y('he', 'does'), k: YK('he', 'does') },
+      { u: 2, q: 'Does Amy like koalas?', a: Y('she', 'does'), k: YK('she', 'does') },
+      { u: 2, q: 'Do they like monkeys?', a: Y('they', 'do'), k: YK('they', 'do') },
+      { u: 2, q: 'Do you like lions or tigers?', a: ['I like lions.', 'I like tigers.', 'Lions.', 'Tigers.'], k: ['lions|tigers|lion|tiger'] },
+      { u: 2, q: 'Does he like zebras or horses?', a: ['He likes zebras.', 'He likes horses.', 'Zebras.', 'Horses.'], k: ['zebras|horses|zebra|horse'] },
+      { u: 2, q: 'Does she like monkeys or koalas?', a: ['She likes monkeys.', 'She likes koalas.', 'Monkeys.', 'Koalas.'], k: ['monkeys|koalas|monkey|koala'] },
+      { u: 2, q: 'Bye! Take care.', a: ['Bye! Take care.', 'Bye!', 'Take care!'], k: ['bye|take care'] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'Are there two koalas in the park?', a: ['Yes, there are.', "No, there aren't."], k: ["Yes, there are|No, there aren't"] },
+      { u: 12, q: 'Where are they going?', a: ["They're going to the ___.", 'To the ___.'], k: [PLACE] }
+    ];
+    const L2 = [
+      // ---- Unit 3 ----
+      { u: 1, q: 'Where are you going?', zh: '你要去圖書館。', a: ["I'm going to the library.", 'To the library.', 'The library.'], k: ['library'] },
+      { u: 1, q: 'Where is she going?', zh: '她要去銀行。', a: ["She's going to the bank.", 'To the bank.'], k: ['bank'] },
+      { u: 1, q: 'Where is he going?', zh: '他要去醫院。', a: ["He's going to the hospital.", 'To the hospital.'], k: ['hospital'] },
+      { u: 1, q: 'Where are you going?', zh: '你和弟弟要一起去超級市場。', a: ["We're going to the supermarket.", 'To the supermarket.'], k: ['supermarket'] },
+      { u: 1, q: 'Where are they going?', zh: '他們要去公園。', a: ["They're going to the park.", 'To the park.'], k: ['park'] },
+      { u: 1, q: "Where's the museum?", zh: '博物館在綠街上。', a: ["It's on Green Street.", 'On Green Street.'], k: ['Green'] },
+      { u: 1, q: 'Where is the post office?', zh: '郵局在黃街上。', a: ["It's on Yellow Street.", 'On Yellow Street.'], k: ['Yellow'] },
+      { u: 1, q: "Excuse me. Where's the bookstore?", zh: '書店在紅街上。', a: ["It's on Red Street.", 'On Red Street.'], k: ['Red'] },
+      { u: 1, q: "Where's the park?", zh: '公園在藍街上。', a: ["It's on Blue Street.", 'On Blue Street.'], k: ['Blue'] },
+      { u: 1, q: 'Is the bank on Red Street?', zh: '沒錯，銀行在紅街上。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      { u: 1, q: 'Is the library on Blue Street?', zh: '不是，圖書館在綠街上。', a: ["No, it isn't. It's on Green Street.", "No. It's on Green Street."], k: ['No', 'Green'] },
+      { u: 1, q: 'Are you going to the museum?', zh: '對，你要去博物館。', a: ['Yes, I am.'], k: ['Yes, I am'] },
+      { u: 1, q: 'Is he going to the park?', zh: '不是，他要去書店。', a: ["No, he isn't. He's going to the bookstore.", "No. He's going to the bookstore."], k: ['No', 'bookstore'] },
+      { u: 1, q: 'Is she going to the hospital?', zh: '對，她要去醫院。', a: ['Yes, she is.'], k: ['Yes, she is'] },
+      { u: 1, q: 'One, two, three!', zh: '要拍照了，請大家笑一個。', a: ['Say cheese!'], k: ['say cheese'] },
+      // ---- Unit 4 ----
+      { u: 2, q: 'How many lions are there?', zh: '看圖：有三隻獅子。', a: ['There are three lions.', 'Three.', 'Three lions.'], k: ['three'] },
+      { u: 2, q: 'How many koalas are there?', zh: '看圖：只有一隻無尾熊。', a: ["There's one koala.", 'One.', 'One koala.'], k: ['one'] },
+      { u: 2, q: 'How many monkeys are there?', zh: '看圖：有十隻猴子。', a: ['There are ten monkeys.', 'Ten.', 'Ten monkeys.'], k: ['ten'] },
+      { u: 2, q: 'How many zebras are there?', zh: '看圖：有兩匹斑馬。', a: ['There are two zebras.', 'Two.', 'Two zebras.'], k: ['two'] },
+      { u: 2, q: 'How many elephants are there?', zh: '看圖：有五頭大象。', a: ['There are five elephants.', 'Five.', 'Five elephants.'], k: ['five'] },
+      { u: 2, q: 'How many turtles are there?', zh: '看圖：有八隻烏龜。', a: ['There are eight turtles.', 'Eight.', 'Eight turtles.'], k: ['eight'] },
+      { u: 2, q: 'How many horses are there?', zh: '看圖：有四匹馬。', a: ['There are four horses.', 'Four.', 'Four horses.'], k: ['four'] },
+      { u: 2, q: 'Is there one tiger?', zh: '不是，有兩隻老虎。', a: ['No, there are two tigers.', "No, there isn't. There are two tigers."], k: ['No', 'two'] },
+      { u: 2, q: 'Are there two lions?', zh: '對，有兩隻獅子。', a: ['Yes, there are.'], k: ['Yes, there are'] },
+      { u: 2, q: 'Does he like tigers?', zh: '他喜歡。', a: ['Yes, he does.'], k: ['Yes, he does'] },
+      { u: 2, q: 'Does she like horses?', zh: '她不喜歡；她喜歡斑馬。', a: ["No, she doesn't. She likes zebras."], k: ["No, she doesn't", 'zebras'] },
+      { u: 2, q: 'Does he like koalas?', zh: '他不喜歡；他喜歡獅子。', a: ["No, he doesn't. He likes lions."], k: ["No, he doesn't", 'lions'] },
+      { u: 2, q: 'Do you like monkeys?', zh: '你很喜歡猴子。', a: ['Yes, I do.'], k: ['Yes, I do'] },
+      { u: 2, q: 'Do you like turtles?', zh: '你不喜歡烏龜。', a: ["No, I don't."], k: ["No, I don't"] },
+      { u: 2, q: 'Do they like elephants?', zh: '他們喜歡大象。', a: ['Yes, they do.'], k: ['Yes, they do'] },
+      { u: 2, q: 'Does she like lions?', zh: '她喜歡獅子。', a: ['Yes, she does.'], k: ['Yes, she does'] },
+      { u: 2, q: 'Do you like lions or tigers?', zh: '你喜歡老虎。', a: ['I like tigers.', 'Tigers.'], k: ['tigers|tiger'] },
+      { u: 2, q: 'Does she like koalas or monkeys?', zh: '她喜歡無尾熊。', a: ['She likes koalas.', 'Koalas.'], k: ['koalas|koala'] },
+      { u: 2, q: "There's a tiger!", zh: '朋友嚇壞了，請他冷靜下來。', a: ['Calm down.', 'Calm down!'], k: ['calm down'] },
+      { u: 2, q: 'Bye!', zh: '跟考官說再見，請他保重。', a: ['Bye! Take care.', 'Take care!'], k: ['take care'] },
+      // ---- 兩課混合 ----
+      { u: 12, q: 'Where is he going?', zh: '他要去郵局。', a: ["He's going to the post office.", 'To the post office.'], k: ['post office'] },
+      { u: 12, q: "Where's the hospital?", zh: '醫院在紅街上。', a: ["It's on Red Street.", 'On Red Street.'], k: ['Red'] },
+      { u: 12, q: 'Is the supermarket on Yellow Street?', zh: '對，超級市場在黃街上。', a: ['Yes, it is.'], k: ['Yes, it is'] },
+      { u: 12, q: 'How many koalas are there in the park?', zh: '公園裡有六隻無尾熊。', a: ['There are six koalas.', 'Six.', 'Six koalas.'], k: ['six'] },
+      { u: 12, q: 'Are you going to the bookstore?', zh: '不是，你要去圖書館。', a: ["No, I'm not. I'm going to the library.", "No. I'm going to the library."], k: ['No', 'library'] }
+    ];
+    const L3 = [
+      { u: 1, q: 'Where are you going?', zh: '你要去圖書館。說完後，反問考官要去哪裡。', a: ["I'm going to the library. Where are you going?"], k: ['library', 'Where are you going'], f: "I'm going to the bank." },
+      { u: 1, q: "Excuse me. Where's the museum?", zh: '博物館在藍街上。告訴他，再說你也要去博物館。', a: ["It's on Blue Street. I'm going to the museum, too.", "It's on Blue Street. I'm going to the museum."], k: ['Blue', 'going to the museum'] },
+      { u: 1, q: "I'm going to the post office.", zh: '換你問考官：郵局在哪裡？', a: ["Where's the post office?"], k: ['Where', 'the post office'], f: "It's on Yellow Street." },
+      { u: 1, q: "I'm going to the supermarket.", zh: '換你問考官：她（旁邊那個女生）要去哪裡？', a: ['Where is she going?'], k: ['Where is she', 'going'], f: "She's going to the bookstore." },
+      { u: 1, q: 'This is Green Street.', zh: '先有禮貌地說「不好意思」，再問考官：醫院在哪裡？', a: ["Excuse me. Where's the hospital?"], k: ['Excuse me', "Where's the hospital"], f: "It's on Green Street." },
+      { u: 1, q: 'Is she going to the library?', zh: '不是；她要去書店，書店在紅街上。', a: ["No, she isn't. She's going to the bookstore. It's on Red Street."], k: ['No', 'bookstore', 'Red'] },
+      { u: 1, q: 'Are you going to the bank?', zh: '不是；你要去郵局。說完後，反問考官是不是要去銀行。', a: ["No, I'm not. I'm going to the post office. Are you going to the bank?"], k: ['No', 'post office', 'Are you going to the bank'], f: 'Yes, I am.' },
+      { u: 1, q: 'Where is he going?', zh: '他要去超級市場；超級市場在黃街上。', a: ["He's going to the supermarket. It's on Yellow Street."], k: ['supermarket', 'Yellow'] },
+      { u: 2, q: 'How many lions are there?', zh: '有四隻獅子。回答後，再問考官有幾隻老虎。', a: ['There are four lions. How many tigers are there?'], k: ['four', 'How many tigers'], f: 'There are two tigers.' },
+      { u: 2, q: 'There are five monkeys.', zh: '換你問考官：有幾隻無尾熊？', a: ['How many koalas are there?'], k: ['How many', 'koalas'], f: "There's one koala." },
+      { u: 2, q: 'Does he like zebras?', zh: '他不喜歡斑馬，他喜歡馬。說完後，問考官喜不喜歡馬。', a: ["No, he doesn't. He likes horses. Do you like horses?"], k: ["No, he doesn't", 'horses', 'Do you like'], f: 'Yes, I do.' },
+      { u: 2, q: 'She likes elephants.', zh: '換你問考官：她喜歡烏龜嗎？', a: ['Does she like turtles?'], k: ['Does she like', 'turtles'], f: "No, she doesn't." },
+      { u: 2, q: 'Do you like tigers?', zh: '你喜歡；再說有三隻老虎。', a: ['Yes, I do. There are three tigers.'], k: ['Yes, I do', 'three'] },
+      { u: 2, q: 'How many koalas are there?', zh: '只有一隻；再說她喜歡無尾熊。', a: ["There's one koala. She likes koalas."], k: ['one', 'She likes koalas'] },
+      { u: 2, q: 'Does she like monkeys?', zh: '她喜歡；再說有十隻猴子。', a: ['Yes, she does. There are ten monkeys.'], k: ['Yes, she does', 'ten'] },
+      { u: 2, q: 'How many elephants are there?', zh: '有兩頭；再說他喜歡大象。', a: ['There are two elephants. He likes elephants.'], k: ['two', 'He likes elephants'] },
+      { u: 2, q: "There's a lion!", zh: '請朋友冷靜下來，再告訴他：只有一隻獅子。', a: ["Calm down. There's one lion."], k: ['calm down', 'one lion'] },
+      { u: 12, q: 'Are you going to the park?', zh: '對，你要去公園；再說公園裡有兩隻烏龜。', a: ['Yes, I am. There are two turtles in the park.'], k: ['Yes, I am', 'two turtles'] },
+      { u: 12, q: 'Say cheese!', zh: '拍照時要說的話，說完再數一、二、三。', a: ['Cheese! One, two, three!'], k: ['cheese', 'one two three'] },
+      { u: 12, q: 'Bye!', zh: '跟考官說再見、請他保重，再說你要去圖書館。', a: ["Bye! Take care. I'm going to the library."], k: ['take care', 'library'] }
+    ];
+    build({ key: '5-u34', title: '五上 U3–U4 口語對話考試', file: '五上U3-U4', units: ['hanlin-5-u3', 'hanlin-5-u4'], labels: ['U3', 'U4'],
+      cls: { [PLACE]: '任一個地點', [STREET]: '任一條街（Blue／Green／Red／Yellow）', [NUM]: '任一個數字（one～ten）' }, L: [L1, L2, L3],
+      scope: "Unit 3 Where Are You Going?（八個地點、Where are you going? I'm going to the ___.、Where's the ___? It's on ___ Street.、Say cheese!、Excuse me.）；Unit 4 How Many Koalas Are There?（八種動物＋複數、How many ___ are there? There are ___.／There's one ___.、Does he/she like ___?、Take care.、Calm down.）",
+      note: 'Unit 3、Unit 4 都是依學校課程計畫整理、還沒拿課本逐字核對。' });
+  })();
+
+  window.DATA_ORALS = BANKS;
+  BANKS.forEach(b => (window.DATA_TEXTBOOK || []).forEach(u => { if (b.units.includes(u.id)) u.oral = b; }));
 })();
