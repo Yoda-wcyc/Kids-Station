@@ -19,6 +19,8 @@
    - 乘法快算（math:mx，2026-10-21）：⏱️ 挑戰「二位數×一位數」「二位數×二位數」各有一輪（20 題）答對 ≥ 90% 而且平均每題在秒數內（同一輪兩個都要到；記在 mx.<題型>.ok）：
      二位數×一位數 ≤ 10 秒、二位數×二位數 ≤ 20 秒（Yoda 2026-10-21 由 10 秒放寬）；其他題型（九九、整十、三位×一位）不算完成，達標記號照 10 秒。
    - AI 三頁（ai:<頁>）：各玩完一次（看到結果頁）。
+   - 國語〈閱讀素養〉（zh:L1～zh:L4，2026-11-01）：該級目錄（chinese/data/catalog.js，data.zhCatalog）的每一篇都完成（kids_done.zh 有那篇；
+     一篇完成＝自動判分題答對率 ≥ 70%＋開放題都寫了，由 chinese/reading.js 判、KidsDone.record('zh', 篇id)）。沒載入目錄的頁面不列國語。
    - Scratch 七堂（scratch:<1–7>）：各有「我完成了」（kids_scratch_done，只讀）。
    - 英文題庫（課本以外）：只算學會百分比（依類別、等級），不判完成。
 
@@ -80,7 +82,7 @@
     if (sec === 'tb') { const p = s.tb[key]; s.tb[key] = { best: Math.max(p ? p.best : 0, v), last: v, at: t }; }
     else if (sec === 'cz' || sec === 'czFirst' || sec === 'qz') { const p = Object.assign({}, s.mm[key]); p[sec] = Math.max(p[sec] == null ? 0 : p[sec], v); s.mm[key] = p; }
     else if (sec === 'sd' || sec === 'gw') s[sec][key] = Math.max(s[sec][key] == null ? 0 : s[sec][key], v);
-    else if (sec === 'bal' || sec === 'ai') { if (!s[sec][key]) s[sec][key] = t; }
+    else if (sec === 'bal' || sec === 'ai' || sec === 'zh') { if (!s[sec][key]) s[sec][key] = t; }   // zh：國語閱讀第一次完成這篇的時間（val 不用）
     else if (sec === 'fr') s.fr[key] = Math.max(s.fr[key] == null ? 0 : s.fr[key], v);
     else if (sec === 'mp') s.mp[key] = Math.max(s.mp[key] == null ? 0 : s.mp[key], v);
     else if (sec === 'mx') {   // val＝{acc:%, sec:平均每題秒數}；同一輪 acc ≥ 90 且 sec ≤ 該題型門檻（mxSec）才記 ok
@@ -183,6 +185,12 @@
     });
     return result(checks, Object.keys(s).length > 0);
   }
+  // ---------- 國語〈閱讀素養〉：每一級（L1～L4）一個單元，目錄 data.zhCatalog（chinese/data/catalog.js）；一篇完成＝kids_done.zh 有它（reading.js 判：自動判分 ≥ 70%＋開放題都寫）----------
+  const ZH_LV = { 1: '讀懂字面', 2: '推論理解', 3: '長文＋跨領域', 4: '多文本與深度思考' };
+  function zhLevel(lv, data, ctx) {
+    const ids = (data.zhCatalog || []).filter(c => c.lv === lv).map(c => c.id), s = SM.normDone(ctx.done).zh, n = ids.filter(id => s[id]).length, t = ids.length;
+    return result([{ label: `L${lv} 的 ${t} 篇都完成（${n}/${t}）`, ok: t > 0 && n === t, p: t ? n / t : 0, detail: n ? `已完成 ${n} 篇，還差 ${t - n} 篇` : '還沒有完成的文章：自動判分題答對 70% 以上、想一想都寫了，就完成一篇' }], n > 0);
+  }
   // ---------- AI ----------
   function aiPage(pg, ctx) {
     const at = SM.normDone(ctx.done).ai[pg];
@@ -209,15 +217,16 @@
     if (key === 'math:mx') return multiply(ctx);
     if (key === 'math:frc') return fraction(ctx);
     if ((m = /^ai:(.+)$/.exec(key))) return aiPage(m[1], ctx);
+    if ((m = /^zh:L([1-4])$/.exec(key))) return zhLevel(+m[1], data, ctx);
     if ((m = /^scratch:(\d)$/.exec(key))) return scratchLesson(+m[1], ctx);
     return null;
   }
 
   // ---------- 課程地圖：各科的單元清單＋狀態＋整體完成率 ----------
   function catalog(data) {
-    const tb = (data && data.textbook) || [];
-    return [
-      { k: 'english', name: '英文課本', icon: '📘', units: tb.map(u => ({ key: 'tb:' + u.id, group: u.book || '', title: u.title.replace(/^五[上下] /, ''), sub: u.theme || '', href: `index.html#tb/${u.id}/learn` })) },
+    const tb = (data && data.textbook) || [], zh = (data && data.zhCatalog) || [];
+    return (zh.length ? [{ k: 'chinese', name: '國語閱讀', icon: '📚', units: [1, 2, 3, 4].map(lv => ({ key: 'zh:L' + lv, title: `L${lv}　${ZH_LV[lv]}`, sub: `${zh.filter(c => c.lv === lv).length} 篇`, href: 'index.html#s/chinese/reading' })) }] : []).concat([
+      { k: 'english', name: '英文課本', icon: '📘', units: tb.map(u => ({ key: 'tb:' + u.id, group: u.book || '', title: u.title.replace(/^[五六][上下] /, ''), sub: u.theme || '', href: `index.html#tb/${u.id}/learn` })) },
       { k: 'social', name: '社會', icon: '🌏', units: MM_UNITS.social.map(([id, t], i) => ({ key: 'mm:social:' + id, title: `單元${NUMS[i]}　${t}`, href: `index.html#s/social/${id}` })) },
       { k: 'science', name: '自然', icon: '🔬', units: MM_UNITS.science.map(([id, t], i) => ({ key: 'mm:science:' + id, title: `單元${NUMS[i]}　${t}`, href: `index.html#s/science/${id}` })) },
       { k: 'math', name: '數學', icon: '🔢', units: [
@@ -229,7 +238,7 @@
         { key: 'math:frc', title: '分數比較大小', href: 'index.html#s/math/fraction' }] },
       { k: 'ai', name: 'AI', icon: '🤖', units: AI.map(([id, t, i]) => ({ key: 'ai:' + id, title: `${i} ${t}`, href: `index.html#s/ai/${id}` })) },
       { k: 'scratch', name: 'Scratch 塔防', icon: '🏰', units: SCRATCH.map((t, i) => ({ key: 'scratch:' + (i + 1), title: `第 ${i + 1} 堂　${t}`, href: `game/scratch-td/web/lesson${i + 1}.html` })) }
-    ];
+    ]);
   }
   // 英文題庫（課本以外）：學會百分比，依類別、等級
   function bank(data, ctx) {

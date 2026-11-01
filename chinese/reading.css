@@ -1,0 +1,81 @@
+/* 國語〈閱讀素養〉頁面樣式（顏色、按鈕、.opt/.chip/.fb 沿用 ../style.css） */
+body{font-size:20px}
+.zr-wrap{max-width:1180px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-right)) 96px max(16px,env(safe-area-inset-left))}
+.zr-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 12px}
+.zr-top h1{font-size:1.35rem;margin:0;flex:1 1 auto;min-width:0}
+.zr-auth{position:absolute;top:max(10px,env(safe-area-inset-top));right:max(16px,env(safe-area-inset-right));z-index:20}
+.zr-top{padding-right:120px}
+.in-frame .zr-top{padding-right:0}
+.zr-intro{margin:0 0 14px;color:var(--muted)}
+/* 列表 */
+.zr-lv{margin:0 0 18px}
+.zr-lv h2{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:1.2rem;margin:0 0 4px}
+.zr-lv h2 small{font-size:.85rem;color:var(--muted);font-weight:600}
+.zr-lock{background:#f4f5f7;border:2px dashed #c3c9d2;border-radius:14px;padding:8px 12px;margin:6px 0 10px;color:#344150;font-size:.95rem}
+.zr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.zr-card{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:var(--ink);background:#fff;border:3px solid var(--line);border-radius:18px;padding:12px 14px;box-shadow:0 3px 0 var(--line);min-height:120px}
+.zr-card b{font-size:1.12rem;line-height:1.4}
+.zr-card.done{border-color:#2fb36d;background:#f3fbf6}
+.zr-card.tried{border-color:#f0b429}
+.zr-card.locked{opacity:.55;border-style:dashed;box-shadow:none;cursor:not-allowed}
+.zr-tags{display:flex;flex-wrap:wrap;gap:4px 6px;font-size:.82rem}
+.zr-tag{border-radius:99px;padding:1px 10px;background:#fff2dd;color:#b45309;font-weight:700}
+.zr-tag.d{background:#e8f4ff;color:#1d5d99}
+.zr-st{font-size:.9rem;font-weight:700;margin-top:auto}
+.zr-empty{color:var(--muted);font-size:.95rem;margin:4px 0}
+/* 閱讀 */
+.zr-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px}
+.zr-read{display:block}
+.zr-art,.zr-qs{min-width:0}
+.zr-art{background:#fff;border:2px solid var(--line);border-radius:20px;padding:18px 22px;font-size:22px;line-height:1.95;letter-spacing:.02em}
+.zr-art h2{font-size:1.2em;margin:0 0 6px;line-height:1.5}
+.zr-art h3{font-size:1.05em;margin:18px 0 4px;color:#b45309}
+.zr-art p{margin:0 0 .9em;text-indent:2em}
+.zr-art .zr-saying{background:#fff4c2;border-radius:8px;box-shadow:0 0 0 4px #fff4c2}
+.zr-doc{margin:22px -6px 10px;padding:8px 12px;border-radius:12px;background:#263445;color:#fff;line-height:1.5}
+.zr-doc b{display:block;font-size:1.08rem}.zr-doc small{opacity:.85;font-size:.85rem}
+.zr-art .zr-doc:first-child{margin-top:0}
+.zr-poem{margin:8px 0 14px 2em;line-height:2}
+.zr-box{border:3px solid #f1c27d;background:#fffaf0;border-radius:14px;padding:10px 14px;margin:6px 0 14px;line-height:1.7}
+.zr-box b{display:block;margin-bottom:4px}.zr-box p{text-indent:0;margin:0 0 4px}
+.zr-fig{margin:10px 0 16px}
+.zr-fig figcaption{font-size:.92rem;line-height:1.55;color:#56616f;margin:6px 0;text-indent:0}
+.zr-tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.zr-fig table{border-collapse:collapse;width:100%;font-size:1rem;line-height:1.5;background:#fff}
+.zr-fig th,.zr-fig td{border:2px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+.zr-fig th{background:#fff2dd}
+.zr-svg svg{display:block;width:100%;height:auto;max-width:680px;margin:0 auto;font-family:inherit}
+.zr-tl{list-style:none;margin:0;padding:0 0 0 18px;border-left:4px solid #f1c27d}
+.zr-tl li{position:relative;margin:0 0 10px;line-height:1.6}
+.zr-tl li::before{content:'';position:absolute;left:-27px;top:.45em;width:14px;height:14px;border-radius:50%;background:var(--pri)}
+.zr-tl b{display:block;color:#b45309}
+.zr-qs h2{font-size:1.2rem;margin:0 0 8px}
+.zr-q{background:#fff;border:2px solid var(--line);border-radius:18px;padding:14px 16px;margin:0 0 14px}
+.zr-q.ok{border-color:var(--ok)}.zr-q.no{border-color:var(--no)}
+.zr-qh{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:.85rem;color:var(--muted);font-weight:700;margin-bottom:6px}
+.zr-qt{font-size:21px;font-weight:700;line-height:1.6;margin:0 0 10px}
+.zr-q .opt{min-height:56px;font-size:19px;text-align:left;padding:8px 14px}
+.zr-q .chip{font-family:inherit;font-size:1.05rem}
+.zr-q .fb{margin-top:10px;padding:10px 14px}.zr-q .fbh{font-size:1.15rem}
+.zr-open textarea{width:100%;min-height:130px;box-sizing:border-box;font:inherit;font-size:19px;line-height:1.7;padding:10px 12px;border:3px solid var(--line);border-radius:14px;background:#fffdf7}
+.zr-open textarea:focus{outline:none;border-color:var(--pri)}
+.zr-open .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.zr-ref{background:#eef7ff;border:3px solid #9fd0f5;border-radius:14px;padding:10px 14px;margin-top:10px;line-height:1.7}
+.zr-ref ul{list-style:none;padding:0;margin:6px 0 0}.zr-ref li{margin:4px 0}
+.zr-ref label{display:flex;gap:8px;align-items:flex-start;min-height:44px;cursor:pointer}
+.zr-ref input{width:24px;height:24px;flex:none;margin-top:4px;accent-color:var(--ok)}
+.zr-msg{color:#b4232a;font-weight:700}
+.zr-res{text-align:center}
+.zr-res .score{font-size:2rem;font-weight:800}
+.zr-res .btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+.zr-jump{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:8px;z-index:40;background:rgba(255,248,236,.95);padding:6px;border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.zr-jump[hidden]{display:none}
+.zr-mk-art summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:700;color:#1d5d99}
+.zr-mk-art .zr-art{font-size:19px;padding:12px 14px;margin-top:6px}
+/* 橫向大畫面：文章和題目並排，各自捲動（作答時文章一直看得到） */
+@media (min-width:1000px) and (orientation:landscape){
+  .zr-read{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+  .zr-art,.zr-qs{position:sticky;top:8px;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .zr-jump{display:none}
+}
+@media (max-width:999px),(orientation:portrait){ .zr-qs{margin-top:18px} }

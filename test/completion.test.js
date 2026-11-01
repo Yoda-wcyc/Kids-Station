@@ -216,13 +216,13 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   };
   ok(SM.VERSION === 6, 'sync doc version 6');
   const v4 = SM.normalize({ v: 4, log: [], learned: {}, mistakes: {}, mk: {} });
-  ok(v4.v === 6 && same(v4.done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: {}, mx: {}, fr: {} }), 'v4 doc → v6 with empty done');
+  ok(v4.v === 6 && same(v4.done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: {}, mx: {}, fr: {}, zh: {} }), 'v4 doc → v6 with empty done');
   // v6：mp 取大、mx acc 取大／sp 取小／ok 取最早；壞資料不會壞
   const P1 = { done: { mp: { circle: 60, test: 85 }, mx: { d21: { acc: 80, sp: 70 }, d22: { acc: 95, sp: 95, ok: 900 } } } }, P2 = { done: { mp: { circle: 90, word: 0 }, mx: { d21: { acc: 95, sp: 120, ok: 500 }, d22: { acc: 70, sp: 60, ok: 700 } } } }, P3 = { done: { mp: { lit: 100 }, mx: { nn: { acc: 100, sp: 20 } } } };
   const P12 = SM.merge(P1, P2).done;
   ok(same(P12.mp, { circle: 90, test: 85, word: 0 }) && same(P12.mx.d21, { acc: 95, sp: 70, ok: 500 }) && same(P12.mx.d22, { acc: 95, sp: 60, ok: 700 }), 'done.mp／mx merge: ' + C(P12.mp) + ' ' + C(P12.mx));
   props(P1, P2, P3, 'done v6 mp/mx');
-  ok(same(SM.normalize({ done: { mp: { circle: 150, zz: 5, test: 'x' }, mx: { d21: { acc: 'abc' }, d22: { acc: 50, sp: -3, ok: 'y' }, qq: { acc: 1 } } } }).done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: { circle: 100 }, mx: { d22: { acc: 50 } }, fr: {} }), 'garbage mp／mx: clamps, drops unknown');
+  ok(same(SM.normalize({ done: { mp: { circle: 150, zz: 5, test: 'x' }, mx: { d21: { acc: 'abc' }, d22: { acc: 50, sp: -3, ok: 'y' }, qq: { acc: 1 } } } }).done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: { circle: 100 }, mx: { d22: { acc: 50 } }, fr: {}, zh: {} }), 'garbage mp／mx: clamps, drops unknown');
   const strip5 = d => { const n = SM.normalize(d); delete n.done.mp; delete n.done.mx; n.v = 5; return n; }, full6 = SM.merge(SM.merge(P1, P2), P3);
   ok(same(SM.merge(full6, strip5(full6)), full6), 'v5 device drops mp/mx → v6 merge restores them from local');
   ok(same(SM.normalize({ done: 'x' }).done, SM.normDone(null)) && same(SM.normalize({ done: { tb: [1], sd: { l20: 'abc', l100: 150, zz: 5 }, ai: { '': 5, ok: -1 } } }).done.sd, { l100: 100 }), 'garbage done does not throw, clamps %, drops unknown');

@@ -20,7 +20,7 @@
   'use strict';
 
   // ================= _core：純函式 =================
-  var SUBJ = ['social', 'science', 'math', 'ai'];
+  var SUBJ = ['chinese', 'social', 'science', 'math', 'ai'];   // chinese（2026-11-01）：id＝'<篇id>:<題id>'，p＝{a:篇id, q:題id, t:篇名, s:題目, ans:正解文字}（chinese/reading.js）
   var GRAD = 3, MAX_DEL = 300, MAX_ID = 200, MAX_P = 4000, ROUND = 30;
   function obj(x) { return x && typeof x === 'object' && !Array.isArray(x) ? x : null; }
   function nat(x) { x = +x; return isFinite(x) && x > 0 ? Math.floor(x) : 0; }
@@ -114,10 +114,11 @@
   // ================= 瀏覽器：畫面（首頁 #s/<科>/mistakes） =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var KLABEL = { w: '考考自己', a: '背架構', q: '練習題' };
-  function badgeOf(subj, p) { if (subj === 'math') return p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
+  function badgeOf(subj, p) { if (subj === 'chinese') return p.t || '閱讀'; if (subj === 'math') return p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
   function textOf(subj, p) {
     if (subj === 'math') return p.q || '';
     if (subj === 'ai') return (p.q || '') + (p.opts && p.opts[p.c] != null ? '　→ ' + p.opts[p.c] : '');
+    if (subj === 'chinese') return (p.s || '') + (p.ans ? '　→ ' + p.ans : '');
     if (p.k === 'w') return p.s && p.a ? p.s.split(p.a).join('＿＿') + '（' + p.a + '）' : (p.s || p.a || '');
     if (p.k === 'a') return (p.s || '') + (p.a ? '（' + p.a + '）' : '');
     return (p.s || '') + (p.a ? '　→ ' + p.a : '');

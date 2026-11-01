@@ -5,6 +5,8 @@
   const SUBJ = [{ k: 'chinese', n: '國語', i: '📝' }, { k: 'math', n: '數學', i: '🔢' }, { k: 'social', n: '社會', i: '🌏' }, { k: 'science', n: '自然', i: '🔬' }, { k: 'english', n: '英文', i: '🔤' }, { k: 'ai', n: 'AI', i: '🤖' }, { k: 'game', n: '遊戲', i: '🎮' }];
   // 有活動卡片的科目：點卡片 → iframe 開正本頁面（有 href 的卡片改成整頁開，例如勇者島；icon 可放小 SVG）
   const ACTS = {
+    // 2026-11-01：國語〈閱讀素養 100 篇〉（chinese/reading.html；L1～L4 循序解鎖，規格 kids-member/docs/CHINESE_READING_SPEC.md）
+    chinese: [{ id: 'reading', title: '閱讀素養 100 篇', desc: () => zhDesc(), icon: '📚', src: 'chinese/reading.html' }],
     math: [{ id: 'balance', title: '天平解方程式', desc: '用天平學加減方程式，可以自己出題，也有括號題', icon: '⚖️', src: 'math/balance.html', dk: 'math:balance' },
       { id: 'short-division', title: '短除法：最大公因數・最小公倍數', desc: '看短除法一步一步畫，再換你算：公因數、商、互質了停！兩個數、三個數都有，還有生活應用題', icon: '🧮', src: 'math/short-division.html', dk: 'math:sd' },
       // 課程地圖「短除法：應用題」直接開到 📝 應用題分頁（不另外列卡片）
@@ -44,7 +46,9 @@
   //   math/short-division.html?mistakes=1（只有應用題時 ?mistakes=word）；都有時天平做完有「接著練短除法錯題」，短除法做完有「接著練應用題錯題」）；AI → 在這頁重答（KidsMistakes.aiPlay）
   //   2026-10-21：倍數（p.type 'multiples'）→ math/multiples.html?mistakes=1、乘法（'multiply'）→ math/multiply.html?mistakes=1；順序＝天平 → 短除法 → 應用題 → 倍數 → 乘法，
   //   每一頁做完都有「接著練…錯題」（KidsMistakes.mathMore）；2026-10-27：分數（'fraction'）→ math/fraction.html?mistakes=1，排在乘法後面
-  const MK_SUBJ = ['social', 'science', 'math', 'ai'];
+  const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai'];   // chinese → iframe chinese/reading.html?mistakes=1（2026-11-01）
+  // 國語卡片小字：完成幾篇（kids_done.zh 跟著同步＋本機 kids_zh_reading）
+  const zhDesc = () => { let n = 0; try { const d = (JSON.parse(localStorage.getItem('kids_done')) || {}).zh || {}, l = JSON.parse(localStorage.getItem('kids_zh_reading')) || {}; n = new Set(Object.keys(d).concat(Object.keys(l).filter(k => l[k] && l[k].done))).size; } catch (e) { } return '記敘、說明、童詩、新聞、圖表、多篇比較…從讀懂字面到深度思考，分 L1～L4 一級一級往上' + (n ? `｜已完成 ${n} 篇` : ''); };
   const KM = () => window.KidsMistakes;
   const mathMkSrc = () => {
     let l = []; try { l = KM().list('math'); } catch (e) { }
@@ -84,7 +88,7 @@
         if (mk[1]) KM().aiPlay(box); else KM().page(box, { k, n: s.n, units: MM_UNITS[k], unit });
       } else {
         document.documentElement.classList.add('frame-mode');
-        const src = k === 'math' ? mathMkSrc() : `mindmap/${k}.html?mistakes=1${unit ? '&u=' + unit : ''}`;
+        const src = k === 'math' ? mathMkSrc() : k === 'chinese' ? 'chinese/reading.html?mistakes=1' : `mindmap/${k}.html?mistakes=1${unit ? '&u=' + unit : ''}`;
         box.innerHTML = `<div class="frame-top"><a class="btn" href="${back}">← 回錯題庫</a><b>📕 ${s.n}錯題練習</b></div><div class="frame-wrap"><iframe src="${src}" title="${s.n}錯題練習" allow="clipboard-write; web-share"></iframe></div>`;
       }
       window.scrollTo(0, 0); setH(); return;

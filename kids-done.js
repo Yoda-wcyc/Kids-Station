@@ -21,7 +21,7 @@
   }
   function data() {
     const W = window;
-    return { textbook: W.DATA_TEXTBOOK || [], words: W.DATA_WORDS || [], phrases: W.DATA_PHRASES || [], roots: W.DATA_ROOTS || [], grammar: W.DATA_GRAMMAR || [], patterns: W.DATA_PATTERNS || [], KE: W.KE || null };
+    return { textbook: W.DATA_TEXTBOOK || [], words: W.DATA_WORDS || [], phrases: W.DATA_PHRASES || [], roots: W.DATA_ROOTS || [], grammar: W.DATA_GRAMMAR || [], patterns: W.DATA_PATTERNS || [], KE: W.KE || null, zhCatalog: W.DATA_ZH_CATALOG || [] };
   }
   const result = key => KC.evaluate(key, data(), ctx());
   function titleOf(key) { const D = data(); for (const s of KC.catalog(D)) { const u = s.units.find(x => x.key === key); if (u) return u.title; } return ''; }

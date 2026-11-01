@@ -6,7 +6,8 @@
 
 ```
 頂端科目列（subjects.js / subjects.css，記住上次的科目：ke_settings.subject）
-├─ 國語   #s/chinese   準備中
+├─ 國語   #s/chinese   活動卡片（2026-11-01）
+│    └─ 閱讀素養 100 篇  #s/chinese/reading → iframe 開 chinese/reading.html（L1～L4 循序解鎖；規格 kids-member/docs/CHINESE_READING_SPEC.md；node test/chinese-reading.test.js）
 ├─ 數學   #s/math      活動卡片
 │    └─ 天平解方程式  #s/math/balance → iframe 開 math/balance.html
 ├─ 社會   #s/social    心智圖，每單元一張卡（單元一～四）
