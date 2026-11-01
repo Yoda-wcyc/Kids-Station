@@ -17,6 +17,7 @@
    🔁 隔天複習（間隔重複，2026-11-01，只開在社會、自然＝SPACED；國語、數學、AI 照舊「連對 3 次」）：
      答錯 → c＝0、due＝明天；到期（台北時間的日子 ≥ due）答對 → c＋1，due＝今天＋[1,3,7][c]（1 天 → 3 天 → 7 天）；7 天那次也答對（c 已經是 2）→ 畢業留墓碑。
      還沒到期答對：不動（不算數）。舊錯題沒有 due → 當作今天到期。c 照舊 0～2（＝過了幾次間隔），錯題庫的 ●○○ 也照用。
+     互動圖題／實驗模擬（2026-11-02）：id＝'<單元>|I|<題id>'，p＝{u, k:'I', s:題目, a:正確答案}（mindmap/data/<科>/interactive.js，重做時照題目 init 重現）。
      閃卡按「再想想」也收進來：id＝'<單元>|F|<卡id>'，p＝{u, k:'F', s:背面說明, a:正面名詞}（mindmap/data/<科>/cards.js）。
    同步（syncmerge v4 的 mk 欄位）：各科依題目 id 聯集；同一題 u 較新的勝（墓碑也是；一樣新時 墓碑 ＞ 有 due ＞ 沒 due），答錯次數 w 取較大；墓碑每科最多留 300 筆（最新的）。
    _core 是純函式（不碰 DOM），Node 可以直接 require 來測；畫面（錯題清單、AI 重答）由首頁 subjects.js 呼叫 page()／aiPlay()。 */
@@ -133,7 +134,7 @@
 
   // ================= 瀏覽器：畫面（首頁 #s/<科>/mistakes） =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  var KLABEL = { w: '考考自己', a: '背架構', q: '練習題', L: '素養題組', X: '單元測驗', F: '閃卡' };
+  var KLABEL = { w: '考考自己', a: '背架構', q: '練習題', L: '素養題組', X: '單元測驗', F: '閃卡', I: '互動題' };
   function badgeOf(subj, p) { if (subj === 'chinese') return p.t || '閱讀'; if (subj === 'math') return p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
   function textOf(subj, p) {
     if (subj === 'math') return p.q || '';

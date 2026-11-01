@@ -1135,6 +1135,8 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
 }
 // 社會、自然〈🧩 素養題組〉40 組 160 題（2026-11-01）：資料格式、題數、d 遞增、單選唯一正解、開放題要點、錯題 id、頁面接線 → test/mindmap-literacy.test.js
 require('./mindmap-literacy.test.js');
+// 社會〈🗺️ 互動圖題〉60 題、自然〈🧪 實驗模擬〉40 題（2026-11-02）：資料、熱區不重疊、時間軸順序、模擬數學關係 → test/interactive.test.js
+require('./interactive.test.js');
 // 社會、自然〈🃏 名詞閃卡〉＋〈🔁 隔天複習〉（2026-11-01）：卡片 ref 指得到、沒有籠統詞、id 唯一 → test/flashcards.test.js；1 → 3 → 7 天、答錯回 1 天、畢業、舊錯題當今天到期、台北時間 → test/spaced-review.test.js
 require('./flashcards.test.js');
 require('./spaced-review.test.js');
