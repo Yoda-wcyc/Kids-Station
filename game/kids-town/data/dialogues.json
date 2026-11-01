@@ -1,0 +1,56 @@
+{
+  "_doc": "小朋友鎮的英文小對話。每段 3–5 回合：npc＝居民說的話（英文＋中文），cards＝小朋友可以選的回答（ok:true 只有一張），最後 check＝理解小測驗（中文選項）。答對（第一次就選對）+1 金幣，小測驗答對 +2。",
+  "school": { "place": "School", "turns": [
+    { "npc": "Good morning! Are you ready for class?", "zh": "早安！準備好上課了嗎？", "cards": [{ "en": "Yes, I'm ready!", "ok": true }, { "en": "I'm a dog.", "ok": false }, { "en": "It's raining apples.", "ok": false }] },
+    { "npc": "Great. Please take out your book.", "zh": "很好。請拿出你的課本。", "cards": [{ "en": "OK. Here it is.", "ok": true }, { "en": "I like pizza.", "ok": false }, { "en": "Good night!", "ok": false }] },
+    { "npc": "What color is the sky?", "zh": "天空是什麼顏色？", "cards": [{ "en": "It's blue.", "ok": true }, { "en": "It's Tuesday.", "ok": false }, { "en": "I'm ten years old.", "ok": false }] },
+    { "npc": "Well done! See you tomorrow.", "zh": "做得好！明天見。", "cards": [{ "en": "See you, Ms. Lin!", "ok": true }, { "en": "Yes, I'm hungry.", "ok": false }, { "en": "Two apples, please.", "ok": false }] }],
+    "check": { "q": "老師請你拿出什麼？", "options": ["課本", "鉛筆盒", "水壺"], "answer": 0 } },
+  "hospital": { "place": "Hospital", "turns": [
+    { "npc": "Hello! What's wrong?", "zh": "你好！哪裡不舒服？", "cards": [{ "en": "I have a headache.", "ok": true }, { "en": "I have a red bike.", "ok": false }, { "en": "It's sunny today.", "ok": false }] },
+    { "npc": "Oh no. When did it start?", "zh": "喔不。什麼時候開始的？", "cards": [{ "en": "This morning.", "ok": true }, { "en": "Blue and green.", "ok": false }, { "en": "Yes, please.", "ok": false }] },
+    { "npc": "Drink some water and get some rest.", "zh": "多喝水，好好休息。", "cards": [{ "en": "OK. Thank you, doctor.", "ok": true }, { "en": "I want a cat.", "ok": false }, { "en": "No, it's a book.", "ok": false }] },
+    { "npc": "Feel better soon!", "zh": "早日康復！", "cards": [{ "en": "Thanks. Bye!", "ok": true }, { "en": "Nice to meet you, too.", "ok": false }, { "en": "I'm cooking.", "ok": false }] }],
+    "check": { "q": "你哪裡不舒服？", "options": ["頭痛", "肚子餓", "腳受傷"], "answer": 0 } },
+  "shop": { "place": "Shop", "turns": [
+    { "npc": "Hi! Can I help you?", "zh": "嗨！需要幫忙嗎？", "cards": [{ "en": "Yes. I want some apples.", "ok": true }, { "en": "I'm fine, thank you. And you?", "ok": false }, { "en": "It's eight o'clock.", "ok": false }] },
+    { "npc": "How many apples do you want?", "zh": "你要幾個蘋果？", "cards": [{ "en": "Three, please.", "ok": true }, { "en": "Red, please.", "ok": false }, { "en": "On Monday.", "ok": false }] },
+    { "npc": "That's thirty dollars.", "zh": "一共三十元。", "cards": [{ "en": "Here you are.", "ok": true }, { "en": "I'm thirty.", "ok": false }, { "en": "Good morning, teacher.", "ok": false }] },
+    { "npc": "Thank you! Have a nice day.", "zh": "謝謝！祝你有美好的一天。", "cards": [{ "en": "You too. Bye!", "ok": true }, { "en": "I have a headache.", "ok": false }, { "en": "Where is the zoo?", "ok": false }] }],
+    "check": { "q": "你買了幾個蘋果？", "options": ["三個", "五個", "十個"], "answer": 0 } },
+  "restaurant": { "place": "Restaurant", "turns": [
+    { "npc": "Welcome! What would you like to eat?", "zh": "歡迎光臨！你想吃什麼？", "cards": [{ "en": "Noodles, please.", "ok": true }, { "en": "I'm from Taiwan.", "ok": false }, { "en": "My bag is blue.", "ok": false }] },
+    { "npc": "Anything to drink?", "zh": "要喝點什麼嗎？", "cards": [{ "en": "Orange juice, please.", "ok": true }, { "en": "A pencil, please.", "ok": false }, { "en": "I can swim.", "ok": false }] },
+    { "npc": "Here you go. Enjoy your meal!", "zh": "來，請慢用！", "cards": [{ "en": "Thank you. It looks yummy!", "ok": true }, { "en": "Sorry, I'm late.", "ok": false }, { "en": "Turn left.", "ok": false }] },
+    { "npc": "How is the food?", "zh": "東西好吃嗎？", "cards": [{ "en": "It's delicious!", "ok": true }, { "en": "It's under the bed.", "ok": false }, { "en": "I'm tall.", "ok": false }] }],
+    "check": { "q": "你點了什麼飲料？", "options": ["柳橙汁", "牛奶", "水"], "answer": 0 } },
+  "fire": { "place": "Fire Station", "turns": [
+    { "npc": "Hi! Do you know what to do in a fire?", "zh": "嗨！你知道失火的時候要怎麼做嗎？", "cards": [{ "en": "Get out and call 119.", "ok": true }, { "en": "Hide under the bed.", "ok": false }, { "en": "Take a nap.", "ok": false }] },
+    { "npc": "Right! Should you use the elevator?", "zh": "對！可以搭電梯嗎？", "cards": [{ "en": "No. Use the stairs.", "ok": true }, { "en": "Yes, it's fun.", "ok": false }, { "en": "I like ice cream.", "ok": false }] },
+    { "npc": "Good. Stay low under the smoke.", "zh": "很好。在煙的下面，身體要放低。", "cards": [{ "en": "OK. Stay low.", "ok": true }, { "en": "Let's jump high!", "ok": false }, { "en": "It's my birthday.", "ok": false }] },
+    { "npc": "You are a fire safety star!", "zh": "你是防火小達人！", "cards": [{ "en": "Thank you, Sam!", "ok": true }, { "en": "See you at school.", "ok": false }, { "en": "Two dollars, please.", "ok": false }] }],
+    "check": { "q": "失火時要打幾號？", "options": ["119", "110", "123"], "answer": 0 } },
+  "post": { "place": "Post Office", "turns": [
+    { "npc": "Hello! Do you want to send a letter?", "zh": "哈囉！你要寄信嗎？", "cards": [{ "en": "Yes. It's for my grandma.", "ok": true }, { "en": "No, I'm a teacher.", "ok": false }, { "en": "It's very hot.", "ok": false }] },
+    { "npc": "Where does she live?", "zh": "她住在哪裡？", "cards": [{ "en": "She lives in Tainan.", "ok": true }, { "en": "She is seventy.", "ok": false }, { "en": "She likes cats.", "ok": false }] },
+    { "npc": "You need a stamp. It's ten dollars.", "zh": "要貼一張郵票，十元。", "cards": [{ "en": "OK. Here is ten dollars.", "ok": true }, { "en": "I need a hat.", "ok": false }, { "en": "Ten o'clock.", "ok": false }] },
+    { "npc": "Your letter will get there in two days.", "zh": "你的信兩天後會送到。", "cards": [{ "en": "Great! Thank you.", "ok": true }, { "en": "Two dogs.", "ok": false }, { "en": "I'm sorry.", "ok": false }] }],
+    "check": { "q": "信要寄給誰？", "options": ["奶奶", "老師", "同學"], "answer": 0 } },
+  "vet": { "place": "Animal Hospital", "turns": [
+    { "npc": "Hi! Is this your puppy?", "zh": "嗨！這是你的小狗嗎？", "cards": [{ "en": "Yes. His name is Lucky.", "ok": true }, { "en": "Yes. I'm eleven.", "ok": false }, { "en": "No, it's a bus.", "ok": false }] },
+    { "npc": "What's wrong with Lucky?", "zh": "Lucky 怎麼了？", "cards": [{ "en": "He doesn't want to eat.", "ok": true }, { "en": "He is brown.", "ok": false }, { "en": "He can sing.", "ok": false }] },
+    { "npc": "Let me check. He has a small cold.", "zh": "我看看。牠有一點小感冒。", "cards": [{ "en": "Will he be OK?", "ok": true }, { "en": "Let's play soccer.", "ok": false }, { "en": "I want a pizza.", "ok": false }] },
+    { "npc": "Yes. Keep him warm, and he will be fine.", "zh": "會的。讓牠保暖，就會好起來。", "cards": [{ "en": "Thank you, Dr. Amy!", "ok": true }, { "en": "Keep it cold.", "ok": false }, { "en": "Good night, Lucky.", "ok": false }] }],
+    "check": { "q": "小狗 Lucky 怎麼了？", "options": ["有一點感冒", "腳受傷", "太胖了"], "answer": 0 } },
+  "neighbor": { "place": "My Street", "turns": [
+    { "npc": "Hi there! Are you new here?", "zh": "嗨！你是新搬來的嗎？", "cards": [{ "en": "Yes. I live in that house.", "ok": true }, { "en": "Yes, it's a pencil.", "ok": false }, { "en": "No, it's Friday.", "ok": false }] },
+    { "npc": "Welcome to Kids Town! What's your favorite place?", "zh": "歡迎來到小朋友鎮！你最喜歡哪裡？", "cards": [{ "en": "I like the park.", "ok": true }, { "en": "I'm fine, thanks.", "ok": false }, { "en": "Three apples.", "ok": false }] },
+    { "npc": "Me too! Let's play there sometime.", "zh": "我也是！找時間一起去玩。", "cards": [{ "en": "Sure! That sounds fun.", "ok": true }, { "en": "No, I'm a doctor.", "ok": false }, { "en": "It's under the table.", "ok": false }] }],
+    "check": { "q": "你最喜歡小鎮的哪裡？", "options": ["公園", "醫院", "郵局"], "answer": 0 } },
+  "park": { "place": "Park", "turns": [
+    { "npc": "Hi! Do you want to play with me?", "zh": "嗨！你想跟我一起玩嗎？", "cards": [{ "en": "Sure! What do you want to play?", "ok": true }, { "en": "I have a headache.", "ok": false }, { "en": "It's thirty dollars.", "ok": false }] },
+    { "npc": "Let's play hide-and-seek!", "zh": "我們來玩捉迷藏！", "cards": [{ "en": "OK! You count first.", "ok": true }, { "en": "I'm eating noodles.", "ok": false }, { "en": "Please open your book.", "ok": false }] },
+    { "npc": "One, two, three... Ready or not, here I come!", "zh": "一、二、三……我要來找你囉！", "cards": [{ "en": "You can't find me!", "ok": true }, { "en": "Feel better soon.", "ok": false }, { "en": "Here is ten dollars.", "ok": false }] },
+    { "npc": "Found you! That was fun.", "zh": "找到你了！好好玩。", "cards": [{ "en": "Let's play again tomorrow.", "ok": true }, { "en": "Turn right at the bank.", "ok": false }, { "en": "I'm a firefighter.", "ok": false }] }],
+    "check": { "q": "你們玩了什麼遊戲？", "options": ["捉迷藏", "跳繩", "踢足球"], "answer": 0 } }
+}

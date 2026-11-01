@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#EFEBDD">
+<meta name="color-scheme" content="light">
+<title>小朋友鎮</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23EFEBDD'/%3E%3Cpolygon points='12,30 32,14 52,30' fill='%23C2443A'/%3E%3Crect x='16' y='30' width='32' height='24' fill='%23D9A63A'/%3E%3Crect x='28' y='40' width='8' height='14' fill='%2326302A'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/kt.css?v=aba33cbaf1">
+</head>
+<body>
+<canvas id="c" aria-label="小朋友鎮"></canvas>
+<div id="grain" aria-hidden="true"></div>
+<div id="ui">
+  <div id="hud-l"><div class="pill" id="coinpill"><span class="coin"></span><b id="coins">0</b><span class="lbl">金幣</span></div><div id="dbg" hidden></div></div>
+  <div id="hud-r">
+    <button id="b-snd" class="hb-btn" aria-label="聲音開關">🔊</button>
+    <button id="b-av" class="hb-btn">外觀</button>
+    <button id="b-home" class="hb-btn">我的家</button>
+    <button id="b-bike" class="hb-btn">腳踏車</button>
+    <button id="b-view" class="hb-btn">視角</button>
+    <button id="b-zh" class="hb-btn">中文：開</button>
+    <button id="b-set" class="hb-btn">設定</button>
+  </div>
+  <div id="cross" aria-hidden="true"></div>
+  <div id="hotbar" hidden></div>
+  <div id="joy" hidden><div id="knob"></div></div>
+  <div id="tbtns"><button id="b-jump" class="tb big">跳</button></div>
+  <div id="toasts" aria-live="polite"></div>
+  <div id="loading" hidden>小鎮準備中…</div>
+</div>
+<div id="ov" class="overlay" hidden></div>
+<div id="start" class="overlay">
+  <div class="panel start">
+    <h1>小朋友鎮</h1>
+    <p class="muted">在小鎮用英文生活：看醫生、點餐、買東西。找居民聊天，選對的英文句子，就能賺金幣（跟方塊世界同一個錢包）。</p>
+    <div class="help"><div class="h-touch"><b>iPad</b>：左手拖曳＝走路；右手拖曳＝轉頭；點居民＝聊天；點門＝開關門。</div><div class="h-desk"><b>電腦</b>：WASD 走、滑鼠看、左鍵點居民或門、Shift 跑、B 腳踏車、V 視角。</div></div>
+    <button id="go" class="btn big">開始</button>
+    <p><a class="home-link" href="../../#s/game">← 回小朋友學習站</a></p>
+  </div>
+</div>
+<div id="err" hidden></div>
+<script src="../../syncmerge.js?v=b9a55d5345"></script>
+<script src="../hero-island/audio.js?v=330edd7966"></script>
+<script src="assets/kt.js?v=aba33cbaf1"></script>
+</body>
+</html>
