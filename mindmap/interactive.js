@@ -1,6 +1,6 @@
 /* interactive.js — 🗺️ 互動圖題（社會）／🧪 實驗模擬（自然）的題目元件（2026-11-02）
  * 資料：data/<科>/interactive.js → <資料>.ia[單元id] = [題]；社會另有 <資料>.iaMap（臺灣簡圖：海岸線、地點經緯度）。格式見 data/FORMAT.md 第 8 節。
- * 題目 kind：map（地圖）／time（時間軸排序）／sim（實驗模擬：shadow 影子、litmus 石蕊試紙、spring 彈簧、friction 摩擦力；五下 star 星座盤、fire 燃燒三要素、rust 鐵生鏽）；
+ * 題目 kind：map（地圖）／time（時間軸排序）／sim（實驗模擬：shadow 影子、litmus 石蕊試紙、spring 彈簧、friction 摩擦力；五下 star 星座盤、fire 燃燒三要素、rust 鐵生鏽；六上 heat 熱的傳導、quake 規模和震度、emag 電磁鐵）；
  *   作答 mode：tap（點地圖上的圓圈，再按確定）／mc（選項）／order（把卡片拖到時間軸，或點卡片再點位置）／set（把模擬調到指定狀態，再按確定）。
  * 重現：選項順序、卡片順序都由題目 id 決定（不隨機），模擬從題目的 init 開始 → 錯題重做時畫面跟第一次一模一樣。
  * 判分只在這支：tap 只認圓圈＋寬限（slop）範圍內，沒點到圓圈不判分；資料測試保證同一題的圓圈不重疊，所以答案唯一。
@@ -79,6 +79,24 @@
   var RUST_G = { A: { n: '甲', d: '放乾燥劑的密封瓶', w: 0, a: 1, s: 0 }, B: { n: '乙', d: '煮沸過的水＋一層油', w: 1, a: 0, s: 0 }, C: { n: '丙', d: '沾濕放在空氣中', w: 1, a: 1, s: 0 }, D: { n: '丁', d: '沾食鹽水放在空氣中', w: 1, a: 1, s: 1 } };
   var RUST_LV = ['沒有生鏽', '一點點', '有些', '很多', '非常多'], DAY_MAX = 7;
   function rustLv(g, day) { var G = RUST_G[g]; return G.w && G.a ? Math.min(4, Math.ceil(day * (G.s ? 2 : 1) / 2)) : 0; }
+  // ⑧ 熱的傳導（六上 n9）：尺的一端放進熱水，尺上 5 片用奶油黏的珍珠板（第 1 片最靠近熱水）。熱由近到遠傳過去，近的先掉；
+  //    金屬傳熱快（銅比鐵快）、木頭和塑膠傳熱慢。第 i 片掉下來的分鐘＝i×k 是示範用的；木尺、塑膠尺 10 分鐘內都沒掉
+  var HEAT_M = { cu: { n: '銅尺', k: 1, metal: 1 }, fe: { n: '鐵尺', k: 2, metal: 1 }, wood: { n: '木尺', k: 0, metal: 0 }, pl: { n: '塑膠尺', k: 0, metal: 0 } };
+  var HEAT_ORDER = ['cu', 'fe', 'wood', 'pl'], HEAT_N = 5, HEAT_T = 10;
+  function heatAt(m, i) { var k = HEAT_M[m].k; return k ? i * k : Infinity; }
+  function heatFall(m, t) { var n = 0; for (var i = 1; i <= HEAT_N; i++) if (heatAt(m, i) <= t) n++; return n; }
+  // ⑨ 電磁鐵（六上 n12）：吸起迴紋針的數量代表磁力。鐵釘當鐵芯：每 20 圈、每個串聯的電池約吸 3 根（示範用）；
+  //    木棒、鋁棒、不放東西都只吸很少（差不多一樣）；斷電就吸不起來；電流方向反過來，N、S 極對調（接法一：甲端是 N 極）
+  var EM_CORE = { fe: { n: '鐵釘' }, wood: { n: '木棒' }, al: { n: '鋁棒' }, none: { n: '不放東西' } };
+  var EM_CORE_ORDER = ['fe', 'wood', 'al', 'none'], EM_TURNS = [20, 40, 60, 80], EM_B = 3;
+  function emClips(s) { if (!s.on) return 0; var u = s.n / 20 * s.b; return s.core === 'fe' ? 3 * u : Math.floor(u / 3); }
+  function emPole(rev, end) { return (end === 'A') !== !!rev ? 'N' : 'S'; }
+  // ⑩ 規模和震度（六上 n11）：一次地震只有一個規模；震度是各地搖晃的程度（0～7 級，5、6 級分弱、強，共 10 級），
+  //    規模越大震度越大、離震央越遠通常越小。換算 floor(1.5×規模 − 3×log10(距離公里)) 是示範用的，不是氣象署的算法
+  var QT = [{ id: 'A', n: '甲鎮', d: 10 }, { id: 'B', n: '乙鎮', d: 30 }, { id: 'C', n: '丙鎮', d: 60 }, { id: 'D', n: '丁鎮', d: 100 }, { id: 'E', n: '戊鎮', d: 150 }];
+  var QLV = ['0 級', '1 級', '2 級', '3 級', '4 級', '5 弱', '5 強', '6 弱', '6 強', '7 級'], QM_MIN = 4, QM_MAX = 7.5;
+  function quakeLv(m, d) { return clamp(Math.floor(1.5 * m - 3 * Math.log10(d) + 1e-9), 0, QLV.length - 1); }
+  function quakeTown(m, id) { return quakeLv(m, QT.filter(function (x) { return x.id === id; })[0].d); }
 
   /* ---------- 狀態、判分 ---------- */
   function initState(q) {
@@ -92,6 +110,9 @@
     if (q.sim === 'star') { st.mon = st.mon || 1; st.hr = st.hr || 21; }
     if (q.sim === 'fire') ['fuel', 'air', 'heat'].forEach(function (k) { st[k] = st[k] == null ? 1 : +!!st[k]; });
     if (q.sim === 'rust') { st.g = st.g || 'C'; st.day = st.day || 0; st.rec = {}; st.rec[st.day] = 1; }
+    if (q.sim === 'heat') { st.m = st.m || 'fe'; st.t = st.t || 0; }
+    if (q.sim === 'emag') { st.n = st.n || 20; st.b = st.b || 1; st.core = st.core || 'fe'; st.on = +!!st.on; st.rev = +!!st.rev; st.rec = {}; if (st.on) st.rec[st.n + ':' + st.b + ':' + st.core] = emClips(st); }
+    if (q.sim === 'quake') { st.m = st.m || 5; }
     return st;
   }
   function simVals(q, st) {
@@ -102,6 +123,9 @@
     if (q.sim === 'star') v.top = skyTop(st.mon, st.hr);
     if (q.sim === 'fire') v.burn = fireBurn(st);
     if (q.sim === 'rust') v.lv = rustLv(st.g, st.day);
+    if (q.sim === 'heat') v.fall = heatFall(st.m, st.t);
+    if (q.sim === 'emag') { v.clips = emClips(st); v.poleA = emPole(st.rev, 'A'); }
+    if (q.sim === 'quake') QT.forEach(function (x) { v[x.id] = quakeLv(st.m, x.d); });
     return v;
   }
   // set 題的目標：{鍵: 值} 或 {鍵: [最小, 最大]}；全部符合才算對
@@ -262,6 +286,59 @@
     });
     return '<svg viewBox="0 0 760 300" role="img" aria-label="鐵生鏽實驗的甲乙丙丁四組">' + o + '</svg>';
   }
+  var HCOL = { cu: '#c8742f', fe: '#8a96a3', wood: '#c9a36b', pl: '#7cc4e8' };
+  function heatSVG(st) {
+    var o = '<rect width="760" height="260" fill="#fbfaf6"/><rect y="236" width="760" height="24" fill="#e8dfcf"/>';
+    o += '<path d="M30 110 L30 230 Q30 236 36 236 L164 236 Q170 236 170 230 L170 110" fill="none" stroke="#7b8a99" stroke-width="4"/><rect x="33" y="140" width="134" height="93" fill="#ffd9c7"/>';
+    o += '<path d="M60 128 q8 -14 0 -28 M100 128 q8 -14 0 -28 M140 128 q8 -14 0 -28" fill="none" stroke="#e58a6a" stroke-width="3" stroke-linecap="round"/><text x="100" y="200" text-anchor="middle" font-size="16" font-weight="800" fill="#a33">熱水</text>';
+    // 尺的左端斜斜的浸在熱水裡（水面 y＝140）
+    o += '<rect x="70" y="175" width="660" height="22" rx="4" fill="' + HCOL[st.m] + '" stroke="#555" stroke-width="1.5" transform="rotate(-6 70 186)"/>';
+    for (var i = 1; i <= HEAT_N; i++) {
+      var x = 230 + (i - 1) * 110, y = 186 - (x - 70) * Math.tan(6 * Math.PI / 180) + 12, down = heatAt(st.m, i) <= st.t;
+      o += down ? '<rect x="' + (x - 18) + '" y="226" width="36" height="10" rx="2" fill="#fff" stroke="#9aa0a6" stroke-width="2"/>'
+        : '<circle cx="' + x + '" cy="' + (y + 3) + '" r="7" fill="#f6d365"/><rect x="' + (x - 10) + '" y="' + (y + 8) + '" width="20" height="34" rx="2" fill="#fff" stroke="#9aa0a6" stroke-width="2"/>';
+      o += '<text x="' + x + '" y="' + (y - 16) + '" text-anchor="middle" font-size="15" font-weight="800" fill="#33415c">' + i + '</text>';
+    }
+    o += '<text x="740" y="40" text-anchor="end" font-size="20" font-weight="800" fill="#33415c">' + HEAT_M[st.m].n + '・第 ' + st.t + ' 分鐘</text>';
+    return '<svg viewBox="0 0 760 260" role="img" aria-label="尺的一端放進熱水，尺上黏著五片珍珠板">' + o + '</svg>';
+  }
+  function emagSVG(st) {
+    var c = emClips(st), o = '<rect width="760" height="300" fill="#fbfaf6"/>', on = st.on, i;
+    // 電池（串聯）與電線
+    for (i = 0; i < st.b; i++) o += '<rect x="' + (300 + i * 56) + '" y="258" width="52" height="26" rx="5" fill="#3b4a5a"/><rect x="' + (352 + i * 56) + '" y="265" width="4" height="12" fill="#c9a227"/>';
+    o += '<path d="M300 271 L230 271 L230 120 L255 120 M' + (356 + (st.b - 1) * 56) + ' 271 L530 271 L530 120 L505 120" fill="none" stroke="' + (on ? '#d9480f' : '#9aa0a6') + '" stroke-width="3"/>';
+    o += '<text x="' + (330 + (st.b - 1) * 28) + '" y="250" text-anchor="middle" font-size="14" font-weight="800" fill="#33415c">' + st.b + ' 個電池串聯' + (st.rev ? '（反接）' : '') + '</text>';
+    // 鐵芯和線圈
+    if (st.core !== 'none') o += '<rect x="255" y="106" width="250" height="28" rx="6" fill="' + { fe: '#7b8794', wood: '#c9a36b', al: '#d5dbe1' }[st.core] + '" stroke="#555" stroke-width="1.5"/>';
+    else o += '<rect x="255" y="106" width="250" height="28" rx="6" fill="#fff" stroke="#bbb" stroke-dasharray="5 4"/>';
+    var loops = st.n / 5;
+    for (i = 0; i < loops; i++) { var lx = 262 + i * 236 / loops; o += '<ellipse cx="' + lx + '" cy="120" rx="4" ry="20" fill="none" stroke="#b5651d" stroke-width="2.5"/>'; }
+    o += '<text x="245" y="96" text-anchor="end" font-size="22" font-weight="800">甲</text><text x="515" y="96" font-size="22" font-weight="800">乙</text>';
+    if (on) o += '<text x="245" y="160" text-anchor="end" font-size="18" font-weight="800" fill="#c2410c">' + emPole(st.rev, 'A') + '</text><text x="515" y="160" font-size="18" font-weight="800" fill="#c2410c">' + emPole(st.rev, 'B') + '</text>';
+    // 指北針：沒通電指北（向上）；通電時 N 端被吸向 S 極
+    [['A', 140], ['B', 620]].forEach(function (e) {
+      var x = e[1], ang = 0;
+      if (on) { var toward = emPole(st.rev, e[0]) === 'S'; ang = (e[0] === 'A') === toward ? 90 : -90; }
+      o += '<circle cx="' + x + '" cy="120" r="40" fill="#fff" stroke="#888" stroke-width="3"/><g transform="rotate(' + ang + ' ' + x + ' 120)"><path d="M' + x + ' 86 L' + (x + 8) + ' 120 L' + (x - 8) + ' 120Z" fill="#e5484d"/><path d="M' + x + ' 154 L' + (x + 8) + ' 120 L' + (x - 8) + ' 120Z" fill="#9aa0a6"/></g>';
+    });
+    // 迴紋針
+    for (i = 0; i < c; i++) { var px = 268 + (i % 12) * 19, py = 142 + Math.floor(i / 12) * 30; o += '<rect x="' + px + '" y="' + py + '" width="10" height="24" rx="5" fill="none" stroke="#5f6b7a" stroke-width="2.5"/>'; }
+    o += '<text x="380" y="40" text-anchor="middle" font-size="20" font-weight="800" fill="' + (on ? '#c2410c' : '#33415c') + '">' + (on ? '通電中：吸起 ' + c + ' 根迴紋針' : '沒有通電') + '</text>';
+    return '<svg viewBox="0 0 760 300" role="img" aria-label="電磁鐵、電池、兩端的指北針和迴紋針">' + o + '</svg>';
+  }
+  var QCOL = ['#e6f4ea', '#cdebd6', '#b7e3c3', '#fff1b8', '#ffd58a', '#ffb066', '#ff8a4c', '#f25f3a', '#d93a2b', '#a61e1e'];
+  function quakeSVG(st) {
+    var o = '<rect width="760" height="300" fill="#f3f7fb"/>', ex = 50, cy = 150;
+    [10, 30, 60, 100, 150].forEach(function (d) { o += '<circle cx="' + ex + '" cy="' + cy + '" r="' + d * 4.4 + '" fill="none" stroke="#c7d3e0" stroke-width="2" stroke-dasharray="6 6"/>'; });
+    o += '<path d="M' + ex + ' ' + (cy - 16) + ' L' + (ex + 5) + ' ' + (cy - 5) + ' L' + (ex + 16) + ' ' + (cy - 5) + ' L' + (ex + 7) + ' ' + (cy + 3) + ' L' + (ex + 10) + ' ' + (cy + 15) + ' L' + ex + ' ' + (cy + 8) + ' L' + (ex - 10) + ' ' + (cy + 15) + ' L' + (ex - 7) + ' ' + (cy + 3) + ' L' + (ex - 16) + ' ' + (cy - 5) + ' L' + (ex - 5) + ' ' + (cy - 5) + 'Z" fill="#e5484d"/><text x="' + ex + '" y="' + (cy + 38) + '" text-anchor="middle" font-size="15" font-weight="800" fill="#a33">震央</text>';
+    QT.forEach(function (t, i) {
+      var x = ex + t.d * 4.4, y = cy + (i % 2 ? 60 : -60), lv = quakeLv(st.m, t.d);
+      o += '<line x1="' + x + '" y1="' + cy + '" x2="' + x + '" y2="' + y + '" stroke="#9aa0a6" stroke-width="2"/><circle cx="' + x + '" cy="' + cy + '" r="5" fill="#33415c"/>';
+      o += '<rect x="' + (x - 42) + '" y="' + (y - 30) + '" width="84" height="60" rx="12" fill="' + QCOL[lv] + '" stroke="#555" stroke-width="1.5"/><text x="' + x + '" y="' + (y - 8) + '" text-anchor="middle" font-size="15" font-weight="800" fill="#222">' + t.n + '</text><text x="' + x + '" y="' + (y + 18) + '" text-anchor="middle" font-size="18" font-weight="800" fill="#222">' + QLV[lv] + '</text>';
+    });
+    o += '<text x="740" y="32" text-anchor="end" font-size="20" font-weight="800" fill="#33415c">這次地震：規模 ' + st.m.toFixed(1) + '</text>';
+    return '<svg viewBox="0 0 760 300" role="img" aria-label="震央和五個鄉鎮的震度">' + o + '</svg>';
+  }
 
   /* ---------- 畫面：組合 ---------- */
   function bt(attr, txt, cls, dis) { return '<button type="button" class="ia-b' + (cls ? ' ' + cls : '') + '" ' + attr + (dis ? ' disabled' : '') + '>' + txt + '</button>'; }
@@ -311,6 +388,25 @@
         '<div class="ia-ctl"><span class="lab">天數</span>' + bt('data-ia="day" data-v="-1"', '－', '', d || st.day <= 0) + '<input type="range" min="0" max="' + DAY_MAX + '" step="1" value="' + st.day + '" data-ia="dayR" aria-label="放置天數"' + (d ? ' disabled' : '') + '>' + bt('data-ia="day" data-v="1"', '＋', '', d || st.day >= DAY_MAX) + '</div>' +
         '<p class="ia-hint">四組的鋼絲絨一樣、放在同一個地方（控制變因）；天數和生鏽程度是示範用的。拿鋼絲絨要戴手套。</p>' +
         '<table class="ia-tbl"><thead><tr><th>天數</th>' + ['A', 'B', 'C', 'D'].map(function (g) { return '<th>' + RUST_G[g].n + '</th>'; }).join('') + '</tr></thead><tbody>' + days.map(function (n) { return '<tr><td>第 ' + n + ' 天</td>' + ['A', 'B', 'C', 'D'].map(function (g) { return '<td>' + RUST_LV[rustLv(g, n)] + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+    } else if (q.sim === 'heat') {
+      h = '<div class="ia-fig">' + heatSVG(st) + '</div><p class="ia-read">' + HEAT_M[st.m].n + '・第 <b>' + st.t + '</b> 分鐘：珍珠板掉了 <b>' + heatFall(st.m, st.t) + '</b> 片</p>' +
+        '<div class="ia-ctl"><span class="lab">尺的材質</span>' + HEAT_ORDER.map(function (k) { return bt('data-ia="hm" data-v="' + k + '"', HEAT_M[k].n, st.m === k ? 'on' : '', d); }).join('') + '</div>' +
+        '<div class="ia-ctl"><span class="lab">時間</span>' + bt('data-ia="ht" data-v="-1"', '－', '', d || st.t <= 0) + '<input type="range" min="0" max="' + HEAT_T + '" step="1" value="' + st.t + '" data-ia="htR" aria-label="放進熱水後幾分鐘"' + (d ? ' disabled' : '') + '>' + bt('data-ia="ht" data-v="1"', '＋', '', d || st.t >= HEAT_T) + '</div>' +
+        '<p class="ia-hint">四把尺一樣長、奶油一樣多、黏的位置一樣、熱水一樣熱（控制變因）；時間是示範用的。真的做時，熱水由大人倒，戴隔熱手套、桌上墊隔熱墊。</p>';
+    } else if (q.sim === 'emag') {
+      var ek = Object.keys(st.rec);
+      h = '<div class="ia-fig">' + emagSVG(st) + '</div><p class="ia-read">' + st.n + ' 圈・' + st.b + ' 個電池串聯・' + EM_CORE[st.core].n + '：' + (st.on ? '吸起 <b>' + emClips(st) + '</b> 根迴紋針　甲端 <b>' + emPole(st.rev, 'A') + '</b> 極、乙端 <b>' + emPole(st.rev, 'B') + '</b> 極' : '<b>沒有通電</b>') + '</p>' +
+        '<div class="ia-ctl"><span class="lab">線圈圈數</span>' + EM_TURNS.map(function (n) { return bt('data-ia="en" data-v="' + n + '"', n + ' 圈', st.n === n ? 'on' : '', d); }).join('') + '</div>' +
+        '<div class="ia-ctl"><span class="lab">串聯電池</span>' + bt('data-ia="eb" data-v="-1"', '➖', '', d || st.b <= 1) + '<b>' + st.b + ' 個</b>' + bt('data-ia="eb" data-v="1"', '➕', '', d || st.b >= EM_B) + bt('data-ia="er"', '🔄 正負極反過來接', '', d) + '</div>' +
+        '<div class="ia-ctl"><span class="lab">線圈中間</span>' + EM_CORE_ORDER.map(function (k) { return bt('data-ia="ec" data-v="' + k + '"', EM_CORE[k].n, st.core === k ? 'on' : '', d); }).join('') + '</div>' +
+        '<div class="ia-ctl">' + bt('data-ia="eo"', st.on ? '⏹ 切斷電流' : '🔌 通電', st.on ? 'on' : '', d) + '</div>' +
+        '<p class="ia-hint">迴紋針數量是示範用的。真的做時通電時間要短（電池和電線會發燙），電池正負極不可以直接用電線接在一起（短路），絕對不能用家裡的插座做實驗。</p>' +
+        '<table class="ia-tbl"><thead><tr><th>圈數</th><th>電池</th><th>線圈中間</th><th>吸起迴紋針</th></tr></thead><tbody>' + (ek.length ? ek.map(function (k) { var a = k.split(':'); return '<tr><td>' + a[0] + ' 圈</td><td>' + a[1] + ' 個</td><td>' + EM_CORE[a[2]].n + '</td><td>' + st.rec[k] + ' 根</td></tr>'; }).join('') : '<tr><td colspan="4">通電後吸起幾根，就會記在這裡</td></tr>') + '</tbody></table>';
+    } else if (q.sim === 'quake') {
+      h = '<div class="ia-fig">' + quakeSVG(st) + '</div><p class="ia-read">這次地震的規模 <b>' + st.m.toFixed(1) + '</b>（一次地震只有一個規模）；各地的震度不一樣</p>' +
+        '<div class="ia-ctl"><span class="lab">規模</span>' + bt('data-ia="qm" data-v="-0.5"', '－', '', d || st.m <= QM_MIN) + '<input type="range" min="' + QM_MIN + '" max="' + QM_MAX + '" step="0.5" value="' + st.m + '" data-ia="qmR" aria-label="地震規模"' + (d ? ' disabled' : '') + '>' + bt('data-ia="qm" data-v="0.5"', '＋', '', d || st.m >= QM_MAX) + '</div>' +
+        '<p class="ia-hint">震度的換算是示範用的。地震時：趴下、掩護、穩住，搖晃停了再依指示到空曠的地方，不要搭電梯。</p>' +
+        '<table class="ia-tbl"><thead><tr><th>地點</th><th>離震央</th><th>震度</th></tr></thead><tbody>' + QT.map(function (x) { return '<tr><td>' + x.n + '</td><td>' + x.d + ' 公里</td><td>' + QLV[quakeLv(st.m, x.d)] + '</td></tr>'; }).join('') + '</tbody></table>';
     }
     return h;
   }
@@ -381,6 +477,13 @@
       else if (k === 'fire') st[v] = st[v] ? 0 : 1;
       else if (k === 'rg') st.g = v;
       else if (k === 'day') { st.day = clamp(st.day + (+v), 0, DAY_MAX); st.rec[st.day] = 1; }
+      else if (k === 'hm') st.m = v;
+      else if (k === 'ht') st.t = clamp(st.t + (+v), 0, HEAT_T);
+      else if (k === 'en' || k === 'eb' || k === 'ec' || k === 'eo' || k === 'er') {
+        if (k === 'en') st.n = +v; else if (k === 'eb') st.b = clamp(st.b + (+v), 1, EM_B); else if (k === 'ec') st.core = v; else if (k === 'eo') st.on = st.on ? 0 : 1; else st.rev = st.rev ? 0 : 1;
+        if (st.on) st.rec[st.n + ':' + st.b + ':' + st.core] = emClips(st);
+      }
+      else if (k === 'qm') st.m = clamp(st.m + (+v), QM_MIN, QM_MAX);
       else if (k === 'slow') { if (timer || st.moved) return; timer = setInterval(function () { if (!box.isConnected) { clearInterval(timer); return; } st.pull = clamp(st.pull + 5, 0, PULL_MAX); frRec(); if (st.moved || st.pull >= PULL_MAX) { clearInterval(timer); timer = 0; } paint(); }, 60); }
       else if (k === 'card') { var i = +v; if (st.sel === null || st.sel === i) st.sel = st.sel === i ? null : i; else if (st.slots.indexOf(i) >= 0 && st.sel !== null) place(st.sel, st.slots.indexOf(i)); else st.sel = i; }
       else if (k === 'slot') { if (st.sel !== null) place(st.sel, +v); }
@@ -404,7 +507,7 @@
     };
     box.oninput = function (e) {
       var t = e.target, k = t.getAttribute && t.getAttribute('data-ia'); if (!k || o.done) return;
-      if (k === 'angR') st.ang = +t.value; else if (k === 'wtR') { st.n = +t.value; st.rec[st.n] = 1; } else if (k === 'pullR') { st.pull = +t.value; frRec(); } else if (k === 'hrR') st.hr = +t.value; else if (k === 'dayR') { st.day = +t.value; st.rec[st.day] = 1; } else return;
+      if (k === 'angR') st.ang = +t.value; else if (k === 'wtR') { st.n = +t.value; st.rec[st.n] = 1; } else if (k === 'pullR') { st.pull = +t.value; frRec(); } else if (k === 'hrR') st.hr = +t.value; else if (k === 'dayR') { st.day = +t.value; st.rec[st.day] = 1; } else if (k === 'htR') st.t = +t.value; else if (k === 'qmR') st.m = +t.value; else return;
       soft();
     };
     // 拉桿拖動中不能整個重畫（iPad 上會把正在拖的拉桿換掉、拖不動）：只換圖、讀數、表格和按鈕的可按狀態
@@ -451,6 +554,8 @@
 
   return { SLOP: SLOP, R_PIN: R_PIN, R_AREA: R_AREA, SOLS: SOLS, SURF: SURF, KIND_ZH: KIND_ZH, SPRING_MAX: SPRING_MAX, FW_MAX: FW_MAX,
     SKY: SKY, HR_MIN: HR_MIN, HR_MAX: HR_MAX, skyHA: skyHA, skySee: skySee, skyTop: skyTop, FIRE_WAY: FIRE_WAY, fireBurn: fireBurn, RUST_G: RUST_G, RUST_LV: RUST_LV, DAY_MAX: DAY_MAX, rustLv: rustLv,
+    HEAT_M: HEAT_M, HEAT_N: HEAT_N, HEAT_T: HEAT_T, heatAt: heatAt, heatFall: heatFall, EM_CORE: EM_CORE, EM_TURNS: EM_TURNS, EM_B: EM_B, emClips: emClips, emPole: emPole,
+    QT: QT, QLV: QLV, QM_MIN: QM_MIN, QM_MAX: QM_MAX, quakeLv: quakeLv, quakeTown: quakeTown,
     proj: proj, segPts: segPts, placeXY: placeXY, spots: spots, hitAt: hitAt, noOverlap: noOverlap, perm: perm, hash: hash,
     shadowLen: shadowLen, paper: paper, springLen: springLen, frictionPull: frictionPull,
     initState: initState, simVals: simVals, meets: meets, check: check, ansText: ansText, label: label, html: html, mount: mount, css: css };

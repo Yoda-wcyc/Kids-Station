@@ -3,6 +3,7 @@
 // 1. 資料格式：kind／mode／d 1～3、id 全站唯一、單元存在、題數（社會 地圖 40＋時間軸 20、自然 4 種模擬各 10）、每個有題的單元 ≥ 10 題
 // 2. 地圖：答案在圓圈裡、同一題的圓圈（含寬限）兩兩不重疊（＝答案唯一）、熱區直徑 ≥ 44；地名只用講義（unit*.js）有的
 // 1b. 五下（2026-11-02）：模擬多 star 星座盤、fire 燃燒三要素、rust 鐵生鏽；專有地名的地點寫 h
+// 1c. 六上（2026-11-02）：模擬多 heat 熱的傳導、quake 規模和震度、emag 電磁鐵（原理規則見 4a 最後）
 // 3. 時間軸：正解順序就是 items 的順序、出題順序不會剛好是正解；有年份的照年份遞增
 // 4. 模擬：影長隨高度角增大而變短、彈簧伸長量和砝碼數成正比、摩擦力 塗油 ＜ 光滑 ＜ 砂紙、石蕊試紙變色規則；chk 題用模擬算出答案對照 opts[a]；set 題起始狀態不符合、但做得到
 'use strict';
@@ -42,6 +43,31 @@ for (let d = 0; d <= IA.DAY_MAX; d++) {
 ok(IA.rustLv('C', 0) === 0 && IA.rustLv('D', 4) === 4 && IA.rustLv('C', 7) === 4, 'rust day 0 none, 丁 day4 / 丙 day7 = 非常多');
 ok(IA.skyTop(1, 21) === '獵戶座' && IA.skyTop(5, 21) === '春季大曲線' && IA.skyTop(7, 21) === '天蠍座' && IA.skyTop(8, 21) === '夏季大三角' && IA.skyTop(11, 21) === '秋季四邊形' && IA.skyTop(2, 21) === '冬季大三角', 'sky: seasonal groups high in the south at 9 pm');
 IA.SKY.forEach(x => { for (let m = 1; m <= 12; m++) ok(Math.abs(IA.skyHA(m, 23, x.n) - IA.skyHA(m === 12 ? 1 : m + 1, 21, x.n)) < 1e-9 || Math.abs(Math.abs(IA.skyHA(m, 23, x.n) - IA.skyHA(m === 12 ? 1 : m + 1, 21, x.n)) - 24) < 1e-9, 'sky: next month 2 hours earlier ' + x.n + ' ' + m); });
+// 六上：熱的傳導（近的先掉、時間越久掉越多、銅 ≥ 鐵 ＞ 木頭＝塑膠＝0）、規模和震度（規模越大震度不變小、越遠不變大、最近＞最遠）、電磁鐵（圈數、電池越多越強；鐵芯最強；斷電 0；反接 N S 對調）
+for (let i = 1; i < IA.HEAT_N; i++) ['cu', 'fe'].forEach(m => ok(IA.heatAt(m, i) < IA.heatAt(m, i + 1), 'heat: nearer piece falls first ' + m + ' ' + i));
+for (let t = 0; t <= IA.HEAT_T; t++) {
+  ok(IA.heatFall('cu', t) >= IA.heatFall('fe', t) && IA.heatFall('fe', t) >= IA.heatFall('wood', t) && IA.heatFall('wood', t) === 0 && IA.heatFall('pl', t) === 0, 'heat: metal faster than wood/plastic, copper ≥ iron, t=' + t);
+  if (t) ['cu', 'fe'].forEach(m => ok(IA.heatFall(m, t) >= IA.heatFall(m, t - 1), 'heat: more pieces fall as time goes on ' + m + ' t=' + t));
+}
+ok(IA.heatFall('cu', IA.HEAT_T) === IA.HEAT_N && IA.heatFall('fe', IA.HEAT_T) === IA.HEAT_N && IA.heatFall('cu', 4) > IA.heatFall('fe', 4) && Object.keys(IA.HEAT_M).every(m => !!IA.HEAT_M[m].metal === (IA.HEAT_M[m].k > 0)), 'heat: both metals finish within 10 min, copper clearly faster at 4 min');
+for (let m = IA.QM_MIN; m <= IA.QM_MAX; m += 0.5) {
+  IA.QT.forEach((x, i) => { if (i) ok(IA.quakeLv(m, x.d) <= IA.quakeLv(m, IA.QT[i - 1].d), 'quake: farther → not stronger, m=' + m + ' ' + x.n);
+    if (m > IA.QM_MIN) ok(IA.quakeLv(m, x.d) >= IA.quakeLv(m - 0.5, x.d), 'quake: bigger magnitude → not weaker, m=' + m + ' ' + x.n); });
+  ok(IA.quakeLv(m, IA.QT[0].d) > IA.quakeLv(m, IA.QT[IA.QT.length - 1].d), 'quake: nearest town shakes more than farthest, m=' + m);
+}
+ok(IA.QLV.length === 10 && IA.QLV.join() === '0 級,1 級,2 級,3 級,4 級,5 弱,5 強,6 弱,6 強,7 級', 'quake: 10 intensity levels 0～7 with 5/6 弱強');
+ok(IA.QLV[IA.quakeTown(6, 'A')] === '5 強' && IA.QLV[IA.quakeTown(6, 'E')] === '2 級', 'n11-s09 premise: 規模 6.0 甲鎮 5 強、戊鎮 2 級');
+const EMS = []; IA.EM_TURNS.forEach(n => { for (let b = 1; b <= IA.EM_B; b++) Object.keys(IA.EM_CORE).forEach(core => EMS.push({ n, b, core })); });
+EMS.forEach(s => {
+  const on = Object.assign({ on: 1 }, s), tag = JSON.stringify(s);
+  ok(IA.emClips(Object.assign({ on: 0 }, s)) === 0, 'emag: no current → no clips ' + tag);
+  if (s.core !== 'fe') ok(IA.emClips(on) < IA.emClips(Object.assign({}, on, { core: 'fe' })) && IA.emClips(on) === IA.emClips(Object.assign({}, on, { core: 'none' })), 'emag: iron core strongest, wood/aluminium ≈ nothing ' + tag);
+  const i = IA.EM_TURNS.indexOf(s.n);
+  if (i) ok(IA.emClips(on) >= IA.emClips(Object.assign({}, on, { n: IA.EM_TURNS[i - 1] })) && (s.core !== 'fe' || IA.emClips(on) > IA.emClips(Object.assign({}, on, { n: IA.EM_TURNS[i - 1] }))), 'emag: more turns → stronger ' + tag);
+  if (s.b > 1) ok(IA.emClips(on) >= IA.emClips(Object.assign({}, on, { b: s.b - 1 })) && (s.core !== 'fe' || IA.emClips(on) > IA.emClips(Object.assign({}, on, { b: s.b - 1 }))), 'emag: more batteries in series → stronger ' + tag);
+});
+ok(IA.emClips({ on: 1, n: 20, b: 1, core: 'fe' }) === 3 && IA.emClips({ on: 1, n: 40, b: 1, core: 'fe' }) === 6 && IA.emClips({ on: 1, n: 60, b: 1, core: 'fe' }) === 9, 'emag: matches practice question 20/40/60 圈 → 3/6/9 根');
+ok(IA.emPole(0, 'A') !== IA.emPole(0, 'B') && IA.emPole(1, 'A') === IA.emPole(0, 'B') && IA.emPole(1, 'B') === IA.emPole(0, 'A'), 'emag: two ends opposite poles; reversing current swaps N and S');
 // tap 判分：圓圈外寬限以外不算、圓圈裡算
 const sp0 = [{ id: 'a', x: 100, y: 100, r: 25 }, { id: 'b', x: 200, y: 100, r: 25 }];
 ok(IA.hitAt(sp0, 100, 100) === 'a' && IA.hitAt(sp0, 100 + 25 + IA.SLOP, 100) === 'a' && IA.hitAt(sp0, 150, 100) === null && IA.hitAt(sp0, 190, 110) === 'b', 'hitAt: inside/slop counts, outside does not');
@@ -62,6 +88,9 @@ function states(q) {
   if (q.sim === 'star') for (let mon = 1; mon <= 12; mon++) for (let hr = IA.HR_MIN; hr <= IA.HR_MAX; hr++) out.push({ mon, hr });
   if (q.sim === 'fire') [0, 1].forEach(fuel => [0, 1].forEach(air => [0, 1].forEach(heat => out.push({ fuel, air, heat }))));
   if (q.sim === 'rust') Object.keys(IA.RUST_G).forEach(g => { for (let day = 0; day <= IA.DAY_MAX; day++) out.push({ g, day }); });
+  if (q.sim === 'heat') Object.keys(IA.HEAT_M).forEach(m => { for (let t = 0; t <= IA.HEAT_T; t++) out.push({ m, t }); });
+  if (q.sim === 'quake') for (let m = IA.QM_MIN; m <= IA.QM_MAX; m += 0.5) out.push({ m });
+  if (q.sim === 'emag') EMS.forEach(s => [0, 1].forEach(on => [0, 1].forEach(rev => out.push(Object.assign({ on, rev }, s)))));
   return out;
 }
 
@@ -110,7 +139,10 @@ Object.keys(SUBJ).forEach(k => {
         ok(st0.slots.every(v => v === -1), tag + ': starts with empty timeline');
       }
       if (q.kind === 'sim') {
-        ok(['shadow', 'litmus', 'spring', 'friction', 'star', 'fire', 'rust'].includes(q.sim), tag + ': sim name');
+        ok(['shadow', 'litmus', 'spring', 'friction', 'star', 'fire', 'rust', 'heat', 'quake', 'emag'].includes(q.sim), tag + ': sim name');
+        if (q.sim === 'heat') ok(IA.HEAT_M[q.init.m] && q.init.t >= 0 && q.init.t <= IA.HEAT_T, tag + ': heat init');
+        if (q.sim === 'quake') ok(q.init.m >= IA.QM_MIN && q.init.m <= IA.QM_MAX && (q.init.m * 2) % 1 === 0, tag + ': quake init');
+        if (q.sim === 'emag') ok(IA.EM_TURNS.includes(q.init.n) && q.init.b >= 1 && q.init.b <= IA.EM_B && IA.EM_CORE[q.init.core] && [0, 1].includes(q.init.on) && [0, 1, undefined].includes(q.init.rev), tag + ': emag init');
         if (q.sim === 'star') ok(q.init.mon >= 1 && q.init.mon <= 12 && q.init.hr >= IA.HR_MIN && q.init.hr <= IA.HR_MAX, tag + ': star init');
         if (q.sim === 'fire') ok(['fuel', 'air', 'heat'].every(k => q.init[k] === 0 || q.init[k] === 1), tag + ': fire init');
         if (q.sim === 'rust') ok(IA.RUST_G[q.init.g] && q.init.day >= 0 && q.init.day <= IA.DAY_MAX, tag + ': rust init');
@@ -145,6 +177,19 @@ Object.keys(SUBJ).forEach(k => {
           if (c.fn === 'lv') ok(A === IA.RUST_LV[IA.rustLv(c.g, c.day)], tag + ': rust level');
           if (c.fn === 'most') { const lv = Object.keys(IA.RUST_G).map(g => IA.rustLv(g, c.day)), mx = Math.max(...lv); ok(lv.filter(v => v === mx).length === 1 && A.includes(IA.RUST_G[Object.keys(IA.RUST_G)[lv.indexOf(mx)]].n) && q.opts.filter(o => o.includes('丁')).length === 1, tag + ': rust most'); }
           if (c.fn === 'none') ok(A.includes('甲') && A.includes('乙') && Object.keys(IA.RUST_G).filter(g => IA.rustLv(g, IA.DAY_MAX) === 0).map(g => IA.RUST_G[g].n).join() === '甲,乙', tag + ': rust none');
+          if (c.fn === 'first') ok(/第 1 片/.test(A) && [2, 3, 4, 5].every(i => IA.heatAt(c.m, 1) < IA.heatAt(c.m, i)), tag + ': heat nearest piece first');
+          if (c.fn === 'fall') ok(num(A) === IA.heatFall(c.m, c.t), tag + ': heat fallen ' + IA.heatFall(c.m, c.t));
+          if (c.fn === 'at') ok(num(A) === IA.heatAt(c.m, c.i), tag + ': heat piece ' + c.i + ' at ' + IA.heatAt(c.m, c.i));
+          if (c.fn === 'fastest') { const f = Object.keys(IA.HEAT_M).map(m => IA.heatFall(m, c.t)), mx = Math.max(...f); ok(f.filter(v => v === mx).length === 1 && A === IA.HEAT_M[Object.keys(IA.HEAT_M)[f.indexOf(mx)]].n, tag + ': heat fastest'); }
+          if (c.fn === 'hnone') { const z = Object.keys(IA.HEAT_M).filter(m => IA.heatFall(m, c.t) === 0).map(m => IA.HEAT_M[m].n); ok(z.length === 2 && z.every(n => A.includes(n)) && q.opts.filter(o => z.every(n => o.includes(n))).length === 1, tag + ': heat none fell: ' + z); }
+          if (c.fn === 'qlv') ok(A === IA.QLV[IA.quakeTown(c.m, c.t)], tag + ': quake level ' + IA.QLV[IA.quakeTown(c.m, c.t)]);
+          if (c.fn === 'qmax') { const L = IA.QT.map(x => IA.quakeLv(c.m, x.d)), mx = Math.max(...L); ok(L.filter(v => v === mx).length === 1 && A.indexOf(IA.QT[L.indexOf(mx)].n) === 0, tag + ': quake strongest town'); }
+          if (c.fn === 'qcmp') { const x = IA.quakeTown(c.m, c.x), y = IA.quakeTown(c.m, c.y), nm = id => IA.QT.find(t => t.id === id).n; ok(A === (x > y ? nm(c.x) + '比較大' : y > x ? nm(c.y) + '比較大' : '兩鎮一樣大'), tag + ': quake compare ' + x + '/' + y); }
+          if (c.fn === 'qup') { const a = IA.quakeTown(c.a, c.t), b = IA.quakeTown(c.b, c.t); ok(A === (b > a ? '變大' : b < a ? '變小' : '不變'), tag + ': quake change ' + a + '→' + b); }
+          if (c.fn === 'clips') ok(num(A) === IA.emClips({ on: 1, n: c.n, b: c.b, core: c.core }), tag + ': emag clips ' + IA.emClips({ on: 1, n: c.n, b: c.b, core: c.core }));
+          if (c.fn === 'off') ok(IA.emClips(Object.assign({}, q.init, { on: 0 })) === 0 && IA.emClips(Object.assign({}, q.init, { on: 1 })) > 0 && /掉下來/.test(A), tag + ': emag off drops clips');
+          if (c.fn === 'cmp') { const x = IA.emClips(c.x), y = IA.emClips(c.y), w = x < y ? '少' : x > y ? '多' : '一樣'; ok(A.includes(w) && q.opts.filter(o => o.includes(w)).length === 1, tag + ': emag compare ' + x + '/' + y); }
+          if (c.fn === 'pole') ok(A === IA.emPole(c.rev, c.end) + ' 極', tag + ': emag pole ' + IA.emPole(c.rev, c.end));
           if (c.fn === 'kind') ok(IA.SOLS[q.init.sol].k === c.k && IA.paper(q.init.sol, 'red') === 'red' && IA.paper(q.init.sol, 'blue') === 'blue', tag + ': neutral → no change');
           if (c.fn === 'mystery') ok(A === IA.KIND_ZH[IA.SOLS[q.init.sol].k], tag + ': mystery solution kind');
           if (c.fn === 'pick') { const byName = {}; Object.keys(IA.SOLS).forEach(s => { byName[IA.SOLS[s].n] = IA.SOLS[s].k; });
@@ -163,9 +208,10 @@ Object.keys(M.places).forEach(id => { const nm = NAMED[id] || M.places[id].h; if
 ok(IA.frictionPull('sand', 1) === 180, 'n4-s20 premise: sand + 1 weight = 180');
 // 題數
 // 2026-11-02 五下：社會 地圖 29＋時間軸 15（u5、u6、u8、u9；u7 米食／音樂沒有適合的地點與年份，不做）、自然 star／fire／rust 各 10（n8 動物不做模擬）
-const want = { 'social:map': 69, 'social:time': 35, 'science:shadow': 10, 'science:litmus': 10, 'science:spring': 10, 'science:friction': 10, 'science:star': 10, 'science:fire': 10, 'science:rust': 10 };
+// 2026-11-02 六上：社會 地圖 20＋時間軸 12（u12、u13、u14；u10 科技、u11 消費理財沒有適合的地點與年份，不做）、自然 heat（n9）、quake（n11）、emag（n12）各 10（n10 天氣不做模擬）
+const want = { 'social:map': 89, 'social:time': 47, 'science:shadow': 10, 'science:litmus': 10, 'science:spring': 10, 'science:friction': 10, 'science:star': 10, 'science:fire': 10, 'science:rust': 10, 'science:heat': 10, 'science:quake': 10, 'science:emag': 10 };
 Object.keys(want).forEach(x => ok(cnt[x] === want[x], `count ${x}: ${cnt[x]} (want ${want[x]})`));
-ok(!SUBJ.science.ia.n2 && !SUBJ.science.ia.n8, 'science n2 (植物)、n8 (動物) have no simulation');
+ok(!SUBJ.science.ia.n2 && !SUBJ.science.ia.n8 && !SUBJ.science.ia.n10, 'science n2 (植物)、n8 (動物)、n10 (天氣) have no simulation');
 // 頁面接線
 ['social', 'science'].forEach(k => { const h = fs.readFileSync(path.join(MM, k + '.html'), 'utf8');
   ok(h.includes(`<script src="data/${k}/interactive.js`) && h.indexOf('<script src="interactive.js') < h.indexOf('<script src="mindmap.js'), `mindmap/${k}.html loads interactive data + component before mindmap.js`); });

@@ -74,7 +74,7 @@ ok(all.reduce((n, x) => n + (x.st.qs || []).length, 0) === 20 * nLit, (20 * nLit
 const sids = all.map(x => x.st.id);
 ok(new Set(sids).size === sids.length, 'set ids unique');
 const mk = all.flatMap(x => (x.st.qs || []).map(q => x.uid + '|L|' + x.st.id + ':' + q.id));
-ok(new Set(mk).size === mk.length && mk.every(id => id.length <= 200 && /^([un][1-9])\|L\|\1-L[1-5]:q[1-4]$/.test(id)), 'mistake ids unique, well-formed');
+ok(new Set(mk).size === mk.length && mk.every(id => id.length <= 200 && /^([un][1-9]\d?)\|L\|\1-L[1-5]:q[1-4]$/.test(id)), 'mistake ids unique, well-formed');
 ok(all.every(x => x.st.qs.filter(ZR.isOpen).every(q => q.ref.length >= 15)), 'open questions have a full reference answer');
 ok(all.every(x => x.st.body.some(b => b.table || b.svg || b.timeline) || x.k === 'social'), 'every science set has a table, SVG or timeline');
 

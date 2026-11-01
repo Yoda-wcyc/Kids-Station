@@ -158,11 +158,13 @@
   function page(box, o) {
     var k = o.k, unit = o.unit || '', all = list(k), items = unit ? all.filter(function (e) { return e.p.u === unit; }) : all;
     var nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'], ulab = {};
-    (o.units || []).forEach(function (x, i) { ulab[x[0]] = x[2] || '單元' + nums[i]; });   // x[2]＝資料的 label（五下「五下 單元一」）
+    (o.units || []).forEach(function (x, i) { ulab[x[0]] = x[2] || '單元' + nums[i]; });   // x[2]＝資料的 label（五下「五下 單元一」、六上「六上 單元一」）
     var filt = (o.units && o.units.length) ? '<div class="seg mk-units" role="group" aria-label="依單元篩選">' +
-      ['<a class="btn sm' + (unit ? '' : ' primary') + '" href="#s/' + k + '/mistakes">全部（' + all.length + '）</a>'].concat(o.units.map(function (x) {
-        var n = all.filter(function (e) { return e.p.u === x[0]; }).length;
-        return '<a class="btn sm' + (unit === x[0] ? ' primary' : '') + '" href="#s/' + k + '/mistakes-' + x[0] + '" title="' + esc(x[1]) + '">' + ulab[x[0]] + '（' + n + '）</a>';
+      ['<a class="btn sm' + (unit ? '' : ' primary') + '" href="#s/' + k + '/mistakes">全部（' + all.length + '）</a>'].concat(o.units.map(function (x, i) {
+        var n = all.filter(function (e) { return e.p.u === x[0]; }).length, bk = x[2] ? x[2].split(' ')[0] : '五上', prev = o.units[i - 1];
+        // 冊別分區（五上／五下／六上）：每一冊第一顆按鈕前面換行、標冊別
+        var head = !prev || (prev[2] ? prev[2].split(' ')[0] : '五上') !== bk ? '<b class="mk-bk">📗 ' + bk + '</b>' : '';
+        return head + '<a class="btn sm' + (unit === x[0] ? ' primary' : '') + '" href="#s/' + k + '/mistakes-' + x[0] + '" title="' + esc(x[1]) + '">' + ulab[x[0]] + '（' + n + '）</a>';
       })).join('') + '</div>' : '';
     var sp = spaced(k), today = dayIdx(now());
     function dueText(e) { var d = (e.due || today) - today; return d <= 0 ? '🔁 今天複習' : d === 1 ? '明天複習' : d + ' 天後複習'; }

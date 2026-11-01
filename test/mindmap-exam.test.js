@@ -17,7 +17,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.error('FAIL mindmap
 
 // 資料檔＝頁面實際載入的（mindmap/<科>.html 的 data/<科>/*.js，照頁面順序），加單元不用改測試
 const pageData = (k, re) => [...fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8').matchAll(/src="data\/(\w+\/[\w-]+)\.js/g)].map(m => m[1]).filter(f => !re || re.test(f));
-// UNITS＝有單元測驗資料的單元；PAIRS＝段考的組（同 mindmap.js mockPairs：照順序兩個一組、單數時最後一個併進最後一組、整組都有測驗才算）
+// UNITS＝有單元測驗資料的單元；PAIRS＝段考的組（同 mindmap.js mockPairs：每一冊照順序兩個一組、單數時最後一個併進最後一組、整組都有測驗才算）
 // 新單元還沒有測驗資料 → 頁面的 📄 按鈕藏起來、段考不出那一組
 const UNITS = {}, PAIRS = {};
 const VAR = { social: 'DATA_SOCIAL', science: 'DATA_SCIENCE' };
@@ -27,7 +27,10 @@ const DATA = {};
   pageData(k, /\/(unit|lit|exam)/).forEach(f => vm.runInNewContext(fs.readFileSync(path.join(root, 'mindmap', 'data', f + '.js'), 'utf8'), ctx));
   const D = DATA[k] = ctx.window[VAR[k]], us = D.units.map(u => u.id);
   UNITS[k] = us.filter(id => D.exam && D.exam[id]);
-  const gs = []; for (let i = 0; i + 1 < us.length; i += 2) gs.push([us[i], us[i + 1]]); if (us.length % 2 && gs.length) gs[gs.length - 1].push(us[us.length - 1]);
+  // 每一冊（label 空格前，沒有＝五上）各自分組（2026-11-02 六上起；五下 u9 不會跟六上 u10 湊成一份）
+  const bk = id => { const u = D.units.find(x => x.id === id); return u.label ? u.label.split(' ')[0] : '五上'; }, books = [], gs = [];
+  us.forEach(id => { const b = books[books.length - 1]; if (!b || bk(b[0]) !== bk(id)) books.push([id]); else b.push(id); });
+  books.forEach(b => { for (let i = 0; i + 1 < b.length; i += 2) gs.push([b[i], b[i + 1]]); if (b.length % 2 && b.length > 1) gs[gs.length - 1].push(b[b.length - 1]); });
   PAIRS[k] = gs.filter(g => g.every(id => D.exam[id]));
   ok(UNITS[k].length >= 4 && PAIRS[k].length >= 2 && Object.keys(D.exam).every(id => us.includes(id)), k + ' exam units exist: ' + UNITS[k] + '｜pairs ' + JSON.stringify(PAIRS[k]));
 });

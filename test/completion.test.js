@@ -185,6 +185,11 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
     const us = M.subjects[i].units, up = us.filter(u => u.group === '五上'), dn = us.filter(u => u.group === '五下');
     ok(up.length >= 4 && dn.length >= 1 && us.indexOf(dn[0]) === up.length && up.every((u, j) => u.title.startsWith('單元' + '一二三四五六七八九十'[j] + '　')) && dn.every(u => /^五下 單元/.test(u.title)), 'map: ' + k + ' 五上 then 五下, titles: ' + us.map(u => u.title.split('　')[0]).join('/'));
   });
+  // 六上（2026-11-02）：接在五下後面、group＝六上、標題「六上 單元X」
+  [['social', 1, 5], ['science', 2, 4]].forEach(([k, i, n]) => {
+    const us = M.subjects[i].units, six = us.filter(u => u.group === '六上');
+    ok(six.length === n && us.indexOf(six[0]) === us.filter(u => u.group === '五上' || u.group === '五下').length && six.every((u, j) => u.title.startsWith('六上 單元' + '一二三四五'[j] + '　')), 'map: ' + k + ' 六上 after 五下: ' + six.map(u => u.title).join('/'));
+  });
   // 加單元不會讓已完成的五上單元掉回未完成：u1 全部達標 → 還是 done，社會完成 1 個
   { const Kd = 'social:u1', ctxU1 = { mm: { [Kd]: { unlocked: 5, best: { 1: 100, 2: 100, 3: 100, 4: 100 }, passedAt: { 1: T0, 2: T0, 3: T0, 4: T0 } } }, done: { mm: { [Kd]: { czFirst: 90, qz: 90 } } } };
     const M3 = KC.build(DATA, ctxU1), so = M3.subjects[1];

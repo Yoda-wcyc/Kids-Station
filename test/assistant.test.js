@@ -228,7 +228,18 @@ const MANY = snap({
   const t1 = r1._.cand.find(t => t.k === 'social'), n1 = r1.next.find(n => n.k === 'social');
   ok(s1.unitsDone === up.length && t1 && t1.kind === 'start' && /五下 單元一/.test(t1.title) && t1.href === 'index.html#s/social/u5' && (!n1 || /五下 單元一/.test(n1.title)), 'g5b: 五上 all done → next is 五下 單元一: ' + JSON.stringify(t1) + ' ' + JSON.stringify(n1));
   const r2 = KA.analyze(snap({ ctx: { mm: Object.assign({ 'social:u5': { passedAt: { 1: NOW - DAY }, lastPassAt: NOW - DAY } }, mm), done: { mm: mmd } }, goal: null }));
-  ok(r2.subjects.find(s => s.k === 'social').unitsTotal === KC.MM_UNITS.social.length, 'g5b: started 五下 → counts every unit: ' + r2.subjects.find(s => s.k === 'social').unitsTotal);
+  const g5 = KC.MM_UNITS.social.filter(x => !x[2] || x[2].startsWith('五下')).length;   // 2026-11-02 六上起：開始五下 → 算到五下為止（六上還沒碰不算）
+  ok(r2.subjects.find(s => s.k === 'social').unitsTotal === g5, 'g5b: started 五下 → counts 五上＋五下: ' + r2.subjects.find(s => s.k === 'social').unitsTotal);
+  // 六上（2026-11-02）：五上＋五下都做完，下一步才是〈六上 單元一〉；五下還沒做完，六上不搶下一步
+  ['social', 'science'].forEach(k => {
+    const g = KC.MM_UNITS[k].filter(x => !x[2] || x[2].startsWith('五下')).map(x => x[0]), m2 = {}, d2 = {}, first6 = KC.MM_UNITS[k].find(x => /^六上/.test(x[2] || ''));
+    g.forEach(id => { m2[k + ':' + id] = full(id); d2[k + ':' + id] = { czFirst: 90, qz: 90 }; });
+    const r3 = KA.analyze(snap({ ctx: { mm: m2, done: { mm: d2 } }, goal: null })), t3 = r3._.cand.find(t => t.k === k), n3 = r3.next.find(n => n.k === k);
+    ok(first6 && t3 && t3.kind === 'start' && /六上 單元一/.test(t3.title) && t3.href === 'index.html#s/' + k + '/' + first6[0] && (!n3 || /六上 單元一/.test(n3.title)), 'g6a: ' + k + ' 五上＋五下 all done → next is 六上 單元一: ' + JSON.stringify(t3));
+    const last5 = g[g.length - 1], m4 = Object.assign({}, m2), d4 = Object.assign({}, d2); delete m4[k + ':' + last5]; delete d4[k + ':' + last5];
+    const r4 = KA.analyze(snap({ ctx: { mm: m4, done: { mm: d4 } }, goal: null }));
+    ok(r4.subjects.find(s => s.k === k).unitsTotal === g.length && r4.next.concat(r4.tasks).filter(x => x.k === k).every(x => !/六上/.test(x.title)), 'g6a: ' + k + ' 五下 not finished → 六上 not counted, not next');
+  });
 }
 
 // ---------- 7. 進步：錯題變少、連續天數 ----------

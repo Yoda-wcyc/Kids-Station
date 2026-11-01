@@ -988,15 +988,18 @@ function exRec(id){ return exAll()[SUBJ + ':' + id] || {}; }
 function exSeen(){ return (exAll()._seen || {})[SUBJ] || {}; }
 function exMarkSeen(keys){ var all = exAll(), t = Date.now(), s = (all._seen || {})[SUBJ] || {}; if(MXx()) s = MXx().prune(s, t); keys.forEach(function(k){ s[k] = t; }); all._seen = all._seen || {}; all._seen[SUBJ] = s; lsSet(XKEY, all); }
 function exOn(u){ return !!(MXx() && QKx() && ZRx() && D.exam && u && D.exam[u.id]); }
-// 段考：照順序兩個一組；單元數是單數時，最後一個併進最後一組（社會 u7＋u8＋u9）；整組都有測驗資料才出
-function mockPairs(){ var out = [], has = function(u){ return !!(D.exam && D.exam[u.id]); }; for(var i = 0; i + 1 < ALL_UNITS.length; i += 2) out.push([ALL_UNITS[i], ALL_UNITS[i + 1]]); if(ALL_UNITS.length % 2 && out.length) out[out.length - 1].push(ALL_UNITS[ALL_UNITS.length - 1]); return out.filter(function(g){ return g.every(has); }); }
+// 段考：每一冊（label 空格前的冊別，沒有＝五上）各自照順序兩個一組；那一冊單元數是單數時，最後一個併進最後一組（社會五下 u7＋u8＋u9、六上 u12＋u13＋u14）；整組都有測驗資料才出
+function mockPairs(){ var out = [], has = function(u){ return !!(D.exam && D.exam[u.id]); }, bk = function(u){ return u.label ? u.label.split(' ')[0] : '五上'; }, books = [];
+  ALL_UNITS.forEach(function(u){ var b = books[books.length - 1]; if(!b || bk(b[0]) !== bk(u)) books.push(b = []); b.push(u); });
+  books.forEach(function(us){ for(var i = 0; i + 1 < us.length; i += 2) out.push([us[i], us[i + 1]]); if(us.length % 2 && us.length > 1) out[out.length - 1].push(us[us.length - 1]); });
+  return out.filter(function(g){ return g.every(has); }); }
 function unitById(id){ return ALL_UNITS.filter(function(x){ return x.id === id; })[0]; }
 function exCard(id, small, title, v){ var r = exRec(id); return '<button class="lit-card' + (r.n ? (r.best >= 90 ? ' done' : ' tried') : '') + '" data-act="exGo" data-v="' + v + '"><small>' + esc(small) + '</small><b>' + esc(title) + '</b><span>' + (r.n ? '🏅 最高 ' + r.best + ' 分・最近 ' + r.last + ' 分' : '⚪ 還沒考過') + '</span></button>'; }
 function renderExamHome(){
   EXM = null; exStopTimer();
   var html = '<div class="mm-wrap">';
   if(MOCK){
-    html += '<h2>📝 ' + CFG.name + '段考模擬</h2><ul class="ex-rules"><li>兩個單元一份（社會五下單元三～五三個單元一份），每份 30 題、滿分 100 分（前 20 題每題 3 分、後 10 題每題 4 分）。</li><li>題目由易到難，最後是題組：先讀一段資料再回答。</li><li>考試中不說對錯，全部寫完按「交卷」，才看分數和每一題的解析。</li><li>答錯的題會收進錯題庫；這裡不算進單元完成。</li></ul>' +
+    html += '<h2>📝 ' + CFG.name + '段考模擬</h2><ul class="ex-rules"><li>兩個單元一份（社會五下、六上的單元三～五是三個單元一份），每份 30 題、滿分 100 分（前 20 題每題 3 分、後 10 題每題 4 分）。</li><li>題目由易到難，最後是題組：先讀一段資料再回答。</li><li>考試中不說對錯，全部寫完按「交卷」，才看分數和每一題的解析。</li><li>答錯的題會收進錯題庫；這裡不算進單元完成。</li></ul>' +
       '<label class="ex-timer-opt"><input type="checkbox" id="exTimed"> ⏱️ 限時 ' + MOCK_MIN + ' 分鐘（時間到自動交卷）</label>' +
       '<div class="lit-grid">' + mockPairs().map(function(p, i){ return exCard('mock-' + p.map(function(x){ return x.id; }).join('-'), p.map(unitLabel).join('＋'), p.map(function(x){ return x.title; }).join('、'), 'mock:' + i); }).join('') + '</div>';
   } else {
