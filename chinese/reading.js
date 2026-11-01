@@ -117,8 +117,8 @@
     var q = it.q, open = ZR.isOpen(q), cls = it.done ? (open || it.right ? ' ok' : ' no') : '';
     var ctx = it.art ? '<details class="zr-mk-art"><summary>📖 看文章〈' + esc(it.art.title) + '〉</summary><div class="zr-art">' + articleHTML(it.art) + '</div></details>' : '';
     var fb = !open && it.done ? '<div class="fb ' + (it.right ? 'ok' : 'no') + '"><div class="fbh">' + (it.right ? '答對了！🎉' : '再看一次 👀') + '</div><div>' + esc(q.why) + QK.extra(it) + '</div></div>' : '';
-    return '<div class="zr-q' + cls + '" id="zq' + i + '" data-i="' + i + '"><div class="zr-qh"><span>第 ' + (i + 1) + ' 題</span><span>' + ZR.PIRLS[q.p] + '</span><span aria-label="難度 ' + q.d + '">' + stars(q.d) + '</span><span class="qtype" style="margin:0">' + (open ? '✍️ 想一想' : QK.TYPES[q.type]) + '</span></div>' +
-      ctx + '<p class="zr-qt">' + esc(q.q) + '</p>' + (open ? openHTML(it) : QK.body(it)) + fb + '<p class="zr-msg" data-msg aria-live="polite"></p></div>';
+    return '<div class="zr-q' + cls + '" id="zq' + i + '" data-i="' + i + '"><div class="zr-qh"><span>第 ' + (i + 1) + ' 題</span><span>' + (ZR.PIRLS[q.p] || '成語') + '</span><span aria-label="難度 ' + q.d + '">' + stars(q.d) + '</span><span class="qtype" style="margin:0">' + (open ? '✍️ 想一想' : QK.TYPES[q.type]) + '</span></div>' +
+      ctx + (q.ctx ? '<div class="cy-ctx">' + esc(q.ctx) + '</div>' : '') + '<p class="zr-qt">' + esc(q.q) + '</p>' + (open ? openHTML(it) : QK.body(it)) + fb + '<p class="zr-msg" data-msg aria-live="polite"></p></div>';
   }
   function paintCard(i) { var el = document.getElementById('zq' + i); if (el) el.outerHTML = cardHTML(R.items[i], i); }
   function setMsg(i, m) { var el = document.querySelector('#zq' + i + ' [data-msg]'); if (el) el.textContent = m || ''; }
@@ -198,6 +198,8 @@
   }
 
   // ---------- 只練錯題 ----------
+  // 成語（idioms/，錯題 id cy001:p2／cyr01:q3）也在這裡練：成語的「文章」＝故事、題目＝閱讀題＋練習題＋考題；素養閱讀照一般文章
+  function cyArt(id) { var I = window.ZhIdiom, it = I && I.find(window.DATA_CY, id); return it ? { id: it.id, title: it.word, body: it.story, qs: it.rq.concat(it.pq, it.xq) } : I ? I.find(window.DATA_CY_READ, id) : null; }
   function mkView() {
     document.title = '國語錯題練習｜小朋友學習站';
     var back = '<a class="btn" href="../index.html#s/chinese/mistakes" target="_top">← 回錯題庫</a>';
@@ -209,7 +211,7 @@
     var items = [];
     L.forEach(function (e) {
       if (items.length >= 30 || !e.p) return;
-      var a = ZR.find(ARTS, e.p.a), q = ZR.qOf(a, e.p.q); if (!q || ZR.isOpen(q)) return;
+      var a = /^cy/.test(e.p.a) ? cyArt(e.p.a) : ZR.find(ARTS, e.p.a), q = ZR.qOf(a, e.p.q); if (!q || ZR.isOpen(q)) return;
       var it = newItem(q, e.id); it.art = a; items.push(it);
     });
     R = { mk: true, items: items, started: true, reported: false, ok: 0, grad: 0, last: 0 };

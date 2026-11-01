@@ -4,6 +4,7 @@
     done.mx:{nn,d21,d22t,d22,d31:{acc:最佳 %, sp:最快平均秒數×10, ok:第一次達標的時間}}   ← 數學〈乘法快算〉挑戰（一輪 ≥90% 且平均每題 ≤ 門檻秒數＝ok：二位×二位 20 秒、其他 10 秒；判定在 completion.js）
     done.fr:{basic,bench,lcd,red,mix:最佳 %, test:考試最高分}   ← 數學〈分數比較大小〉各題型練習一輪最佳 %＋考試最高分（2026-10-27 加，跟 p1／p2 一樣不升版：舊版裝置會丟掉、新版下次同步從本機補回）
     done.zh:{'<篇id>':第一次完成的時間}   ← 國語〈閱讀素養〉完成的篇（2026-11-01 加，跟 fr 一樣不升版；聯集，留最早的時間；判定在 completion.js zh:L1～L4）
+    done.cy:{'<成語／篇／單元測驗 id>':第一次完成的時間}   ← 國語〈成語故事〉完成的成語 cy001～cy100、素養閱讀 cyr01～cyr10、單元測驗 cyu01～cyu10、總測驗 cyall（2026-11-01 加，同 zh）
     mk.chinese                              ← 國語錯題庫（2026-11-01 加；舊版裝置的 normMk 會丟掉、新版下次同步從本機補回）
    - mp、fr：各項取大。mx：acc 取大、sp 取小、ok 取最早（聯集）。舊版（v5）裝置的 normDone 會丟掉 mp／mx → 新版下次同步從本機補回來（跟 v4→v5 的 done 一樣）。
    文件格式 v5（2026-10-20 起；v4 欄位完全不變，只多一個 done 欄位，舊文件少了它就當空的）：
@@ -201,7 +202,7 @@
   function normMmD(e) { if (!e || typeof e !== 'object') return null; const o = {}; MM_F.forEach(k => { const v = pct(e[k]); if (v != null) o[k] = v; }); return Object.keys(o).length ? o : null; }
   function normDone(x) {
     const d = obj(x), once = v => ms(v) || null;
-    return { tb: dsec(d.tb, normTb), mm: dsec(d.mm, normMmD), bal: dsec(d.bal, once), sd: dsec(d.sd, pct, SD_K), gw: dsec(d.gw, pct, GW_K), ai: dsec(d.ai, once), mp: dsec(d.mp, pct, MP_K), mx: dsec(d.mx, normMx, MX_K), fr: dsec(d.fr, pct, FR_K), zh: dsec(d.zh, once) };
+    return { tb: dsec(d.tb, normTb), mm: dsec(d.mm, normMmD), bal: dsec(d.bal, once), sd: dsec(d.sd, pct, SD_K), gw: dsec(d.gw, pct, GW_K), ai: dsec(d.ai, once), mp: dsec(d.mp, pct, MP_K), mx: dsec(d.mx, normMx, MX_K), fr: dsec(d.fr, pct, FR_K), zh: dsec(d.zh, once), cy: dsec(d.cy, once) };
   }
   const maxOf = (a, b) => Math.max(a == null ? -Infinity : a, b == null ? -Infinity : b);
   function mergeDone(a, b) {
@@ -213,7 +214,7 @@
     const first = (x, y) => Math.min(x, y), best = (x, y) => Math.max(x, y);
     const lo = (x, y) => (x == null ? y : y == null ? x : Math.min(x, y));
     const mx = mergeSection(a.mx, b.mx, (x, y) => { const o = { acc: Math.max(x.acc, y.acc) }, sp = lo(x.sp, y.sp), ok = lo(x.ok, y.ok); if (sp != null) o.sp = sp; if (ok != null) o.ok = ok; return o; });
-    return normDone({ tb, mm, bal: nums(a.bal, b.bal, first), sd: nums(a.sd, b.sd, best), gw: nums(a.gw, b.gw, best), ai: nums(a.ai, b.ai, first), mp: nums(a.mp, b.mp, best), mx, fr: nums(a.fr, b.fr, best), zh: nums(a.zh, b.zh, first) });
+    return normDone({ tb, mm, bal: nums(a.bal, b.bal, first), sd: nums(a.sd, b.sd, best), gw: nums(a.gw, b.gw, best), ai: nums(a.ai, b.ai, first), mp: nums(a.mp, b.mp, best), mx, fr: nums(a.fr, b.fr, best), zh: nums(a.zh, b.zh, first), cy: nums(a.cy, b.cy, first) });
   }
 
   // 整理成 v6：補 r、去重、排序；t ≤ cut 的舊紀錄只保留「答對過」到 agg；新欄位缺了就是空的（讀舊文件不會壞）

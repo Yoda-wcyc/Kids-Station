@@ -952,7 +952,8 @@ const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 // 2026-10-21：數學多 2 張卡（倍數與公倍數 math/multiples.html、乘法快算 math/multiply.html）→ 8 張卡＋1 個 hidden 入口＝9 個 src
 // 2026-10-27：數學多 1 張卡（分數比較大小 math/fraction.html）→ 10 個 src
 // 2026-11-01：國語 1 張卡（閱讀素養 100 篇 chinese/reading.html）→ 11 個 src
-ok(srcs.length === 11 && (sj.match(/hidden: true/g) || []).length === 1, 'activity cards: ' + srcs.length);
+// 2026-11-01：國語第 2 張卡（成語故事 100 chinese/idioms/idioms.html）→ 12 個 src
+ok(srcs.length === 12 && (sj.match(/hidden: true/g) || []).length === 1, 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----
@@ -1093,6 +1094,39 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
   ok(sj.includes("src: 'chinese/reading.html'") && !sj.includes('國語準備中') && mh.indexOf('chinese/data/catalog.js') > 0 && mh.indexOf('chinese/data/catalog.js') < mh.indexOf('kids-done.js'), 'subjects.js 國語卡、map.html 載入目錄');
   ok(kc.validEvent({ event_id: 'e-1', type: 'practice_round', item: 'chinese:reading', correct: 5, total: 6 }) && kc.validEvent({ event_id: 'e-2', type: 'practice_round', item: 'chinese:mistakes', correct: 5, total: 5 }) && !kc.validEvent({ event_id: 'e-3', type: 'practice_round', item: 'chinese:quiz', correct: 5, total: 5 }), 'kids-coins: chinese:reading／chinese:mistakes whitelisted');
   require('./chinese-reading.test.js');
+}
+// ---- 國語〈成語故事 100〉（2026-11-01）：資料格式、題數、單選、出處、組卷、解鎖 → test/chinese-idiom.test.js；
+//      這裡對接線：done.cy 同步、課程地圖 cy:L1～L4／cy:U1～U10、頁面載入、學習幣 item、錯題 id 與大小、只練錯題（reading.js）、科目卡 ----
+{
+  const KC2 = require(path.join(root, 'completion.js')), C = SM.canon, CYc = require(path.join(root, 'chinese', 'idioms', 'idiom-core.js'));
+  const a = { cy: { cy001: 300, cyu01: 500 } }, b = { cy: { cy001: 200, cyr01: 250, cyall: 400, 'bad key!': 1 } }, m = SM.mergeDone(a, b);
+  ok(C(m.cy) === C({ cy001: 200, cyall: 400, cyr01: 250, cyu01: 500 }) && C(SM.mergeDone(m, a)) === C(m) && C(SM.mergeDone(b, a)) === C(m), 'done.cy: union, earliest time, commutative, idempotent');
+  ok(C(KC2.record({}, 'cy', 'cy001', 83, 1000).cy) === C({ cy001: 1000 }) && KC2.record({ cy: { cy001: 5 } }, 'cy', 'cy001', 90, 9000).cy.cy001 === 5, 'record cy: first completion time kept');
+  const ccat = require(path.join(root, 'chinese', 'idioms', 'data', 'catalog.js')), D3 = { cyCatalog: ccat }, L1 = ccat.idioms.filter(c => c.lv === 1).map(c => c.id);
+  const all = { cy: Object.fromEntries(ccat.idioms.map(c => c.id).concat(ccat.readings.map(r => r.id), Array.from({ length: 10 }, (_, i) => 'cyu' + String(i + 1).padStart(2, '0')), ['cyall']).map(id => [id, 1.8e12])) };
+  ok(SM.bytes(SM.normDone(all)) < 8 * 1024 && Object.keys(SM.normDone(all).cy).length === 121, 'done.cy at maximum (121 ids) stays small: ' + SM.bytes(SM.normDone(all)) + ' B');
+  const e1 = KC2.evaluate('cy:L1', D3, { done: {} }), e2 = KC2.evaluate('cy:L1', D3, { done: { cy: { cy001: 1 } } }), e3 = KC2.evaluate('cy:L1', D3, { done: { cy: Object.fromEntries(L1.map(id => [id, 1])) } });
+  ok(L1.length === 25 && e1.status === 'todo' && e2.status === 'doing' && e2.pct === 4 && e3.status === 'done', 'completion cy:L1 todo → doing 1/25 → done 25/25');
+  ok(KC2.evaluate('cy:U1', D3, { done: {} }).status === 'todo' && KC2.evaluate('cy:U1', D3, { done: { cy: { cyu01: 1 } } }).status === 'done' && KC2.evaluate('cy:U10', D3, { done: { cy: { cyu10: 1 } } }).status === 'done', 'completion cy:U1～U10 = 單元測驗通過（done.cy.cyu01…）');
+  const cys = KC2.catalog(D3).find(s => s.k === 'idioms');
+  ok(cys && cys.name === '成語故事' && cys.icon === '📜' && cys.units.map(u => u.key).join() === 'cy:L1,cy:L2,cy:L3,cy:L4,cy:U1,cy:U2,cy:U3,cy:U4,cy:U5,cy:U6,cy:U7,cy:U8,cy:U9,cy:U10' && !KC2.catalog({}).some(s => s.k === 'idioms'), 'map: 📜 成語故事 L1–L4 + 10 單元測驗 (only when the catalog is loaded)');
+  const ih = fs.readFileSync(path.join(root, 'chinese', 'idioms', 'idioms.html'), 'utf8'), ij = fs.readFileSync(path.join(root, 'chinese', 'idioms', 'idioms.js'), 'utf8');
+  ['../../kids-auth.js', '../../kids-coins.js', '../../kids-mistakes.js', '../../syncmerge.js', '../../completion.js', '../../kids-done.js', '../../sync.js', '../../quizkit.js', '../reading-core.js', 'idiom-core.js', 'data/catalog.js', 'data/set0.js', 'data/set1.js', 'data/set2.js', 'data/set3.js', 'idioms.js']
+    .forEach(s => ok(new RegExp('<script src="' + s.replace(/[.]/g, '\\.') + '(\\?v=[0-9a-f]+)?"></script>').test(ih), 'chinese/idioms/idioms.html loads ' + s));
+  ok(/var WIRE = true;/.test(ij) && ij.includes("KidsCoins.answer(!!ok, 'chinese')") && ij.includes("'chinese:idioms-test' : 'chinese:idioms'") && ij.includes("KidsMistakes.record('chinese'") && ij.includes("KidsDone.record('cy'") && ij.includes("A.startActivity('chinese'"), 'idioms.js: WIRE on — coins, mistakes, done, activity wired');
+  const rh2 = fs.readFileSync(path.join(root, 'chinese', 'reading.html'), 'utf8'), rj2 = fs.readFileSync(path.join(root, 'chinese', 'reading.js'), 'utf8');
+  ['idioms/idiom-core.js', 'idioms/data/set0.js', 'idioms/data/set3.js'].forEach(s => ok(rh2.indexOf(s) > rh2.indexOf('../quizkit.js') && rh2.indexOf(s) < rh2.search(/src="reading[.]js/) && rh2.includes('<script src="' + s), 'chinese/reading.html loads ' + s + ' (只練錯題也出成語題)'));
+  ok(rj2.includes('function cyArt(id)') && rj2.includes("/^cy/.test(e.p.a) ? cyArt(e.p.a)"), 'reading.js: 只練錯題 finds idiom questions (cy…／cyr…)');
+  const sj3 = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8'), mh3 = fs.readFileSync(path.join(root, 'map.html'), 'utf8'), kc3 = require(path.join(root, 'kids-coins.js'))._core;
+  ok(sj3.includes("src: 'chinese/idioms/idioms.html'") && sj3.includes("icon: '📜'") && mh3.indexOf('chinese/idioms/data/catalog.js') > 0 && mh3.indexOf('chinese/idioms/data/catalog.js') < mh3.indexOf('kids-done.js'), 'subjects.js 成語卡、map.html 載入成語目錄');
+  ok(kc3.validEvent({ event_id: 'e-1', type: 'practice_round', item: 'chinese:idioms', correct: 7, total: 8 }) && kc3.validEvent({ event_id: 'e-2', type: 'practice_round', item: 'chinese:idioms-test', correct: 18, total: 20 }) && !kc3.validEvent({ event_id: 'e-3', type: 'practice_round', item: 'chinese:idiom', correct: 5, total: 5 }), 'kids-coins: chinese:idioms／chinese:idioms-test whitelisted');
+  // 錯題：id＝成語:題、分類「成語」；p 截到 120 字（遠小於 MK_P），normMk 全收（活的錯題不設上限；成語全錯約 310KB）
+  const vmc = { window: {} }; vm.createContext(vmc); [0, 1, 2, 3].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'chinese', 'idioms', 'data', 'set' + n + '.js'), 'utf8'), vmc));
+  const owners = vmc.window.DATA_CY.map(it => [it, it.rq.concat(it.pq, it.xq)]).concat(vmc.window.DATA_CY_READ.map(r => [r, r.qs]));
+  const ps = owners.flatMap(([o, qs]) => qs.filter(q => !CYc.isOpen(q)).map(q => [CYc.mkId(o, q), CYc.mkP(o, q)]));
+  const mkDoc = SM.normMk({ chinese: Object.fromEntries(ps.map(([id, p]) => [id, { c: 0, w: 1, t: 1.8e12, u: 1.8e12, p }])) });
+  ok(ps.length > 1000 && ps.every(([id, p]) => /^cyr?\d+:[rpxq]\d$/.test(id) && p.t === '成語' && JSON.stringify(p).length < 1000) && Object.keys(mkDoc.chinese).length === ps.length && SM.bytes(mkDoc) < 400 * 1024 && Object.values(mkDoc.chinese).every(e => e.p && e.p.t === '成語'), 'idiom mistakes: id 成語:題, t 成語, p small, kept by normMk (' + ps.length + ' auto-graded questions, all wrong = ' + SM.bytes(mkDoc) + ' B)');
+  require('./chinese-idiom.test.js');
 }
 // 社會、自然〈🧩 素養題組〉40 組 160 題（2026-11-01）：資料格式、題數、d 遞增、單選唯一正解、開放題要點、錯題 id、頁面接線 → test/mindmap-literacy.test.js
 require('./mindmap-literacy.test.js');

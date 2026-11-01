@@ -6,7 +6,9 @@
   // 有活動卡片的科目：點卡片 → iframe 開正本頁面（有 href 的卡片改成整頁開，例如勇者島；icon 可放小 SVG）
   const ACTS = {
     // 2026-11-01：國語〈閱讀素養 100 篇〉（chinese/reading.html；L1～L4 循序解鎖，規格 kids-member/docs/CHINESE_READING_SPEC.md）
-    chinese: [{ id: 'reading', title: '閱讀素養 100 篇', desc: () => zhDesc(), icon: '📚', src: 'chinese/reading.html' }],
+    // 2026-11-01：國語〈成語故事 100〉（chinese/idioms/idioms.html；規格 kids-member/docs/CHINESE_IDIOM_SPEC.md）
+    chinese: [{ id: 'reading', title: '閱讀素養 100 篇', desc: () => zhDesc(), icon: '📚', src: 'chinese/reading.html' },
+      { id: 'idioms', title: '成語故事 100', desc: () => cyDesc(), icon: '📜', src: 'chinese/idioms/idioms.html' }],
     math: [{ id: 'balance', title: '天平解方程式', desc: '用天平學加減方程式，可以自己出題，也有括號題', icon: '⚖️', src: 'math/balance.html', dk: 'math:balance' },
       { id: 'short-division', title: '短除法：最大公因數・最小公倍數', desc: '看短除法一步一步畫，再換你算：公因數、商、互質了停！兩個數、三個數都有，還有生活應用題', icon: '🧮', src: 'math/short-division.html', dk: 'math:sd' },
       // 課程地圖「短除法：應用題」直接開到 📝 應用題分頁（不另外列卡片）
@@ -47,9 +49,11 @@
   //   math/short-division.html?mistakes=1（只有應用題時 ?mistakes=word）；都有時天平做完有「接著練短除法錯題」，短除法做完有「接著練應用題錯題」）；AI → 在這頁重答（KidsMistakes.aiPlay）
   //   2026-10-21：倍數（p.type 'multiples'）→ math/multiples.html?mistakes=1、乘法（'multiply'）→ math/multiply.html?mistakes=1；順序＝天平 → 短除法 → 應用題 → 倍數 → 乘法，
   //   每一頁做完都有「接著練…錯題」（KidsMistakes.mathMore）；2026-10-27：分數（'fraction'）→ math/fraction.html?mistakes=1，排在乘法後面
-  const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai'];   // chinese → iframe chinese/reading.html?mistakes=1（2026-11-01）
+  const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai'];   // chinese → iframe chinese/reading.html?mistakes=1（2026-11-01；閱讀和成語的錯題都在這頁練）
   // 國語卡片小字：完成幾篇（kids_done.zh 跟著同步＋本機 kids_zh_reading）
   const zhDesc = () => { let n = 0; try { const d = (JSON.parse(localStorage.getItem('kids_done')) || {}).zh || {}, l = JSON.parse(localStorage.getItem('kids_zh_reading')) || {}; n = new Set(Object.keys(d).concat(Object.keys(l).filter(k => l[k] && l[k].done))).size; } catch (e) { } return '記敘、說明、童詩、新聞、圖表、多篇比較…從讀懂字面到深度思考，分 L1～L4 一級一級往上' + (n ? `｜已完成 ${n} 篇` : ''); };
+  // 成語卡片小字：完成幾個成語（kids_done.cy 跟著同步＋本機 kids_zh_idioms；只數 cy001～cy100）
+  const cyDesc = () => { let n = 0; try { const d = (JSON.parse(localStorage.getItem('kids_done')) || {}).cy || {}, l = JSON.parse(localStorage.getItem('kids_zh_idioms')) || {}; n = new Set(Object.keys(d).concat(Object.keys(l).filter(k => l[k] && l[k].done)).filter(k => /^cy\d{3}$/.test(k))).size; } catch (e) { } return '守株待兔、塞翁失馬…讀成語故事、分辨用法、用在生活情境，還有單元測驗和總測驗' + (n ? `｜已完成 ${n} 個成語` : ''); };
   const KM = () => window.KidsMistakes;
   const mathMkSrc = () => {
     let l = []; try { l = KM().list('math'); } catch (e) { }

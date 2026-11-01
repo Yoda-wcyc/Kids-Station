@@ -1,0 +1,20 @@
+/* 國語〈成語故事 100〉：版面沿用 ../reading.css（.zr-*），這裡只補成語頁特有的 */
+.zr-art .cy-word{font-size:1.7em;letter-spacing:.25em;margin:0}
+.zr-art .cy-zy{color:#1d5d99;font-size:.8em;letter-spacing:.08em;margin:0 0 2px;text-indent:0}
+.zr-art .cy-src{color:var(--muted);font-size:.78em;margin:0 0 12px;text-indent:0}
+.cy-quote p{font-size:.92em}
+.cy-ctx{white-space:pre-line;background:#f3f7fc;border-left:6px solid #9fd0f5;border-radius:12px;padding:10px 14px;margin:0 0 10px;font-size:19px;line-height:1.8}
+.cy-ex{margin:6px 0 18px;text-align:left}
+.cy-ex h2{font-size:1.2rem;margin:0 0 8px}
+.cy-dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 14px;margin:0;line-height:1.7}
+.cy-dl dt{font-weight:800;color:#b45309}
+.cy-dl dd{margin:0}
+.cy-dl ul{margin:0;padding-left:20px}
+.cy-next{margin:8px 0 16px}
+.cy-grid .zr-card{min-height:96px}
+.cy-unit{gap:6px}
+.cy-unit .btn{justify-content:flex-start;text-align:left;white-space:normal}
+.cy-unit .btn.disabled{opacity:.5;pointer-events:none}
+.cy-unit small{color:var(--muted);font-size:.85rem}
+.cy-test{max-width:860px;margin:0 auto}
+@media (max-width:600px){ .cy-dl{grid-template-columns:1fr} .cy-dl dt{margin-top:6px} }

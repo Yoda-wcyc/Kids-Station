@@ -21,6 +21,8 @@
    - AI 三頁（ai:<頁>）：各玩完一次（看到結果頁）。
    - 國語〈閱讀素養〉（zh:L1～zh:L4，2026-11-01）：該級目錄（chinese/data/catalog.js，data.zhCatalog）的每一篇都完成（kids_done.zh 有那篇；
      一篇完成＝自動判分題答對率 ≥ 70%＋開放題都寫了，由 chinese/reading.js 判、KidsDone.record('zh', 篇id)）。沒載入目錄的頁面不列國語。
+   - 國語〈成語故事〉（2026-11-01；目錄 chinese/idioms/data/catalog.js，data.cyCatalog）：cy:L1～cy:L4＝該級 25 個成語都完成（kids_done.cy 有那個成語 id）；
+     cy:U1～cy:U10＝該單元的單元測驗通過（kids_done.cy 有 cyu01～cyu10；答對 ≥ 70%，由 chinese/idioms/idioms.js 判、KidsDone.record('cy', id)）。
    - Scratch 七堂（scratch:<1–7>）：各有「我完成了」（kids_scratch_done，只讀）。
    - 英文題庫（課本以外）：只算學會百分比（依類別、等級），不判完成。
 
@@ -82,7 +84,7 @@
     if (sec === 'tb') { const p = s.tb[key]; s.tb[key] = { best: Math.max(p ? p.best : 0, v), last: v, at: t }; }
     else if (sec === 'cz' || sec === 'czFirst' || sec === 'qz') { const p = Object.assign({}, s.mm[key]); p[sec] = Math.max(p[sec] == null ? 0 : p[sec], v); s.mm[key] = p; }
     else if (sec === 'sd' || sec === 'gw') s[sec][key] = Math.max(s[sec][key] == null ? 0 : s[sec][key], v);
-    else if (sec === 'bal' || sec === 'ai' || sec === 'zh') { if (!s[sec][key]) s[sec][key] = t; }   // zh：國語閱讀第一次完成這篇的時間（val 不用）
+    else if (sec === 'bal' || sec === 'ai' || sec === 'zh' || sec === 'cy') { if (!s[sec][key]) s[sec][key] = t; }   // zh／cy：國語閱讀／成語第一次完成的時間（val 不用）
     else if (sec === 'fr') s.fr[key] = Math.max(s.fr[key] == null ? 0 : s.fr[key], v);
     else if (sec === 'mp') s.mp[key] = Math.max(s.mp[key] == null ? 0 : s.mp[key], v);
     else if (sec === 'mx') {   // val＝{acc:%, sec:平均每題秒數}；同一輪 acc ≥ 90 且 sec ≤ 該題型門檻（mxSec）才記 ok
@@ -191,6 +193,16 @@
     const ids = (data.zhCatalog || []).filter(c => c.lv === lv).map(c => c.id), s = SM.normDone(ctx.done).zh, n = ids.filter(id => s[id]).length, t = ids.length;
     return result([{ label: `L${lv} 的 ${t} 篇都完成（${n}/${t}）`, ok: t > 0 && n === t, p: t ? n / t : 0, detail: n ? `已完成 ${n} 篇，還差 ${t - n} 篇` : '還沒有完成的文章：自動判分題答對 70% 以上、想一想都寫了，就完成一篇' }], n > 0);
   }
+  // ---------- 國語〈成語故事〉：cy:L1～L4（該級成語都完成）、cy:U1～U10（單元測驗通過）；目錄 data.cyCatalog ----------
+  const CY_LV = { 1: '常用寓言', 2: '歷史故事', 3: '寓意加深', 4: '分辨用法' };
+  function cyLevel(lv, data, ctx) {
+    const ids = ((data.cyCatalog || {}).idioms || []).filter(c => c.lv === lv).map(c => c.id), s = SM.normDone(ctx.done).cy, n = ids.filter(id => s[id]).length, t = ids.length;
+    return result([{ label: `L${lv} 的 ${t} 個成語都完成（${n}/${t}）`, ok: t > 0 && n === t, p: t ? n / t : 0, detail: n ? `已完成 ${n} 個，還差 ${t - n} 個` : '還沒有完成的成語：閱讀題＋練習題答對 70% 以上、想一想都寫了，就完成一個' }], n > 0);
+  }
+  function cyUnit(k, ctx) {
+    const at = SM.normDone(ctx.done).cy['cyu' + String(k).padStart(2, '0')];
+    return result([{ label: `第 ${k} 單元測驗通過`, ok: !!at, p: at ? 1 : 0, detail: at ? '已通過（答對 70% 以上）' : '單元的 10 個成語都完成後，做單元測驗答對 70% 以上' }], !!at);
+  }
   // ---------- AI ----------
   function aiPage(pg, ctx) {
     const at = SM.normDone(ctx.done).ai[pg];
@@ -218,14 +230,18 @@
     if (key === 'math:frc') return fraction(ctx);
     if ((m = /^ai:(.+)$/.exec(key))) return aiPage(m[1], ctx);
     if ((m = /^zh:L([1-4])$/.exec(key))) return zhLevel(+m[1], data, ctx);
+    if ((m = /^cy:L([1-4])$/.exec(key))) return cyLevel(+m[1], data, ctx);
+    if ((m = /^cy:U([1-9]|10)$/.exec(key))) return cyUnit(+m[1], ctx);
     if ((m = /^scratch:(\d)$/.exec(key))) return scratchLesson(+m[1], ctx);
     return null;
   }
 
   // ---------- 課程地圖：各科的單元清單＋狀態＋整體完成率 ----------
   function catalog(data) {
-    const tb = (data && data.textbook) || [], zh = (data && data.zhCatalog) || [];
-    return (zh.length ? [{ k: 'chinese', name: '國語閱讀', icon: '📚', units: [1, 2, 3, 4].map(lv => ({ key: 'zh:L' + lv, title: `L${lv}　${ZH_LV[lv]}`, sub: `${zh.filter(c => c.lv === lv).length} 篇`, href: 'index.html#s/chinese/reading' })) }] : []).concat([
+    const tb = (data && data.textbook) || [], zh = (data && data.zhCatalog) || [], cy = ((data && data.cyCatalog) || {}).idioms || [];
+    return (zh.length ? [{ k: 'chinese', name: '國語閱讀', icon: '📚', units: [1, 2, 3, 4].map(lv => ({ key: 'zh:L' + lv, title: `L${lv}　${ZH_LV[lv]}`, sub: `${zh.filter(c => c.lv === lv).length} 篇`, href: 'index.html#s/chinese/reading' })) }] : []).concat(cy.length ? [{ k: 'idioms', name: '成語故事', icon: '📜',
+      units: [1, 2, 3, 4].map(lv => ({ key: 'cy:L' + lv, title: `L${lv}　${CY_LV[lv]}`, sub: `${cy.filter(c => c.lv === lv).length} 個成語`, href: 'index.html#s/chinese/idioms' }))
+        .concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(k => ({ key: 'cy:U' + k, title: `第 ${k} 單元　${cy.filter(c => c.unit === k).map(c => c.word).slice(0, 2).join('、')}…`, href: 'index.html#s/chinese/idioms' }))) }] : []).concat([
       { k: 'english', name: '英文課本', icon: '📘', units: tb.map(u => ({ key: 'tb:' + u.id, group: u.book || '', title: u.title.replace(/^[五六][上下] /, ''), sub: u.theme || '', href: `index.html#tb/${u.id}/learn` })) },
       { k: 'social', name: '社會', icon: '🌏', units: MM_UNITS.social.map(([id, t], i) => ({ key: 'mm:social:' + id, title: `單元${NUMS[i]}　${t}`, href: `index.html#s/social/${id}` })) },
       { k: 'science', name: '自然', icon: '🔬', units: MM_UNITS.science.map(([id, t], i) => ({ key: 'mm:science:' + id, title: `單元${NUMS[i]}　${t}`, href: `index.html#s/science/${id}` })) },
