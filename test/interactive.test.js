@@ -4,6 +4,7 @@
 // 2. 地圖：答案在圓圈裡、同一題的圓圈（含寬限）兩兩不重疊（＝答案唯一）、熱區直徑 ≥ 44；地名只用講義（unit*.js）有的
 // 1b. 五下（2026-11-02）：模擬多 star 星座盤、fire 燃燒三要素、rust 鐵生鏽；專有地名的地點寫 h
 // 1c. 六上（2026-11-02）：模擬多 heat 熱的傳導、quake 規模和震度、emag 電磁鐵（原理規則見 4a 最後）
+// 1d. 六下（2026-11-02）：模擬多 lever 槓桿尺、pulley 滑輪、strg 弦的音調（原理規則見 4a 最後）
 // 3. 時間軸：正解順序就是 items 的順序、出題順序不會剛好是正解；有年份的照年份遞增
 // 4. 模擬：影長隨高度角增大而變短、彈簧伸長量和砝碼數成正比、摩擦力 塗油 ＜ 光滑 ＜ 砂紙、石蕊試紙變色規則；chk 題用模擬算出答案對照 opts[a]；set 題起始狀態不符合、但做得到
 'use strict';
@@ -68,6 +69,21 @@ EMS.forEach(s => {
 });
 ok(IA.emClips({ on: 1, n: 20, b: 1, core: 'fe' }) === 3 && IA.emClips({ on: 1, n: 40, b: 1, core: 'fe' }) === 6 && IA.emClips({ on: 1, n: 60, b: 1, core: 'fe' }) === 9, 'emag: matches practice question 20/40/60 圈 → 3/6/9 根');
 ok(IA.emPole(0, 'A') !== IA.emPole(0, 'B') && IA.emPole(1, 'A') === IA.emPole(0, 'B') && IA.emPole(1, 'B') === IA.emPole(0, 'A'), 'emag: two ends opposite poles; reversing current swaps N and S');
+// 六下：槓桿尺（鉤碼數×格數 相等才平衡、乘積大的那邊往下；離支點越遠需要越少）、滑輪（定＝重量、往下拉；動＝比一半多一點、往上拉、繩長兩倍；滑輪組＝省力＋往下拉）、
+//       弦（越短、越細、越緊 振動越快；用力撥只改音量）
+const LVS = []; for (let lw = 1; lw <= IA.LV_W; lw++) for (let lp = 1; lp <= IA.LV_P; lp++) for (let rw = 0; rw <= IA.LV_W; rw++) for (let rp = 1; rp <= IA.LV_P; rp++) LVS.push({ lw, lp, rw, rp });
+LVS.forEach(s => { const t = IA.leverTilt(s), a = s.lw * s.lp, b = s.rw * s.rp; ok(t === (a === b ? 0 : a > b ? -1 : 1), 'lever: torque rule ' + JSON.stringify(s));
+  if (s.rw && s.rp < IA.LV_P && t === 0) ok(IA.leverTilt(Object.assign({}, s, { rp: s.rp + 1 })) === 1, 'lever: same weights farther → that side goes down ' + JSON.stringify(s)); });
+ok(IA.leverTilt({ lw: 3, lp: 2, rw: 2, rp: 3 }) === 0, 'lever: matches 重點句 example 左 2 格 3 個＝右 3 格 2 個');
+IA.PL_W.forEach(w => { ok(IA.pullF('hand', w) === w && IA.pullF('fixed', w) === w && IA.pullF('move', w) > w / 2 && IA.pullF('move', w) < w * 0.65 && IA.pullF('combo', w) === IA.pullF('move', w), 'pulley: fixed = weight, movable a bit over half, combo same as movable ' + w); });
+ok(IA.pullDir('fixed') === '下' && IA.pullDir('combo') === '下' && IA.pullDir('move') === '上' && IA.pullDir('hand') === '上', 'pulley: fixed/combo change direction, movable does not');
+for (let r = 0; r <= IA.PL_RMAX; r += 5) ok(IA.pullLift('fixed', r) === r && IA.pullLift('move', r) * 2 === r && IA.pullLift('combo', r) * 2 === r, 'pulley: movable rope = 2 × lift ' + r);
+const STS = []; IA.ST_L.forEach(L => Object.keys(IA.ST_D).forEach(d => Object.keys(IA.ST_T).forEach(t => [1, 2].forEach(p => STS.push({ L, d, t, p })))));
+STS.forEach(s => { const f = IA.strF(s), tag = JSON.stringify(s);
+  const i = IA.ST_L.indexOf(s.L); if (i) ok(f < IA.strF(Object.assign({}, s, { L: IA.ST_L[i - 1] })), 'strg: shorter → higher ' + tag);
+  if (s.d === 'thick') ok(f < IA.strF(Object.assign({}, s, { d: 'thin' })), 'strg: thinner → higher ' + tag);
+  if (s.t === 'loose') ok(f < IA.strF(Object.assign({}, s, { t: 'tight' })), 'strg: tighter → higher ' + tag);
+  ok(f === IA.strF(Object.assign({}, s, { p: 3 - s.p })) && IA.strVol(s) === (s.p > 1 ? '大' : '小'), 'strg: plucking harder changes volume only ' + tag); });
 // tap 判分：圓圈外寬限以外不算、圓圈裡算
 const sp0 = [{ id: 'a', x: 100, y: 100, r: 25 }, { id: 'b', x: 200, y: 100, r: 25 }];
 ok(IA.hitAt(sp0, 100, 100) === 'a' && IA.hitAt(sp0, 100 + 25 + IA.SLOP, 100) === 'a' && IA.hitAt(sp0, 150, 100) === null && IA.hitAt(sp0, 190, 110) === 'b', 'hitAt: inside/slop counts, outside does not');
@@ -91,6 +107,9 @@ function states(q) {
   if (q.sim === 'heat') Object.keys(IA.HEAT_M).forEach(m => { for (let t = 0; t <= IA.HEAT_T; t++) out.push({ m, t }); });
   if (q.sim === 'quake') for (let m = IA.QM_MIN; m <= IA.QM_MAX; m += 0.5) out.push({ m });
   if (q.sim === 'emag') EMS.forEach(s => [0, 1].forEach(on => [0, 1].forEach(rev => out.push(Object.assign({ on, rev }, s)))));
+  if (q.sim === 'lever') LVS.filter(s => !q.init.lockL || (s.lw === q.init.lw && s.lp === q.init.lp)).forEach(s => out.push(s));   // lockL：左邊不能動
+  if (q.sim === 'pulley') Object.keys(IA.PL_M).forEach(m => IA.PL_W.forEach(w => { for (let r = 0; r <= IA.PL_RMAX; r += 5) out.push({ m, w, r }); }));
+  if (q.sim === 'strg') STS.forEach(s => out.push(s));
   return out;
 }
 
@@ -139,7 +158,10 @@ Object.keys(SUBJ).forEach(k => {
         ok(st0.slots.every(v => v === -1), tag + ': starts with empty timeline');
       }
       if (q.kind === 'sim') {
-        ok(['shadow', 'litmus', 'spring', 'friction', 'star', 'fire', 'rust', 'heat', 'quake', 'emag'].includes(q.sim), tag + ': sim name');
+        ok(['shadow', 'litmus', 'spring', 'friction', 'star', 'fire', 'rust', 'heat', 'quake', 'emag', 'lever', 'pulley', 'strg'].includes(q.sim), tag + ': sim name');
+        if (q.sim === 'lever') ok(['lw', 'lp', 'rp'].every(x => q.init[x] >= 1) && q.init.lw <= IA.LV_W && q.init.rw >= 0 && q.init.rw <= IA.LV_W && q.init.lp <= IA.LV_P && q.init.rp <= IA.LV_P, tag + ': lever init');
+        if (q.sim === 'pulley') ok(IA.PL_M[q.init.m] && IA.PL_W.includes(q.init.w), tag + ': pulley init');
+        if (q.sim === 'strg') ok(IA.ST_L.includes(q.init.L) && IA.ST_D[q.init.d] && IA.ST_T[q.init.t] && [1, 2, undefined].includes(q.init.p), tag + ': strg init');
         if (q.sim === 'heat') ok(IA.HEAT_M[q.init.m] && q.init.t >= 0 && q.init.t <= IA.HEAT_T, tag + ': heat init');
         if (q.sim === 'quake') ok(q.init.m >= IA.QM_MIN && q.init.m <= IA.QM_MAX && (q.init.m * 2) % 1 === 0, tag + ': quake init');
         if (q.sim === 'emag') ok(IA.EM_TURNS.includes(q.init.n) && q.init.b >= 1 && q.init.b <= IA.EM_B && IA.EM_CORE[q.init.core] && [0, 1].includes(q.init.on) && [0, 1, undefined].includes(q.init.rev), tag + ': emag init');
@@ -189,6 +211,20 @@ Object.keys(SUBJ).forEach(k => {
           if (c.fn === 'clips') ok(num(A) === IA.emClips({ on: 1, n: c.n, b: c.b, core: c.core }), tag + ': emag clips ' + IA.emClips({ on: 1, n: c.n, b: c.b, core: c.core }));
           if (c.fn === 'off') ok(IA.emClips(Object.assign({}, q.init, { on: 0 })) === 0 && IA.emClips(Object.assign({}, q.init, { on: 1 })) > 0 && /掉下來/.test(A), tag + ': emag off drops clips');
           if (c.fn === 'cmp') { const x = IA.emClips(c.x), y = IA.emClips(c.y), w = x < y ? '少' : x > y ? '多' : '一樣'; ok(A.includes(w) && q.opts.filter(o => o.includes(w)).length === 1, tag + ': emag compare ' + x + '/' + y); }
+          // 六下：槓桿尺、滑輪、弦
+          const need = (lw, lp, rp) => (lw * lp) % rp ? null : lw * lp / rp, dirW = (x, y) => y > x ? '高' : y < x ? '低' : '不變';
+          if (c.fn === 'need') { const n = need(c.lw, c.lp, c.rp); ok(n && n <= IA.LV_W && IA.leverTilt({ lw: c.lw, lp: c.lp, rw: n, rp: c.rp }) === 0 && (c.more ? n > c.lw && /多/.test(A) : num(A) === n), tag + ': lever need ' + n); }
+          if (c.fn === 'tilt') { const t = IA.leverTilt(c.s); ok(A === (t < 0 ? '左邊往下傾斜' : t > 0 ? '右邊往下傾斜' : '保持平衡不動'), tag + ': lever tilt ' + t); }
+          if (c.fn === 'least') { const ns = c.ps.map(p => need(c.lw, c.lp, p)); ok(ns.every(n => n) && ns.filter(n => n === Math.min(...ns)).length === 1 && num(A) === c.ps[ns.indexOf(Math.min(...ns))] && q.opts.every((o, i) => num(o) === c.ps[i]), tag + ': lever least ' + ns); }
+          if (c.fn === 'farLess') { const a = need(c.lw, c.lp, c.a), b = need(c.lw, c.lp, c.b); ok(a && b && b < a && A === '變少', tag + ': lever farther needs fewer ' + a + '→' + b); }
+          if (c.fn === 'balOpt') { const r = c.os.map(([rw, rp]) => IA.leverTilt({ lw: c.lw, lp: c.lp, rw, rp }) === 0); ok(r.filter(Boolean).length === 1 && r[q.a] && q.opts.every((o, i) => o === '第 ' + c.os[i][1] + ' 格掛 ' + c.os[i][0] + ' 個'), tag + ': lever exactly one balancing option'); }
+          if (c.fn === 'pf') ok(num(A) === IA.pullF(c.m, c.w) || (c.v === IA.pullF(c.m, c.w) && c.v > c.w / 2), tag + ': pulley reading ' + IA.pullF(c.m, c.w));
+          if (c.fn === 'pdir') ok(A.includes('往' + IA.pullDir(c.m)) || (IA.pullDir(c.m) === '下' && A.includes('往下拉')), tag + ': pulley direction ' + IA.pullDir(c.m));
+          if (c.fn === 'pmin') { const F = c.ms.map(m => IA.pullF(m, c.w)); ok(F.filter(f => f === Math.min(...F)).length === 1 && F.indexOf(Math.min(...F)) === q.a && q.opts.every((o, i) => o.includes(IA.PL_M[c.ms[i]].n)), tag + ': pulley least force ' + F); }
+          if (c.fn === 'rope') ok(IA.pullLift(c.m, num(A)) === c.h && q.opts.every((o, i) => i === q.a || IA.pullLift(c.m, num(o)) !== c.h), tag + ': pulley rope length');
+          if (c.fn === 'scmp') { const x = IA.strF(Object.assign({ p: 1 }, c.x)), y = IA.strF(Object.assign({ p: 1 }, c.y)), w = dirW(x, y); ok(x !== y && (c.w ? A === c.w : w === '高' ? /高/.test(A) && !/低/.test(A) : /低/.test(A) && !/高/.test(A)) && q.opts.filter(o => (w === '高' ? /變高|高$/ : /變低/).test(o)).length <= 1, tag + ': strg compare ' + x + '→' + y); }
+          if (c.fn === 'vol') ok(IA.strF(Object.assign({}, q.init, { p: 1 })) === IA.strF(Object.assign({}, q.init, { p: 2 })) && IA.strVol({ p: 2 }) === '大' && A === '音量', tag + ': strg harder → louder only');
+          if (c.fn === 'smax') { const F = c.os.map(o => IA.strF(Object.assign({ p: 1 }, o))); ok(F.filter(f => f === Math.max(...F)).length === 1 && F.indexOf(Math.max(...F)) === q.a, tag + ': strg highest ' + F); }
           if (c.fn === 'pole') ok(A === IA.emPole(c.rev, c.end) + ' 極', tag + ': emag pole ' + IA.emPole(c.rev, c.end));
           if (c.fn === 'kind') ok(IA.SOLS[q.init.sol].k === c.k && IA.paper(q.init.sol, 'red') === 'red' && IA.paper(q.init.sol, 'blue') === 'blue', tag + ': neutral → no change');
           if (c.fn === 'mystery') ok(A === IA.KIND_ZH[IA.SOLS[q.init.sol].k], tag + ': mystery solution kind');
@@ -209,9 +245,10 @@ ok(IA.frictionPull('sand', 1) === 180, 'n4-s20 premise: sand + 1 weight = 180');
 // 題數
 // 2026-11-02 五下：社會 地圖 29＋時間軸 15（u5、u6、u8、u9；u7 米食／音樂沒有適合的地點與年份，不做）、自然 star／fire／rust 各 10（n8 動物不做模擬）
 // 2026-11-02 六上：社會 地圖 20＋時間軸 12（u12、u13、u14；u10 科技、u11 消費理財沒有適合的地點與年份，不做）、自然 heat（n9）、quake（n11）、emag（n12）各 10（n10 天氣不做模擬）
-const want = { 'social:map': 89, 'social:time': 47, 'science:shadow': 10, 'science:litmus': 10, 'science:spring': 10, 'science:friction': 10, 'science:star': 10, 'science:fire': 10, 'science:rust': 10, 'science:heat': 10, 'science:quake': 10, 'science:emag': 10 };
+// 2026-11-02 六下：社會 地圖 2＋時間軸 19（u16、u17；u15 經濟沒有臺灣地點、有年份的事件太少，不做）、自然 lever、pulley（n13）、strg（n14）各 10（n15 不做模擬）
+const want = { 'social:map': 91, 'social:time': 66, 'science:shadow': 10, 'science:litmus': 10, 'science:spring': 10, 'science:friction': 10, 'science:star': 10, 'science:fire': 10, 'science:rust': 10, 'science:heat': 10, 'science:quake': 10, 'science:emag': 10, 'science:lever': 10, 'science:pulley': 10, 'science:strg': 10 };
 Object.keys(want).forEach(x => ok(cnt[x] === want[x], `count ${x}: ${cnt[x]} (want ${want[x]})`));
-ok(!SUBJ.science.ia.n2 && !SUBJ.science.ia.n8 && !SUBJ.science.ia.n10, 'science n2 (植物)、n8 (動物)、n10 (天氣) have no simulation');
+ok(!SUBJ.science.ia.n2 && !SUBJ.science.ia.n8 && !SUBJ.science.ia.n10 && !SUBJ.science.ia.n15, 'science n2 (植物)、n8 (動物)、n10 (天氣)、n15 (永續) have no simulation');
 // 頁面接線
 ['social', 'science'].forEach(k => { const h = fs.readFileSync(path.join(MM, k + '.html'), 'utf8');
   ok(h.includes(`<script src="data/${k}/interactive.js`) && h.indexOf('<script src="interactive.js') < h.indexOf('<script src="mindmap.js'), `mindmap/${k}.html loads interactive data + component before mindmap.js`); });

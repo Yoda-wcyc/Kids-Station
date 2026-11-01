@@ -240,6 +240,16 @@ const MANY = snap({
     const r4 = KA.analyze(snap({ ctx: { mm: m4, done: { mm: d4 } }, goal: null }));
     ok(r4.subjects.find(s => s.k === k).unitsTotal === g.length && r4.next.concat(r4.tasks).filter(x => x.k === k).every(x => !/六上/.test(x.title)), 'g6a: ' + k + ' 五下 not finished → 六上 not counted, not next');
   });
+  // 六下（2026-11-02）：五上～六上都做完，下一步才是〈六下 單元一〉；六上還沒做完，六下不搶下一步、不算進分母
+  ['social', 'science'].forEach(k => {
+    const g = KC.MM_UNITS[k].filter(x => !/^六下/.test(x[2] || '')).map(x => x[0]), m2 = {}, d2 = {}, first6 = KC.MM_UNITS[k].find(x => /^六下/.test(x[2] || ''));
+    g.forEach(id => { m2[k + ':' + id] = full(id); d2[k + ':' + id] = { czFirst: 90, qz: 90 }; });
+    const r3 = KA.analyze(snap({ ctx: { mm: m2, done: { mm: d2 } }, goal: null })), t3 = r3._.cand.find(t => t.k === k), n3 = r3.next.find(n => n.k === k);
+    ok(first6 && t3 && t3.kind === 'start' && /六下 單元一/.test(t3.title) && t3.href === 'index.html#s/' + k + '/' + first6[0] && (!n3 || /六下 單元一/.test(n3.title)), 'g6b: ' + k + ' 五上～六上 all done → next is 六下 單元一: ' + JSON.stringify(t3));
+    const last = g[g.length - 1], m4 = Object.assign({}, m2), d4 = Object.assign({}, d2); delete m4[k + ':' + last]; delete d4[k + ':' + last];
+    const r4 = KA.analyze(snap({ ctx: { mm: m4, done: { mm: d4 } }, goal: null }));
+    ok(r4.subjects.find(s => s.k === k).unitsTotal === g.length && r4.next.concat(r4.tasks).filter(x => x.k === k).every(x => !/六下/.test(x.title)), 'g6b: ' + k + ' 六上 not finished → 六下 not counted, not next');
+  });
 }
 
 // ---------- 7. 進步：錯題變少、連續天數 ----------

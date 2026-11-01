@@ -826,7 +826,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   for (let m = 0; m < 3; m++) for (let l = 1; l <= 7; l++) maxDoc.scratch['K10' + m + '|scratch-td:lesson' + l] = '2026-10-09T01:00:00.000Z';
   for (let d = 0; d < 5; d++) maxDoc.ctr['d' + d + 'mgk2x9abc'] = { stars: 99999, quizzes: 9999 };
   maxDoc.eq = { at: 1.8e12, items: many(30).map(it => Object.assign({ t: 1.8e12 }, it)), del: Object.fromEntries(Array.from({ length: 150 }, (_, i) => ['(x+' + i + ')−(' + i + '−2)=' + (i + 100), 1.7e12])) };
-  // 六下全部上線後的估計：六下 9 單元（社會 5、自然 4），還沒上線的用六上單元照抄（每單元詞數、節點數、題數＝六上）
+  // 六下全部上線後的估計：原本估 9 單元（社會 5、自然 4），還沒上線的用六上單元照抄（每單元詞數、節點數、題數＝六上）。
+  // 2026-11-02 六下實際上線 6 單元（社會 u15～u17〔第四單元是探究實作、沒有新知識節點，不做〕、自然 n13～n15）＝ maxDoc 已含；這裡照舊再補 3 個六上大小的單元當餘裕，上限不放寬
   const g6a = allUnits.filter(([, u]) => /^六上/.test(u.label || '')), g6bHave = allUnits.filter(([, u]) => /^六下/.test(u.label || '')).length;
   const projDoc = JSON.parse(JSON.stringify(maxDoc));
   for (let i = g6bHave; i < 9; i++) { const [s, u] = g6a[i % g6a.length]; fillUnit(projDoc, s + ':g6b' + i + '-' + u.id, u); }
@@ -1304,8 +1305,8 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
   ok(appSrc.includes('const list = E.round(cfg);') && appSrc.includes('每回最後至少 3 題打字（含 2 題中翻英）'), 'app.js: every round goes through E.round + settings note');
   console.log(`typed rule: ${stat.set} item sets, ${stat.tb} textbook units (practice+exam ×30), ${stat.round} round configs ×50 — all pass`);
 }
-// 五下、六上社會／自然資料檢查（2026-11-02）：作者的檢查也跑一遍
-['g5b-social.test.js', 'g5b-science.test.js', 'g6a-social.test.js', 'g6a-science.test.js'].forEach(f => { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'mindmap', 'test', f)], { encoding: 'utf8' }); ok(r.status === 0, 'mindmap/test/' + f + ' passes: ' + (r.stdout || '').slice(-1500) + (r.stderr || '').slice(-1500)); });
+// 五下、六上、六下社會／自然資料檢查（2026-11-02）：作者的檢查也跑一遍
+['g5b-social.test.js', 'g5b-science.test.js', 'g6a-social.test.js', 'g6a-science.test.js', 'g6b-social.test.js', 'g6b-science.test.js'].forEach(f => { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'mindmap', 'test', f)], { encoding: 'utf8' }); ok(r.status === 0, 'mindmap/test/' + f + ' passes: ' + (r.stdout || '').slice(-1500) + (r.stderr || '').slice(-1500)); });
 console.log(`bank build: engine ${msEngine.toFixed(0)} ms, all ${allQs.length} questions ${msBank.toFixed(0)} ms`);
 console.log(`OK  ${checks} checks | words ${W.length} (lv ${lvCount.join('/')}/${W800.length}) | phrases ${PH.length} (${[1, 2, 3].map(l => PH.filter(p => p.lv === l).length).join('/')}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
 console.log('pool per type:', JSON.stringify(counts));

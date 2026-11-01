@@ -1,6 +1,6 @@
 /* interactive.js — 🗺️ 互動圖題（社會）／🧪 實驗模擬（自然）的題目元件（2026-11-02）
  * 資料：data/<科>/interactive.js → <資料>.ia[單元id] = [題]；社會另有 <資料>.iaMap（臺灣簡圖：海岸線、地點經緯度）。格式見 data/FORMAT.md 第 8 節。
- * 題目 kind：map（地圖）／time（時間軸排序）／sim（實驗模擬：shadow 影子、litmus 石蕊試紙、spring 彈簧、friction 摩擦力；五下 star 星座盤、fire 燃燒三要素、rust 鐵生鏽；六上 heat 熱的傳導、quake 規模和震度、emag 電磁鐵）；
+ * 題目 kind：map（地圖）／time（時間軸排序）／sim（實驗模擬：shadow 影子、litmus 石蕊試紙、spring 彈簧、friction 摩擦力；五下 star 星座盤、fire 燃燒三要素、rust 鐵生鏽；六上 heat 熱的傳導、quake 規模和震度、emag 電磁鐵；六下 lever 槓桿尺、pulley 滑輪、strg 弦的音調）；
  *   作答 mode：tap（點地圖上的圓圈，再按確定）／mc（選項）／order（把卡片拖到時間軸，或點卡片再點位置）／set（把模擬調到指定狀態，再按確定）。
  * 重現：選項順序、卡片順序都由題目 id 決定（不隨機），模擬從題目的 init 開始 → 錯題重做時畫面跟第一次一模一樣。
  * 判分只在這支：tap 只認圓圈＋寬限（slop）範圍內，沒點到圓圈不判分；資料測試保證同一題的圓圈不重疊，所以答案唯一。
@@ -97,6 +97,21 @@
   var QLV = ['0 級', '1 級', '2 級', '3 級', '4 級', '5 弱', '5 強', '6 弱', '6 強', '7 級'], QM_MIN = 4, QM_MAX = 7.5;
   function quakeLv(m, d) { return clamp(Math.floor(1.5 * m - 3 * Math.log10(d) + 1e-9), 0, QLV.length - 1); }
   function quakeTown(m, id) { return quakeLv(m, QT.filter(function (x) { return x.id === id; })[0].d); }
+  // ⑪ 槓桿尺（六下 n13）：支點在中間，左右各 1～5 格、每邊最多 6 個鉤碼。左右「鉤碼數×格數」相等就平衡；不相等時乘積大的那邊往下傾
+  var LV_P = 5, LV_W = 6;
+  function leverTilt(s) { var a = s.lw * s.lp, b = s.rw * s.rp; return a === b ? 0 : a > b ? -1 : 1; }   // -1 左邊往下、0 平衡、1 右邊往下
+  // ⑫ 滑輪（六下 n13）：直接提、定滑輪、動滑輪、滑輪組（定＋動）提同一個重物。定滑輪拉力＝重量、改變方向；動滑輪約一半（滑輪本身 20 公克重，示範 → 比一半多一點）、
+  //    手拉的繩長是重物上升的兩倍、不改變方向；滑輪組＝省力又改變方向。重量、滑輪重是示範用的
+  var PL_M = { hand: { n: '直接提起' }, fixed: { n: '定滑輪' }, move: { n: '動滑輪' }, combo: { n: '滑輪組（定＋動）' } };
+  var PL_ORDER = ['hand', 'fixed', 'move', 'combo'], PL_W = [100, 200, 300, 400], PL_PW = 20, PL_RMAX = 40;
+  function plHalf(m) { return m === 'move' || m === 'combo'; }
+  function pullF(m, w) { return plHalf(m) ? (w + PL_PW) / 2 : w; }
+  function pullDir(m) { return m === 'fixed' || m === 'combo' ? '下' : '上'; }
+  function pullLift(m, r) { return plHalf(m) ? r / 2 : r; }   // 手拉 r 公分繩子，重物上升幾公分
+  // ⑬ 弦的音調（六下 n14）：弦越短、越細、拉得越緊，振動越快、音調越高；撥得越用力，振動幅度越大、音量越大。每秒振動次數是示範用的
+  var ST_L = [20, 30, 40], ST_D = { thin: { n: '細弦', k: 1 }, thick: { n: '粗弦', k: 2 } }, ST_T = { loose: { n: '拉鬆', k: 1 }, tight: { n: '拉緊', k: 4 } };
+  function strF(s) { return Math.round(2400 * Math.sqrt(ST_T[s.t].k) / (s.L * ST_D[s.d].k)); }
+  function strVol(s) { return s.p > 1 ? '大' : '小'; }
 
   /* ---------- 狀態、判分 ---------- */
   function initState(q) {
@@ -113,6 +128,9 @@
     if (q.sim === 'heat') { st.m = st.m || 'fe'; st.t = st.t || 0; }
     if (q.sim === 'emag') { st.n = st.n || 20; st.b = st.b || 1; st.core = st.core || 'fe'; st.on = +!!st.on; st.rev = +!!st.rev; st.rec = {}; if (st.on) st.rec[st.n + ':' + st.b + ':' + st.core] = emClips(st); }
     if (q.sim === 'quake') { st.m = st.m || 5; }
+    if (q.sim === 'lever') ['lw', 'lp', 'rw', 'rp'].forEach(function (k) { if (st[k] == null) st[k] = k === 'rw' ? 0 : k === 'lw' ? 2 : 3; });
+    if (q.sim === 'pulley') { st.m = st.m || 'fixed'; st.w = st.w || 200; st.r = 0; st.rec = {}; }
+    if (q.sim === 'strg') { st.L = st.L || 30; st.d = st.d || 'thin'; st.t = st.t || 'loose'; st.p = st.p || 1; }
     return st;
   }
   function simVals(q, st) {
@@ -126,6 +144,9 @@
     if (q.sim === 'heat') v.fall = heatFall(st.m, st.t);
     if (q.sim === 'emag') { v.clips = emClips(st); v.poleA = emPole(st.rev, 'A'); }
     if (q.sim === 'quake') QT.forEach(function (x) { v[x.id] = quakeLv(st.m, x.d); });
+    if (q.sim === 'lever') v.tilt = leverTilt(st);
+    if (q.sim === 'pulley') { v.pull = pullF(st.m, st.w); v.dir = pullDir(st.m); v.lift = pullLift(st.m, st.r); }
+    if (q.sim === 'strg') { v.f = strF(st); v.vol = strVol(st); }
     return v;
   }
   // set 題的目標：{鍵: 值} 或 {鍵: [最小, 最大]}；全部符合才算對
@@ -340,6 +361,46 @@
     return '<svg viewBox="0 0 760 300" role="img" aria-label="震央和五個鄉鎮的震度">' + o + '</svg>';
   }
 
+  function hooks(x, y, n, col) { var o = '<line x1="' + x + '" y1="' + y + '" x2="' + x + '" y2="' + (y + 14) + '" stroke="#555" stroke-width="2"/>', i; for (i = 0; i < n; i++) o += '<rect x="' + (x - 12) + '" y="' + (y + 14 + i * 20) + '" width="24" height="17" rx="4" fill="' + col + '" stroke="#40444a" stroke-width="2"/>'; return o; }
+  function leverSVG(st) {
+    var t = leverTilt(st), cx = 380, cy = 110, gap = 62, o = '<rect width="760" height="330" fill="#fbfaf6"/><rect y="300" width="760" height="30" fill="#e8dfcf"/>', i, g = '';
+    o += '<path d="M' + cx + ' ' + (cy + 4) + ' L' + (cx - 34) + ' 300 L' + (cx + 34) + ' 300Z" fill="#8a96a3" stroke="#555" stroke-width="2"/>';
+    g += '<rect x="' + (cx - 5 * gap - 24) + '" y="' + (cy - 8) + '" width="' + (10 * gap + 48) + '" height="16" rx="5" fill="#f2c56b" stroke="#a57a1f" stroke-width="2"/>';
+    for (i = 1; i <= LV_P; i++) [-1, 1].forEach(function (sd) { g += '<circle cx="' + (cx + sd * i * gap) + '" cy="' + cy + '" r="4" fill="#6b5a2a"/><text x="' + (cx + sd * i * gap) + '" y="' + (cy - 14) + '" text-anchor="middle" font-size="15" font-weight="800" fill="#6b5a2a">' + i + '</text>'; });
+    if (st.lw) g += hooks(cx - st.lp * gap, cy + 8, st.lw, '#7a7f87');
+    if (st.rw) g += hooks(cx + st.rp * gap, cy + 8, st.rw, '#5f9de8');
+    o += '<g transform="rotate(' + (t * 7) + ' ' + cx + ' ' + cy + ')">' + g + '</g><circle cx="' + cx + '" cy="' + cy + '" r="7" fill="#c2410c"/>';
+    o += '<text x="' + cx + '" y="34" text-anchor="middle" font-size="20" font-weight="800" fill="' + (t ? '#c2410c' : '#16784a') + '">' + (t ? (t < 0 ? '左邊' : '右邊') + '往下傾斜' : '平衡了！') + '</text>';
+    o += '<text x="20" y="324" font-size="16" font-weight="800" fill="#33415c">左邊</text><text x="740" y="324" text-anchor="end" font-size="16" font-weight="800" fill="#33415c">右邊</text>';
+    return '<svg viewBox="0 0 760 330" role="img" aria-label="槓桿尺、支點和兩邊的鉤碼">' + o + '</svg>';
+  }
+  function pulleySVG(st) {
+    var m = st.m, lift = pullLift(m, st.r), wy = 240 - lift * 2, F = pullF(m, st.w), o = '<rect width="600" height="330" fill="#fbfaf6"/><rect x="40" y="14" width="520" height="14" fill="#5d6670"/><rect y="290" width="600" height="40" fill="#e8dfcf"/>';
+    function wheel(x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="26" fill="#dfe7f1" stroke="#40444a" stroke-width="3"/><circle cx="' + x + '" cy="' + y + '" r="5" fill="#40444a"/>'; }
+    function ln(x1, y1, x2, y2, c, w) { return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + (c || '#8b5a2b') + '" stroke-width="' + (w || 3) + '"/>'; }
+    function scale(x, y) { return '<rect x="' + (x - 16) + '" y="' + y + '" width="32" height="64" rx="8" fill="#fff" stroke="#2b8fd6" stroke-width="3"/><rect x="' + (x - 6) + '" y="' + (y + 8) + '" width="12" height="48" fill="#e4f1fc"/><rect x="' + (x - 6) + '" y="' + (y + 8) + '" width="12" height="' + Math.round(48 * Math.min(1, F / 420)) + '" fill="#2b8fd6"/>'; }
+    function arrow(x, y, down) { return '<path d="M' + x + ' ' + y + ' l0 ' + (down ? 34 : -34) + '" stroke="#c2410c" stroke-width="6" marker-end="url(#iaArr3)"/>'; }
+    var bx = 200, py = wy - 40, sy;
+    if (m === 'hand') { sy = wy - 150; o += ln(bx, sy + 64, bx, wy) + scale(bx, sy) + arrow(bx, sy - 4, false); }
+    if (m === 'fixed') { sy = 130 + lift * 2; o += ln(300, 28, 300, 80, '#40444a', 4) + wheel(300, 80) + ln(274, 80, 274, wy) + ln(326, 80, 326, sy) + scale(326, sy) + arrow(326, sy + 70, true); bx = 274; }
+    if (m === 'move') { sy = py - 140; o += ln(bx - 26, 28, bx - 26, py) + wheel(bx, py) + ln(bx, py, bx, wy, '#40444a', 4) + ln(bx + 26, py, bx + 26, sy + 64) + scale(bx + 26, sy) + arrow(bx + 26, sy - 4, false); }
+    if (m === 'combo') { sy = 130 + lift * 4; o += ln(bx - 26, 28, bx - 26, py) + wheel(bx, py) + ln(bx, py, bx, wy, '#40444a', 4) + ln(bx + 52, 28, bx + 52, 80, '#40444a', 4) + wheel(bx + 52, 80) + ln(bx + 26, py, bx + 26, 80) + ln(bx + 78, 80, bx + 78, sy) + scale(bx + 78, sy) + arrow(bx + 78, sy + 70, true); }
+    o += '<rect x="' + (bx - 34) + '" y="' + wy + '" width="68" height="48" rx="6" fill="#7a7f87" stroke="#40444a" stroke-width="3"/><text x="' + bx + '" y="' + (wy + 30) + '" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">' + st.w + '</text>';
+    o += '<text x="585" y="60" text-anchor="end" font-size="18" font-weight="800" fill="#33415c">' + PL_M[m].n + '</text><text x="585" y="88" text-anchor="end" font-size="17" font-weight="800" fill="#c2410c">彈簧秤 ' + F + ' 公克重</text><text x="585" y="114" text-anchor="end" font-size="17" font-weight="800" fill="#c2410c">手往' + pullDir(m) + '拉</text>';
+    return '<svg viewBox="0 0 600 330" role="img" aria-label="滑輪、重物和彈簧秤"><defs><marker id="iaArr3" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#c2410c"/></marker></defs>' + o + '</svg>';
+  }
+  function strgSVG(st) {
+    var f = strF(st), len = st.L * 14, x0 = 90, x1 = x0 + len, th = ST_D[st.d].k * 2.5, amp = st.p > 1 ? 26 : 10, waves = Math.max(1, Math.round(f / 30)), pts = [], i;
+    for (i = 0; i <= 160; i++) pts.push((x0 + len * i / 160).toFixed(1) + ',' + (120 + amp * Math.sin(Math.PI * i / 160) * Math.sin(waves * Math.PI * i / 40)).toFixed(1));
+    var o = '<rect width="760" height="300" fill="#fbfaf6"/><rect x="60" y="150" width="660" height="70" rx="14" fill="#e3b778" stroke="#9a6b2c" stroke-width="3"/><circle cx="390" cy="185" r="20" fill="#5a3b14"/>';
+    o += '<rect x="' + (x0 - 10) + '" y="96" width="10" height="48" fill="#5d6670"/><rect x="' + x1 + '" y="96" width="10" height="48" fill="#5d6670"/>';
+    o += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + (st.t === 'tight' ? '#c2410c' : '#2b8fd6') + '" stroke-width="' + th + '" stroke-linecap="round"/>';
+    o += '<text x="' + ((x0 + x1) / 2) + '" y="72" text-anchor="middle" font-size="16" font-weight="800" fill="#33415c">弦長 ' + st.L + ' 公分・' + ST_D[st.d].n + '・' + ST_T[st.t].n + '</text>';
+    o += '<text x="60" y="257" font-size="16" font-weight="800" fill="#33415c">音調</text><rect x="110" y="242" width="560" height="18" rx="9" fill="#eee"/><rect x="110" y="242" width="' + Math.round(560 * f / 240) + '" height="18" rx="9" fill="#8350d6"/><text x="680" y="257" font-size="14" font-weight="800" fill="#33415c">高</text>';
+    o += '<text x="60" y="290" font-size="16" font-weight="800" fill="#33415c">每秒振動 ' + f + ' 次（示範）・音量' + strVol(st) + '</text>';
+    return '<svg viewBox="0 0 760 300" role="img" aria-label="一條弦、振動的樣子和音調高低">' + o + '</svg>';
+  }
+
   /* ---------- 畫面：組合 ---------- */
   function bt(attr, txt, cls, dis) { return '<button type="button" class="ia-b' + (cls ? ' ' + cls : '') + '" ' + attr + (dis ? ' disabled' : '') + '>' + txt + '</button>'; }
   function simPart(q, st, done) {
@@ -407,6 +468,28 @@
         '<div class="ia-ctl"><span class="lab">規模</span>' + bt('data-ia="qm" data-v="-0.5"', '－', '', d || st.m <= QM_MIN) + '<input type="range" min="' + QM_MIN + '" max="' + QM_MAX + '" step="0.5" value="' + st.m + '" data-ia="qmR" aria-label="地震規模"' + (d ? ' disabled' : '') + '>' + bt('data-ia="qm" data-v="0.5"', '＋', '', d || st.m >= QM_MAX) + '</div>' +
         '<p class="ia-hint">震度的換算是示範用的。地震時：趴下、掩護、穩住，搖晃停了再依指示到空曠的地方，不要搭電梯。</p>' +
         '<table class="ia-tbl"><thead><tr><th>地點</th><th>離震央</th><th>震度</th></tr></thead><tbody>' + QT.map(function (x) { return '<tr><td>' + x.n + '</td><td>' + x.d + ' 公里</td><td>' + QLV[quakeLv(st.m, x.d)] + '</td></tr>'; }).join('') + '</tbody></table>';
+    }
+    else if (q.sim === 'lever') {
+      var side = function (kw, kp, nm) { return '<div class="ia-ctl"><span class="lab">' + nm + '鉤碼</span>' + bt('data-ia="' + kw + '" data-v="-1"', '➖', '', d || st[kw] <= (kw === 'lw' ? 1 : 0)) + '<b>' + st[kw] + ' 個</b>' + bt('data-ia="' + kw + '" data-v="1"', '➕', '', d || st[kw] >= LV_W) + '</div>' +
+        '<div class="ia-ctl"><span class="lab">' + nm + '掛在第</span>' + [1, 2, 3, 4, 5].map(function (i) { return bt('data-ia="' + kp + '" data-v="' + i + '"', i + ' 格', st[kp] === i ? 'on' : '', d); }).join('') + '</div>'; };
+      h = '<div class="ia-fig">' + leverSVG(st) + '</div><p class="ia-read">左邊：第 <b>' + st.lp + '</b> 格掛 <b>' + st.lw + '</b> 個（' + st.lw + '×' + st.lp + '＝' + st.lw * st.lp + '）　右邊：' + (st.rw ? '第 <b>' + st.rp + '</b> 格掛 <b>' + st.rw + '</b> 個（' + st.rw + '×' + st.rp + '＝' + st.rw * st.rp + '）' : '<b>還沒掛</b>') + '</p>' +
+        (q.init && q.init.lockL ? '<p class="ia-hint">這一題左邊的鉤碼不能動。</p>' : side('lw', 'lp', '左邊')) + side('rw', 'rp', '右邊') +
+        '<p class="ia-hint">每個鉤碼一樣重、每一格一樣寬（示範）。鉤碼要掛牢，重物不要放在桌邊。</p>';
+    } else if (q.sim === 'pulley') {
+      var pk = Object.keys(st.rec);
+      h = '<div class="ia-fig">' + pulleySVG(st) + '</div><p class="ia-read">' + PL_M[st.m].n + '・重物 ' + st.w + ' 公克重：彈簧秤 <b>' + pullF(st.m, st.w) + '</b> 公克重、手往<b>' + pullDir(st.m) + '</b>拉　手拉了 <b>' + st.r + '</b> 公分繩子，重物上升 <b>' + fmt(pullLift(st.m, st.r)) + '</b> 公分</p>' +
+        '<div class="ia-ctl"><span class="lab">方法</span>' + PL_ORDER.map(function (k) { return bt('data-ia="pm" data-v="' + k + '"', PL_M[k].n, st.m === k ? 'on' : '', d); }).join('') + '</div>' +
+        '<div class="ia-ctl"><span class="lab">重物</span>' + PL_W.map(function (w) { return bt('data-ia="pw" data-v="' + w + '"', w + ' 公克重', st.w === w ? 'on' : '', d); }).join('') + '</div>' +
+        '<div class="ia-ctl"><span class="lab">拉繩子</span>' + bt('data-ia="pr" data-v="-5"', '－5 公分', '', d || st.r <= 0) + '<b>' + st.r + ' 公分</b>' + bt('data-ia="pr" data-v="5"', '＋5 公分', '', d || st.r >= PL_RMAX) + '</div>' +
+        '<p class="ia-hint">慢慢等速拉；動滑輪本身 ' + PL_PW + ' 公克重（示範），所以讀數會比一半多一點。彈簧秤不要拉超過最大刻度，重物下方不要站人或放腳。</p>' +
+        '<table class="ia-tbl"><thead><tr><th>方法</th><th>重物</th><th>彈簧秤</th><th>手拉的方向</th></tr></thead><tbody>' + (pk.length ? pk.map(function (k) { var a = k.split(':'); return '<tr><td>' + PL_M[a[0]].n + '</td><td>' + a[1] + ' 公克重</td><td>' + pullF(a[0], +a[1]) + ' 公克重</td><td>往' + pullDir(a[0]) + '</td></tr>'; }).join('') : '<tr><td colspan="4">拉動繩子後，就會記在這裡</td></tr>') + '</tbody></table>';
+    } else if (q.sim === 'strg') {
+      h = '<div class="ia-fig">' + strgSVG(st) + '</div><p class="ia-read">弦長 <b>' + st.L + '</b> 公分・<b>' + ST_D[st.d].n + '</b>・<b>' + ST_T[st.t].n + '</b>：每秒振動 <b>' + strF(st) + '</b> 次（示範）、音量<b>' + strVol(st) + '</b></p>' +
+        '<div class="ia-ctl"><span class="lab">弦的長度</span>' + ST_L.map(function (L) { return bt('data-ia="sl" data-v="' + L + '"', L + ' 公分', st.L === L ? 'on' : '', d); }).join('') + '</div>' +
+        '<div class="ia-ctl"><span class="lab">粗細</span>' + Object.keys(ST_D).map(function (k) { return bt('data-ia="sd" data-v="' + k + '"', ST_D[k].n, st.d === k ? 'on' : '', d); }).join('') + '</div>' +
+        '<div class="ia-ctl"><span class="lab">鬆緊</span>' + Object.keys(ST_T).map(function (k) { return bt('data-ia="sk" data-v="' + k + '"', ST_T[k].n, st.t === k ? 'on' : '', d); }).join('') + '</div>' +
+        '<div class="ia-ctl"><span class="lab">撥弦</span>' + bt('data-ia="sp" data-v="1"', '輕輕撥', st.p === 1 ? 'on' : '', d) + bt('data-ia="sp" data-v="2"', '用力撥', st.p === 2 ? 'on' : '', d) + '</div>' +
+        '<p class="ia-hint">每秒振動次數是示範用的。演奏時不要把樂器靠近別人的耳朵。</p>';
     }
     return h;
   }
@@ -484,6 +567,11 @@
         if (st.on) st.rec[st.n + ':' + st.b + ':' + st.core] = emClips(st);
       }
       else if (k === 'qm') st.m = clamp(st.m + (+v), QM_MIN, QM_MAX);
+      else if (k === 'lw' || k === 'rw') st[k] = clamp(st[k] + (+v), k === 'lw' ? 1 : 0, LV_W);
+      else if (k === 'lp' || k === 'rp') st[k] = +v;
+      else if (k === 'pm') { st.m = v; st.r = 0; } else if (k === 'pw') { st.w = +v; st.r = 0; }
+      else if (k === 'pr') { st.r = clamp(st.r + (+v), 0, PL_RMAX); if (st.r) st.rec[st.m + ':' + st.w] = 1; }
+      else if (k === 'sl') st.L = +v; else if (k === 'sd') st.d = v; else if (k === 'sk') st.t = v; else if (k === 'sp') st.p = +v;
       else if (k === 'slow') { if (timer || st.moved) return; timer = setInterval(function () { if (!box.isConnected) { clearInterval(timer); return; } st.pull = clamp(st.pull + 5, 0, PULL_MAX); frRec(); if (st.moved || st.pull >= PULL_MAX) { clearInterval(timer); timer = 0; } paint(); }, 60); }
       else if (k === 'card') { var i = +v; if (st.sel === null || st.sel === i) st.sel = st.sel === i ? null : i; else if (st.slots.indexOf(i) >= 0 && st.sel !== null) place(st.sel, st.slots.indexOf(i)); else st.sel = i; }
       else if (k === 'slot') { if (st.sel !== null) place(st.sel, +v); }
@@ -556,6 +644,8 @@
     SKY: SKY, HR_MIN: HR_MIN, HR_MAX: HR_MAX, skyHA: skyHA, skySee: skySee, skyTop: skyTop, FIRE_WAY: FIRE_WAY, fireBurn: fireBurn, RUST_G: RUST_G, RUST_LV: RUST_LV, DAY_MAX: DAY_MAX, rustLv: rustLv,
     HEAT_M: HEAT_M, HEAT_N: HEAT_N, HEAT_T: HEAT_T, heatAt: heatAt, heatFall: heatFall, EM_CORE: EM_CORE, EM_TURNS: EM_TURNS, EM_B: EM_B, emClips: emClips, emPole: emPole,
     QT: QT, QLV: QLV, QM_MIN: QM_MIN, QM_MAX: QM_MAX, quakeLv: quakeLv, quakeTown: quakeTown,
+    LV_P: LV_P, LV_W: LV_W, leverTilt: leverTilt, PL_M: PL_M, PL_W: PL_W, PL_PW: PL_PW, PL_RMAX: PL_RMAX, pullF: pullF, pullDir: pullDir, pullLift: pullLift,
+    ST_L: ST_L, ST_D: ST_D, ST_T: ST_T, strF: strF, strVol: strVol,
     proj: proj, segPts: segPts, placeXY: placeXY, spots: spots, hitAt: hitAt, noOverlap: noOverlap, perm: perm, hash: hash,
     shadowLen: shadowLen, paper: paper, springLen: springLen, frictionPull: frictionPull,
     initState: initState, simVals: simVals, meets: meets, check: check, ansText: ansText, label: label, html: html, mount: mount, css: css };
