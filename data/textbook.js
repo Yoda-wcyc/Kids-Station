@@ -324,8 +324,8 @@
       sents.push({ key: 'i:' + c.k, g: 'i', en: `I'm from ${c.en}.`, zh: `我來自${c.zh}。`, alts: [`I am from ${c.en}.`], why,
         blanks: [{ fam: 'ctry', w: c.w, opts: cOpts, cue: c.zh, why: `${c.zh}＝${c.en}（國名第一個字母大寫）` }, { fam: 'from', w: 'from', opts: ['from', 'to', 'in', 'at'], why: '來自＝from。' }], ask: { prompt: `說說看：我來自${c.zh}。`, hint: "I'm from …" } });
       ppl.forEach(p => {
-        sents.push({ key: `${p.k}:${c.k}`, g: 'he', en: `${p.c} from ${c.en}.`, zh: `${p.zh}來自${c.zh}。`, alts: [`${p.S} is from ${c.en}.`], why,
-          blanks: [{ fam: 'ctry', w: c.w, opts: cOpts, cue: c.zh }], ask: { prompt: `說說看：${p.zh}來自${c.zh}。`, hint: `${p.c} from …` } });
+        sents.push({ key: `${p.k}:${c.k}`, g: 'he', en: `${p.S} is from ${c.en}.`, zh: `${p.zh}來自${c.zh}。`, alts: [`${p.c} from ${c.en}.`], why,
+          blanks: [{ fam: 'ctry', w: c.w, opts: cOpts, cue: c.zh }, { fam: 'be', w: 'is', opts: BE }], ask: { prompt: `說說看：${p.zh}來自${c.zh}。`, hint: `${p.c} from …` } });
         sents.push({ key: `q:${p.k}:${c.k}`, g: 'q', en: `Is ${p.en} from ${c.en}?`, zh: `${p.zh}來自${c.zh}嗎？`, why: 'he、she 用 Is 問：Is he from …? 回答 Yes, he is. / No, he isn\'t.',
           blanks: [{ fam: 'isq', w: 'Is', opts: ['Is', 'Are', 'Do', 'Does'] }], ask: { prompt: `問：${p.zh}來自${c.zh}嗎？`, hint: `Is ${p.en} from …?` } });
         replies.push({ key: `y:${p.k}:${c.k}`, card: `q:${p.k}:${c.k}`, q: `Is ${p.en} from ${c.en}?`, cue: `⭕ 是`, en: `Yes, ${p.en} is.`, kind: 'y', why: 'Is he …? 對的話：Yes, he is.（句尾不縮寫）',
@@ -367,7 +367,7 @@
         sents.push({ key: `${p.k}:${m.k}`, g: 'he', en: `${p.S} goes to school ${m.by}.`, zh: `${p.zh}${m.zh}上學。`, why,
           blanks: [{ fam: 'goes', w: 'goes', opts: ['go', 'goes', 'going', 'gos'], why: 'he、she 後面 go 要變 goes。' }], ask: { prompt: `說說看：${p.zh}${m.zh}上學。`, hint: `${p.S} goes …` } });
         sents.push({ key: `q:${p.k}:${m.k}`, g: 'q', en: `Does ${p.en} go to school ${m.by}?`, zh: `${p.zh}${m.zh}上學嗎？`, why: 'he、she 用 Does 問，後面 go 用原形。',
-          blanks: [{ fam: 'does', w: 'Does', opts: ['Does', 'Do', 'Is', 'Are'] }], ask: { prompt: `問：${p.zh}${m.zh}上學嗎？`, hint: `Does ${p.en} go to school …?` } });
+          blanks: [{ fam: 'dd', w: 'Does', opts: ['Does', 'Do', 'Is', 'Are'], why: 'he、she 用 Does 問。' }], ask: { prompt: `問：${p.zh}${m.zh}上學嗎？`, hint: `Does ${p.en} go to school …?` } });
         replies.push({ key: `hw:${p.k}:${m.k}`, card: `hq:${p.k}`, q: `How does ${p.en} go to school?`, cue: `🚌 ${m.zh}`, en: `${p.S} goes to school ${m.by}.`, kind: 'hw', why,
           wrong: [`${p.S} go to school ${m.by}.`, `${p.S} goes to school ${m2.by}.`, `${p.S} goes to school ${wrongBy}.`] });
         replies.push({ key: `y:${p.k}:${m.k}`, card: `q:${p.k}:${m.k}`, q: `Does ${p.en} go to school ${m.by}?`, cue: '⭕ 是', en: `Yes, ${p.en} does.`, kind: 'y', why: 'Does …? 對的話：Yes, he does.',
@@ -401,7 +401,7 @@
     const sents = [
       { key: 'wq:you', g: 'wq', en: 'What do you do on weekends?', zh: '你週末做什麼？', why, blanks: [{ fam: 'on', w: 'on', opts: ['on', 'in', 'at', 'to'], why: '週末用 on weekends。' }], ask: { prompt: '問對方：你週末做什麼？', hint: 'What … on weekends?' } }];
     ppl.forEach(p => sents.push({ key: 'wq:' + p.k, g: 'wq', en: `What does ${p.en} do in ${p.own} free time?`, zh: `${p.zh}空閒的時候做什麼？`, why,
-      blanks: [{ fam: 'dd', w: 'does', opts: ['does', 'do', 'is', 'are'], why: 'he、she 用 does 問。' }, { fam: 'own', w: p.own, opts: p.k === 'he' ? ['his', 'he', 'him', 'her'] : ['her', 'she', 'hers', 'his'], why: `${p.en} 的＝${p.own}` }],
+      blanks: [{ fam: 'own', w: p.own, opts: p.k === 'he' ? ['his', 'he', 'him', 'her'] : ['her', 'she', 'hers', 'his'], why: `${p.en} 的＝${p.own}` }],
       ask: { prompt: `問：${p.zh}空閒的時候做什麼？`, hint: `What does ${p.en} do …?` } }));
     const replies = [];
     acts.forEach((a, i) => {
@@ -410,7 +410,8 @@
         blanks: [{ fam: 'on', w: 'on', opts: ['on', 'in', 'at', 'to'], why: '週末用 on weekends。' }], ask: { prompt: `說說看：我週末${a.zh}。`, hint: `I ${w0} … on weekends.` } });
       ppl.forEach(p => {
         sents.push({ key: `${p.k}:${a.k}`, g: 'he', en: `${p.S} ${a.s} in ${p.own} free time.`, zh: `${p.zh}空閒的時候${a.zh}。`, why,
-          blanks: [{ fam: 's3', w: s0, opts: [s0, w0, a.ing.split(' ')[0], 'is ' + a.ing.split(' ')[0]], why: `${p.en} 是一個人，${w0} 要變 ${s0}。` }], ask: { prompt: `說說看：${p.zh}空閒的時候${a.zh}。`, hint: `${p.S} ${s0} …` } });
+          blanks: [{ fam: 's3', w: s0, opts: [s0, w0, a.ing.split(' ')[0], 'is ' + a.ing.split(' ')[0]], why: `${p.en} 是一個人，${w0} 要變 ${s0}。` },
+            { fam: 'own', w: p.own, opts: p.k === 'he' ? ['his', 'he', 'him', 'her'] : ['her', 'she', 'hers', 'his'], why: `${p.en} 的＝${p.own}` }], ask: { prompt: `說說看：${p.zh}空閒的時候${a.zh}。`, hint: `${p.S} ${s0} …` } });
         replies.push({ key: `h:${p.k}:${a.k}`, card: 'wq:' + p.k, q: `What does ${p.en} do in ${p.own} free time?`, cue: `🎈 ${a.zh}`, en: `${p.S} ${a.s} in ${p.own} free time.`, alts: [`${p.S} ${a.s}.`], kind: p.k, why,
           wrong: [`${p.S} ${a.v} in ${p.own} free time.`, `${p.S} ${a2.s} in ${p.own} free time.`, `${p.S} is ${a.ing} in ${p.own} free time.`] });
       });
