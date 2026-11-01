@@ -988,16 +988,17 @@ function exRec(id){ return exAll()[SUBJ + ':' + id] || {}; }
 function exSeen(){ return (exAll()._seen || {})[SUBJ] || {}; }
 function exMarkSeen(keys){ var all = exAll(), t = Date.now(), s = (all._seen || {})[SUBJ] || {}; if(MXx()) s = MXx().prune(s, t); keys.forEach(function(k){ s[k] = t; }); all._seen = all._seen || {}; all._seen[SUBJ] = s; lsSet(XKEY, all); }
 function exOn(u){ return !!(MXx() && QKx() && ZRx() && D.exam && u && D.exam[u.id]); }
-function mockPairs(){ var out = []; for(var i = 0; i + 1 < ALL_UNITS.length; i += 2) if(D.exam && D.exam[ALL_UNITS[i].id] && D.exam[ALL_UNITS[i + 1].id]) out.push([ALL_UNITS[i], ALL_UNITS[i + 1]]); return out; }
+// 段考：照順序兩個一組；單元數是單數時，最後一個併進最後一組（社會 u7＋u8＋u9）；整組都有測驗資料才出
+function mockPairs(){ var out = [], has = function(u){ return !!(D.exam && D.exam[u.id]); }; for(var i = 0; i + 1 < ALL_UNITS.length; i += 2) out.push([ALL_UNITS[i], ALL_UNITS[i + 1]]); if(ALL_UNITS.length % 2 && out.length) out[out.length - 1].push(ALL_UNITS[ALL_UNITS.length - 1]); return out.filter(function(g){ return g.every(has); }); }
 function unitById(id){ return ALL_UNITS.filter(function(x){ return x.id === id; })[0]; }
 function exCard(id, small, title, v){ var r = exRec(id); return '<button class="lit-card' + (r.n ? (r.best >= 90 ? ' done' : ' tried') : '') + '" data-act="exGo" data-v="' + v + '"><small>' + esc(small) + '</small><b>' + esc(title) + '</b><span>' + (r.n ? '🏅 最高 ' + r.best + ' 分・最近 ' + r.last + ' 分' : '⚪ 還沒考過') + '</span></button>'; }
 function renderExamHome(){
   EXM = null; exStopTimer();
   var html = '<div class="mm-wrap">';
   if(MOCK){
-    html += '<h2>📝 ' + CFG.name + '段考模擬</h2><ul class="ex-rules"><li>兩個單元一份，每份 30 題、滿分 100 分（前 20 題每題 3 分、後 10 題每題 4 分）。</li><li>題目由易到難，最後是題組：先讀一段資料再回答。</li><li>考試中不說對錯，全部寫完按「交卷」，才看分數和每一題的解析。</li><li>答錯的題會收進錯題庫；這裡不算進單元完成。</li></ul>' +
+    html += '<h2>📝 ' + CFG.name + '段考模擬</h2><ul class="ex-rules"><li>兩個單元一份（社會五下單元三～五三個單元一份），每份 30 題、滿分 100 分（前 20 題每題 3 分、後 10 題每題 4 分）。</li><li>題目由易到難，最後是題組：先讀一段資料再回答。</li><li>考試中不說對錯，全部寫完按「交卷」，才看分數和每一題的解析。</li><li>答錯的題會收進錯題庫；這裡不算進單元完成。</li></ul>' +
       '<label class="ex-timer-opt"><input type="checkbox" id="exTimed"> ⏱️ 限時 ' + MOCK_MIN + ' 分鐘（時間到自動交卷）</label>' +
-      '<div class="lit-grid">' + mockPairs().map(function(p, i){ return exCard('mock-' + p[0].id + '-' + p[1].id, unitLabel(p[0]) + '＋' + unitLabel(p[1]), p[0].title + '、' + p[1].title, 'mock:' + i); }).join('') + '</div>';
+      '<div class="lit-grid">' + mockPairs().map(function(p, i){ return exCard('mock-' + p.map(function(x){ return x.id; }).join('-'), p.map(unitLabel).join('＋'), p.map(function(x){ return x.title; }).join('、'), 'mock:' + i); }).join('') + '</div>';
   } else {
     var u = unit();
     html += '<h2>📄 單元測驗・' + esc(unitLabel(u)) + '</h2><ul class="ex-rules"><li>25 題、每題 4 分，滿分 100 分：選擇 15 題、是非 5 題、配對或排序 2 題、題組 1 組（3 題）。</li><li>題目由易到難；大約一半是新題，一半從練習題裡挑（最近一週做過的會先避開）。</li><li>考試中不說對錯，全部寫完按「交卷」，才看分數和每一題的解析。</li><li>答錯的題會收進錯題庫；這裡不算進單元完成。</li></ul>' +
@@ -1010,7 +1011,7 @@ function startExam(v, timed){
   var src = {units:ALL_UNITS, exam:D.exam}, o = {hash:qHash, recent:M.recentFn(exSeen(), Date.now()), rand:R}, P = null;
   timed = !!(MOCK && timed);
   if(v === 'unit') P = M.unitPaper(src, unit().id, o);
-  else { var pr = mockPairs()[+String(v).split(':')[1]]; if(pr) P = M.mockPaper(src, [pr[0].id, pr[1].id], o); }
+  else { var pr = mockPairs()[+String(v).split(':')[1]]; if(pr) P = M.mockPaper(src, pr.map(function(x){ return x.id; }), o); }
   if(!P){ toast('找不到這份考卷'); return; }
   EXM = {v:v, timed:timed, P:P, st:P.items.map(function(it){ return Q.prep(it.q, R); }), done:false, confirm:false, end:timed ? Date.now() + MOCK_MIN * 60000 : 0};
   renderExam(); $('#panel').scrollTop = 0; exStartTimer();

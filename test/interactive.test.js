@@ -2,6 +2,7 @@
 // 用法：node test/interactive.test.js
 // 1. 資料格式：kind／mode／d 1～3、id 全站唯一、單元存在、題數（社會 地圖 40＋時間軸 20、自然 4 種模擬各 10）、每個有題的單元 ≥ 10 題
 // 2. 地圖：答案在圓圈裡、同一題的圓圈（含寬限）兩兩不重疊（＝答案唯一）、熱區直徑 ≥ 44；地名只用講義（unit*.js）有的
+// 1b. 五下（2026-11-02）：模擬多 star 星座盤、fire 燃燒三要素、rust 鐵生鏽；專有地名的地點寫 h
 // 3. 時間軸：正解順序就是 items 的順序、出題順序不會剛好是正解；有年份的照年份遞增
 // 4. 模擬：影長隨高度角增大而變短、彈簧伸長量和砝碼數成正比、摩擦力 塗油 ＜ 光滑 ＜ 砂紙、石蕊試紙變色規則；chk 題用模擬算出答案對照 opts[a]；set 題起始狀態不符合、但做得到
 'use strict';
@@ -32,6 +33,15 @@ for (let w = 0; w <= IA.FW_MAX; w++) {
 Object.keys(IA.SOLS).forEach(s => { const k = IA.SOLS[s].k;
   ok(IA.paper(s, 'blue') === (k === 'acid' ? 'red' : 'blue') && IA.paper(s, 'red') === (k === 'base' ? 'blue' : 'red'), 'litmus rule ' + s); });
 ok(IA.SOLS.vinegar.k === 'acid' && IA.SOLS.citric.k === 'acid' && ['water', 'sugar', 'salt'].every(s => IA.SOLS[s].k === 'neutral') && IA.SOLS.soap.k === 'base' && IA.SOLS.soda.k === 'base', 'solutions classified as in 講義');
+// 五下：燃燒三要素（三個都有才燒）、生鏽（甲乙不鏽、丁不比丙慢、天數愈多不會變少）、星空（每月提早約 2 小時、季節星群在晚上 9 點的南方高空）
+[0, 1].forEach(f => [0, 1].forEach(a => [0, 1].forEach(h => ok(IA.fireBurn({ fuel: f, air: a, heat: h }) === (f && a && h ? 1 : 0), 'fire needs all three: ' + [f, a, h]))));
+for (let d = 0; d <= IA.DAY_MAX; d++) {
+  ok(IA.rustLv('A', d) === 0 && IA.rustLv('B', d) === 0 && IA.rustLv('D', d) >= IA.rustLv('C', d), 'rust: 甲乙 never, 丁 ≥ 丙, day ' + d);
+  if (d) ok(['C', 'D'].every(g => IA.rustLv(g, d) >= IA.rustLv(g, d - 1) && IA.rustLv(g, d) > 0), 'rust grows with days, day ' + d);
+}
+ok(IA.rustLv('C', 0) === 0 && IA.rustLv('D', 4) === 4 && IA.rustLv('C', 7) === 4, 'rust day 0 none, 丁 day4 / 丙 day7 = 非常多');
+ok(IA.skyTop(1, 21) === '獵戶座' && IA.skyTop(5, 21) === '春季大曲線' && IA.skyTop(7, 21) === '天蠍座' && IA.skyTop(8, 21) === '夏季大三角' && IA.skyTop(11, 21) === '秋季四邊形' && IA.skyTop(2, 21) === '冬季大三角', 'sky: seasonal groups high in the south at 9 pm');
+IA.SKY.forEach(x => { for (let m = 1; m <= 12; m++) ok(Math.abs(IA.skyHA(m, 23, x.n) - IA.skyHA(m === 12 ? 1 : m + 1, 21, x.n)) < 1e-9 || Math.abs(Math.abs(IA.skyHA(m, 23, x.n) - IA.skyHA(m === 12 ? 1 : m + 1, 21, x.n)) - 24) < 1e-9, 'sky: next month 2 hours earlier ' + x.n + ' ' + m); });
 // tap 判分：圓圈外寬限以外不算、圓圈裡算
 const sp0 = [{ id: 'a', x: 100, y: 100, r: 25 }, { id: 'b', x: 200, y: 100, r: 25 }];
 ok(IA.hitAt(sp0, 100, 100) === 'a' && IA.hitAt(sp0, 100 + 25 + IA.SLOP, 100) === 'a' && IA.hitAt(sp0, 150, 100) === null && IA.hitAt(sp0, 190, 110) === 'b', 'hitAt: inside/slop counts, outside does not');
@@ -49,6 +59,9 @@ function states(q) {
   if (q.sim === 'shadow') ['E', 'S', 'W'].forEach(side => { for (let ang = 15; ang <= 90; ang++) out.push({ side, ang }); });
   if (q.sim === 'spring') for (let n = 0; n <= IA.SPRING_MAX; n++) out.push({ n });
   if (q.sim === 'friction') Object.keys(IA.SURF).forEach(surf => { for (let w = 0; w <= IA.FW_MAX; w++) [false, true].forEach(moved => out.push({ surf, w, moved })); });
+  if (q.sim === 'star') for (let mon = 1; mon <= 12; mon++) for (let hr = IA.HR_MIN; hr <= IA.HR_MAX; hr++) out.push({ mon, hr });
+  if (q.sim === 'fire') [0, 1].forEach(fuel => [0, 1].forEach(air => [0, 1].forEach(heat => out.push({ fuel, air, heat }))));
+  if (q.sim === 'rust') Object.keys(IA.RUST_G).forEach(g => { for (let day = 0; day <= IA.DAY_MAX; day++) out.push({ g, day }); });
   return out;
 }
 
@@ -97,7 +110,10 @@ Object.keys(SUBJ).forEach(k => {
         ok(st0.slots.every(v => v === -1), tag + ': starts with empty timeline');
       }
       if (q.kind === 'sim') {
-        ok(['shadow', 'litmus', 'spring', 'friction'].includes(q.sim), tag + ': sim name');
+        ok(['shadow', 'litmus', 'spring', 'friction', 'star', 'fire', 'rust'].includes(q.sim), tag + ': sim name');
+        if (q.sim === 'star') ok(q.init.mon >= 1 && q.init.mon <= 12 && q.init.hr >= IA.HR_MIN && q.init.hr <= IA.HR_MAX, tag + ': star init');
+        if (q.sim === 'fire') ok(['fuel', 'air', 'heat'].every(k => q.init[k] === 0 || q.init[k] === 1), tag + ': fire init');
+        if (q.sim === 'rust') ok(IA.RUST_G[q.init.g] && q.init.day >= 0 && q.init.day <= IA.DAY_MAX, tag + ': rust init');
         if (q.sim === 'spring') ok(q.spring && q.spring.L0 > 0 && q.spring.k > 0 && q.init.n >= 0 && q.init.n <= IA.SPRING_MAX, tag + ': spring params');
         if (q.sim === 'friction') ok(IA.SURF[q.init.surf] && q.init.w >= 0 && q.init.w <= IA.FW_MAX, tag + ': friction init');
         if (q.sim === 'litmus') ok(IA.SOLS[q.init.sol], tag + ': litmus solution');
@@ -121,6 +137,14 @@ Object.keys(SUBJ).forEach(k => {
           if (c.fn === 'pull') ok(num(A) === IA.frictionPull(c.surf, c.w), tag + ': pull ' + IA.frictionPull(c.surf, c.w));
           if (c.fn === 'max' || c.fn === 'min') { const s = Object.keys(IA.SURF).sort((x, y) => IA.SURF[x].mu - IA.SURF[y].mu); ok(A.indexOf(IA.SURF[c.fn === 'max' ? s[2] : s[0]].n.replace('的桌面', '')) === 0, tag + ': ' + c.fn + ' friction surface'); }
           if (c.fn === 'paper') { const after = IA.paper(q.init.sol, c.color); ok(A.includes(after === 'red' ? '紅' : '藍') && (after !== c.color) === !/沒有變/.test(A), tag + ': paper colour ' + after); }
+          if (c.fn === 'top') ok(IA.skyTop(c.mon, c.hr) && A === IA.skyTop(c.mon, c.hr), tag + ': sky top ' + IA.skyTop(c.mon, c.hr));
+          if (c.fn === 'see') ok(A === (IA.skySee(c.mon, c.hr, c.name) ? '看得到' : '看不到'), tag + ': sky see ' + c.name);
+          if (c.fn === 'turn') ok(num(A) === 15 * c.h, tag + ': sky turns 15° per hour');
+          if (c.fn === 'way') ok(A.includes(IA.FIRE_WAY[c.off]) && q.opts.filter(o => o.includes(IA.FIRE_WAY[c.off])).length === 1, tag + ': fire way ' + IA.FIRE_WAY[c.off]);
+          if (c.fn === 'burn') ok(A === (IA.fireBurn(c.s) ? '會燃燒' : '不會燃燒'), tag + ': burn ' + JSON.stringify(c.s));
+          if (c.fn === 'lv') ok(A === IA.RUST_LV[IA.rustLv(c.g, c.day)], tag + ': rust level');
+          if (c.fn === 'most') { const lv = Object.keys(IA.RUST_G).map(g => IA.rustLv(g, c.day)), mx = Math.max(...lv); ok(lv.filter(v => v === mx).length === 1 && A.includes(IA.RUST_G[Object.keys(IA.RUST_G)[lv.indexOf(mx)]].n) && q.opts.filter(o => o.includes('丁')).length === 1, tag + ': rust most'); }
+          if (c.fn === 'none') ok(A.includes('甲') && A.includes('乙') && Object.keys(IA.RUST_G).filter(g => IA.rustLv(g, IA.DAY_MAX) === 0).map(g => IA.RUST_G[g].n).join() === '甲,乙', tag + ': rust none');
           if (c.fn === 'kind') ok(IA.SOLS[q.init.sol].k === c.k && IA.paper(q.init.sol, 'red') === 'red' && IA.paper(q.init.sol, 'blue') === 'blue', tag + ': neutral → no change');
           if (c.fn === 'mystery') ok(A === IA.KIND_ZH[IA.SOLS[q.init.sol].k], tag + ': mystery solution kind');
           if (c.fn === 'pick') { const byName = {}; Object.keys(IA.SOLS).forEach(s => { byName[IA.SOLS[s].n] = IA.SOLS[s].k; });
@@ -133,13 +157,15 @@ Object.keys(SUBJ).forEach(k => {
 
 // 地名只用講義有的
 const M = SUBJ.social.iaMap, NAMED = { keelung: ['雞籠', '基隆'], tamsui: ['淡水'], keelungTamsui: ['基隆', '淡水'], shisanhang: ['十三行遺址'], tainan: ['臺南'], anping: ['安平'], dagou: ['打狗'], hengchun: ['恆春城'], mudan: ['牡丹社'], beinan: ['卑南遺址'], changbin: ['長濱遺址'], mainland: ['亞洲大陸'], pacific: ['太平洋'] };
-Object.keys(M.places).forEach(id => { if (NAMED[id]) NAMED[id].forEach(n => ok(handout.social.includes(n), 'place name in 講義: ' + n)); else ok(!/[臺台]|遺址|港|城|社/.test(M.places[id].name) || /北部|南部|東部|西部/.test(M.places[id].name), 'generic area, no proper name: ' + M.places[id].name); });
+// 五下起：專有地名的地點寫 h:[講義裡的詞]（例 { name:'高雄港', h:['高雄港'] }），這裡檢查每個詞都在講義裡
+Object.keys(M.places).forEach(id => { const nm = NAMED[id] || M.places[id].h; if (nm) { ok(Array.isArray(nm) && nm.length, 'place h list: ' + id); nm.forEach(n => ok(handout.social.includes(n), 'place name in 講義: ' + n)); } else ok(!/[臺台]|遺址|港|城|社/.test(M.places[id].name) || /北部|南部|東部|西部/.test(M.places[id].name), 'generic area, no proper name: ' + M.places[id].name); });
 // 數學題同時用到的條件也要對得上（n4-s20：砂紙 1 個砝碼 180 公克重）
 ok(IA.frictionPull('sand', 1) === 180, 'n4-s20 premise: sand + 1 weight = 180');
 // 題數
-const want = { 'social:map': 40, 'social:time': 20, 'science:shadow': 10, 'science:litmus': 10, 'science:spring': 10, 'science:friction': 10 };
+// 2026-11-02 五下：社會 地圖 29＋時間軸 15（u5、u6、u8、u9；u7 米食／音樂沒有適合的地點與年份，不做）、自然 star／fire／rust 各 10（n8 動物不做模擬）
+const want = { 'social:map': 69, 'social:time': 35, 'science:shadow': 10, 'science:litmus': 10, 'science:spring': 10, 'science:friction': 10, 'science:star': 10, 'science:fire': 10, 'science:rust': 10 };
 Object.keys(want).forEach(x => ok(cnt[x] === want[x], `count ${x}: ${cnt[x]} (want ${want[x]})`));
-ok(!SUBJ.science.ia.n2, 'science n2 (植物) has no simulation');
+ok(!SUBJ.science.ia.n2 && !SUBJ.science.ia.n8, 'science n2 (植物)、n8 (動物) have no simulation');
 // 頁面接線
 ['social', 'science'].forEach(k => { const h = fs.readFileSync(path.join(MM, k + '.html'), 'utf8');
   ok(h.includes(`<script src="data/${k}/interactive.js`) && h.indexOf('<script src="interactive.js') < h.indexOf('<script src="mindmap.js'), `mindmap/${k}.html loads interactive data + component before mindmap.js`); });

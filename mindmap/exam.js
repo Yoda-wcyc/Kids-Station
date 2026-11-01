@@ -2,6 +2,7 @@
    資料：<資料>.exam[單元id] = {qs:[新題], grp:{題組}}（data/<科>/exam1-4.js）＋單元的練習題庫 unit.quiz。
    單元測驗 25 題／100 分（每題 4 分）：新題全部（選擇 7、是非 2、配對或排序 1、題組 3）＋題庫挑 12 題（選擇 8、是非 3、配對或排序 1）。
    段考模擬 30 題／100 分（前 20 題 3 分、後 10 題 4 分）：兩個單元各 15 題＝新題（選擇 4、是非 1）＋題庫（選擇 4、是非 2、配對或排序 1）＋該單元的題組 3 題。
+   三個單元一份（2026-11-02，社會五下 u7～u9）：各 10 題＝新題（選擇 2）＋題庫（選擇 2、是非 2、配對或排序 1）＋題組 3 題。
    難度：整份目標 d1 40%、d2 40%、d3 20%（新題的 d 先算，缺的從題庫補，題庫不夠就就近補）。
    排序：一般題照 d 由小到大（同 d：是非 → 選擇 → 配對／排序），題組放最後、組內也照 d。
    避開最近做過的題：recent(key) 為真的題排到最後才用（key：題庫 'q:'+題目雜湊、新題 'x:'+題 id；mindmap.js 把最近 7 天作答過的記在 kids_mm_exam._seen）。 */
@@ -12,6 +13,7 @@
   'use strict';
   var UNIT_Q = { bank: { mc: 8, tf: 3, om: 1 } };
   var MOCK_Q = { fresh: { mc: 4, tf: 1 }, bank: { mc: 4, tf: 2, om: 1 } };
+  var MOCK3_Q = { fresh: { mc: 2 }, bank: { mc: 2, tf: 2, om: 1 } };   // 三個單元一份：每單元 10 題
   var MIX = [0.4, 0.4, 0.2], TRANK = { tf: 0, mc: 1, order: 2, match: 2 };
   var SEEN_DAYS = 7, DAY = 864e5;
   function kids(d) { return d.lessons || d.topics || d.children || []; }
@@ -64,15 +66,15 @@
     var bank = pick(bankOf(u, o.hash), UNIT_Q.bank, need, o.recent, o.rand);
     return { kind: 'unit', id: uid, units: [uid], items: finish(fresh.concat(bank), [gi]) };
   }
-  // 📝 段考模擬（兩個單元）
+  // 📝 段考模擬（兩個或三個單元）
   function mockPaper(D, uids, o) {
     o = opts0(o);
-    var plain = [], groups = [];
+    var plain = [], groups = [], Q = uids.length === 3 ? MOCK3_Q : MOCK_Q, per = 30 / uids.length;
     for (var k = 0; k < uids.length; k++) {
       var u = (D.units || []).filter(function (x) { return x.id === uids[k]; })[0], E = D.exam && D.exam[uids[k]]; if (!u || !E) return null;
-      var gi = grpItems(u, E), need = minus(target(15), gi);
-      var fresh = pick(E.qs.map(function (q) { return freshItem(u, q); }), MOCK_Q.fresh, need, o.recent, o.rand);
-      var bank = pick(bankOf(u, o.hash), MOCK_Q.bank, need, o.recent, o.rand);
+      var gi = grpItems(u, E), need = minus(target(per), gi);
+      var fresh = pick(E.qs.map(function (q) { return freshItem(u, q); }), Q.fresh, need, o.recent, o.rand);
+      var bank = pick(bankOf(u, o.hash), Q.bank, need, o.recent, o.rand);
       plain = plain.concat(fresh, bank); groups.push(gi);
     }
     return { kind: 'mock', id: 'mock-' + uids.join('-'), units: uids.slice(), items: finish(plain, groups) };

@@ -48,7 +48,7 @@
   Object.keys(MM_UNITS).forEach(k => {
     ACTS[k] = MM_UNITS[k].map((x, i) => ({ id: x[0], title: `${mmLab(x, i)}　${x[1]}`, grp: mmBook(x), desc: () => mmDesc(k, x[0]), icon: '🗺️', src: `mindmap/${k}.html?u=${x[0]}`, dk: `mm:${k}:${x[0]}` }));
     // 📝 段考模擬（2026-11-01，mindmap/exam.js）：單元一＋二、三＋四各一份 30 題；不算單元完成（沒有 dk）
-    ACTS[k].push({ id: 'mock', title: '📝 段考模擬', desc: '兩個單元一份、30 題由易到難，可以選 40 分鐘限時', icon: '📝', src: `mindmap/${k}.html?mock=1` });
+    ACTS[k].push({ id: 'mock', title: '📝 段考模擬', desc: '兩三個單元一份、30 題由易到難，可以選 40 分鐘限時', icon: '📝', src: `mindmap/${k}.html?mock=1` });
     // 🔁 今天要複習（2026-11-01）：錯題庫裡到期的題＋閃卡（間隔 1 → 3 → 7 天，規則在 kids-mistakes.js）；入口是科目首頁上方的按鈕（reviewBar），不另列卡片
     ACTS[k].push({ id: 'review', title: '今天要複習', icon: '🔁', src: `mindmap/${k}.html?review=1`, hidden: true });
   });

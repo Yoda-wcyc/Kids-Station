@@ -65,7 +65,7 @@ window.DATA_SOCIAL = window.DATA_SOCIAL || { units: [], alts: {} };
           { id: "u7-l2-t2", title: "傳統音樂與戲曲", keys: ["傳統音樂","戲曲"], verify: true, points: [
             { t: "漢人移民帶來北管、南管等傳統音樂，常在廟會和節慶中演奏。", cands: [{ w: "北管", core: true }, { w: "南管" }, { w: "廟會" }] },
             { t: "一般認為歌仔戲發源於宜蘭，是在臺灣發展出來的戲曲，用臺語演唱。", cands: [{ w: "歌仔戲", core: true }, { w: "宜蘭" }, { w: "臺語" }] },
-            { t: "客家人有山歌和客家八音，唱出客家人的生活和心情。", cands: [{ w: "客家八音", core: true }, { w: "山歌" }] }
+            { t: "客家人有山歌和客家八音，表現出客家人的生活和心情。", cands: [{ w: "客家八音", core: true }, { w: "山歌" }] }
           ] },
           { id: "u7-l2-t3", title: "日治時期的流行歌", keys: ["流行歌"], verify: true, points: [
             { t: "日治時期有了唱片和收音機，臺語流行歌開始流行起來。", cands: [{ w: "唱片", core: true }, { w: "收音機" }] },

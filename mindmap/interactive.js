@@ -1,6 +1,6 @@
 /* interactive.js — 🗺️ 互動圖題（社會）／🧪 實驗模擬（自然）的題目元件（2026-11-02）
  * 資料：data/<科>/interactive.js → <資料>.ia[單元id] = [題]；社會另有 <資料>.iaMap（臺灣簡圖：海岸線、地點經緯度）。格式見 data/FORMAT.md 第 8 節。
- * 題目 kind：map（地圖）／time（時間軸排序）／sim（實驗模擬：shadow 影子、litmus 石蕊試紙、spring 彈簧、friction 摩擦力）；
+ * 題目 kind：map（地圖）／time（時間軸排序）／sim（實驗模擬：shadow 影子、litmus 石蕊試紙、spring 彈簧、friction 摩擦力；五下 star 星座盤、fire 燃燒三要素、rust 鐵生鏽）；
  *   作答 mode：tap（點地圖上的圓圈，再按確定）／mc（選項）／order（把卡片拖到時間軸，或點卡片再點位置）／set（把模擬調到指定狀態，再按確定）。
  * 重現：選項順序、卡片順序都由題目 id 決定（不隨機），模擬從題目的 init 開始 → 錯題重做時畫面跟第一次一模一樣。
  * 判分只在這支：tap 只認圓圈＋寬限（slop）範圍內，沒點到圓圈不判分；資料測試保證同一題的圓圈不重疊，所以答案唯一。
@@ -64,6 +64,21 @@
   var SURF = { oil: { n: '塗了油的桌面', mu: 0.2 }, smooth: { n: '光滑的桌面', mu: 0.5 }, sand: { n: '鋪砂紙的桌面', mu: 1.2 } };
   var SURF_ORDER = ['oil', 'smooth', 'sand'], FW_MAX = 3, PULL_MAX = 400;
   function frictionPull(surf, w) { return Math.round(SURF[surf].mu * (100 + 50 * w)); }
+  // ⑤ 星座盤（五下 n5）：mon＝X 月中旬、hr 18～28（24 以後＝隔天凌晨）。示範用的近似：同一時刻的星空每月提早約 2 小時、每小時轉 15 度，
+  //    恆星時 ≈ hr＋2×mon＋5.6；星群的時角（離正南方幾小時，負＝還在東邊）＝恆星時－赤經。|時角| ≤ 6 算在地平線上，≤ 2 算在南方高空。
+  var SKY = [{ n: '獵戶座', ra: 5.6 }, { n: '冬季大三角', ra: 6.9 }, { n: '春季大曲線', ra: 13.9 }, { n: '天蠍座', ra: 16.9 }, { n: '夏季大三角', ra: 19.7 }, { n: '秋季四邊形', ra: 23.7 }];
+  var HR_MIN = 18, HR_MAX = 28;
+  function skyHA(mon, hr, name) { var o = SKY.filter(function (x) { return x.n === name; })[0], h = ((hr + 2 * mon + 5.6 - o.ra) % 24 + 36) % 24 - 12; return Math.round(h * 10) / 10; }
+  function skySee(mon, hr, name) { return Math.abs(skyHA(mon, hr, name)) <= 6; }
+  function skyTop(mon, hr) { var best = '', bd = 2.0001; SKY.forEach(function (x) { var d = Math.abs(skyHA(mon, hr, x.n)); if (d < bd) { bd = d; best = x.n; } }); return best; }
+  function hrText(h) { return h < 19 ? '傍晚 6 點' : h < 24 ? '晚上 ' + (h - 12) + ' 點' : h === 24 ? '半夜 12 點' : '凌晨 ' + (h - 24) + ' 點'; }
+  // ⑥ 燃燒三要素（五下 n6）：可燃物（木柴）、助燃物（空氣中的氧氣）、溫度達到燃點，三個都有才會燃燒；少一個火就熄滅
+  var FIRE_WAY = { fuel: '移走可燃物', air: '隔絕空氣', heat: '降低溫度' };
+  function fireBurn(st) { return st.fuel && st.air && st.heat ? 1 : 0; }
+  // ⑦ 鐵生鏽（五下 n7 甲乙丙丁四組）：同時有水和空氣才生鏽，鹽分讓它更快。程度 0～4 是示範用的
+  var RUST_G = { A: { n: '甲', d: '放乾燥劑的密封瓶', w: 0, a: 1, s: 0 }, B: { n: '乙', d: '煮沸過的水＋一層油', w: 1, a: 0, s: 0 }, C: { n: '丙', d: '沾濕放在空氣中', w: 1, a: 1, s: 0 }, D: { n: '丁', d: '沾食鹽水放在空氣中', w: 1, a: 1, s: 1 } };
+  var RUST_LV = ['沒有生鏽', '一點點', '有些', '很多', '非常多'], DAY_MAX = 7;
+  function rustLv(g, day) { var G = RUST_G[g]; return G.w && G.a ? Math.min(4, Math.ceil(day * (G.s ? 2 : 1) / 2)) : 0; }
 
   /* ---------- 狀態、判分 ---------- */
   function initState(q) {
@@ -74,6 +89,9 @@
     if (q.sim === 'spring') { st.n = st.n || 0; st.rec = {}; st.rec[st.n] = 1; }
     if (q.sim === 'friction') { st.w = st.w || 0; st.pull = 0; st.moved = false; st.rec = {}; }
     if (q.sim === 'shadow') { st.ang = st.ang || 45; st.side = st.side || 'E'; }
+    if (q.sim === 'star') { st.mon = st.mon || 1; st.hr = st.hr || 21; }
+    if (q.sim === 'fire') ['fuel', 'air', 'heat'].forEach(function (k) { st[k] = st[k] == null ? 1 : +!!st[k]; });
+    if (q.sim === 'rust') { st.g = st.g || 'C'; st.day = st.day || 0; st.rec = {}; st.rec[st.day] = 1; }
     return st;
   }
   function simVals(q, st) {
@@ -81,6 +99,9 @@
     Object.keys(st).forEach(function (k) { if (typeof st[k] !== 'object') v[k] = st[k]; });
     if (q.sim === 'shadow') v.len = shadowLen(st.ang);
     if (q.sim === 'spring') v.len = springLen(q.spring, st.n);
+    if (q.sim === 'star') v.top = skyTop(st.mon, st.hr);
+    if (q.sim === 'fire') v.burn = fireBurn(st);
+    if (q.sim === 'rust') v.lv = rustLv(st.g, st.day);
     return v;
   }
   // set 題的目標：{鍵: 值} 或 {鍵: [最小, 最大]}；全部符合才算對
@@ -199,6 +220,49 @@
       (st.moved ? '<text x="350" y="236" text-anchor="middle" font-size="18" font-weight="800" fill="#16784a">盒子開始移動了！剛開始移動時的拉力約 ' + F + ' 公克重</text>' : '') + '</svg>';
   }
 
+  function starSVG(st) {
+    var o = '<rect width="900" height="330" rx="16" fill="#14213d"/>', cx = 160, cy = 165, i, a, rot = (st.hr - 24) * 15 - (st.mon - 1) * 30;
+    // 星座盤：外圈（固定）是時刻、內圈（轉動）是日期；選的日期轉到對準選的時刻（橘線）
+    o += '<circle cx="' + cx + '" cy="' + cy + '" r="145" fill="#e9eef8" stroke="#8aa0c8" stroke-width="3"/><circle cx="' + cx + '" cy="' + cy + '" r="108" fill="#26365e" stroke="#c9d6f0" stroke-width="3"/>';
+    for (i = HR_MIN; i <= HR_MAX; i++) { a = (i - 24) * 15 * Math.PI / 180; o += '<text x="' + (cx + 127 * Math.sin(a)) + '" y="' + (cy + 127 * Math.cos(a) + 6) + '" text-anchor="middle" font-size="15" font-weight="800" fill="' + (i === st.hr ? '#c2410c' : '#33415c') + '">' + (i % 24) + '</text>'; }
+    for (i = 1; i <= 12; i++) { a = ((i - 1) * 30 + rot) * Math.PI / 180; o += '<text x="' + (cx + 90 * Math.sin(a)) + '" y="' + (cy + 90 * Math.cos(a) + 6) + '" text-anchor="middle" font-size="15" font-weight="800" fill="' + (i === st.mon ? '#ffb36b' : '#dfe7fb') + '">' + i + '月</text>'; }
+    a = (st.hr - 24) * 15 * Math.PI / 180; o += '<line x1="' + (cx + 70 * Math.sin(a)) + '" y1="' + (cy + 70 * Math.cos(a)) + '" x2="' + (cx + 142 * Math.sin(a)) + '" y2="' + (cy + 142 * Math.cos(a)) + '" stroke="#ff8a3d" stroke-width="4" opacity=".85"/>';
+    o += '<text x="' + cx + '" y="' + (cy + 5) + '" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">星座盤</text>';
+    // 面向南方的星空：左東、右西，愈靠中間愈高
+    o += '<path d="M335 300 Q612 290 890 300 L890 330 L335 330Z" fill="#2f4a2c"/><line x1="335" y1="300" x2="890" y2="300" stroke="#7fa36b" stroke-width="2"/>';
+    o += '<text x="345" y="322" font-size="18" font-weight="800" fill="#cfe3b0">東</text><text x="612" y="322" text-anchor="middle" font-size="18" font-weight="800" fill="#cfe3b0">南</text><text x="880" y="322" text-anchor="end" font-size="18" font-weight="800" fill="#cfe3b0">西</text>';
+    SKY.forEach(function (x) { var h = skyHA(st.mon, st.hr, x.n); if (Math.abs(h) > 6) return; var px = 612 + h * 44, py = 295 - 250 * Math.cos(h * 15 * Math.PI / 180);
+      o += '<circle cx="' + px + '" cy="' + py + '" r="6" fill="#fff6c8"/><circle cx="' + (px - 14) + '" cy="' + (py + 12) + '" r="3.5" fill="#fff6c8"/><circle cx="' + (px + 13) + '" cy="' + (py + 10) + '" r="3.5" fill="#fff6c8"/>' +
+        '<text x="' + px + '" y="' + (py - 12) + '" text-anchor="middle" font-size="17" font-weight="800" fill="#fff">' + esc(x.n) + '</text>'; });
+    return '<svg viewBox="0 0 900 330" role="img" aria-label="星座盤和南方的星空">' + o + '</svg>';
+  }
+  function fireSVG(st) {
+    var b = fireBurn(st), o = '<rect width="600" height="300" fill="' + (st.heat ? '#fff4e6' : '#eaf4ff') + '"/><rect y="240" width="600" height="60" fill="#d9c7a4"/><rect x="200" y="226" width="200" height="16" rx="6" fill="#8d8d8d"/>';
+    if (st.fuel) o += '<rect x="225" y="200" width="150" height="22" rx="10" fill="#8b5a2b" transform="rotate(-8 300 211)"/><rect x="225" y="200" width="150" height="22" rx="10" fill="#a0692f" transform="rotate(8 300 211)"/>';
+    else o += '<rect x="470" y="222" width="110" height="18" rx="8" fill="#8b5a2b"/><text x="525" y="214" text-anchor="middle" font-size="15" font-weight="800" fill="#6b4a2a">木柴移到旁邊</text>';
+    if (b) o += '<path d="M300 90 C340 140 355 170 330 205 L270 205 C245 170 260 140 300 90Z" fill="#ff8a3d"/><path d="M300 130 C320 160 325 180 312 205 L288 205 C275 180 282 160 300 130Z" fill="#ffd23f"/>';
+    else if (st.fuel) o += '<path d="M285 196 q8 -20 0 -40 M305 196 q8 -22 0 -46" fill="none" stroke="#9aa0a6" stroke-width="5" stroke-linecap="round" opacity=".7"/>';
+    if (!st.heat) for (var i = 0; i < 7; i++) o += '<path d="M' + (230 + i * 23) + ' ' + (60 + (i % 3) * 22) + ' q-7 12 0 16 q7 -4 0 -16Z" fill="#5f9de8"/>';
+    if (!st.air) o += '<path d="M190 236 L190 110 Q190 60 300 60 Q410 60 410 110 L410 236" fill="rgba(200,225,255,.35)" stroke="#7b8a99" stroke-width="6"/><rect x="290" y="44" width="20" height="18" rx="4" fill="#7b8a99"/>';
+    o += '<text x="300" y="285" text-anchor="middle" font-size="20" font-weight="800" fill="' + (b ? '#c2410c' : '#33415c') + '">' + (b ? '正在燃燒' : '火熄滅了') + '</text>';
+    return '<svg viewBox="0 0 600 300" role="img" aria-label="木柴、蓋子和火">' + o + '</svg>';
+  }
+  var RCOL = ['#9aa0a6', '#a98a72', '#a5683f', '#8f4a22', '#6e2f10'];
+  function rustSVG(st) {
+    var o = '<rect width="760" height="300" fill="#fbfaf6"/>';
+    ['A', 'B', 'C', 'D'].forEach(function (g, i) {
+      var G = RUST_G[g], x = 20 + i * 185, lv = rustLv(g, st.day), on = st.g === g;
+      o += '<rect x="' + x + '" y="10" width="170" height="250" rx="14" fill="' + (on ? '#fff1e3' : '#fff') + '" stroke="' + (on ? '#ff8a3d' : '#e6dccb') + '" stroke-width="' + (on ? 5 : 2) + '"/>';
+      o += '<path d="M' + (x + 40) + ' 60 L' + (x + 40) + ' 200 Q' + (x + 40) + ' 215 ' + (x + 55) + ' 215 L' + (x + 115) + ' 215 Q' + (x + 130) + ' 215 ' + (x + 130) + ' 200 L' + (x + 130) + ' 60" fill="none" stroke="#7b8a99" stroke-width="4"/>';
+      if (G.w) o += '<rect x="' + (x + 43) + '" y="' + (G.a ? 185 : 120) + '" width="84" height="' + (G.a ? 28 : 93) + '" fill="' + (G.s ? '#e6f2e8' : '#dcefff') + '"/>';
+      if (!G.a) o += '<rect x="' + (x + 43) + '" y="108" width="84" height="12" fill="#f6d365"/><text x="' + (x + 85) + '" y="102" text-anchor="middle" font-size="13" font-weight="700" fill="#8a6a1a">油</text>';
+      if (!G.w) o += '<rect x="' + (x + 36) + '" y="48" width="98" height="12" rx="4" fill="#7b8a99"/><rect x="' + (x + 50) + '" y="190" width="30" height="20" rx="4" fill="#fff" stroke="#9aa0a6"/><text x="' + (x + 65) + '" y="205" text-anchor="middle" font-size="11">乾燥劑</text>';
+      o += '<circle cx="' + (x + 90) + '" cy="' + (G.a ? 165 : 160) + '" r="24" fill="' + RCOL[lv] + '" stroke="#555" stroke-width="2" stroke-dasharray="3 3"/>';
+      o += '<text x="' + (x + 85) + '" y="40" text-anchor="middle" font-size="22" font-weight="800">' + G.n + '</text><text x="' + (x + 85) + '" y="245" text-anchor="middle" font-size="15" font-weight="800" fill="' + (lv ? '#8f4a22' : '#33415c') + '">' + RUST_LV[lv] + '</text>';
+    });
+    return '<svg viewBox="0 0 760 300" role="img" aria-label="鐵生鏽實驗的甲乙丙丁四組">' + o + '</svg>';
+  }
+
   /* ---------- 畫面：組合 ---------- */
   function bt(attr, txt, cls, dis) { return '<button type="button" class="ia-b' + (cls ? ' ' + cls : '') + '" ' + attr + (dis ? ' disabled' : '') + '>' + txt + '</button>'; }
   function simPart(q, st, done) {
@@ -226,6 +290,27 @@
         '<div class="ia-ctl"><span class="lab">盒子裡的砝碼</span>' + bt('data-ia="fw" data-v="-1"', '➖', '', d || st.w <= 0) + '<b>' + st.w + ' 個</b>' + bt('data-ia="fw" data-v="1"', '➕', '', d || st.w >= FW_MAX) + '</div>' +
         '<div class="ia-ctl"><span class="lab">拉力</span>' + bt('data-ia="pull" data-v="-10"', '－10', '', d || st.pull <= 0) + '<input type="range" min="0" max="' + PULL_MAX + '" step="5" value="' + st.pull + '" data-ia="pullR" aria-label="拉力（公克重）"' + (d ? ' disabled' : '') + '>' + bt('data-ia="pull" data-v="10"', '＋10', '', d || st.pull >= PULL_MAX) + bt('data-ia="slow"', '🐢 慢慢拉', '', d || st.moved) + bt('data-ia="reset"', '↩ 放回原位', '', d) + '</div>' +
         '<table class="ia-tbl"><thead><tr><th>桌面</th><th>盒子裡的砝碼</th><th>剛開始移動時的拉力</th></tr></thead><tbody>' + (keys.length ? keys.map(function (k) { var a = k.split(':'); return '<tr><td>' + esc(SURF[a[0]].n) + '</td><td>' + a[1] + ' 個</td><td>' + st.rec[k] + ' 公克重</td></tr>'; }).join('') : '<tr><td colspan="3">拉到盒子開始移動，就會記在這裡</td></tr>') + '</tbody></table>';
+    }
+    else if (q.sim === 'star') {
+      var top = skyTop(st.mon, st.hr);
+      h = '<div class="ia-fig">' + starSVG(st) + '</div><p class="ia-read">星座盤對準 <b>' + st.mon + ' 月中旬、' + hrText(st.hr) + '</b>　' + (top ? '南方高空：<b>' + esc(top) + '</b>' : '南方高空沒有這裡列的星群') + '</p>' +
+        '<div class="ia-ctl"><span class="lab">日期</span>' + bt('data-ia="mon" data-v="-1"', '◀ 前一個月', '', d) + '<b>' + st.mon + ' 月</b>' + bt('data-ia="mon" data-v="1"', '後一個月 ▶', '', d) + '</div>' +
+        '<div class="ia-ctl"><span class="lab">時刻</span>' + bt('data-ia="hr" data-v="-1"', '◀ 早 1 小時', '', d || st.hr <= HR_MIN) + '<input type="range" min="' + HR_MIN + '" max="' + HR_MAX + '" step="1" value="' + st.hr + '" data-ia="hrR" aria-label="觀測時刻"' + (d ? ' disabled' : '') + '>' + bt('data-ia="hr" data-v="1"', '晚 1 小時 ▶', '', d || st.hr >= HR_MAX) + '</div>' +
+        '<p class="ia-hint">示範用的簡化星空：面向南方，左邊是東、右邊是西；星空大約每小時轉 15 度。晚上觀星一定要有大人陪同。</p>';
+    } else if (q.sim === 'fire') {
+      var miss = ['fuel', 'air', 'heat'].filter(function (k) { return !st[k]; }).map(function (k) { return { fuel: '可燃物', air: '助燃物（空氣）', heat: '溫度（到達燃點）' }[k]; });
+      h = '<div class="ia-fig">' + fireSVG(st) + '</div><p class="ia-read">' + (fireBurn(st) ? '可燃物、助燃物、溫度三個都有：<b>正在燃燒</b>' : '火熄滅了，少了：<b>' + miss.join('、') + '</b>') + '</p>' +
+        '<div class="ia-ctl"><span class="lab">可燃物</span>' + bt('data-ia="fire" data-v="fuel"', st.fuel ? '🪵 移走木柴' : '🪵 放回木柴', '', d) + '</div>' +
+        '<div class="ia-ctl"><span class="lab">空氣</span>' + bt('data-ia="fire" data-v="air"', st.air ? '🫙 蓋上蓋子（隔絕空氣）' : '打開蓋子', '', d) + '</div>' +
+        '<div class="ia-ctl"><span class="lab">溫度</span>' + bt('data-ia="fire" data-v="heat"', st.heat ? '💧 灑水降溫' : '🔥 加熱（大人操作）', '', d) + '</div>' +
+        '<p class="ia-hint">這是模擬。真的用火、做燃燒實驗，一定要有老師或大人在旁邊。</p>';
+    } else if (q.sim === 'rust') {
+      var G = RUST_G[st.g], days = Object.keys(st.rec).map(Number).sort(function (a, b) { return a - b; });
+      h = '<div class="ia-fig">' + rustSVG(st) + '</div><p class="ia-read">示範第 <b>' + st.day + '</b> 天　' + G.n + '組（' + G.d + '）：<b>' + RUST_LV[rustLv(st.g, st.day)] + '</b></p>' +
+        '<div class="ia-ctl"><span class="lab">看哪一組</span>' + ['A', 'B', 'C', 'D'].map(function (g) { return bt('data-ia="rg" data-v="' + g + '"', RUST_G[g].n + '：' + RUST_G[g].d, st.g === g ? 'on' : '', d); }).join('') + '</div>' +
+        '<div class="ia-ctl"><span class="lab">天數</span>' + bt('data-ia="day" data-v="-1"', '－', '', d || st.day <= 0) + '<input type="range" min="0" max="' + DAY_MAX + '" step="1" value="' + st.day + '" data-ia="dayR" aria-label="放置天數"' + (d ? ' disabled' : '') + '>' + bt('data-ia="day" data-v="1"', '＋', '', d || st.day >= DAY_MAX) + '</div>' +
+        '<p class="ia-hint">四組的鋼絲絨一樣、放在同一個地方（控制變因）；天數和生鏽程度是示範用的。拿鋼絲絨要戴手套。</p>' +
+        '<table class="ia-tbl"><thead><tr><th>天數</th>' + ['A', 'B', 'C', 'D'].map(function (g) { return '<th>' + RUST_G[g].n + '</th>'; }).join('') + '</tr></thead><tbody>' + days.map(function (n) { return '<tr><td>第 ' + n + ' 天</td>' + ['A', 'B', 'C', 'D'].map(function (g) { return '<td>' + RUST_LV[rustLv(g, n)] + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
     }
     return h;
   }
@@ -291,6 +376,11 @@
       else if (k === 'fw') { st.w = clamp(st.w + (+v), 0, FW_MAX); frReset(); }
       else if (k === 'pull') { st.pull = clamp(st.pull + (+v), 0, PULL_MAX); frRec(); }
       else if (k === 'reset') frReset();
+      else if (k === 'mon') st.mon = (st.mon + (+v) + 11) % 12 + 1;
+      else if (k === 'hr') st.hr = clamp(st.hr + (+v), HR_MIN, HR_MAX);
+      else if (k === 'fire') st[v] = st[v] ? 0 : 1;
+      else if (k === 'rg') st.g = v;
+      else if (k === 'day') { st.day = clamp(st.day + (+v), 0, DAY_MAX); st.rec[st.day] = 1; }
       else if (k === 'slow') { if (timer || st.moved) return; timer = setInterval(function () { if (!box.isConnected) { clearInterval(timer); return; } st.pull = clamp(st.pull + 5, 0, PULL_MAX); frRec(); if (st.moved || st.pull >= PULL_MAX) { clearInterval(timer); timer = 0; } paint(); }, 60); }
       else if (k === 'card') { var i = +v; if (st.sel === null || st.sel === i) st.sel = st.sel === i ? null : i; else if (st.slots.indexOf(i) >= 0 && st.sel !== null) place(st.sel, st.slots.indexOf(i)); else st.sel = i; }
       else if (k === 'slot') { if (st.sel !== null) place(st.sel, +v); }
@@ -314,7 +404,7 @@
     };
     box.oninput = function (e) {
       var t = e.target, k = t.getAttribute && t.getAttribute('data-ia'); if (!k || o.done) return;
-      if (k === 'angR') st.ang = +t.value; else if (k === 'wtR') { st.n = +t.value; st.rec[st.n] = 1; } else if (k === 'pullR') { st.pull = +t.value; frRec(); } else return;
+      if (k === 'angR') st.ang = +t.value; else if (k === 'wtR') { st.n = +t.value; st.rec[st.n] = 1; } else if (k === 'pullR') { st.pull = +t.value; frRec(); } else if (k === 'hrR') st.hr = +t.value; else if (k === 'dayR') { st.day = +t.value; st.rec[st.day] = 1; } else return;
       soft();
     };
     // 拉桿拖動中不能整個重畫（iPad 上會把正在拖的拉桿換掉、拖不動）：只換圖、讀數、表格和按鈕的可按狀態
@@ -360,6 +450,7 @@
   }
 
   return { SLOP: SLOP, R_PIN: R_PIN, R_AREA: R_AREA, SOLS: SOLS, SURF: SURF, KIND_ZH: KIND_ZH, SPRING_MAX: SPRING_MAX, FW_MAX: FW_MAX,
+    SKY: SKY, HR_MIN: HR_MIN, HR_MAX: HR_MAX, skyHA: skyHA, skySee: skySee, skyTop: skyTop, FIRE_WAY: FIRE_WAY, fireBurn: fireBurn, RUST_G: RUST_G, RUST_LV: RUST_LV, DAY_MAX: DAY_MAX, rustLv: rustLv,
     proj: proj, segPts: segPts, placeXY: placeXY, spots: spots, hitAt: hitAt, noOverlap: noOverlap, perm: perm, hash: hash,
     shadowLen: shadowLen, paper: paper, springLen: springLen, frictionPull: frictionPull,
     initState: initState, simVals: simVals, meets: meets, check: check, ansText: ansText, label: label, html: html, mount: mount, css: css };
