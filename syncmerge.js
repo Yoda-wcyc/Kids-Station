@@ -1,4 +1,16 @@
 /* syncmerge.js — 裝置同步的合併規則（純函式，不碰 DOM／網路以外的東西；瀏覽器與 Node 共用）
+   文件格式 v8（2026-11-02 起；只改 mmBlanks，其他欄位跟 v7 完全一樣）——大小改由「真的答過的詞」決定、每筆有上限，不再跟著題庫長：
+    - 只同步答過的詞／節點（ok+wrong＞0）；只抽出來、還沒作答的（commitSession 只記 lastShown）留在本機不上傳。
+      'rel:' 開頭的背架構紀錄（關係詞 2026-10-11 起不挖空、不會再有新作答）不同步。
+    - 計數封頂：ok、wrong 各最多 BL_CAP（99）、streak 最多 3（引擎只看 ≥3）。完整紀錄 "ok,wrong,streak,lastShown"（last 由 streak 推：＞0＝答對）。
+    - 已熟練（last＝ok 且 streak≥3，引擎 ×0.25 降權的那種）只留旗標 "m<答題次數>,<lastShown>"，例 "m12,40"：
+      答題次數留著給合併比「誰答得多」；lastShown 留著給 core 保證（前兩次沒出現就一定出），不然別台會每次都硬塞這些詞。
+    - q（練習題答對過的題目雜湊）從 {雜湊:1} 改成排序過、空格分隔的字串 "h1 h2 h3"。
+    - 升級：normRec／normQ 舊物件、v7 字串都吃，一律輸出 v8；新舊格式混著合併結果一樣（smoke 有測）。
+    - 本機照舊存完整物件：sync.js writeLocal 用 expandBl(文件, 本機)——同步結果跟本機那筆壓縮後一樣就留本機原本的（不會被封頂、
+      旗標蓋掉），本機有、文件沒有的（沒作答的）也留著。只有別台答得比較多的詞才換成文件裡的（可能是封頂／旗標還原的）。
+    - 舊版（v7）裝置讀 v8：紀錄、旗標、q 字串都看不懂會丟掉，PUT 回去少了它們 → 新版下次同步從本機補回（跟 v6→v7 一樣，不會掉資料；?v= 換網址後重開頁就是新版）。
+    - 最壞情況（每個詞、節點都答過、計數封頂，練習題全答對）見 smoke：現有單元＋六下 9 單元（照六上詞數估）都要 ≤ MAX_BYTES/4。
    文件格式 v7（2026-11-02 起；只改 mmBlanks 的寫法，其他欄位跟 v6 完全一樣）：
     mmBlanks 每個詞／節點的紀錄從物件壓成一個字串 "ok,wrong,streak,last,lastShown"（last＝o／w／空、lastShown 沒有＝空），
     例 {ok:4,wrong:1,streak:2,last:'ok',lastShown:5} → "4,1,2,o,5"。五下上線後塞滿（每個詞答 999 次）從約 156KB 降到約 80KB。
@@ -44,7 +56,7 @@
    - ctr：每台裝置各記自己的星星／回數（各欄取大），本機總數＝全部裝置加總，所以兩台不會互相蓋掉也不會重複算。 */
 (function (root) {
   'use strict';
-  const MAX_BYTES = 500 * 1024, VERSION = 7, MAX_EQ = 30, MAX_EQ_DEL = 100;
+  const MAX_BYTES = 500 * 1024, VERSION = 8, MAX_EQ = 30, MAX_EQ_DEL = 100, BL_CAP = 99;
 
   function h53(str) {
     let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
@@ -97,25 +109,45 @@
     return o;
   }
   // ---- mmBlanks：挖空／背架構加權（kids_mm_blanks 的一個單元）----
-  // v7：紀錄壓成 "ok,wrong,streak,last,lastShown"；舊的物件也吃（升級）
-  const unRec = s => { const p = s.split(','), o = { ok: +p[0], wrong: +p[1], streak: +p[2] }; if (p[3]) o.last = p[3] === 'o' ? 'ok' : 'wrong'; if (p[4] !== '') o.lastShown = +p[4]; return o; };
+  // v8：完整紀錄 "ok,wrong,streak,lastShown"（計數封頂；last 不存：答過的詞 streak＞0＝最後答對、streak＝0＝最後答錯，recordAnswer 就是這樣記的）；
+  //     已熟練只留旗標 "m<次數>,<lastShown>"；沒作答的不留。舊的物件、v7 字串 "ok,wrong,streak,last,lastShown" 也吃（升級）
+  const unRec = s => {
+    let p, o;
+    if (s.charAt(0) === 'm') { p = s.slice(1).split(','); const n = int0(p[0]), ok = Math.min(n, BL_CAP); o = { ok, wrong: n - ok, streak: 3, last: 'ok' }; p = [, , , , p[1]]; }
+    else { p = s.split(','); if (p.length === 4) p.splice(3, 0, +p[2] > 0 ? 'o' : 'w'); o = { ok: +p[0], wrong: +p[1], streak: +p[2] }; if (p[3]) o.last = p[3] === 'o' ? 'ok' : 'wrong'; }
+    if (p[4] !== '') o.lastShown = +p[4];
+    return o;
+  };
   function normRec(r) {
-    if (typeof r === 'string') r = r.split(',').length === 5 ? unRec(r) : null;
+    if (typeof r === 'string') { const n = r.split(',').length; r = (r.charAt(0) === 'm' ? n === 2 : n === 4 || n === 5) ? unRec(r) : null; }
     if (!r || typeof r !== 'object') return null;
-    const ls = num(r.lastShown, null);
-    return [int0(r.ok), int0(r.wrong), int0(r.streak), r.last === 'ok' ? 'o' : r.last === 'wrong' ? 'w' : '', ls == null ? '' : ls].join(',');
+    const ok = Math.min(int0(r.ok), BL_CAP), wrong = Math.min(int0(r.wrong), BL_CAP), st0 = Math.min(int0(r.streak), 3);
+    if (!(ok + wrong)) return null;   // 只抽出來、沒作答
+    const lastOk = r.last === 'ok' || (r.last !== 'wrong' && st0 > 0), st = lastOk ? Math.max(1, st0) : 0;
+    const ls = num(r.lastShown, null), L = ls == null ? '' : ls;
+    return st >= 3 ? 'm' + (ok + wrong) + ',' + L : [ok, wrong, st, L].join(',');
   }
+  const normA = x => { const o = section(x, normRec); Object.keys(o).forEach(k => { if (k.indexOf('rel:') === 0) delete o[k]; }); return o; };
+  // q：v8 存成排序過、空格分隔的字串；舊的 {雜湊:1} 也吃。'_' 開頭的不同步；空的回 ''
+  const normQ = x => { const s = new Set(); (typeof x === 'string' ? x.split(/\s+/) : Object.keys(obj(x)).filter(k => x[k] && !/\s/.test(k))).forEach(k => { if (k && k.charAt(0) !== '_') s.add(k); }); return [...s].sort().join(' '); };
   function pickRec(a, b) {
     const x = unRec(a), y = unRec(b), na = x.ok + x.wrong, nb = y.ok + y.wrong; if (na !== nb) return na > nb ? a : b;
     const la = x.lastShown || 0, lb = y.lastShown || 0; if (la !== lb) return la > lb ? a : b;
     return a >= b ? a : b;
   }
-  // q：練習題答對過的題（題目雜湊 → 1，2026-10-29）；聯集。空的不寫出來（舊文件、舊測試的形狀不變）
-  const withQ = (o, q) => { if (Object.keys(q).length) o.q = q; return o; };
-  function normBl(s) { if (!s || typeof s !== 'object' || Array.isArray(s)) return null; return withQ({ sess: int0(s.sess), w: section(s.w, normRec), a: section(s.a, normRec) }, section(s.q, v => (v ? 1 : null))); }
-  const mergeBl = (a, b) => withQ({ sess: Math.max(a.sess, b.sess), w: mergeSection(a.w, b.w, pickRec), a: mergeSection(a.a, b.a, pickRec) }, section(Object.assign({}, a.q, b.q), () => 1));
-  // 同步結果寫回本機 kids_mm_blanks 用：字串紀錄還原成物件（形狀跟 blanks.js 寫的一樣）
-  const expandBl = x => { const m = r => { const o = {}; Object.keys(r).forEach(k => { o[k] = unRec(r[k]); }); return o; }; return section(x, s => { const u = normBl(s); return u && withQ({ sess: u.sess, w: m(u.w), a: m(u.a) }, obj(u.q)); }); };
+  // q：練習題答對過的題（題目雜湊，2026-10-29）；聯集。空的不寫出來（舊文件、舊測試的形狀不變）
+  const withQ = (o, q) => { if (q && (typeof q === 'string' || Object.keys(q).length)) o.q = q; return o; };
+  function normBl(s) { if (!s || typeof s !== 'object' || Array.isArray(s)) return null; return withQ({ sess: int0(s.sess), w: section(s.w, normRec), a: normA(s.a) }, normQ(s.q)); }
+  const mergeBl = (a, b) => withQ({ sess: Math.max(a.sess, b.sess), w: mergeSection(a.w, b.w, pickRec), a: mergeSection(a.a, b.a, pickRec) }, normQ((a.q || '') + ' ' + (b.q || '')));
+  // 同步結果寫回本機 kids_mm_blanks 用：字串紀錄還原成物件（形狀跟 blanks.js 寫的一樣）。
+  // local＝本機原本的 kids_mm_blanks：文件裡那筆＝本機那筆壓縮後的樣子 → 留本機原本的（沒被封頂／旗標化）；本機有、文件沒有的（沒作答的）也留
+  function expandBl(x, local) {
+    const L = obj(local), qo = q => { const o = {}; (q ? q.split(' ') : []).forEach(h => { o[h] = 1; }); return o; };
+    const m = (r, lb) => { const lo = obj(lb), o = {}; Object.keys(lo).forEach(k => { if (lo[k] && typeof lo[k] === 'object') o[k] = lo[k]; }); Object.keys(r).forEach(k => { if (normRec(lo[k]) !== r[k]) o[k] = unRec(r[k]); }); return o; };
+    const d = section(x, normBl), o = {};
+    Object.keys(d).forEach(k => { const u = d[k], l = obj(L[k]); o[k] = withQ({ sess: u.sess, w: m(u.w, l.w), a: m(u.a, l.a) }, qo(u.q)); });
+    return o;
+  }
   // ---- eq：數學天平題目清單（聯集＋刪除墓碑）----
   function finishEq(at, items, del) {
     const alive = items.filter(it => !(it.q in del) || it.t > del[it.q]).slice(0, MAX_EQ), live = new Set(alive.map(it => it.q)), d2 = {};

@@ -89,7 +89,7 @@ ok(same(K.SPACED, ['social', 'science']) && same(K.IV, [1, 3, 7]) && K.GRAD === 
   ok(same(SM.merge(A, B), SM.merge(B, A)) && same(SM.merge(SM.merge(A, B), Cc), SM.merge(A, SM.merge(B, Cc))) && same(SM.merge(SM.merge(A, B), A), SM.merge(A, B)), 'merge: commutative, associative, idempotent with due');
   ok(same(SM.normMk(A.mk), K.normAll(A.mk)) && same(SM.mergeMk(A.mk, B.mk), K.mergeAll(A.mk, B.mk)) && same(SM.mergeMk(B.mk, Cc.mk), K.mergeAll(B.mk, Cc.mk)), 'syncmerge === kids-mistakes _core (due kept the same way)');
   ok(SM.normalize({ mk: { social: { q: e(0, 1, 'x') } } }).mk.social.q.due === undefined && SM.normalize({ mk: { social: { q: e(0, 1, -5) } } }).mk.social.q.due === undefined, 'garbage due dropped');
-  ok(SM.VERSION === 7, 'sync doc version: due is additive (like done.fr); v7 (2026-11-02) is only the mmBlanks compaction');
+  ok(SM.VERSION === 8, 'sync doc version: due is additive (like done.fr); v7、v8 (2026-11-02) only change mmBlanks');
 }
 // ---- 同步邊界：一台畢業、另一台還有排程 → 不復活也不消失 ----
 {
