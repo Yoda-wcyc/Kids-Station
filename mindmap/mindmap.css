@@ -18,8 +18,12 @@ body{overflow:hidden;overscroll-behavior:none;font-size:19px}
 .mm-segbox{display:flex;gap:4px;padding:3px;border-radius:16px;background:#f3e6cf;margin-left:auto}
 .mm-segbox .mm-b{box-shadow:none;border-color:transparent;background:transparent}
 .mm-segbox .mm-b.on{background:#fff;color:#c2410c;border-color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.12)}
-.mm-modes{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;margin-top:8px}   /* 4～5 顆（🧩 素養題組有資料才顯示）排一列 */
-.mm-modes .mm-b{min-height:50px;font-size:1.02rem;padding:4px 6px}
+.mm-modes{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:6px}   /* 學習／練習／測驗／複習 四組（2026-11-03） */
+.mm-grp{display:flex;flex-direction:column;gap:2px;flex:0 1 auto;min-width:0}.mm-grp[hidden]{display:none}
+.mm-gl{font-size:.78rem;font-weight:700;color:var(--muted);padding-left:4px}
+.mm-gb{display:flex;gap:4px}
+.mm-modes .mm-b{min-height:46px;font-size:.92rem;padding:4px 8px;gap:3px;min-width:0;white-space:nowrap}
+@media (min-width:1000px){.mm-modes .mm-b{font-size:1rem;padding:4px 12px}.mm-modes{gap:6px 22px}}
 .mm-main{flex:1;min-height:0;position:relative}
 .mm-mapwrap{display:flex;flex-direction:column;height:100%}
 .mm-mapwrap[hidden],.mm-panel[hidden],.mm-tray[hidden]{display:none}

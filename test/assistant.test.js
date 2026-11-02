@@ -14,7 +14,8 @@ const ctxD = { window: {} }; vm.createContext(ctxD);
 const W = ctxD.window;
 const DATA = { textbook: W.DATA_TEXTBOOK, words: W.DATA_WORDS, phrases: W.DATA_PHRASES, roots: W.DATA_ROOTS, grammar: W.DATA_GRAMMAR, patterns: W.DATA_PATTERNS, KE, zhCatalog: require(path.join(root, 'chinese', 'data', 'catalog.js')) };
 const DAY = 864e5, NOW = Date.parse('2026-11-01T04:00:00Z');   // 台北 12:00
-const snap = o => Object.assign({ now: NOW, data: DATA, ctx: {}, mk: {}, keMk: {}, seen: {}, goal: { min: 0, met: false }, rand: () => 0.5 }, o || {});
+const dailyOf0 = { allDone: false, rows: [{ k: 'math', done: false }] };
+const snap = o => Object.assign({ now: NOW, data: DATA, ctx: {}, mk: {}, keMk: {}, seen: {}, daily: null, rand: () => 0.5 }, o || {});
 const uniq = xs => new Set(xs).size === xs.length;
 const mkE = (t, p) => ({ c: 0, w: 1, t, u: t, p: p || {} });
 const LATER = Math.floor((NOW + 8 * 3600e3) / DAY) + 3;   // 🔁 社會／自然錯題的 due（3 天後才到期）：這些舊測試看的是「錯題多」那條，不讓到期複習蓋過去
@@ -72,7 +73,7 @@ const MANY = snap({
   },
   keMk: { 'w:apple:spell': mkE(T1), 'w:banana:gap1': mkE(T1), 'ph:watch-tv:dict': mkE(T1), 'w:cat:type': mkE(T1), 'g:modal:11:speak': mkE(T1) },
   ctx: { mmBlanks: { 'science:n3': { sess: 3, w: { 溶解: { ok: 0, wrong: 3, last: 'wrong' }, 酸性: { ok: 1, wrong: 2, last: 'wrong' }, 鹼性: { ok: 3, wrong: 1, last: 'ok' } } } } },
-  wordLv: { gw: { 1: 1 } }, goal: null
+  wordLv: { gw: { 1: 1 } }, daily: null
 });
 {
   const r = KA.analyze(MANY);
@@ -132,7 +133,7 @@ const MANY = snap({
   const today = Math.floor((NOW + 8 * 3600e3) / DAY), mm = (u, k, due) => Object.assign(mkE(T1, { u, k, s: 'S', a: 'A' }), due == null ? {} : { due });
   const mk = { social: { 'u1|w|a': mm('u1', 'w'), 'u1|F|u1-03': mm('u1', 'F', today), 'u2|q|b': mm('u2', 'q', today - 2), 'u2|a|c': mm('u2', 'a', today + 1), 'u2|q|gone': { d: 1, w: 1, t: T1, u: T1 } },
     science: { 'n3|w|x': mm('n3', 'w', today + 3) }, math: Object.fromEntries([1, 2, 3, 4, 5].map(i => [`mx:1${i}x7`, mkE(T1, { type: 'multiply', a: 10 + i, b: 7, lv: 'd21' })])) };
-  const r = KA.analyze(snap({ mk, goal: null })), so = r._.cand.find(t => t.k === 'social');
+  const r = KA.analyze(snap({ mk, daily: null })), so = r._.cand.find(t => t.k === 'social');
   ok(so && so.kind === 'review' && so.title === '今天有 3 題到期該複習' && so.n === 3 && so.href === 'index.html#s/social/review' && routeOk(so.href) && so.pri === KA.PRI.mistakes && so.min >= KA.MINUTES.mkMin,
     'review task: old entry (no due) + flashcard due today + overdue = 3; not-yet-due / tombstone excluded ' + JSON.stringify(so));
   ok(!r._.cand.some(t => t.k === 'science' && t.kind === 'review'), 'science: nothing due → no review task');
@@ -140,14 +141,14 @@ const MANY = snap({
   ok(r.tasks.some(t => t.kind === 'review') && allLinks(r).every(routeOk), 'review task makes it into the tasks; links valid ' + r.tasks.map(t => t.k + ':' + t.kind));
   // 同一科有很多錯題（錯題多）又有到期的 → 🔁 今天要複習取代那一條（同一個位置，一科一項）
   const many = { science: Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`n3|w|p${i}|詞${i}`, mm('n3', 'w', i <= 2 ? today : today + 3)])) };
-  const r2 = KA.analyze(snap({ mk: many, goal: null })), sc = r2._.cand.filter(t => t.k === 'science');
+  const r2 = KA.analyze(snap({ mk: many, daily: null })), sc = r2._.cand.filter(t => t.k === 'science');
   ok(sc.length === 1 && sc[0].kind === 'review' && /2 題/.test(sc[0].title), 'review replaces 錯題多 for the same subject: ' + JSON.stringify(sc));
   // 輪到明天（台北時間）才到期：今天不出、明天出
   const t1 = { social: { 'u1|w|z': mm('u1', 'w', today + 1) } };
   ok(!KA.analyze(snap({ mk: t1 }))._.cand.some(t => t.kind === 'review') && KA.analyze(snap({ mk: t1, now: NOW + DAY }))._.cand.some(t => t.kind === 'review'), 'due tomorrow (Taipei day) → shows up the next day');
   // 優先順序：跟錯題多一樣排在「很久沒練」「完成到一半」前面
   const stale = { social: { 'u1|w|z': Object.assign(mkE(NOW - 9 * DAY, { u: 'u1', k: 'w', s: 'S', a: 'A' }), { due: today }) } }, seen = { social: { t: NOW - 9 * DAY, d: [] }, math: { t: NOW - 9 * DAY, d: [] }, english: { t: NOW - 9 * DAY, d: [] } };
-  const r3 = KA.analyze(snap({ mk: stale, seen, goal: null }));
+  const r3 = KA.analyze(snap({ mk: stale, seen, daily: null }));
   ok(r3.tasks[0].kind === 'review' && r3.tasks[0].k === 'social', 'review (pri 2) ranks before stale reviews (pri 3): ' + r3.tasks.map(t => t.k + ':' + t.kind));
 }
 
@@ -158,7 +159,7 @@ const MANY = snap({
   const en = r.tasks.find(t => t.k === 'english'), so = r.tasks.find(t => t.k === 'social');
   ok(en && en.kind === 'stale' && /10 天前/.test(en.why) && en.href === 'index.html#tb/hanlin-5-u1/learn', 'stale: english review ' + JSON.stringify(en));
   ok(so && so.kind === 'stale' && /9 天前/.test(so.why) && so.href === 'index.html#s/social', 'stale: social (seen only) review ' + JSON.stringify(so));
-  ok(r.tasks[0].kind === 'goal' && r.tasks.slice(1).every(t => t.kind === 'stale'), 'stale: goal first, then stale reviews: ' + r.tasks.map(t => t.kind));
+  ok(r.tasks.filter(t => t.kind === 'stale').length >= 2, 'stale: stale reviews listed: ' + r.tasks.map(t => t.kind));
   const S = r.subjects.find(s => s.k === 'english');
   ok(S.days === 10 && S.status === 'push' && r.cheer.sit === 'comeback' && /9 天/.test(r.cheer.text) === /\{days\}/.test(KA.CHEERS.comeback[+r.cheer.id.split(':')[1]]), 'stale: english 10 天前, comeback cheer: ' + r.cheer.text);
   ok(!r.isNew && allLinks(r).every(routeOk), 'stale: links ok');
@@ -168,26 +169,31 @@ const MANY = snap({
 {
   const t10 = NOW - 10 * DAY, base = [{ t: t10, id: 'w:apple:listen', m: 'words', k: 'words:fruit', y: 'listen-choose', ok: 1, a: 'apple' }];
   const town = { t: NOW - 2 * 3600e3, id: 'town:bakery:3', m: 'town', k: 'town:bakery', y: 'town-dialogue', ok: 1, a: 'I want bread.' };
-  const r = KA.analyze(snap({ ctx: { log: base.concat(town) }, goal: null })), en = r.subjects.find(s => s.k === 'english');
+  const r = KA.analyze(snap({ ctx: { log: base.concat(town) }, daily: null })), en = r.subjects.find(s => s.k === 'english');
   ok(en.days === 0 && en.today && !r.tasks.some(t => t.k === 'english' && t.kind === 'stale') && r.progress.bySubj.find(x => x.k === 'english').days === 1 && r.progress.streak === 1, 'town answer counts as english practice today: ' + JSON.stringify({ days: en.days, tasks: r.tasks.map(t => t.k + ':' + t.kind) }));
   // 沒有答題紀錄（只有遊玩）→ 英文照樣是 10 天前、要複習
-  const r2 = KA.analyze(snap({ ctx: { log: base }, goal: null }));
+  const r2 = KA.analyze(snap({ ctx: { log: base }, daily: null }));
   ok(r2.subjects.find(s => s.k === 'english').days === 10 && r2.tasks.some(t => t.k === 'english' && t.kind === 'stale'), 'without town answers english stays stale');
   // 小鎮答錯也算英文的錯題次數
-  const r3 = KA.analyze(snap({ ctx: { log: [Object.assign({}, town, { ok: 0 })] }, goal: null }));
+  const r3 = KA.analyze(snap({ ctx: { log: [Object.assign({}, town, { ok: 0 })] }, daily: null }));
   ok(r3.progress.bySubj.find(x => x.k === 'english').wrong === 1, 'town wrong answer counted for english');
 }
 
 // ---------- 4. 每日目標 ----------
 {
   const log = [{ t: NOW - 600e3, id: 'w:apple:listen', m: 'words', k: 'words:fruit', y: 'listen-choose', ok: 1, a: 'apple' }];
-  const a = KA.analyze(snap({ ctx: { log }, goal: { min: 6, met: false } }));
-  ok(a.tasks.length === 3 && a.tasks[0].kind === 'goal' && a.tasks[0].title === '每日目標還差 9 分鐘' && /6 分鐘/.test(a.tasks[0].why) && a.tasks[0].min === 9 && routeOk(a.tasks[0].href), 'goal not met: first task ' + JSON.stringify(a.tasks[0]));
-  ok(a.tasks.slice(1).every(t => t.href !== a.tasks[0].href), 'goal task links to a subject not otherwise listed');
-  const b = KA.analyze(snap({ ctx: { log }, goal: { min: 17, met: true } }));
-  ok(!b.tasks.some(t => t.kind === 'goal') && b.cheer.sit === 'goalMet' && /17 分鐘/.test(b.cheer.text) === /\{min\}/.test(KA.CHEERS.goalMet[+b.cheer.id.split(':')[1]]), 'goal met: no goal task, goalMet cheer: ' + b.cheer.text);
-  const c = KA.analyze(snap({ ctx: { log }, goal: null }));
-  ok(!c.tasks.some(t => t.kind === 'goal'), 'goal unknown: no goal task');
+  const dailyOf = (...undone) => ({ allDone: !undone.length, rows: [{ k: 'english', done: !undone.includes('english') }, { k: 'math', done: !undone.includes('math') }, { k: 'chinese', done: !undone.includes('chinese') }] });
+  const a = KA.analyze(snap({ ctx: { log }, daily: dailyOf('math', 'chinese') }));
+  ok(a.tasks[0].k === 'math' && a.tasks[1].k === 'chinese' && a.tasks.every(t => routeOk(t.href)), 'checklist not done: unmet subjects first: ' + a.tasks.map(t => t.k));
+  const ae = KA.analyze(snap({ ctx: { log }, daily: dailyOf('english') }));
+  ok(ae.tasks[0].k === 'english' && ae.tasks.length === 3 && new Set(ae.tasks.map(t => t.k)).size === 3, 'other tasks are kept after the unmet subject: ' + ae.tasks.map(t => t.k));
+  const b = KA.analyze(snap({ ctx: { log }, daily: dailyOf() }));
+  ok(b.cheer.sit === 'listDone' && KA.CHEERS.listDone.every(s => !/笨|不夠|太少|差|落後|沒有/.test(s)), 'all done: praise cheer: ' + b.cheer.text);
+  const c = KA.analyze(snap({ ctx: { log }, daily: null }));
+  const c0 = c.tasks.map(t => t.k).join();
+  ok(!c.tasks.some(t => t.kind === 'goal') && c0.length > 0, 'no checklist data: tasks still work');
+  ok(KA.CHEERS.listDone.length === 5, 'five ways to say it');
+  
 }
 
 // ---------- 5. 各科輪流＋同一科一天最多 1 項 ----------
@@ -196,11 +202,11 @@ const MANY = snap({
   for (let d = 0; d < 6; d++) { const r = KA.analyze(snap({ now: NOW + d * DAY })); firsts.add(r.tasks[0].k); ok(uniq(r.tasks.map(t => t.k)), 'rotation day ' + d + ' unique subjects'); }
   ok(firsts.size >= 4, 'rotation: different first subject on different days: ' + [...firsts]);
   // 數學今天已經練過（錯題 5 題的優先順序被往後排），社會很久沒練 → 社會在數學前面
-  const r = KA.analyze(snap({ mk: { math: Object.fromEntries([1, 2, 3, 4, 5].map(i => [`mx:1${i}x7`, mkE(NOW - 60e3, { type: 'multiply' })])) }, seen: { social: { t: NOW - 9 * DAY, d: [] } }, goal: null }));
+  const r = KA.analyze(snap({ mk: { math: Object.fromEntries([1, 2, 3, 4, 5].map(i => [`mx:1${i}x7`, mkE(NOW - 60e3, { type: 'multiply' })])) }, seen: { social: { t: NOW - 9 * DAY, d: [] } }, daily: null }));
   const iS = r.tasks.findIndex(t => t.k === 'social'), iM = r.tasks.findIndex(t => t.k === 'math');
   ok(iS === 0 && iM > 0, 'rotation: subject practiced today goes after a long-unpracticed one: ' + r.tasks.map(t => t.k + ':' + t.kind));
   // 每一個情境：任務最多 3 項、科目不重複
-  [MANY, snap(), snap({ goal: { min: 3 } })].forEach((s, i) => { const x = KA.analyze(s); ok(x.tasks.length <= 3 && uniq(x.tasks.filter(t => t.k).map(t => t.k)), 'max 1 task per subject #' + i); });
+  [MANY, snap(), snap({ daily: dailyOf0 })].forEach((s, i) => { const x = KA.analyze(s); ok(x.tasks.length <= 3 && uniq(x.tasks.filter(t => t.k).map(t => t.k)), 'max 1 task per subject #' + i); });
   // 候選裡一科只有一項（就算同時有錯題、很久沒練、進行中）
   const y = KA.analyze(snap({ mk: { math: Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`mx:1${i}x7`, mkE(NOW - 20 * DAY, { type: 'multiply' })])) }, ctx: { done: { sd: { l20: 60 } } } }));
   ok(y._.cand.filter(t => t.k === 'math').length === 1 && y._.cand.find(t => t.k === 'math').kind === 'mistakes', 'one candidate per subject, highest priority wins: ' + JSON.stringify(y._.cand.filter(t => t.k === 'math')));
@@ -208,7 +214,7 @@ const MANY = snap({
 
 // ---------- 6. 進行到一半 → 把它完成；還沒開始只列下一步 ----------
 {
-  const r = KA.analyze(snap({ ctx: { done: { sd: { l20: 100, l100: 90 } }, mm: { 'science:n1': { passedAt: { 1: NOW - 2 * DAY, 2: NOW - 2 * DAY }, lastPassAt: NOW - 2 * DAY } } }, goal: null }));
+  const r = KA.analyze(snap({ ctx: { done: { sd: { l20: 100, l100: 90 } }, mm: { 'science:n1': { passedAt: { 1: NOW - 2 * DAY, 2: NOW - 2 * DAY }, lastPassAt: NOW - 2 * DAY } } }, daily: null }));
   const m = r._.cand.find(t => t.k === 'math'), s = r._.cand.find(t => t.k === 'science');
   ok(m.kind === 'finish' && /短除法：換你算/.test(m.title) && /還差/.test(m.why) && m.href === 'index.html#s/math/short-division', 'finish: math sd ' + JSON.stringify(m));
   ok(s.kind === 'finish' && /太陽與光/.test(s.title) && s.href === 'index.html#s/science/n1', 'finish: science n1 ' + JSON.stringify(s));
@@ -222,32 +228,32 @@ const MANY = snap({
   const full = id => ({ unlocked: 5, best: { 1: 100, 2: 100, 3: 100, 4: 100 }, passedAt: { 1: NOW - DAY, 2: NOW - DAY, 3: NOW - DAY, 4: NOW - DAY }, lastPassAt: NOW - DAY });
   const up = KC.MM_UNITS.social.filter(x => !x[2]).map(x => x[0]), mm = {}, mmd = {};
   up.forEach(id => { mm['social:' + id] = full(id); mmd['social:' + id] = { czFirst: 90, qz: 90 }; });
-  const r0 = KA.analyze(snap({ goal: null })), s0 = r0.subjects.find(s => s.k === 'social');
+  const r0 = KA.analyze(snap({ daily: null })), s0 = r0.subjects.find(s => s.k === 'social');
   ok(s0.unitsTotal === up.length && r0.next.concat(r0.tasks).filter(x => x.k === 'social').every(x => /單元一　臺灣的位置/.test(x.title)), 'g5b: new kid → social counts 五上 only, starts at 五上 單元一: ' + s0.unitsTotal);
-  const r1 = KA.analyze(snap({ ctx: { mm, done: { mm: mmd } }, goal: null })), s1 = r1.subjects.find(s => s.k === 'social');
+  const r1 = KA.analyze(snap({ ctx: { mm, done: { mm: mmd } }, daily: null })), s1 = r1.subjects.find(s => s.k === 'social');
   const t1 = r1._.cand.find(t => t.k === 'social'), n1 = r1.next.find(n => n.k === 'social');
   ok(s1.unitsDone === up.length && t1 && t1.kind === 'start' && /五下 單元一/.test(t1.title) && t1.href === 'index.html#s/social/u5' && (!n1 || /五下 單元一/.test(n1.title)), 'g5b: 五上 all done → next is 五下 單元一: ' + JSON.stringify(t1) + ' ' + JSON.stringify(n1));
-  const r2 = KA.analyze(snap({ ctx: { mm: Object.assign({ 'social:u5': { passedAt: { 1: NOW - DAY }, lastPassAt: NOW - DAY } }, mm), done: { mm: mmd } }, goal: null }));
+  const r2 = KA.analyze(snap({ ctx: { mm: Object.assign({ 'social:u5': { passedAt: { 1: NOW - DAY }, lastPassAt: NOW - DAY } }, mm), done: { mm: mmd } }, daily: null }));
   const g5 = KC.MM_UNITS.social.filter(x => !x[2] || x[2].startsWith('五下')).length;   // 2026-11-02 六上起：開始五下 → 算到五下為止（六上還沒碰不算）
   ok(r2.subjects.find(s => s.k === 'social').unitsTotal === g5, 'g5b: started 五下 → counts 五上＋五下: ' + r2.subjects.find(s => s.k === 'social').unitsTotal);
   // 六上（2026-11-02）：五上＋五下都做完，下一步才是〈六上 單元一〉；五下還沒做完，六上不搶下一步
   ['social', 'science'].forEach(k => {
     const g = KC.MM_UNITS[k].filter(x => !x[2] || x[2].startsWith('五下')).map(x => x[0]), m2 = {}, d2 = {}, first6 = KC.MM_UNITS[k].find(x => /^六上/.test(x[2] || ''));
     g.forEach(id => { m2[k + ':' + id] = full(id); d2[k + ':' + id] = { czFirst: 90, qz: 90 }; });
-    const r3 = KA.analyze(snap({ ctx: { mm: m2, done: { mm: d2 } }, goal: null })), t3 = r3._.cand.find(t => t.k === k), n3 = r3.next.find(n => n.k === k);
+    const r3 = KA.analyze(snap({ ctx: { mm: m2, done: { mm: d2 } }, daily: null })), t3 = r3._.cand.find(t => t.k === k), n3 = r3.next.find(n => n.k === k);
     ok(first6 && t3 && t3.kind === 'start' && /六上 單元一/.test(t3.title) && t3.href === 'index.html#s/' + k + '/' + first6[0] && (!n3 || /六上 單元一/.test(n3.title)), 'g6a: ' + k + ' 五上＋五下 all done → next is 六上 單元一: ' + JSON.stringify(t3));
     const last5 = g[g.length - 1], m4 = Object.assign({}, m2), d4 = Object.assign({}, d2); delete m4[k + ':' + last5]; delete d4[k + ':' + last5];
-    const r4 = KA.analyze(snap({ ctx: { mm: m4, done: { mm: d4 } }, goal: null }));
+    const r4 = KA.analyze(snap({ ctx: { mm: m4, done: { mm: d4 } }, daily: null }));
     ok(r4.subjects.find(s => s.k === k).unitsTotal === g.length && r4.next.concat(r4.tasks).filter(x => x.k === k).every(x => !/六上/.test(x.title)), 'g6a: ' + k + ' 五下 not finished → 六上 not counted, not next');
   });
   // 六下（2026-11-02）：五上～六上都做完，下一步才是〈六下 單元一〉；六上還沒做完，六下不搶下一步、不算進分母
   ['social', 'science'].forEach(k => {
     const g = KC.MM_UNITS[k].filter(x => !/^六下/.test(x[2] || '')).map(x => x[0]), m2 = {}, d2 = {}, first6 = KC.MM_UNITS[k].find(x => /^六下/.test(x[2] || ''));
     g.forEach(id => { m2[k + ':' + id] = full(id); d2[k + ':' + id] = { czFirst: 90, qz: 90 }; });
-    const r3 = KA.analyze(snap({ ctx: { mm: m2, done: { mm: d2 } }, goal: null })), t3 = r3._.cand.find(t => t.k === k), n3 = r3.next.find(n => n.k === k);
+    const r3 = KA.analyze(snap({ ctx: { mm: m2, done: { mm: d2 } }, daily: null })), t3 = r3._.cand.find(t => t.k === k), n3 = r3.next.find(n => n.k === k);
     ok(first6 && t3 && t3.kind === 'start' && /六下 單元一/.test(t3.title) && t3.href === 'index.html#s/' + k + '/' + first6[0] && (!n3 || /六下 單元一/.test(n3.title)), 'g6b: ' + k + ' 五上～六上 all done → next is 六下 單元一: ' + JSON.stringify(t3));
     const last = g[g.length - 1], m4 = Object.assign({}, m2), d4 = Object.assign({}, d2); delete m4[k + ':' + last]; delete d4[k + ':' + last];
-    const r4 = KA.analyze(snap({ ctx: { mm: m4, done: { mm: d4 } }, goal: null }));
+    const r4 = KA.analyze(snap({ ctx: { mm: m4, done: { mm: d4 } }, daily: null }));
     ok(r4.subjects.find(s => s.k === k).unitsTotal === g.length && r4.next.concat(r4.tasks).filter(x => x.k === k).every(x => !/六下/.test(x.title)), 'g6b: ' + k + ' 六上 not finished → 六下 not counted, not next');
   });
 }
@@ -257,25 +263,25 @@ const MANY = snap({
   const lastW = NOW - 9 * DAY, thisW = NOW - 2 * DAY;
   const sci = Object.fromEntries([1, 2, 3, 4, 5, 6].map(i => [`n2|w|a${i}|x`, mkE(lastW + i, { u: 'n2', k: 'w' })]).concat([[`n2|w|b1|x`, mkE(thisW, { u: 'n2', k: 'w' })], [`n2|w|b2|x`, mkE(thisW, { u: 'n2', k: 'w' })]]));
   const days = [0, 1, 2, 3].map(d => new Date(NOW - d * DAY + 8 * 3600e3).toISOString().slice(0, 10)).reverse();
-  const r = KA.analyze(snap({ mk: { science: sci }, seen: { science: { t: NOW - 3600e3, d: days } }, goal: null }));
+  const r = KA.analyze(snap({ mk: { science: sci }, seen: { science: { t: NOW - 3600e3, d: days } }, daily: null }));
   const b = r.progress.bySubj.find(x => x.k === 'science');
   ok(b.wrong === 2 && b.wrongLast === 6 && b.days === 4, 'progress: science wrong 6 → 2, 4 days: ' + JSON.stringify(b));
   ok(r.progress.streak === 4 && r.progress.days >= 4, 'progress: streak 4: ' + r.progress.streak);
   ok(r.cheer.sit === 'fewer' && /6/.test(r.cheer.text) && /2/.test(r.cheer.text) && /自然/.test(r.cheer.text), 'cheer fewer mistakes: ' + r.cheer.text);
   // 這週沒練 → 不能說錯題變少
-  const r2 = KA.analyze(snap({ mk: { science: Object.fromEntries(Object.entries(sci).slice(0, 6)) }, goal: null }));
+  const r2 = KA.analyze(snap({ mk: { science: Object.fromEntries(Object.entries(sci).slice(0, 6)) }, daily: null }));
   ok(r2.cheer.sit !== 'fewer', 'no practice this week → no "fewer" cheer: ' + r2.cheer.sit);
   // 今天答錯很多 → 安慰＋鼓勵
-  const r3 = KA.analyze(snap({ ctx: { log: [...Array(9)].map((_, i) => ({ t: NOW - 60e3 + i, id: `w:x${i}:spell`, m: 'words', k: 'words:x', y: 'spell', ok: 0, a: 'q' })) }, seen: { english: { t: NOW, d: days } }, goal: null }));
+  const r3 = KA.analyze(snap({ ctx: { log: [...Array(9)].map((_, i) => ({ t: NOW - 60e3 + i, id: `w:x${i}:spell`, m: 'words', k: 'words:x', y: 'spell', ok: 0, a: 'q' })) }, seen: { english: { t: NOW, d: days } }, daily: null }));
   ok(r3.cheer.sit === 'manyWrong', 'many wrong today → manyWrong cheer: ' + r3.cheer.sit);
   // 第一次做某科
-  const r4 = KA.analyze(snap({ seen: { ai: { t: NOW - 60e3, d: [days[3]] }, english: { t: NOW - 3 * DAY, d: [days[0]] } }, goal: null }));
+  const r4 = KA.analyze(snap({ seen: { ai: { t: NOW - 60e3, d: [days[3]] }, english: { t: NOW - 3 * DAY, d: [days[0]] } }, daily: null }));
   ok(r4.cheer.sit === 'first' && /AI/.test(r4.cheer.text), 'first time a subject → first cheer: ' + r4.cheer.text);
 }
 
 // ---------- 8. 鼓勵語：每種情境至少 5 句、不連續重複、數字都填上 ----------
 {
-  ok(['welcome', 'comeback', 'manyWrong', 'goalMet', 'fewer', 'first', 'unitDone', 'streak'].every(s => (KA.CHEERS[s] || []).length >= 5), 'every situation ≥ 5 lines');
+  ok(['welcome', 'comeback', 'manyWrong', 'listDone', 'fewer', 'first', 'unitDone', 'streak'].every(s => (KA.CHEERS[s] || []).length >= 5), 'every situation ≥ 5 lines');
   let prev = '', rep = 0, seen = new Set(); const R = (() => { let a = 7; return () => { a = (a * 9301 + 49297) % 233280; return a / 233280; }; })();
   for (let i = 0; i < 400; i++) { const sit = KA.CHEER_ORDER[i % 3 === 0 ? 0 : 8]; const c = KA.pickCheer('streak', { n: 3 }, prev, R); if (c.id === prev) rep++; prev = c.id; seen.add(c.id); if (/\{\w+\}/.test(c.text)) rep += 100; void sit; }
   ok(rep === 0 && seen.size === KA.CHEERS.streak.length, 'pickCheer never repeats consecutively, uses every line, fills vars: rep=' + rep + ' used=' + seen.size);

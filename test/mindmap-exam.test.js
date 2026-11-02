@@ -186,7 +186,7 @@ ok(exSec.length > 500, 'mindmap.js 有單元測驗區塊');
 ok(!/doneRec\(/.test(exSec), '單元測驗／段考不寫單元完成（不呼叫 doneRec）');
 ok(exSec.includes("'|X|'") || exSec.includes('it.mk'), '錯題 id 用 exam.js 的 mk（新題 |X|）');
 ok(mm.includes("p.k === 'X'"), '只練錯題認得單元測驗新題（p.k X）');
-ok(mm.includes("data-v=\"exam\""), '單元頁有 📄 單元測驗');
+ok(mm.includes("['exam', '📄 單元測驗', 1]"), '單元頁有 📄 單元測驗');
 ok(mm.includes('xb.hidden = !exOn(unit())') && mm.includes("if(UI.mode === 'exam' && !exOn(unit())) UI.mode = 'read';") && mm.includes('return out.filter(function(g){ return g.every(has); });'), '沒有測驗資料的單元：📄 按鈕藏起來、段考不出那一組');
 ok(fs.readFileSync(path.join(root, 'subjects.js'), 'utf8').includes('html?mock=1'), '首頁社會、自然有 📝 段考模擬卡');
 

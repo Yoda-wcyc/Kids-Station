@@ -1111,6 +1111,7 @@ function updateChrome(){
   var xb = $('#modes [data-v=exam]'); if(xb) xb.hidden = !exOn(unit());
   var cb = $('#modes [data-v=card]'); if(cb) cb.hidden = !cardsOf().length;
   var ib = $('#modes [data-v=ia]'); if(ib) ib.hidden = !iaOf().length;
+  document.querySelectorAll('#modes .mm-grp').forEach(function(g){ g.hidden = !g.querySelector('.mm-b:not([hidden])'); });   // 這個單元沒有的模式：那一組整個收起來
   if(MKMODE || MOCK){ $('#units').hidden = true; $('#modes').hidden = true; $('#layoutSeg').style.visibility = 'hidden'; }
   paintDone();
 }
@@ -1213,7 +1214,7 @@ function buildDOM(){
       '<span class="mm-auth" data-kids-auth-slot></span></div>' +
       '<div id="kdone" hidden></div>' +
       '<nav class="mm-units" id="units" aria-label="單元"></nav>' +
-      '<nav class="mm-modes" id="modes" aria-label="模式"><button class="mm-b" data-act="mode" data-v="read">📖 看重點</button><button class="mm-b" data-act="mode" data-v="arch">🧠 背架構</button><button class="mm-b" data-act="mode" data-v="cloze">✏️ 考考自己</button><button class="mm-b" data-act="mode" data-v="quiz">📝 練習題</button><button class="mm-b" data-act="mode" data-v="lit" hidden>🧩 素養題組</button><button class="mm-b" data-act="mode" data-v="exam" hidden>📄 單元測驗</button><button class="mm-b" data-act="mode" data-v="card" hidden>🃏 閃卡</button><button class="mm-b" data-act="mode" data-v="ia" hidden>' + IA_LAB + '</button></nav></header>' +
+      '<nav class="mm-modes" id="modes" aria-label="模式">' + [['學習', [['read', '📖 看重點'], ['arch', '🧠 背架構'], ['cloze', '✏️ 考考自己']]], ['練習', [['quiz', '📝 練習題'], ['lit', '🧩 素養題組', 1], ['ia', IA_LAB, 1]]], ['測驗', [['exam', '📄 單元測驗', 1]]], ['複習', [['card', '🃏 閃卡', 1]]]].map(function(g){ return '<div class="mm-grp" role="group" aria-label="' + g[0] + '"><span class="mm-gl">' + g[0] + '</span><div class="mm-gb">' + g[1].map(function(b){ return '<button class="mm-b" data-act="mode" data-v="' + b[0] + '"' + (b[2] ? ' hidden' : '') + '>' + b[1] + '</button>'; }).join('') + '</div></div>'; }).join('') + '</nav></header>' +
     '<main class="mm-main"><section class="mm-mapwrap" id="mapwrap"><div class="mm-tray tt" id="trayTop" hidden></div>' +
       '<div class="mm-vp" id="vp"><div class="mm-stage" id="stage"><svg id="lines" xmlns="http://www.w3.org/2000/svg"></svg><div id="nodes"></div></div>' +
         '<div class="mm-tools" id="tools"><button class="mm-b sm" data-act="expandAll">➕ 展開全部</button><button class="mm-b sm" data-act="collapseAll">➖ 收合全部</button><button class="mm-b sm" data-act="reshuffle" id="btnShuffle">🔀 換一組</button><span class="mm-score" id="score" hidden></span></div>' +

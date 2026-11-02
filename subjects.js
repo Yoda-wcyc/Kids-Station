@@ -49,7 +49,7 @@
     let u = null; try { u = (JSON.parse(localStorage.getItem('kids_mm_progress')) || {})[k + ':' + id]; } catch (e) { /* 私密模式 */ }
     const passed = u ? Object.keys(u.passedAt || {}).length : 0, R = [1, 3, 7], st = (u && u.reviewStep) || 0;
     const due = u && u.lastPassAt && st < R.length && (Date.now() - u.lastPassAt) / 864e5 >= R[st];
-    return '📖 看重點・🧠 背架構・✏️ 考考自己・📝 練習題' + (passed ? `｜架構過了 ${passed}/4 關` : '') + (due ? '｜⏰ 該複習架構囉' : '');
+    return (passed ? `架構過了 ${passed}/4 關` : '') + (due ? (passed ? '｜' : '') + '⏰ 該複習架構囉' : '');
   };
   Object.keys(MM_UNITS).forEach(k => {
     ACTS[k] = MM_UNITS[k].map((x, i) => ({ id: x[0], title: `${mmLab(x, i)}　${x[1]}`, grp: mmBook(x), desc: () => mmDesc(k, x[0]), icon: '🗺️', src: `mindmap/${k}.html?u=${x[0]}`, dk: `mm:${k}:${x[0]}` }));
@@ -83,26 +83,28 @@
   MK_SUBJ.forEach(k => { if (ACTS[k]) ACTS[k].push({ id: 'mistakes', title: '錯題庫', desc: () => mkDesc(k), icon: '📕', href: `#s/${k}/mistakes` }); });
   // 單元卡上的完成狀態（kids-done.js／completion.js；沒載入就不顯示）
   const doneTag = dk => { try { const r = dk && window.KidsDone && KidsDone.result(dk); return r ? `<small class="tb-st tb-st-${r.status}">${KidsCompletion.statusText(r)}</small>` : ''; } catch (e) { return ''; } };
-  const COLORS = ['c2', 'c4', 'c1', 'c5', 'c3'];
+  const COLORS = ['c2', 'c4', 'c1', 'c5', 'c3'], bookOpen = {};
   const bar = document.getElementById('subjects'), box = document.getElementById('subject'), app = document.getElementById('app');
   if (!bar || !box || !app) return;
   const loadS = () => { try { return JSON.parse(localStorage.getItem('ke_settings')) || {}; } catch (e) { return {}; } };
   const saveSubj = k => { try { const s = loadS(); if (s.subject === k) return; s.subject = k; localStorage.setItem('ke_settings', JSON.stringify(s)); } catch (e) { /* 私密模式 */ } };
   const parse = () => { const m = (location.hash || '').match(/^#s\/([a-z]+)(?:\/([a-z0-9-]+))?/); return m ? { k: m[1], sub: m[2] || '' } : { k: 'english', sub: '' }; };
 
+  window.KidsSubjects = SUBJ;   // 首頁的全部科目卡（app.js）
   document.body.classList.add('has-subjects');
-  bar.innerHTML = `<div class="subj-in"><b class="brand">小朋友學習站</b><div class="stabs" role="tablist">${SUBJ.map(s => `<a class="stab" role="tab" data-k="${s.k}" href="${s.k === 'english' ? '#home' : '#s/' + s.k}"><span>${s.i}</span><b>${s.n}</b></a>`).join('')}</div></div>`;
+  bar.innerHTML = `<div class="subj-in"><a class="brand" href="#home" aria-label="回首頁">🏠 小朋友學習站</a><div class="stabs" role="tablist">${SUBJ.map(s => `<a class="stab" role="tab" data-k="${s.k}" href="${s.k === 'english' ? '#en' : '#s/' + s.k}"><span>${s.i}</span><b>${s.n}</b></a>`).join('')}</div></div>`;
   const setH = () => document.documentElement.style.setProperty('--subj-h', bar.offsetHeight + 'px');
   window.addEventListener('resize', setH); setH();
 
   function route() {
-    const { k, sub } = parse(), s = SUBJ.find(x => x.k === k);
+    const { k, sub } = parse(), s = SUBJ.find(x => x.k === k), h0 = location.hash, isHome = !h0 || h0 === '#' || h0 === '#home';
     if (!s) { location.replace('#home'); return; }
-    bar.querySelectorAll('.stab').forEach(a => { const on = a.dataset.k === k; a.classList.toggle('on', on); a.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    document.body.classList.toggle('home-page', isHome);   // 首頁有 8 張科目卡，分頁列先收起來
+    bar.querySelectorAll('.stab').forEach(a => { const on = !isHome && a.dataset.k === k; a.classList.toggle('on', on); a.setAttribute('aria-selected', on ? 'true' : 'false'); });
     const acts = ACTS[k], a = acts && acts.find(x => x.id === sub && !x.href);
     document.documentElement.classList.toggle('frame-mode', !!a);
     saveSubj(k);
-    if (k === 'english') { box.hidden = true; box.innerHTML = ''; app.hidden = false; return; }
+    if (k === 'english') { box.hidden = true; box.innerHTML = ''; app.hidden = false; setH(); return; }
     app.hidden = true; box.hidden = false;
     const mk = MK_SUBJ.includes(k) && KM() && /^mistakes(-go)?(?:-([a-z0-9]+))?$/.exec(sub);
     if (mk) {
@@ -122,14 +124,18 @@
       // 連續同一冊（grp：五上／五下）的卡片放一區、上面標冊別；沒有 grp 的（段考模擬、錯題庫）自成一區不加標題
       let ci = 0;
       const secs = acts.filter(x => !x.hidden).reduce((a, x) => { const g = x.grp || ''; if (!a.length || a[a.length - 1].g !== g) a.push({ g, xs: [] }); a[a.length - 1].xs.push(x); return a; }, []);
-      box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header>${reviewBar(k)}${secs.map(sec => `${sec.g ? `<h2 class="tiles-h">📗 ${sec.g}</h2>` : ''}<div class="tiles">${sec.xs.map(x => `<a class="tile ${COLORS[ci++ % COLORS.length]}" href="${x.href || `#s/${k}/${x.id}`}"><span class="ti">${x.icon}</span><b>${x.title}</b><small>${typeof x.desc === 'function' ? x.desc() : x.desc}</small>${doneTag(x.dk)}</a>`).join('')}</div>`).join('')}<p class="center"><a class="btn" href="map.html">🗺️ 課程地圖：看哪些單元學完了</a></p>`;
+      const tilesOf = xs => `<div class="tiles tiles-even">${xs.map(x => { const d = typeof x.desc === 'function' ? x.desc() : x.desc; return `<a class="tile ${COLORS[ci++ % COLORS.length]}" href="${x.href || `#s/${k}/${x.id}`}"><span class="ti">${x.icon}</span><b>${x.title}</b>${d ? `<small>${d}</small>` : ''}${doneTag(x.dk)}</a>`; }).join('')}</div>`;
+      // 冊別收合：預設打開第一冊還沒學完的（使用者開關過就照他的）
+      const unfinished = sec => sec.xs.some(x => { try { const r = x.dk && window.KidsDone && KidsDone.result(x.dk); return !r || r.status !== 'done'; } catch (e) { return true; } });
+      const firstOpen = (secs.find(sec => sec.g && unfinished(sec)) || secs.find(sec => sec.g) || {}).g;
+      const isOpen = g => (bookOpen[k + ':' + g] != null ? bookOpen[k + ':' + g] : g === firstOpen);
+      box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header>${reviewBar(k)}${secs.map(sec => sec.g ? `<details class="book" data-g="${sec.g}"${isOpen(sec.g) ? ' open' : ''}><summary class="tiles-h">📗 ${sec.g}</summary>${tilesOf(sec.xs)}</details>` : tilesOf(sec.xs)).join('')}<p class="center"><a class="btn" href="map.html">🗺️ 課程地圖：看哪些單元學完了</a></p>`;
     }
     else box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header><div class="card center soon"><div class="soon-i">${s.i}</div><h2>${s.n}準備中，敬請期待！</h2><p class="muted">先去其他科目玩玩看吧 😊</p></div>`;
     window.scrollTo(0, 0); setH();
   }
-  // 打開網站時沒有指定頁面 → 回到上次的科目
-  const last = loadS().subject;
-  if ((!location.hash || location.hash === '#') && last && last !== 'english' && SUBJ.some(s => s.k === last)) history.replaceState(null, '', '#s/' + last);
+  // 打開網站一律到首頁（今天的清單）；冊別收合的開關記在這一頁
+  box.addEventListener('toggle', e => { const d = e.target; if (d && d.classList && d.classList.contains('book')) bookOpen[parse().k + ':' + d.dataset.g] = d.open; }, true);
   window.addEventListener('hashchange', route);
   // 帳號同步把別台的心智圖過關紀錄合併進來：正在看單元卡（不是開著 iframe）就重畫，卡片上的「過了幾關」才會是新的
   // （AI 錯題正在重答時不重畫，免得打斷）

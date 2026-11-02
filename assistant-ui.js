@@ -1,5 +1,6 @@
 /* assistant-ui.js — 🦉 學習小助理的畫面（2026-11-01）。算法全在 assistant-core.js（KidsAssistant.analyze），這支只讀本機紀錄、畫畫面：
-   - 首頁卡片：index.html 的 #assist（登入後才顯示；#home、各科卡片頁最上方）。開頁先讓首頁畫完，閒下來才算。
+   - 首頁：index.html 的 #assist（登入後才顯示）。① 今天的清單 ② 一顆接著做 ③ 今天做了＋一句鼓勵 ④ 其他任務（收合）；⑤ 全部科目在 app.js pHome。開頁先讓首頁畫完，閒下來才算。
+     英文入口頁、各科卡片頁只顯示一行今天進度；進到單元（iframe）就收起來。
    - 完整頁：assistant.html 的 #kas-page（KidsAssistantUI.page(el)）。
    - 家長頁「本週學習摘要」：app.js #parent 呼叫 KidsAssistantUI.parentHtml()。
    只讀學習紀錄；唯一會寫的是 localStorage kids_assist_ui（上一句鼓勵語，讓鼓勵語不連續重複；不是學習紀錄、不同步）。
@@ -17,20 +18,13 @@
   const loggedIn = () => { try { const A = window.KidsAuth; return !!(A && A.configured() && A.isLoggedIn()); } catch (e) { return false; } };
 
   // ---------- 快照 ----------
-  function goal() {
-    const C = window.KidsCoins; if (!C) return null;
-    try {
-      const mid = C.mid(), c = ld('kids_coin_min', {}) || {}, t = C.today && C.today(), d = C._core.tpeDate(Date.now());
-      const local = c.mid === mid && c.date === d ? +c.n || 0 : 0, srv = t && typeof t.minutes === 'number' ? t.minutes : 0;
-      return { min: Math.max(local, srv), met: !!(t && t.goal_met) };
-    } catch (e) { return null; }
-  }
+  function daily() { try { return window.KidsDaily ? KidsDaily.today() : null; } catch (e) { return null; } }
   function nick() { try { const m = window.KidsAuth && KidsAuth.member(); return m && m.child_nickname ? String(m.child_nickname).slice(0, 12) : ''; } catch (e) { return ''; } }
   let lastCheer = null;   // 這一頁已經挑過的鼓勵語（同一情境就沿用，畫面重畫不會一直換句子）
   function snapshot() {
     const KD = window.KidsDone, ui = ld(UIK, {}) || {};
     return { now: Date.now(), data: KD ? KD.data() : {}, ctx: KD ? KD.ctx() : {}, mk: ld('kids_mistakes', {}), keMk: ld('ke_mistakes', {}), seen: ld('kids_coin_seen', {}),
-      zhLocal: ld('kids_zh_reading', {}), exam: ld('kids_mm_exam', {}), wordLv: ld('kids_word_lv', {}), goal: goal(), nick: nick(), prevCheer: ui.cheer || '' };
+      zhLocal: ld('kids_zh_reading', {}), exam: ld('kids_mm_exam', {}), wordLv: ld('kids_word_lv', {}), daily: daily(), nick: nick(), prevCheer: ui.cheer || '' };
   }
   function analyze() {
     const s = snapshot(), r = KA.analyze(s);
@@ -40,14 +34,25 @@
   }
 
   // ---------- 樣式（大按鈕、820px 不橫向捲動；狀態不用紅色） ----------
+  const todayCss = '.td-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:1.2rem;margin:0 0 8px}#td-count{color:var(--muted);font-weight:700;font-size:1rem;white-space:nowrap}'
+    + '.td-r{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;min-height:60px;padding:6px 12px;margin:0 0 8px;border:2px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);text-decoration:none}'
+    + '.td-r.cur{border-color:var(--pri);border-width:3px;background:#fff8ec}.td-r.done{background:transparent;border-color:transparent;color:var(--muted);min-height:44px;padding:2px 12px;margin-bottom:4px}'
+    + '.td-i{width:30px;text-align:center;font-size:1.2rem}.td-r.cur .td-i{color:var(--pri)}.td-n{font-size:1.25rem;width:72px}.td-v{font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums}.td-r.done .td-n,.td-r.done .td-v{font-size:1.05rem;font-weight:600}'
+    + '.td-side{margin-left:auto;display:flex;align-items:center;gap:12px}.td-note{font-size:.95rem;color:var(--muted);white-space:nowrap}.td-go{min-height:44px;padding:4px 18px;box-shadow:none;font-size:1rem}.td-hint{flex-basis:100%;order:9;color:var(--muted);font-size:.82rem;padding-left:42px}'
+    + 'a.td-main{display:flex;width:100%;min-height:72px;font-size:1.35rem;font-weight:800;margin:6px 0 10px;border-radius:20px;white-space:normal;text-align:center}'
+    + '.td-party{margin:6px 0 10px;padding:16px;text-align:center;font-size:1.35rem;font-weight:800;background:var(--ok-bg,#e6f8ee);color:#145c38;border-radius:20px}.td-party.pop{animation:td-pop .9s ease-out}'
+    + '@keyframes td-pop{0%{transform:scale(.8);opacity:0}45%{transform:scale(1.07);opacity:1}70%{transform:scale(.98)}100%{transform:scale(1)}}@media (prefers-reduced-motion:reduce){.td-party.pop{animation:none}}'
+    + '.td-made{margin:0 0 2px;font-size:.95rem;color:#56616f;line-height:1.5}.td-cheer{margin:2px 0 0;font-size:1rem;line-height:1.5;display:flex;align-items:center;gap:10px}.td-cheer>span:first-child{flex:1;min-width:0}.td-cheer .kas-hi{display:inline;font-size:1rem}.td-cheer .kas-cheer{margin:0}.td-all{min-height:44px;padding:4px 14px;font-size:.95rem;box-shadow:none;white-space:nowrap;flex:none}'
+    + '.td-more{margin-top:10px;border-top:2px dashed var(--line);padding-top:4px}.td-more>summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:700;color:#56616f}.td-more>summary::after{content:"▾";margin-left:8px}.td-more[open]>summary::after{content:"▴"}.td-more>summary::-webkit-details-marker{display:none}'
+    + '.td-strip{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;min-height:48px;padding:6px 14px;background:#fff;border:2px solid var(--line);border-radius:14px;color:var(--ink);text-decoration:none;font-size:.95rem}.td-strip .ok{color:var(--muted)}.td-home{margin-left:auto;color:var(--muted);white-space:nowrap}';
   let cssDone = false;
   function css() {
     if (cssDone) return; cssDone = true;
     const s = document.createElement('style');
     s.textContent = '#assist{max-width:980px;margin:0 auto;padding:12px 16px 0;box-sizing:border-box}#assist[hidden]{display:none}html.frame-mode #assist{display:none}'
-      + 'a.btn{text-decoration:none}.kas-card{background:linear-gradient(180deg,#fffdf6,#fff);border:3px solid #ffd166;border-radius:22px;padding:14px 16px;box-shadow:0 4px 0 rgba(240,180,41,.25);box-sizing:border-box;max-width:100%}'
+      + 'a.btn{text-decoration:none}.kas-card{background:#fff;border:2px solid var(--line);border-radius:22px;padding:14px 16px;box-sizing:border-box;max-width:100%}'
       + '.kas-head{display:flex;gap:12px;align-items:flex-start}.kas-owl{font-size:2.4rem;line-height:1}.kas-hi{display:block;font-size:1.15rem}.kas-cheer{margin:2px 0 0;line-height:1.5}'
-      + '.kas-h{font-size:1.1rem;margin:12px 0 8px}.kas-tasks{list-style:none;margin:0;padding:0;display:grid;gap:10px}'
+      + todayCss + '.kas-h{font-size:1.1rem;margin:12px 0 8px}.kas-tasks{list-style:none;margin:0;padding:0;display:grid;gap:10px}'
       + '.kas-task{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 12px;align-items:center;background:#fff;border:2px solid var(--line,#eadfca);border-radius:16px;padding:10px 12px}'
       + '.kas-ti{font-size:1.7rem}.kas-tx b{display:block;font-size:1.02rem;line-height:1.35}.kas-tx small{display:block;color:#56616f;font-size:.88rem;line-height:1.4;margin-top:2px}'
       + '.kas-act{display:flex;flex-direction:column;align-items:flex-end;gap:4px}.kas-min{font-size:.82rem;color:#56616f;white-space:nowrap}.kas-go{min-height:52px;white-space:nowrap}'
@@ -79,20 +84,48 @@
   const head = r => `<div class="kas-head"><span class="kas-owl" aria-hidden="true">🦉</span><div><b class="kas-hi">${esc(r.hi)}</b><p class="kas-cheer" data-cheer="${esc(r.cheer.id)}">${esc(r.cheer.text)}</p></div></div>`;
   const tasksHtml = r => r.tasks.length ? `<ol class="kas-tasks" id="kas-tasks">${r.tasks.map(taskLi).join('')}</ol>`
     : '<p class="kas-done">🎉 今天的任務都完成了！可以到課程地圖看看你走了多遠。</p>';
-  const cardHtml = (r, more) => `<section class="kas-card" aria-label="學習小助理">${head(r)}<h2 class="kas-h">📋 今日任務</h2>${tasksHtml(r)}`
-    + (more ? `<div class="kas-foot"><small class="muted">每天最多 3 項，各科輪流</small><a class="btn kas-all" id="kas-all" href="assistant.html">看全部 ▶</a></div>` : '') + '</section>';
+  // ---------- 今天的清單 ----------
+  const num = r => `${r.n} / ${r.goal}${r.key === 'r' ? ' 篇' : ''}`;
+  function rowHtml(r, cur) {
+    const side = r.done ? (r.over ? '<span class="td-note">今天超標了 🎉</span>' : '') : `<span class="td-note">${cur && r.left ? `還差 ${r.left} ${r.unit}` : ''}</span><span class="btn td-go">${r.n ? '繼續' : '開始'}</span>`;
+    const hint = r.key === 'm' && r.mx ? '<small class="td-hint">⚡ 快算 3 題算 1 題</small>' : '';
+    return `<a class="td-r ${r.done ? 'done' : cur ? 'cur' : ''}" data-key="${r.key}" href="${esc(link(r.href))}"><span class="td-i" aria-hidden="true">${r.done ? '✅' : cur ? '▶' : '○'}</span><b class="td-n">${esc(r.name)}</b><span class="td-v">${num(r)}</span>${hint}<span class="td-side">${side}</span></a>`;
+  }
+  function listHtml(T) {
+    return `<section class="td" id="td" aria-label="今天的清單"><div class="td-h"><b>今天（${esc(T.label)}）</b><span id="td-count">${T.doneN} / ${T.total} 完成</span></div>${T.rows.map(r => rowHtml(r, T.next && r.key === T.next.key)).join('')}</section>`;
+  }
+  // 主按鈕：英文、數學優先用小助理挑的那一項（錯題、複習也算題數）；閱讀一定要讀一篇，到閱讀列表
+  const nextHref = (T, r) => { const c = T.next.key === 'r' ? null : r.tasks.find(t => t.k === T.next.k); return c ? c.href : T.next.href; };
+  let partyDay = '';
+  function mainHtml(T, r) {
+    if (T.next) return `<a class="btn primary td-main" id="td-next" href="${esc(link(nextHref(T, r)))}">接著做：${esc(T.next.name)}（還差 ${T.next.left} ${T.next.unit}）</a>`;
+    if (window.KidsDaily && KidsDaily.party(T.day, T.allDone)) partyDay = T.day;
+    return `<p class="td-party${partyDay === T.day ? ' pop' : ''}" id="td-party">🎉 今天的清單全部完成了！</p>`;
+  }
+  const madeHtml = T => `<p class="td-made" id="td-made">${T.made.length ? `今天做了：${T.made.map(s => `${esc(s.name)} ${s.n} 題`).join('・')}${T.pct == null ? '' : `　答對 ${T.pct}%`}` : '今天還沒開始，從上面第一項開始吧！'}</p>`;
+  const oneLine = (r, more) => `<p class="td-cheer"><span>🦉 <b class="kas-hi">${esc(r.hi)}</b> <span class="kas-cheer" data-cheer="${esc(r.cheer.id)}">${esc(r.cheer.text)}</span></span>${more ? '<a class="btn td-all kas-all" id="kas-all" href="assistant.html">看全部</a>' : ''}</p>`;
+  let moreOpen = false;
+  // 其他任務：主按鈕已經指到的那一項不重複列
+  function moreHtml(T, r) {
+    const main = T.next ? nextHref(T, r) : '', others = r.tasks.filter(t => t.href !== main);
+    return `<details class="td-more" id="td-more"${moreOpen ? ' open' : ''}><summary>其他任務（${others.length}）</summary>${others.length ? `<ol class="kas-tasks" id="kas-tasks">${others.map(taskLi).join('')}</ol>` : '<p class="kas-done">今天沒有其他任務了。</p>'}</details>`;
+  }
+  const cardHtml = (r, T) => `<section class="kas-card" aria-label="今天要做的事">${listHtml(T)}${mainHtml(T, r)}${madeHtml(T)}${oneLine(r, true)}${moreHtml(T, r)}</section>`;
+  // 英文入口頁、各科卡片頁：一行就好
+  const stripHtml = T => `<a class="td-strip" id="td-strip" href="${esc(link('index.html#home'))}"><b>今天</b>${T.rows.map(x => `<span${x.done ? ' class="ok"' : ''}>${esc(x.name)} ${x.done ? '✓' : x.n + '/' + x.goal}</span>`).join('')}<span class="td-home">🏠 回首頁</span></a>`;
   const dayText = s => (s.days == null ? '還沒練過' : s.days === 0 ? '今天' : s.days === 1 ? '昨天' : `${s.days} 天前`);
 
   // ---------- 首頁卡片 ----------
   let timer = null;
-  function homeRoute() { const h = location.hash || ''; return h === '' || h === '#' || h === '#home' || /^#s\/[a-z]+$/.test(h); }
+  const isHome = () => { const h = location.hash || ''; return h === '' || h === '#' || h === '#home'; };
+  function homeRoute() { const h = location.hash || ''; return isHome() || h === '#en' || /^#s\/[a-z]+$/.test(h); }
   function renderHome() {
     const box = document.getElementById('assist'); if (!box) return;
     if (!loggedIn() || !homeRoute()) { box.hidden = true; return; }
     css();
-    let r; try { r = analyze(); } catch (e) { box.hidden = true; return; }
-    const h = cardHtml(r, true);
-    if (box.__h !== h) { box.innerHTML = h; box.__h = h; }
+    let r, T; try { r = analyze(); T = r.daily || KidsDaily.today(); } catch (e) { box.hidden = true; return; }
+    const h = isHome() ? cardHtml(r, T) : stripHtml(T);
+    if (box.__h !== h) { box.innerHTML = h; box.__h = h; const d = box.querySelector('#td-more'); if (d) d.ontoggle = () => { moreOpen = d.open; }; }
     box.hidden = false; box.dataset.tasks = r.tasks.length;
   }
   // 閒下來才算：首頁先畫完，不因為算紀錄卡住
@@ -100,7 +133,7 @@
   if (document.getElementById('assist')) {
     window.addEventListener('hashchange', () => { const b = document.getElementById('assist'); if (b && !homeRoute()) b.hidden = true; later(30); });
     ['kids-sync-updated', 'kids-done-changed'].forEach(ev => window.addEventListener(ev, () => later(300)));
-    window.addEventListener('storage', e => { if (!e.key || /^(kids_jwt|kids_member|kids_mistakes|ke_mistakes|kids_coin_seen|kids_coin_min)$/.test(e.key)) later(300); });
+    window.addEventListener('storage', e => { if (!e.key || /^(kids_jwt|kids_member|kids_mistakes|ke_mistakes|kids_coin_seen|kids_daily|kids_daily_goal|kids_done)$/.test(e.key)) later(300); });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') later(100); });
     window.addEventListener('pageshow', e => { if (e.persisted) later(50); });
     if (document.readyState === 'complete') later(60); else window.addEventListener('load', () => later(60));
@@ -137,8 +170,8 @@
       el.innerHTML = `<section class="card center" id="kas-out"><p>🦉 登入後，學習小助理就會幫你整理今天的任務。</p>${A && A.configured() ? `<a class="btn primary big" href="${esc(A.loginUrl(A.base + 'assistant.html'))}">🔑 去登入</a>` : ''}</section>`;
       return;
     }
-    const r = analyze();
-    el.innerHTML = cardHtml(r, false)
+    const r = analyze(), T = r.daily || KidsDaily.today();
+    el.innerHTML = `<section class="kas-card" aria-label="學習小助理">${head(r)}${listHtml(T)}<h2 class="kas-h">📋 其他任務</h2>${tasksHtml(r)}</section>`
       + `<section class="kas-sec card" id="kas-subjects"><h2>📚 各科進度</h2><div class="kas-grid">${r.subjects.map(subjCard).join('')}</div></section>`
       + `<section class="kas-sec card" id="kas-weak-sec"><h2>💡 比較弱的地方</h2>${r.weak.length ? `<ol class="kas-weak" id="kas-weak">${r.weak.map(weakLi).join('')}</ol>` : '<p class="muted">目前沒有特別弱的地方 👍 錯題多起來時，這裡會告訴你怎麼練。</p>'}</section>`
       + `<section class="kas-sec card" id="kas-next-sec"><h2>🧭 還沒開始的（下一步）</h2>${r.next.length ? `<ul class="kas-next" id="kas-next">${r.next.map(n => `<li data-k="${n.k}"><span>${n.icon} <b>${esc(n.subj)}</b>：${esc(n.title)}</span><a class="btn" href="${esc(link(n.href))}">${n.first ? '從這裡開始' : '下一個'} ▶</a></li>`).join('')}</ul>` : '<p class="muted">每一科都開始了，很棒！</p>'}</section>`

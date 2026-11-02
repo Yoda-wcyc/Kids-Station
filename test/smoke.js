@@ -827,12 +827,15 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   for (let d = 0; d < 5; d++) maxDoc.ctr['d' + d + 'mgk2x9abc'] = { stars: 99999, quizzes: 9999 };
   maxDoc.eq = { at: 1.8e12, items: many(30).map(it => Object.assign({ t: 1.8e12 }, it)), del: Object.fromEntries(Array.from({ length: 150 }, (_, i) => ['(x+' + i + ')−(' + i + '−2)=' + (i + 100), 1.7e12])) };
   // 2026-11-02 v9：每日學習統計 dd 也算進最壞情況：90 天、5 台裝置、每天 8 個代碼全部封頂（整理後被 SM.DD_MAX 限住，超過從最舊的一天丟；正常使用 90 天放得下，見 test/daily-stats.test.js）
-  maxDoc.dd = {}; for (let d = 0; d < 5; d++) { const days = []; for (let i = 0; i < 90; i++) days.push(SM.ddDay(Date.now() - i * 864e5) + 'emcsnhao'.split('').map(c => c + '9999,9999').join('')); maxDoc.dd['d' + d + 'mgk2x9abc123'] = days.reverse().join(';'); }
+  maxDoc.dd = {}; for (let d = 0; d < 5; d++) { const days = []; for (let i = 0; i < 90; i++) days.push(SM.ddDay(Date.now() - i * 864e5) + 'emcsnhaox'.split('').map(c => c + '9999,9999').join('')); maxDoc.dd['d' + d + 'mgk2x9abc123'] = days.reverse().join(';'); }
   // 六下全部上線後的估計：原本估 9 單元（社會 5、自然 4），還沒上線的用六上單元照抄（每單元詞數、節點數、題數＝六上）。
   // 2026-11-02 六下實際上線 6 單元（社會 u15～u17〔第四單元是探究實作、沒有新知識節點，不做〕、自然 n13～n15）＝ maxDoc 已含；這裡照舊再補 3 個六上大小的單元當餘裕，上限不放寬
   const g6a = allUnits.filter(([, u]) => /^六上/.test(u.label || '')), g6bHave = allUnits.filter(([, u]) => /^六下/.test(u.label || '')).length;
   const projDoc = JSON.parse(JSON.stringify(maxDoc));
   for (let i = g6bHave; i < 9; i++) { const [s, u] = g6a[i % g6a.length]; fillUnit(projDoc, s + ':g6b' + i + '-' + u.id, u); }
+  // 目標 dg 也算最壞（只留最新 6 筆）；dd 用上限算，不靠上面這份資料剛好沒塞滿
+  const dg6 = {}; for (let i = 0; i < 9; i++) dg6['2611' + String(i + 10)] = '999,999,20,99'; maxDoc.dg = projDoc.dg = dg6;
+  ok(SM.bytes(SM.normDg(dg6)) <= SM.DG_MAX_BYTES && SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX <= SM.MAX_BYTES / 4, 'daily stats + goals at their caps fit the budget: ' + (SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX));
   const projBytes = SM.bytes(SM.normalize(projDoc));
   ok(g6a.length === 9 && projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats) after 六下 (9 units, sized like 六上) still ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes (六下已上線 ' + g6bHave + ' 單元)');
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
@@ -1057,7 +1060,7 @@ const mmJs = fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8');
   // 抽題會打散順序（練習題一輪、段考、錯題庫、隔天複習）→ 題幹不能靠上一題（2026-11-02）：不得以「承上」「上題」開頭（練習題＋素養題組＋單元測驗＋互動題）
   {
     const all = { window: {} }; vm.createContext(all);
-    ['social', 'science'].forEach(k => [...fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8').matchAll(/src="(data\/[^"]+\.js)"/g)].forEach(m => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', m[1]), 'utf8'), all)));
+    ['social', 'science'].forEach(k => [...fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8').matchAll(/src="(data\/[^"?]+\.js)[^"]*"/g)].forEach(m => vm.runInContext(fs.readFileSync(path.join(root, 'mindmap', m[1]), 'utf8'), all)));
     const bad = [], seen = { n: 0 }, chk = (u, q) => { seen.n++; if (q && /^\s*(承上|上題)/.test(q.q || '')) bad.push(u + '：' + q.q); };
     [all.window.DATA_SOCIAL, all.window.DATA_SCIENCE].forEach(D => {
       D.units.forEach(u => (u.quiz || []).forEach(q => chk(u.id, q)));

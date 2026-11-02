@@ -173,6 +173,70 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     const mix = KD.view({ dd: {}, log: [L(lanT - 3 * DAY, 1)], today: lanDay, ev: { [SM.ddDay(lanT - 3 * DAY)]: { english: 1, math: 1 } } }).rows.find(r => r.day);
     ok(mix.n === 1 && same(mix.noted, ['數學']), 'counted subject is not also noted');
   }
+  // ---------- 每日進度清單 ----------
+  {
+    const G = KD.GOAL_DEF, D = (o) => o, chk = (d, reads, goal) => KD.checkDay(d, reads, goal || G);
+    ok(same(G, [60, 30, 1]), 'default goals 60/30/1');
+    // 計數與折算：答錯也算；快算 3 題折 1 題，多的不進位
+    let dd = add({}, 'iPad', NOW, 'e', false, 12); dd = add(dd, 'iPad', NOW, 'm', true, 10); dd = add(dd, 'iPad', NOW, 'x', false, 8);
+    let c = chk(SM.ddSum(dd)[today], 0);
+    ok(c.rows[0].n === 12 && c.rows[0].left === 48 && !c.rows[0].done, 'wrong answers count');
+    ok(c.rows[1].n === 12 && c.rows[1].raw === 18 && c.rows[1].left === 18 && c.rows[1].mx === 8, 'multiply 3→1: 10 + floor(8/3) = 12; raw 18 ' + JSON.stringify(c.rows[1]));
+    ok(c.rows[2].n === 0 && !c.rows[2].done && c.doneN === 0 && !c.allDone && c.total === 3, 'reading not done');
+    // 三台裝置合併：先加總再折算（2＋2＋2 快算＝6 題＝2 題，不是各自折成 0）
+    let a3 = {}, b3 = {}, c3 = {}; a3 = add(a3, 'a', NOW, 'x', true, 2); b3 = add(b3, 'b', NOW, 'x', true, 2); c3 = add(c3, 'c', NOW, 'x', true, 2); a3 = add(a3, 'a', NOW, 'e', true, 20); b3 = add(b3, 'b', NOW, 'e', true, 20); c3 = add(c3, 'c', NOW, 'e', true, 20);
+    const m3 = [a3, b3, c3].reduce((p, q) => SM.mergeDd(p, q, NOW), {}), cm = chk(SM.ddSum(SM.mergeDd(m3, a3, NOW))[today], 0);
+    ok(cm.rows[1].n === 2 && cm.rows[0].n === 60 && cm.rows[0].done && !cm.rows[0].over, 'three devices: sum first, then convert; 60/60 done, not over; repeated merge unchanged');
+    // 家長頁、首頁的數學題數含快算（原始題數）
+    const rv = view({ dd }).rows[0];
+    ok(rv.subj.find(s => s.name === '數學').n === 18, 'math row shows raw count including multiply');
+    // 跨日歸零（台北時間）
+    const t0 = Date.UTC(2026, 10, 19, 15, 59), t1 = Date.UTC(2026, 10, 19, 16, 1); let dn = add({}, 'x', t0, 'e', true, 60);
+    ok(chk(SM.ddSum(dn)['261119'], 0).rows[0].done && !chk(SM.ddSum(dn)['261120'], 0).rows[0].done && chk(SM.ddSum(dn)['261120'], 0).rows[0].n === 0, 'new Taipei day starts at 0');
+    dn = SM.ddAdd(dn, 'x', t1, 'e', true); ok(chk(SM.ddSum(dn)['261120'], 0).rows[0].n === 1 && chk(SM.ddSum(dn)['261119'], 0).rows[0].n === 60, '00:01 counts on the new day; 23:59 stays');
+    // 超標：多做的不算到隔天
+    const ov = chk({ e: [85, 80], m: [30, 30] }, 2);
+    ok(ov.rows[0].over && ov.rows[0].done && !ov.rows[1].over && ov.rows[2].over && ov.allDone, 'over target flagged');
+    ok(chk(SM.ddSum(add({}, 'x', t0, 'e', true, 85))['261120'], 0).rows[0].n === 0, 'extra does not carry over');
+    // 閱讀：只算第一次完成落在當天；重讀（done 時間不變）、成語故事 cy001、單元測驗 cyu、總測驗不算；成語素養閱讀 cyr 算
+    const tR = Date.UTC(2026, 10, 19, 4), yR = tR - DAY, rd = KD.readDays({ zh: { 'zh1-01': yR, 'zh1-02': tR }, cy: { cy001: tR, cyu01: tR, cyall: tR, cyr01: tR } }, SM.ddDay);
+    ok(rd[SM.ddDay(tR)] === 2 && rd[SM.ddDay(yR)] === 1, 'reading counts: zh + cyr only, by first completion ' + JSON.stringify(rd));
+    ok(same(KD.readDays(SM.mergeDone({ zh: { a: tR } }, { zh: { a: yR } }).zh ? { zh: SM.mergeDone({ zh: { a: tR } }, { zh: { a: yR } }).zh } : {}, SM.ddDay), { [SM.ddDay(yR)]: 1 }), 'same article on two devices: earliest counts once');
+    ok(same(KD.readDays(null, SM.ddDay), {}), 'no reading data');
+    // 目標生效日：改目標不影響過去
+    let dg = KD.setGoal({}, '261110', [80, 30, 1]);
+    ok(same(KD.goalOn(dg, '261109'), [60, 30, 1]) && same(KD.goalOn(dg, '261110'), [80, 30, 1]) && same(KD.goalOn(dg, '261120'), [80, 30, 1]), 'goal applies from its effective day');
+    dg = KD.setGoal(dg, '261115', [40, 20, 2]);
+    ok(same(KD.goalOn(dg, '261112'), [80, 30, 1]) && same(KD.goalOn(dg, '261115'), [40, 20, 2]), 'history kept');
+    const d2 = add(add({}, 'x', Date.UTC(2026, 10, 12, 4), 'e', true, 70), 'x', Date.UTC(2026, 10, 12, 4), 'm', true, 30), lab = dgx => KD.view({ dd: d2, ev: {}, today: '261120', start: '261103', dg: dgx, done: { zh: { a: Date.UTC(2026, 10, 12, 4) } } }).rows.find(r => r.day === '261112').check;
+    ok(lab(KD.setGoal({}, '261110', [60, 30, 1])) === '✓ 全部完成' && lab(KD.setGoal(KD.setGoal({}, '261110', [60, 30, 1]), '261115', [90, 30, 1])) === '✓ 全部完成', 'raising the goal later does not change a past day');
+    ok(lab(KD.setGoal({}, '261110', [80, 30, 1])) === '英文 70/80、數學 ✓、閱讀 ✓', 'judged by that day goal: ' + lab(KD.setGoal({}, '261110', [80, 30, 1])));
+    // 家長頁文字
+    ok(KD.checkText(chk({ e: [45, 40], m: [30, 30] }, 0)) === '英文 45/60、數學 ✓、閱讀 未完成', 'parent label ' + KD.checkText(chk({ e: [45, 40], m: [30, 30] }, 0)));
+    ok(KD.checkText(chk({ e: [60, 40], m: [30, 30] }, 1, [60, 30, 2])) === '英文 ✓、數學 ✓、閱讀 1/2', 'reading partial');
+    const hc = KD.cardHtml(KD.view({ dd: d2, ev: {}, today: '261120', start: '261103', dg: {}, done: { zh: { a: Date.UTC(2026, 10, 12, 4) } } }), '261120', false, [60, 30, 1]);
+    ok(hc.includes('今日清單：✓ 全部完成') && hc.includes('id="dgSave"') && hc.includes('現在：英文 60 題、數學 30 題、閱讀 1 篇'), 'parent card shows label and goal form');
+    ok(!KD.view({ dd: { x: '261001e5' }, ev: {}, today: '261103', start: '261103' }).rows.find(r => r.day === '261001').check, 'days before launch have no checklist label');
+    // 同步：目標合併
+    const g1 = { 261110: '80,30,1,0' }, g2 = { 261110: '70,30,1,1', 261112: '50,30,1,0' };
+    ok(same(SM.mergeDg(g1, g2), SM.mergeDg(g2, g1)) && SM.mergeDg(g1, g2)[261110] === '70,30,1,1' && same(SM.mergeDg(SM.mergeDg(g1, g2), g2), SM.mergeDg(g1, g2)), 'goals merge: higher edit count wins; commutative, idempotent');
+    ok(same(SM.normalize({ dg: { 261110: '80,30,1,0', bad: 'x', 261111: 'nope' } }).dg, { 261110: '80,30,1,0' }) && same(SM.normalize({}).dg, {}), 'goals normalized; old doc has none');
+    const many = {}; for (let i = 10; i < 20; i++) many['2611' + i] = '999,999,20,99';
+    ok(Object.keys(SM.normDg(many)).length === 6 && SM.normDg(many)[261119] && SM.bytes(SM.normDg(many)) <= SM.DG_MAX_BYTES, 'keep newest 6 goals within budget: ' + SM.bytes(SM.normDg(many)));
+    ok(same(KD.setGoal({ 261110: '80,30,1,3' }, '261110', [70, 30, 1]), { 261110: '70,30,1,4' }), 'editing again the same day bumps the edit count');
+    ok(same(KD.validGoal(['60', '30', '1']), [60, 30, 1]) && !KD.validGoal(['0', '30', '1']) && !KD.validGoal(['60', 'x', '1']) && !KD.validGoal(['60', '30', '21']), 'goal validation');
+    // 慶祝只跳一次
+    ok(KD.partyDue(null, '261103', true) && !KD.partyDue('261103', '261103', true) && KD.partyDue('261102', '261103', true) && !KD.partyDue(null, '261103', false), 'celebration once a day, only when all done');
+  }
+  // ---------- 小助理看清單 ----------
+  {
+    const ac = read('assistant-core.js'), au = read('assistant-ui.js');
+    ok(ac.includes('listDone') && !ac.includes('GOAL_MIN') && !/每日目標還差/.test(ac), 'assistant uses the checklist, not the 15-minute goal');
+    ok(au.includes('KidsDaily.today()') && au.includes('id="td-next"') && au.includes('id="td-more"'), 'home: list, one main button, other tasks collapsed');
+    ok(read('sync.js').includes('dg: ld(K_DG, {})') && /WATCH = \[[^\]]*K_DG/.test(read('sync.js')), 'goals in sync scope');
+    ok(read('mindmap/mindmap.js').includes("['學習', [['read',") && read('mindmap/mindmap.js').includes("['測驗', [['exam',") && read('mindmap/mindmap.js').includes("['複習', [['card',"), 'unit page modes grouped');
+    ['read', 'arch', 'cloze', 'quiz', 'lit', 'ia', 'exam', 'card'].forEach(v => ok(read('mindmap/mindmap.js').includes("['" + v + "', "), 'mode still there: ' + v));
+  }
   // ---------- 作答入口都有記錄（新增入口沒接就會在這裡擋下）----------
   {
     const R = 'KidsDaily.rec(';
@@ -184,7 +248,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       ['數學 天平應用題', 'math/balance.html', "function bwRec(Q, ok){ if (window.KidsDaily) KidsDaily.rec('math', ok)"],
       ['數學 分數練習＋考試', 'math/fraction.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
       ['數學 倍數練習＋考試', 'math/multiples.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
-      ['數學 乘法練習＋挑戰', 'math/multiply.html', /function mkRec\(q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
+      ['數學 乘法練習＋挑戰（快算，清單 3 題折 1 題）', 'math/multiply.html', /function mkRec\(q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('mathx', ok\)/],
       ['數學 短除法換你算', 'math/short-division.html', /function mkRec\(Q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
       ['數學 短除法應用題', 'math/short-division.html', /function wRec\(Q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
       // 社會／自然（SUBJ＝科）
@@ -234,7 +298,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     const kd = read('kids-daily.js');
     ok(kd.includes('!loggedIn()') && !/fetch\(|XMLHttpRequest|sendBeacon/.test(kd), 'no login no record; no network');
     ok(read('sync.js').includes("dd: ld(K_DD, {})") && /WATCH = \[[^\]]*K_DD/.test(read('sync.js')), 'kids_daily in sync scope');
-    ok(read('app.js').includes('KidsDaily.html()') && read('app.js').includes('KidsDaily.bind(app)'), 'parent page shows the card');
+    ok(read('app.js').includes('KidsDaily.html()') && read('app.js').includes('KidsDaily.bind(app, render)'), 'parent page shows the card');
   }
   console.log(`daily-stats: ${pass} passed, ${fail} failed`);
   if (fail) process.exit(1);

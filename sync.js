@@ -68,9 +68,9 @@
   const has = k => { try { return localStorage.getItem(k) != null; } catch (e) { return false; } };
   // 內容一樣就不寫（避免別的分頁／子框收到沒意義的 storage 事件）
   const svIf = (k, v) => { try { const s = JSON.stringify(v); if (localStorage.getItem(k) !== s) localStorage.setItem(k, s); } catch (e) { } };
-  const K_MM = 'kids_mm_progress', K_MMB = 'kids_mm_blanks', K_EQ = 'tianping-eq-list-v2', K_EQS = 'ke_sync_eq', K_SCR = 'kids_scratch_done', K_PROG = 'ke_progress', K_CTR = 'ke_sync_ctr', K_MK = 'kids_mistakes', K_DONE = 'kids_done', K_DD = 'kids_daily';
+  const K_MM = 'kids_mm_progress', K_MMB = 'kids_mm_blanks', K_EQ = 'tianping-eq-list-v2', K_EQS = 'ke_sync_eq', K_SCR = 'kids_scratch_done', K_PROG = 'ke_progress', K_CTR = 'ke_sync_ctr', K_MK = 'kids_mistakes', K_DONE = 'kids_done', K_DD = 'kids_daily', K_DG = 'kids_daily_goal';
   // 同步範圍裡的 localStorage：別的分頁／子框（Scratch 講義、心智圖、天平）寫進來 → 也算變動，排一次上傳
-  const WATCH = ['ke_log', 'ke_agg', 'ke_learned', 'ke_mistakes', K_PROG, K_MM, K_MMB, K_EQ, K_SCR, K_MK, K_DD, K_DONE];
+  const WATCH = ['ke_log', 'ke_agg', 'ke_learned', 'ke_mistakes', K_PROG, K_MM, K_MMB, K_EQ, K_SCR, K_MK, K_DD, K_DG, K_DONE];
   const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
   // 英文星星／回數：每台裝置一個 id，ke_sync_ctr＝{dev, ctr:上次同步後全部裝置的數字}；這台自己的＝本機總數－別台的
   function ctrMeta() { let m = ld(K_CTR, null); if (!isObj(m) || typeof m.dev !== 'string' || !m.dev) { m = { dev: 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), ctr: {} }; sv(K_CTR, m); } if (!isObj(m.ctr)) m.ctr = {}; return m; }
@@ -89,7 +89,7 @@
   const readLocal = () => {
     const a = ld('ke_agg', {}) || {};
     return { log: ld('ke_log', []), cut: a.cut || 0, agg: a.agg || {}, learned: ld('ke_learned', {}), mistakes: ld('ke_mistakes', {}),
-      mm: ld(K_MM, {}), mmBlanks: ld(K_MMB, {}), eq: localEq(), scratch: ld(K_SCR, {}), ctr: localCtr(), mk: ld(K_MK, {}), done: ld(K_DONE, {}), dd: ld(K_DD, {}) };
+      mm: ld(K_MM, {}), mmBlanks: ld(K_MMB, {}), eq: localEq(), scratch: ld(K_SCR, {}), ctr: localCtr(), mk: ld(K_MK, {}), done: ld(K_DONE, {}), dd: ld(K_DD, {}), dg: ld(K_DG, {}) };
   };
   function writeLocal(d) {
     sv('ke_log', d.log); sv('ke_agg', { cut: d.cut, agg: d.agg }); sv('ke_learned', d.learned); sv('ke_mistakes', d.mistakes);
@@ -112,6 +112,7 @@
     if (Object.keys(dn).some(k => dn[k] && Object.keys(dn[k]).length) || has(K_DONE)) svIf(K_DONE, dn);
     // 每日學習統計：合併結果已含本機全部（各欄取大），整份換掉
     if (Object.keys(d.dd || {}).length || has(K_DD)) svIf(K_DD, d.dd || {});
+    if (Object.keys(d.dg || {}).length || has(K_DG)) svIf(K_DG, d.dg || {});
     // 星星／回數：本機總數＝全部裝置加總
     const m = ctrMeta(); m.ctr = d.ctr || {}; sv(K_CTR, m);
     const tot = SM.ctrSum(m.ctr), P0 = ld(K_PROG, null), P = isObj(P0) ? P0 : {};

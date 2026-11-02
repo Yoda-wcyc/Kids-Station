@@ -2,7 +2,7 @@
 :root{--subj-h:72px}
 .subjects{position:sticky;top:0;z-index:80;background:#fff;border-bottom:3px solid var(--line);box-shadow:0 2px 10px rgba(38,52,69,.06)}
 .subj-in{max-width:980px;margin:0 auto;padding:6px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px}
-.brand{font-size:1.1rem;white-space:nowrap}
+.brand{font-size:1.05rem;font-weight:800;white-space:nowrap;color:var(--ink);text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
 .stabs{flex:1 1 520px;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;min-width:0}
 .stab{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:56px;border-radius:16px;text-decoration:none;color:var(--ink);background:#fff8ec;border:2px solid var(--line);touch-action:manipulation;line-height:1.15}
 .stab span{font-size:1.35rem}.stab b{font-size:1rem}
@@ -27,3 +27,20 @@ html.frame-mode,html.frame-mode body{overflow:hidden;height:100%}
 .tiles-h{margin:6px 2px 10px;font-size:1.15rem}
 /* 錯題庫單元篩選分冊（kids-mistakes.js）：冊別標題自成一行 */
 .mk-units .mk-bk{flex-basis:100%;margin-top:4px;font-size:.95rem}
+/* 首頁：科目卡在頁面裡，分頁列收起來 */
+body.home-page .stabs{display:none}
+.hs-h{margin:18px 2px 10px;font-size:1.1rem;color:var(--muted);font-weight:700}
+.tiles.hs{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile.hs-c{min-height:112px;background:#fff;border:2px solid var(--line);box-shadow:0 3px 0 var(--line);padding:8px 4px}
+.tile.hs-c .ti{font-size:2rem;line-height:1.2}.tile.hs-c b{font-size:1.15rem}.tile.hs-c small{font-size:.85rem;color:var(--muted);opacity:1}
+.hs-links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0 14px}
+.hs-links .btn{font-size:.95rem;min-height:48px;box-shadow:none}.hs-links small{color:var(--muted);font-size:.8rem;font-weight:400}
+.hs-guest{text-align:center}.hs-guest p{margin:0 0 12px}
+/* 單元卡：一樣大、說明最多兩行；冊別可收合 */
+.tiles-even{grid-auto-rows:1fr}
+.tiles-even .tile small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;text-align:center}
+.book{margin:0 0 8px}
+summary.tiles-h{cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:700;background:#fff;border:2px solid var(--line);border-radius:14px;padding:6px 14px;margin:0 0 10px;list-style-position:inside}
+summary.tiles-h::after{content:'▾';margin-left:auto;color:var(--muted)}
+.book[open]>summary.tiles-h::after{content:'▴'}
+summary.tiles-h::-webkit-details-marker{display:none}

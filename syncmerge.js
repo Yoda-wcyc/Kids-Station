@@ -5,6 +5,7 @@
     - 只留最近 90 天（用現在時間砍，未來日期不砍：時鐘錯的裝置頂多多留幾筆，顯示端會略過）。
     - 大小：整個 dd 最多 DD_MAX 位元組，超過從最舊的一天開始丟（從新到舊累計，只看「比它新的天」，所以合併順序不影響結果）。iPad 天天 4～5 科＋電腦偶爾用，90 天都放得下（數字見 test/daily-stats.test.js）；只有每天好幾台各做很多科才會提早丟舊的。
     - 舊版（v8）裝置的 normalize 會丟掉 dd，PUT 回去少了它 → 新版下次同步從本機補回（跟 v4→v5 的 done 一樣，不會掉資料）。
+    dg:{'261103':'60,30,1,0'}   ← kids_daily_goal（每日進度清單的目標，2026-11-03 加，跟 fr 一樣不升版）：生效日 → 英文,數學,閱讀,修改序號。同一天的目標序號大的勝；只留最新 DG_KEEP 筆。
    文件格式 v8（2026-11-02 起；只改 mmBlanks，其他欄位跟 v7 完全一樣）——大小改由「真的答過的詞」決定、每筆有上限，不再跟著題庫長：
     - 只同步答過的詞／節點（ok+wrong＞0）；只抽出來、還沒作答的（commitSession 只記 lastShown）留在本機不上傳。
       'rel:' 開頭的背架構紀錄（關係詞 2026-10-11 起不挖空、不會再有新作答）不同步。
@@ -270,7 +271,7 @@
   }
 
   // ---- dd：每日學習統計（kids_daily；格式見檔頭 v9）----
-  const DD_DAYS = 90, DD_MAX = 3800, DD_CAP = 9999, DD_ID = /^[\w-]{1,32}$/, DD_ENT = /^(\d{6})((?:[a-z]\d+(?:,\d+)?)+)$/;
+  const DD_DAYS = 90, DD_MAX = 3750, DD_CAP = 9999, DD_ID = /^[\w-]{1,32}$/, DD_ENT = /^(\d{6})((?:[a-z]\d+(?:,\d+)?)+)$/;
   const ddDay = t => new Date(+t + 8 * 3600e3).toISOString().slice(2, 10).replace(/-/g, '');   // 台北時間 YYMMDD
   // 展開成 {天:{裝置:{科:[題數,答錯數]}}}
   function ddOpen(x) {
@@ -323,6 +324,13 @@
     return s;
   }
 
+  // ---- dg：每日進度清單的目標（kids_daily_goal；改目標只影響生效日起，過去的判定不變）----
+  const DG_KEEP = 6, DG_MAX_BYTES = 160, DG_VAL = /^\d{1,3},\d{1,3},\d{1,2},\d{1,2}$/;
+  const dgSeq = v => +v.split(',')[3];
+  const pickDg = (a, b) => { if (!a) return b; if (!b) return a; const x = dgSeq(a), y = dgSeq(b); return x !== y ? (x > y ? a : b) : (a >= b ? a : b); };
+  function normDg(x) { const d = obj(x), o = {}; Object.keys(d).filter(k => /^\d{6}$/.test(k) && typeof d[k] === 'string' && DG_VAL.test(d[k])).sort().slice(-DG_KEEP).forEach(k => { o[k] = d[k]; }); return o; }
+  function mergeDg(a, b) { a = normDg(a); b = normDg(b); const o = {}; Object.keys(Object.assign({}, a, b)).forEach(k => { o[k] = pickDg(a[k], b[k]); }); return normDg(o); }
+
   // 整理成 v7：補 r、去重、排序；t ≤ cut 的舊紀錄只保留「答對過」到 agg；新欄位缺了就是空的（讀舊文件不會壞）
   function normalize(doc) {
     const d = obj(doc), cut = +d.cut || 0, agg = mergeAgg(obj(d.agg), {}), seen = new Map();
@@ -333,14 +341,14 @@
       const p = seen.get(e.r); if (!p || canon(e) > canon(p)) seen.set(e.r, e);
     });
     return { v: VERSION, cut, log: [...seen.values()].sort(cmpLog), agg, learned: mergeMap(obj(d.learned), {}, evL), mistakes: mergeMap(obj(d.mistakes), {}, evM),
-      mm: section(d.mm, normProg), mmBlanks: section(d.mmBlanks, normBl), eq: normEq(d.eq), scratch: normScr(d.scratch), ctr: normCtr(d.ctr), mk: normMk(d.mk), done: normDone(d.done), dd: normDd(d.dd) };
+      mm: section(d.mm, normProg), mmBlanks: section(d.mmBlanks, normBl), eq: normEq(d.eq), scratch: normScr(d.scratch), ctr: normCtr(d.ctr), mk: normMk(d.mk), done: normDone(d.done), dd: normDd(d.dd), dg: normDg(d.dg) };
   }
   function merge(a, b) {
     a = normalize(a); b = normalize(b);
     const cut = Math.max(a.cut, b.cut);
     return normalize({ cut, log: a.log.concat(b.log), agg: mergeAgg(a.agg, b.agg), learned: mergeMap(a.learned, b.learned, evL), mistakes: mergeMap(a.mistakes, b.mistakes, evM),
       mm: mergeSection(a.mm, b.mm, mergeProg), mmBlanks: mergeSection(a.mmBlanks, b.mmBlanks, mergeBl), eq: mergeEq(a.eq, b.eq),
-      scratch: mergeSection(a.scratch, b.scratch, earliest), ctr: mergeSection(a.ctr, b.ctr, mergeCtr), mk: mergeMk(a.mk, b.mk), done: mergeDone(a.done, b.done), dd: mergeDd(a.dd, b.dd) });
+      scratch: mergeSection(a.scratch, b.scratch, earliest), ctr: mergeSection(a.ctr, b.ctr, mergeCtr), mk: mergeMk(a.mk, b.mk), done: mergeDone(a.done, b.done), dd: mergeDd(a.dd, b.dd), dg: mergeDg(a.dg, b.dg) });
   }
   // 太大就把最舊的 1/4 壓進 agg（保留每題第一次答對的時間），重複到夠小
   function compact(doc, maxBytes) {
@@ -384,7 +392,7 @@
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function normCode(s) { const c = String(s || '').toUpperCase().replace(/[\s-]/g, ''); return c.length === 8 && [...c].every(ch => ALPHA.includes(ch)) ? c.slice(0, 4) + '-' + c.slice(4) : null; }
 
-  const SM = { MAX_BYTES, VERSION, MAX_EQ, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, ddDay, normDd, mergeDd, ddAdd, ddSum };
+  const SM = { MAX_BYTES, VERSION, MAX_EQ, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg };
   if (typeof module !== 'undefined' && module.exports) module.exports = SM;
   root.KESyncMerge = SM;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -139,7 +139,7 @@
     try { const K = window.KESync; if (K && K.hold) { if (/^#quiz/.test(h) && Q && !Q.result) K.hold('english'); else setTimeout(() => K.release('english'), 0); } } catch (e) { }
     if (/^#s\//.test(h)) return; // 其他科目由 subjects.js 負責
     const [p, sub, sub2] = h.slice(1).split('/');
-    const pages = { home: pHome, learn: pLearn, practice: pPractice, quiz: pQuiz, result: pResult, mistakes: pMistakes, bank: pBank, parent: pParent, tb: pTb };
+    const pages = { home: pHome, en: pEn, learn: pLearn, practice: pPractice, quiz: pQuiz, result: pResult, mistakes: pMistakes, bank: pBank, parent: pParent, tb: pTb };
     (pages[p] || pHome)(sub, sub2);
     window.scrollTo(0, 0);
   }
@@ -185,7 +185,7 @@
     if (t) { const p = t.parentNode.querySelector('.speed-pop'); p.hidden = !p.hidden; }
     if (!e.target.closest('.speed')) $$('.speed-pop').forEach(p => { p.hidden = true; });
   });
-  const top = (title, back) => `<header class="top">${back === false ? '' : `<button class="btn icon" data-go="${back || '#home'}" aria-label="回上一頁">${back && back !== '#home' ? '⬅️' : '🏠'}</button>`}<h1>${title}</h1>${window.KESync && KESync.code() ? '<span class="cloud" title="裝置同步已開啟" aria-label="裝置同步已開啟">☁️</span>' : ''}${speedPill()}</header>`;
+  const top = (title, back) => `<header class="top">${back === false ? '' : `<button class="btn icon" data-go="${back || '#en'}" aria-label="回上一頁">${back !== '#home' ? '⬅️' : '🏠'}</button>`}<h1>${title}</h1>${window.KESync && KESync.code() ? '<span class="cloud" title="裝置同步已開啟" aria-label="裝置同步已開啟">☁️</span>' : ''}${speedPill()}</header>`;
   const tile = (go, icon, name, desc, cls) => `<button class="tile ${cls}" data-go="${go}"><span class="ti">${icon}</span><b>${name}</b><small>${desc}</small></button>`;
   const radios = (name, opts, cur) => `<div class="seg">${opts.map(([v, t]) => `<label class="pill"><input type="radio" name="${name}" value="${esc(v)}" ${String(v) === String(cur) ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}</div>`;
   const val = name => { const el = $(`input[name="${name}"]:checked`); return el ? el.value : ''; };
@@ -266,12 +266,22 @@
   }
 
   // ---------- 首頁 ----------
+  // 全部科目（8 張一樣大）＋找得到其他功能的小連結；登入後的今日清單、接著做、其他任務在 #assist（assistant-ui.js）
   function pHome() {
+    const A = window.KidsAuth, inn = !!(A && A.configured() && A.isLoggedIn()), T = inn && window.KidsDaily ? KidsDaily.today() : null;
+    const count = k => { if (!T) return 0; const s = T.made.find(x => x.k === k); return s ? s.n : 0; };
+    const cards = (window.KidsSubjects || []).map(s => { const n = count(s.k); return `<a class="tile hs-c" data-k="${s.k}" href="${s.k === 'english' ? '#en' : '#s/' + s.k}"><span class="ti">${s.i}</span><b>${s.n}</b>${n ? `<small>今天 ${n} 題</small>` : ''}</a>`; }).join('');
+    const guest = inn || !A || !A.configured() ? '' : `<section class="card hs-guest" id="hs-guest"><h2>📋 今天要做什麼？</h2><p>登入後，這裡會有今天的清單：英文、數學、閱讀，做完自動打勾。</p><a class="btn primary big" href="${esc(A.loginUrl(location.href))}">🔑 去登入</a></section>`;
+    app.innerHTML = guest + `<h2 class="hs-h">全部科目</h2><div class="tiles hs">${cards}</div>
+      <nav class="hs-links" aria-label="其他功能"><a class="btn" id="tile-map" href="map.html">🗺️ 課程地圖<small>哪些單元學完了</small></a><a class="btn" id="hs-parent" href="#parent">👨‍👩‍👦 家長</a></nav>${shareRow()}`;
+  }
+  // 英文的入口頁（原本的首頁）
+  function pEn() {
     const st = stats(), mc = mistakeIds().length;
-    app.innerHTML = top('小朋友學習站 🎈', false) + `
+    app.innerHTML = top('🔤 英文', '#home') + `
       <div class="stats"><div class="stat"><span>🔥</span><b>${st.streak}</b><small>連續天數</small></div><div class="stat"><span>✏️</span><b>${st.today}</b><small>今天做的題目</small></div><div class="stat"><span>⭐</span><b>${S.progress.stars}</b><small>星星</small></div></div>
-      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? `翰林五年級・${D.textbook.length} 個單元` : '準備中', 'c2')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}<a class="tile c1" id="tile-map" href="map.html"><span class="ti">🗺️</span><b>課程地圖</b><small>哪些單元學完了、還差哪些</small></a></div>
-      <p class="muted center">小提示：看到英文，點一下就會唸給你聽 👂</p>${shareRow()}`;
+      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? `翰林五年級・${D.textbook.length} 個單元` : '準備中', 'c2')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}<a class="tile c1" href="map.html"><span class="ti">🗺️</span><b>課程地圖</b><small>哪些單元學完了、還差哪些</small></a></div>
+      <p class="muted center">小提示：看到英文，點一下就會唸給你聽 👂</p>`;
   }
 
   // ---------- 學習 ----------
@@ -812,7 +822,7 @@
     const rows = Object.values(per).map(p => ({ label: E.topicLabel(p.k), mod: KE.MODULES[p.k.split(':')[0]] || '', n: p.n, ok: p.ok, acc: p.ok / p.n }));
     const weak = rows.filter(r => r.n >= 3).sort((a, b) => a.acc - b.acc).slice(0, 5);
     const pct = x => Math.round(x * 100) + '%';
-    app.innerHTML = top('家長專區') + `
+    app.innerHTML = top('家長專區', '#home') + `
       <section class="card"><h2>最近 7 天做題數</h2><div class="week">${days.map(d => `<div class="day"><div class="col"><i style="height:${(cnt[d] || 0) / mx * 100}%"></i></div><b>${cnt[d] || 0}</b><small>${d.slice(5)}</small></div>`).join('')}</div>
         <p class="muted">累計 ${S.log.length} 題・完成 ${S.progress.quizzes} 回練習・⭐ ${S.progress.stars}・錯題庫 ${mistakeIds().length} 題</p></section>
       ${window.KidsAssistantUI ? KidsAssistantUI.parentHtml() : ''}
@@ -825,7 +835,7 @@
       ${speakCard()}
       ${voiceCard()}
       <section class="card"><h2>備份與重設</h2><div class="row wrap"><button class="btn" id="exp">📤 匯出備份</button><label class="btn">📥 匯入備份<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn danger" id="rst">🗑️ 清除全部紀錄</button></div><p class="muted">紀錄只存在這台裝置的瀏覽器裡；換裝置前先匯出備份。</p></section>`;
-    bindVoice(); bindSync(); if (window.KSParentPin) KSParentPin.bindCard(render); if (window.KidsDaily) KidsDaily.bind(app);
+    bindVoice(); bindSync(); if (window.KSParentPin) KSParentPin.bindCard(render); if (window.KidsDaily) KidsDaily.bind(app, render);
     sortTable($('#tt'), [{ k: 'label', t: '主題' }, { k: 'mod', t: '單元' }, { k: 'n', t: '題數' }, { k: 'ok', t: '答對' }, { k: 'acc', t: '正確率', f: pct }], rows, PS);
     sortTable($('#lt'), [{ k: 'item', t: '項目' }, { k: 'type', t: '類型' }, { k: 'at', t: '學會時間（台北）', f: x => KE.fmtTaipei(x, true) }, { k: 'score', t: '分數' }], E.learnedRows(S.learned), PL);
     $('#exp').onclick = () => {

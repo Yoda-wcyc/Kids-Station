@@ -108,7 +108,7 @@ const mm = fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8');
 const litSrc = mm.slice(mm.indexOf('/* ---------- 🧩 素養題組'), mm.indexOf('/* ---------- 📕 只練錯題'));
 ok(litSrc.length > 500 && !/doneRec\(|KidsDone/.test(litSrc), 'mindmap.js literacy block does not touch unit completion');
 ok(litSrc.includes("mkRec(u.id + '|L|' + LT.st.id + ':' + q.id") && litSrc.includes('coinAnswer(ok)') && !litSrc.includes('coinRound('), 'mindmap.js literacy: mistakes id, per-answer coins, no practice_round (sets < 5 questions)');
-ok(mm.includes("data-v=\"lit\" hidden>🧩 素養題組</button>") && mm.includes("if(p.k === 'L')") && mm.includes("lit:'做素養題組'"), 'mindmap.js: 🧩 mode button next to 練習題, mistakes redo, login reason');
+ok(mm.includes("['lit', '🧩 素養題組', 1]") && mm.includes("if(p.k === 'L')") && mm.includes("lit:'做素養題組'"), 'mindmap.js: 🧩 mode button next to 練習題, mistakes redo, login reason');
 ok(mm.includes('lb.hidden = !litOn()') && mm.includes('litSets().length'), 'mindmap.js hides 🧩 for units without sets');
 ok(fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8').includes("L: '素養題組'"), 'kids-mistakes.js: badge 素養題組');
 ok(typeof ZR.blockHTML === 'function' && /<table>/.test(ZR.blockHTML({ table: { cap: 'c', head: ['a'], rows: [['1']] } })) && ZR.blockHTML('<b>').indexOf('&lt;b&gt;') > 0, 'reading-core blockHTML shared and escapes text');

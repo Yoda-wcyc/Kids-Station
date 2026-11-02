@@ -12,7 +12,7 @@
      zhLocal       kids_zh_reading（國語閱讀本機細節）
      exam          kids_mm_exam（社會／自然單元測驗分數：{'<科>:<單元>':{best,last,n,at}}；mock-*、_seen 不看）
      wordLv        kids_word_lv（數學應用題循序漸進的難度）
-     goal          {min:今天有效分鐘, met:達標了沒}｜null（不知道就不出「每日目標」任務）
+     daily         今日清單 KidsDaily.today()：{rows:[{k,name,left,done}], allDone}｜null（不知道就不排序）
      nick          暱稱（打招呼用）
      prevCheer     上一次用的鼓勵語 id（不連續重複）
      rand          亂數（測試可固定）
@@ -24,7 +24,6 @@
 
   // ================= 可調常數（優先順序規則） =================
   const RULES = {
-    GOAL_MIN: 15,        // 每日目標：有效學習 15 分鐘（跟學習幣後端一樣）
     MK_SUBJ: 5,          // 一科錯題 ≥ 5 題 → 「只練錯題」
     MK_UNIT: 3,          // 社會／自然同一單元錯題 ≥ 3 題 → 只練那個單元的錯題
     STALE_DAYS: 7,       // 超過 7 天沒碰 → 複習一輪
@@ -41,7 +40,7 @@
     FRESH_DAYS: 3,       // 3 天內練過、沒有錯題 → 很棒
     TODAY_PENALTY: 2     // 今天已經練過的科目，任務優先順序往後 2 級（各科輪流）
   };
-  const PRI = { goal: 1, mistakes: 2, review: 2, stale: 3, finish: 4, start: 5 };   // 數字小＝先做；🔁 到期複習放在「錯題多」的位置
+  const PRI = { mistakes: 2, review: 2, stale: 3, finish: 4, start: 5 };   // 數字小＝先做；🔁 到期複習放在「錯題多」的位置
   const MINUTES = { stale: 10, finish: 10, start: 10, mkEach: 0.5, mkMin: 3, mkMax: 10 };
   const DAY = 864e5, TPE = 8 * 3600e3;
   const SPACED = ['social', 'science'];   // 🔁 隔天複習（間隔 1 → 3 → 7 天，kids-mistakes.js）只開在社會、自然
@@ -105,8 +104,8 @@
       '休息了 {days} 天，今天重新出發！先挑最簡單的一項暖身。', '回來就是最重要的一步！今天練一點點，就會接回之前的進度。'],
     manyWrong: ['今天有 {n} 題答錯，代表你正在挑戰新東西，錯題就是最好的老師。', '錯了 {n} 題沒關係！把錯題再練一次，下次就會記得更清楚。', '今天碰到比較難的題目，你還是繼續做下去，這份努力最重要。',
       '答錯的題目都收進錯題庫了，再練幾次都答對，它們就會畢業 🎓', '大腦在學新東西的時候本來就會答錯，慢慢看解說，你會越來越熟。'],
-    goalMet: ['今天的目標達成了！練了 {min} 分鐘，你真的說到做到。', '每日目標 ✅！認真練了 {min} 分鐘，給自己一個讚 👍', '達標了！每天練一點，累積起來就是很大的進步。',
-      '今天的 15 分鐘完成了，想多練也可以，休息一下也很好。', '目標達成 🎯 你今天花時間練習，這就是會進步的方法。'],
+    listDone: ['今天的清單全部完成了！你說到做到，真的很努力。', '清單都打勾了 ✅ 一題一題做完，這份認真最棒。', '今天的目標都達成了，給自己一個讚 👍',
+      '全部完成！想多練也可以，休息一下也很好。', '今天的份量都做完了，你的努力會一點一點變成實力。'],
     fewer: ['這週你的{subj}錯題從 {from} 題變成 {to} 題！把錯題練回來的方法有效喔。', '{subj}錯題從 {from} 題減到 {to} 題，這是你一題一題練出來的成果。', '看得出來你有在複習，{subj}這週只錯 {to} 題（上週 {from} 題）。',
       '{subj}越來越熟了：錯題從 {from} 題變成 {to} 題，繼續用同樣的方法練。', '上週{subj}錯 {from} 題，這週 {to} 題，你的練習正在發揮作用！'],
     first: ['第一次練{subj}！新的開始，先把第一個單元慢慢看完。', '今天開始學{subj}了，願意嘗試新科目，很勇敢喔。', '{subj}初體驗 🎉 不會的地方多看一次解說就好。',
@@ -119,7 +118,7 @@
       '先做最上面的任務，完成後再看看下一個。', '慢慢來比較快，把每一題都弄懂最重要。']
   };
   // 挑情境的順序（前面的先）
-  const CHEER_ORDER = ['welcome', 'comeback', 'manyWrong', 'goalMet', 'fewer', 'first', 'unitDone', 'streak', 'normal'];
+  const CHEER_ORDER = ['welcome', 'listDone', 'comeback', 'manyWrong', 'fewer', 'first', 'unitDone', 'streak', 'normal'];
 
   // ================= 小工具 =================
   const obj = x => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
@@ -275,7 +274,7 @@
     { const n = live(mk.ai).length; if (n) groups.push({ k: 'ai', kind: 'ai', n, title: 'AI・挑戰題', unitHref: SBY.ai.home, mkHref: SBY.ai.mk, extra: '' }); }
 
     // ---------- 今日任務 ----------
-    const cand = [];
+    let cand = [];
     SUBJ.forEach(s => {
       const S = SB[s.k], us = U[s.k], list = [];
       // ② 錯題多：社會／自然先看單元，其他整科。社會／自然有到期該複習的（錯題＋閃卡）→ 改成 🔁 今天要複習（同一個位置）
@@ -304,14 +303,10 @@
     const rot = today % SUBJ.length, ord = k => (SK.indexOf(k) - rot + SUBJ.length) % SUBJ.length;
     const eff = t => t.pri + (SB[t.k].today ? RULES.TODAY_PENALTY : 0), dd = k => (SB[k].days == null ? -1 : SB[k].days);
     cand.sort((x, y) => (eff(x) - eff(y)) || (dd(y.k) - dd(x.k)) || (ord(x.k) - ord(y.k)));
-    let tasks = cand.slice(0, RULES.MAX_TASKS);
-    // ① 每日目標還沒達成：放第一項（直達第 3 名之後的那一科，不重複）
-    const goal = snap.goal && num(snap.goal.min) != null ? { min: Math.max(0, Math.round(+snap.goal.min)), met: !!snap.goal.met || +snap.goal.min >= RULES.GOAL_MIN } : null;
-    if (goal && !goal.met && !isNew && cand.length) {
-      const need = RULES.GOAL_MIN - goal.min, pick = cand[RULES.MAX_TASKS - 1] || cand[0];
-      tasks = [{ kind: 'goal', pri: PRI.goal, k: '', subj: '', icon: '🎯', title: `每日目標還差 ${need} 分鐘`, why: `今天已經練 ${goal.min} 分鐘，練滿 ${RULES.GOAL_MIN} 分鐘就達標、還有學習幣 🪙；可以先試試：${pick.title}`, href: pick.href, min: need }]
-        .concat(cand.filter(t => t !== pick).slice(0, RULES.MAX_TASKS - 1));
-    }
+    // 今日清單還沒完成：還沒達標的科目優先；別科的錯題、複習照留，排在「沒達標科目的新單元」前面（新單元清單那一列就能直達）。不另外列一條，清單本身就在首頁最上面
+    const daily = snap.daily && Array.isArray(snap.daily.rows) ? snap.daily : null, unmet = daily ? daily.rows.filter(x => !x.done).map(x => x.k) : [];
+    if (unmet.length) { const rk = t => { const miss = unmet.indexOf(t.k) >= 0, work = t.kind === 'mistakes' || t.kind === 'review' || t.kind === 'stale'; return miss ? (work ? 0 : 2) : (work ? 1 : 3); }, si = t => { const i = unmet.indexOf(t.k); return i < 0 ? 9 : i; }; cand = cand.map((t, i) => [t, i]).sort((a, b) => (rk(a[0]) - rk(b[0])) || (si(a[0]) - si(b[0])) || (a[1] - b[1])).map(x => x[0]); }
+    const tasks = cand.slice(0, RULES.MAX_TASKS);
 
     // ---------- 比較弱的地方 ----------
     const weak = [], per = {};
@@ -358,7 +353,7 @@
       welcome: isNew ? {} : null,
       comeback: gap >= RULES.COMEBACK_DAYS ? { days: gap } : null,
       manyWrong: todayWrong >= RULES.MANY_WRONG ? { n: todayWrong } : null,
-      goalMet: goal && goal.met ? { min: goal.min } : null,
+      listDone: daily && daily.allDone ? {} : null,
       fewer: fewer ? { subj: fewer.name, from: fewer.wrongLast, to: fewer.wrong } : null,
       first: first && allDays.size > 1 ? { subj: first.name } : null,
       unitDone: progress.goals > 0 ? { n: progress.goals } : null,
@@ -370,7 +365,7 @@
 
     // 打招呼（台北時間）
     const h = new Date(now + TPE).getUTCHours(), hi = (snap.nick ? snap.nick + '，' : '') + (h >= 5 && h < 11 ? '早安！' : h >= 11 && h < 18 ? '午安！' : '晚上好！');
-    return { isNew, now, hi, cheer, goal, tasks, subjects, weak, next, progress, _: { groups, cand } };
+    return { isNew, now, hi, cheer, daily, tasks, subjects, weak, next, progress, _: { groups, cand } };
   }
 
   // 同一情境隨機挑一句，跟上一次（prev）不一樣
