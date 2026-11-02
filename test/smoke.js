@@ -999,8 +999,9 @@ ok(idx.indexOf('subjects.js') < idx.indexOf('app.js'), 'subjects.js loads before
 ok(idx.indexOf('syncmerge.js') < idx.indexOf('syncauto.js') && idx.indexOf('syncauto.js') < idx.indexOf('sync.js') && idx.indexOf('sync.js') < idx.indexOf('app.js'), 'syncmerge.js → syncauto.js → sync.js → app.js (sync card renders on first paint)');
 ['account.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/short-division.html', 'math/multiples.html', 'math/multiply.html', 'math/fraction.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'), a = h.search(/src="(\.\.\/)?syncauto\.js(\?v=[0-9a-f]+)?"/), s = h.search(/src="(\.\.\/)?sync\.js(\?v=[0-9a-f]+)?"/); ok(h.search(/src="(\.\.\/)?syncmerge\.js(\?v=[0-9a-f]+)?"/) < a && a >= 0 && a < s, f + ' loads syncmerge.js → syncauto.js → sync.js'); });
 const sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
-['國語', '數學', '社會', '自然', '英文', "n: 'AI'", '遊戲', '#s/', 'math/balance.html', '準備中，敬請期待', '← 回'].forEach(t => ok(sj.includes(t), 'subjects.js has ' + t));
-ok((sj.match(/\{ k: '[a-z]+', n: /g) || []).length === 7, '7 subject tabs');
+['國語', '數學', '社會', '歷史', '自然', '英文', "n: 'AI'", '遊戲', '#s/', 'math/balance.html', '準備中，敬請期待', '← 回'].forEach(t => ok(sj.includes(t), 'subjects.js has ' + t));
+ok((sj.match(/\{ k: '[a-z]+', n: /g) || []).length === 8, '8 subject tabs');
+ok(/repeat\(8,/.test(fs.readFileSync(path.join(root, 'subjects.css'), 'utf8')) && sj.includes("href: 'comics/v1e1.html'") && fs.existsSync(path.join(root, 'comics/v1e1.html')), '歷史科：分頁列 8 欄、漫畫卡指到 comics/v1e1.html');
 
 // ---- AI 與 遊戲（Scratch 塔防）：檔案存在、非空；活動卡片的 src 都找得到 ----
 const nonEmpty = rel => { const p = path.join(root, rel); return fs.existsSync(p) && fs.statSync(p).size > 0; };

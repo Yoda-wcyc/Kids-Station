@@ -1,8 +1,8 @@
-/* subjects.js — 科目切換列（國語／數學／社會／自然／英文／AI／遊戲）。英文＝原本的 app.js；其他科目由這支畫在 #subject。
+/* subjects.js — 科目切換列（國語／數學／社會／歷史／自然／英文／AI／遊戲）。英文＝原本的 app.js；其他科目由這支畫在 #subject。
    社會、自然＝心智圖（mindmap/），每單元一張卡（MM_UNITS）。 */
 (function () {
   'use strict';
-  const SUBJ = [{ k: 'chinese', n: '國語', i: '📝' }, { k: 'math', n: '數學', i: '🔢' }, { k: 'social', n: '社會', i: '🌏' }, { k: 'science', n: '自然', i: '🔬' }, { k: 'english', n: '英文', i: '🔤' }, { k: 'ai', n: 'AI', i: '🤖' }, { k: 'game', n: '遊戲', i: '🎮' }];
+  const SUBJ = [{ k: 'chinese', n: '國語', i: '📝' }, { k: 'math', n: '數學', i: '🔢' }, { k: 'social', n: '社會', i: '🌏' }, { k: 'history', n: '歷史', i: '🏛️' }, { k: 'science', n: '自然', i: '🔬' }, { k: 'english', n: '英文', i: '🔤' }, { k: 'ai', n: 'AI', i: '🤖' }, { k: 'game', n: '遊戲', i: '🎮' }];
   // 有活動卡片的科目：點卡片 → iframe 開正本頁面（有 href 的卡片改成整頁開，例如勇者島；icon 可放小 SVG）
   const ACTS = {
     // 2026-11-01：國語〈閱讀素養 100 篇〉（chinese/reading.html；L1～L4 循序解鎖，規格 kids-member/docs/CHINESE_READING_SPEC.md）
@@ -18,6 +18,8 @@
       { id: 'multiply', title: '乘法快算', desc: '九九、二位數×一位數、二位數×二位數、三位數×一位數：練習有拆解提示和直式格子，挑戰一輪 20 題計時', icon: '⚡', src: 'math/multiply.html', dk: 'math:mx' },
       // 2026-10-27：五上〈分數比較大小〉（教學／練習／考試）
       { id: 'fraction', title: '分數比較大小', desc: '分數條、數線看懂比大小：同分母、同分子、跟 1 跟一半比、通分、先約分、假分數化帶分數；按 ＞＜＝ 大按鈕，考試一份 100 分', icon: '🍰', src: 'math/fraction.html', dk: 'math:frc' }],
+    // 2026-11-02：世界史漫畫（comics/；整頁開，閱讀不用登入；學習幣、完成標示、錯題庫、課程地圖、小助理等第 1 話看過再接）
+    history: [{ id: 'comic-v1e1', title: '世界史漫畫 第 1 冊 古文明・第 1 話：寫下來，才算數！', desc: '試做｜阿凱和小禾搭時光搖搖車到 3800 年前的巴比倫：楔形文字、《漢摩拉比法典》，看完有重點、地圖和 5 題小測驗', icon: '📖', href: 'comics/v1e1.html' }],
     ai: [
       { id: 'hallucinate', title: 'AI 會唬爛', desc: 'AI 有時會很有自信地說錯。學會三招不被騙：自己查、問大人、多找一個地方對答案。', icon: '🤥', src: 'ai/hallucinate.html', dk: 'ai:hallucinate' },
       { id: 'ask-well', title: '怎麼問得好', desc: '同一件事，問法不同答案就差很多。練習講清楚、給背景、說形式，讓 AI 真的幫得上忙。', icon: '💬', src: 'ai/ask-well.html', dk: 'ai:ask-well' },
