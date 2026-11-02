@@ -580,7 +580,7 @@ footer .share-row{margin:14px 0 0}
   </footer>
 </main>
 
-<script src="../kids-mistakes.js?v=183db2e4df"></script>
+<script src="../kids-mistakes.js?v=687c0b6906"></script>
 <script src="balance-word.js?v=06163b98ed"></script>
 <script src="word-level.js?v=0dd1455f2c"></script>
 <script>
@@ -962,6 +962,7 @@ var MK = /[?&]mistakes=1/.test(location.search);
 /* 短除法錯題（p.type 'gcd'；應用題 'gcdword'）在 short-division.html?mistakes=1 練（只有應用題時那頁自己轉去練應用題）；這裡做完還有的話給一顆「接著練」 */
 function gcdMore(){ var n = 0; try { n = (window.KidsMistakes ? KidsMistakes.list('math') : []).filter(function(e){ return e.p && (e.p.type === 'gcd' || e.p.type === 'gcdword'); }).length; } catch (e){} return (n ? '<a class="btn" id="mk-gcd" href="short-division.html?mistakes=1">接著練短除法錯題（' + n + ' 題）▶</a>' : '') + (window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['multiples', 'multiply', 'fraction']) : ''); }
 function mkRec(q, ok){
+  if (window.KidsDaily) KidsDaily.rec('math', ok);   /* 每日學習紀錄：一題記一次（第一次算錯，或一次就算對） */
   try {
     if (!window.KidsMistakes) return null;
     var w = S.mkWord[q]; if (w) return KidsMistakes.record('math', w.id, ok, w.p);   /* 錯題練習裡的應用題：記回應用題那一筆（id eqw:…） */
@@ -1808,7 +1809,7 @@ window.eqSelfCheck = selfCheck;
    ① 三個算式選一個（按鈕）→ ② 算出 x（數字輸入）→ 看解法。每次作答 KidsCoins.answer(ok,'math')；第一次答錯（哪一步都算）收進錯題庫
    （id 'eqw:<故事>:<數字>'，p＝{q:算式, bw:故事, v:數字, t:故事文字}，沒有 type＝天平錯題；錯題練習載入算式、上面顯示故事）；不送 KidsDone、不送新的學習幣事件。 */
 var BWS = { Q:null, step:0, wrong:false, asked:{} };
-function bwRec(Q, ok){ try { if (!window.KidsMistakes) return null; var m = BW.mkEntry(Q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e){ return null; } }
+function bwRec(Q, ok){ if (window.KidsDaily) KidsDaily.rec('math', ok); try { if (!window.KidsMistakes) return null; var m = BW.mkEntry(Q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e){ return null; } }
 /* 循序漸進（math/word-level.js）：先出難度 1，第一次就答對 3 題才混入難度 2，再來才是 3（兩步的式子） */
 function bwLevel(){ try { return window.WL ? WL.level('bal') : 3; } catch (e){ return 3; } }
 function bwNew(){
@@ -1909,11 +1910,12 @@ try {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=4b2ac9f5f5"></script>
-<script src="../syncmerge.js?v=db1a578788"></script>
+<script src="../syncmerge.js?v=cafc27c76b"></script>
+<script src="../kids-daily.js?v=3a9cda8359"></script>
 <script src="../completion.js?v=e00090d0f2"></script>
 <script src="../kids-done.js?v=de42d7120a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
-<script src="../sync.js?v=f480360ff5"></script>
+<script src="../sync.js?v=7da2209723"></script>
 <script>
 /* 頁首：這個單元學完了沒（completion.js 判定；📕 錯題練習不顯示） */
 if (window.KidsDone && !/[?&]mistakes=/.test(location.search)) KidsDone.mount(document.getElementById('kdone'), 'math:balance', { title: '天平解方程式' });

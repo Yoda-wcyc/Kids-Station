@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>短除法：最大公因數・最小公倍數</title>
-<link rel="stylesheet" href="../style.css?v=d8aed364d6">
+<link rel="stylesheet" href="../style.css?v=285bb453ba">
 <style>
 :root{--g:#2477c9;--g-bg:#d6ecff;--l:#d2601a;--l-bg:#ffe1c4;--bfs:clamp(30px,4.2vw + 12px,46px)}
 body{background:var(--bg)}
@@ -182,7 +182,7 @@ body{background:var(--bg)}
   </section>
 </main>
 
-<script src="../kids-mistakes.js?v=183db2e4df"></script>
+<script src="../kids-mistakes.js?v=687c0b6906"></script>
 <script src="short-division.js?v=17afc65cb7"></script>
 <script src="gcd-word.js?v=889d7b62a4"></script>
 <script src="word-level.js?v=0dd1455f2c"></script>
@@ -391,6 +391,7 @@ $('see-alt').addEventListener('click', function (e) {
 function qText(nums, mode) { return nums.join('、') + ' 的' + (mode === 'both' ? '最大公因數・最小公倍數' : nameOf(mode)); }   // 錯題庫清單前面已有「短除法」標籤
 function mkId(Q) { return 'gcd:' + Q.nums.join(',') + (Q.nums.length === 3 ? ':' + Q.mode : ''); }
 function mkRec(Q, ok) {
+  if (window.KidsDaily) KidsDaily.rec('math', ok);   // 每日學習紀錄：一題記一次（第一次答錯，或一路沒錯做完）
   try { return window.KidsMistakes ? KidsMistakes.record('math', mkId(Q), ok, { type: 'gcd', nums: Q.nums.slice(), mode: Q.mode, q: qText(Q.nums, Q.mode) }) : null; } catch (e) { return null; }
 }
 function msg(t, kind) { var m = $('try-msg'); m.innerHTML = t || ''; m.className = 'sd-msg' + (kind ? ' ' + kind : ''); }
@@ -593,6 +594,7 @@ function wAuth() {   // 作答要登入；這一輪第一次作答時 startActiv
 function wlLevel() { try { return window.WL ? WL.level('gw') : 3; } catch (e) { return 3; } }
 function wlNote() { try { return window.WL ? WL.note('gw') : ''; } catch (e) { return ''; } }
 function wRec(Q, ok) {
+  if (window.KidsDaily) KidsDaily.rec('math', ok);
   var p = Q.p;
   try { return window.KidsMistakes ? KidsMistakes.record('math', p.id, ok, { type: 'gcdword', t: p.tid, v: p.v.slice(), q: p.name + '：' + p.keys.join('、') }) : null; } catch (e) { return null; }
 }
@@ -970,11 +972,12 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=4b2ac9f5f5"></script>
-<script src="../syncmerge.js?v=db1a578788"></script>
+<script src="../syncmerge.js?v=cafc27c76b"></script>
+<script src="../kids-daily.js?v=3a9cda8359"></script>
 <script src="../completion.js?v=e00090d0f2"></script>
 <script src="../kids-done.js?v=de42d7120a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
-<script src="../sync.js?v=f480360ff5"></script>
+<script src="../sync.js?v=7da2209723"></script>
 <script>if (window.SDPage && SDPage.paintDone) SDPage.paintDone();</script>
 </body>
 </html>

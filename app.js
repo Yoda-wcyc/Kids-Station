@@ -25,7 +25,7 @@
   }
   // 科目列（subjects.js）也會寫 ke_settings.subject：存檔時以磁碟上最新的 subject 為準，不要蓋掉
   function saveSettings() { const cur = load('ke_settings', {}) || {}; S.settings.subject = cur.subject; if (S.settings.subject === undefined) delete S.settings.subject; save('ke_settings', S.settings); }
-  const KEYS = ['ke_progress', 'ke_mistakes', 'ke_settings', 'ke_log', 'ke_learned', 'ke_correct', 'ke_agg'];
+  const KEYS = ['ke_progress', 'ke_mistakes', 'ke_settings', 'ke_log', 'ke_learned', 'ke_correct', 'ke_agg', 'kids_daily'];
   let S;
   function loadAll() {
     S = { progress: load('ke_progress', {}), mistakes: load('ke_mistakes', {}), settings: load('ke_settings', {}), log: load('ke_log', []), learned: load('ke_learned', {}) };
@@ -621,6 +621,7 @@
     if (!skipped) record(q, res.ok, q.input === 'mic' ? (res.ok ? q.answer : '') : input);
     // 學習幣（kids-coins.js）：每答一題記進「這一分鐘」；跳過不算作答
     if (window.KidsCoins) skipped ? KidsCoins.activity('english') : KidsCoins.answer(res.ok, 'english');
+    if (!skipped && window.KidsDaily) KidsDaily.rec('english', res.ok);   // 家長頁每日學習紀錄
     Q.answers.push({ q, ok: res.ok, skip: !!skipped, input });
     // 📝 考試：不給回饋、不唸答案，直接下一題；全部答完才看結果
     if (Q.exam) { Q.i++; Q.answered = false; if (Q.i >= Q.list.length) finish(); else { pQuiz(); window.scrollTo(0, 0); } return; }
@@ -815,6 +816,7 @@
       <section class="card"><h2>最近 7 天做題數</h2><div class="week">${days.map(d => `<div class="day"><div class="col"><i style="height:${(cnt[d] || 0) / mx * 100}%"></i></div><b>${cnt[d] || 0}</b><small>${d.slice(5)}</small></div>`).join('')}</div>
         <p class="muted">累計 ${S.log.length} 題・完成 ${S.progress.quizzes} 回練習・⭐ ${S.progress.stars}・錯題庫 ${mistakeIds().length} 題</p></section>
       ${window.KidsAssistantUI ? KidsAssistantUI.parentHtml() : ''}
+      ${window.KidsDaily ? KidsDaily.html() : ''}
       <section class="card"><h2>最需要加強的 5 個主題</h2>${weak.length ? `<ol>${weak.map(r => `<li>${esc(r.label)}（${esc(r.mod)}）— 正確率 ${pct(r.acc)}，做了 ${r.n} 題</li>`).join('')}</ol>` : '<p class="muted">每個主題做滿 3 題後就會出現。</p>'}</section>
       <section class="card"><h2>各主題正確率（點標題排序）</h2><div class="tblwrap"><table class="tbl" id="tt"></table></div></section>
       <section class="card"><h2>學會紀錄（${E.learnedRows(S.learned).length} 項，點標題排序）</h2><div class="tblwrap"><table class="tbl" id="lt"></table></div></section>
@@ -823,7 +825,7 @@
       ${speakCard()}
       ${voiceCard()}
       <section class="card"><h2>備份與重設</h2><div class="row wrap"><button class="btn" id="exp">📤 匯出備份</button><label class="btn">📥 匯入備份<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn danger" id="rst">🗑️ 清除全部紀錄</button></div><p class="muted">紀錄只存在這台裝置的瀏覽器裡；換裝置前先匯出備份。</p></section>`;
-    bindVoice(); bindSync(); if (window.KSParentPin) KSParentPin.bindCard(render);
+    bindVoice(); bindSync(); if (window.KSParentPin) KSParentPin.bindCard(render); if (window.KidsDaily) KidsDaily.bind(app);
     sortTable($('#tt'), [{ k: 'label', t: '主題' }, { k: 'mod', t: '單元' }, { k: 'n', t: '題數' }, { k: 'ok', t: '答對' }, { k: 'acc', t: '正確率', f: pct }], rows, PS);
     sortTable($('#lt'), [{ k: 'item', t: '項目' }, { k: 'type', t: '類型' }, { k: 'at', t: '學會時間（台北）', f: x => KE.fmtTaipei(x, true) }, { k: 'score', t: '分數' }], E.learnedRows(S.learned), PL);
     $('#exp').onclick = () => {

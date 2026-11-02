@@ -39,7 +39,7 @@
     return true;
   }
   function loggedOK() { var A = window.KidsAuth; try { return !A || !A.configured() || A.isLoggedIn(); } catch (e) { return true; } }
-  function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } }
+  function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok); }
   function coinRound(item, c, n) { try { if (window.KidsCoins && n > 0) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); } catch (e) { } }
   function mkRec(id, ok, p) { try { return window.KidsMistakes ? KidsMistakes.record('chinese', id, ok, p) : null; } catch (e) { return null; } }
   function doneRec(id, pct) { try { if (window.KidsDone) KidsDone.record('zh', id, pct); } catch (e) { } }
@@ -241,7 +241,7 @@
       var c = z.closest('.zr-q'), n = +c.getAttribute('data-i'), item = R.items[n], ta = c.querySelector('textarea');
       item.text = ta ? ta.value : item.text;
       if (ZR.countText(item.text) < ZR.OPEN_MIN) { setMsg(n, '再多寫一點：至少 ' + ZR.OPEN_MIN + ' 個字，說出你的想法和理由。'); return; }
-      item.done = true; R.last = n; paintCard(n); finishIfDone();
+      item.done = true; R.last = n; if (window.KidsDaily) KidsDaily.rec('chinese', null); paintCard(n); finishIfDone();   // 開放題：算一題、不計答對率
     }
   });
   document.addEventListener('input', function (e) { var t = e.target; if (t && t.getAttribute && t.getAttribute('data-z') === 'draft' && R) { var c = t.closest('.zr-q'); R.items[+c.getAttribute('data-i')].text = t.value; } });

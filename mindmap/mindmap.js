@@ -87,6 +87,7 @@ function gate(mode, retry){
   return true;
 }
 function coinAnswer(ok){ try{ if(window.KidsCoins) window.KidsCoins.answer(!!ok, SUBJ); }catch(e){} }
+function dailyRec(ok){ if(window.KidsDaily) window.KidsDaily.rec(SUBJ, !!ok); }   // 家長頁每日學習紀錄：一題記一次（挖空、背架構答錯重試不重複；閃卡不算）
 function coinRound(mode, correct, total){ try{ if(window.KidsCoins && total > 0) window.KidsCoins.report({type:'practice_round', item:SUBJ + ':' + mode, correct:correct, total:total}); }catch(e){} }
 
 /* ---------- 錯題庫（../kids-mistakes.js；沒載入就不記）----------
@@ -104,7 +105,7 @@ function archPath(u, id){
   parts.push(x.depth === 1 ? '___（' + lessonLabel(x.d, x.li) + '）' : '___');
   return {path:parts.join(' › '), title:x.d.title, x:x};
 }
-function mkArch(id, ok){ if(!KMx() || MKMODE) return; var u = unit(), s = archPath(u, id); if(!s || s.x.nq) return; mkRec(u.id + '|a|' + id, ok, {u:u.id, k:'a', s:s.path, a:s.title}); }
+function mkArch(id, ok){ if(MKMODE) return; var u = unit(), s = archPath(u, id); if(!s || s.x.nq) return; dailyRec(ok); if(!KMx()) return; mkRec(u.id + '|a|' + id, ok, {u:u.id, k:'a', s:s.path, a:s.title}); }
 function mkBlank(b, ok){ if(!KMx() || MKMODE) return; var u = unit(), np = npByPid(b.node, b.pi); mkRec(u.id + '|w|' + b.pid + '|' + b.cand.w, ok, {u:u.id, k:'w', pid:b.pid, ci:b.ci, a:b.cand.w, s:np ? np.text : ''}); }
 function quizAns(q){
   if(q.type === 'mc') return q.opts[q.a];
@@ -219,7 +220,7 @@ function czMiss(key){ cz(); var c = cloze[unit().id]; if(!c.miss) c.miss = {}; i
 function firstOkOf(keys){ var s = cz(), m = czMiss(); return keys.filter(function(k){ return s[k] && s[k].st === 'ok' && s[k].first && !m[k]; }).length; }
 function scoreOf(keys){ var s = cz(), ok = 0, done = 0; keys.forEach(function(k){ if(s[k]){ done++; if(s[k].st === 'ok') ok++; } }); return {ok:ok, done:done, n:keys.length}; }
 function hiddenSet(pid){ var dr = cloze[unit().id] && cloze[unit().id].draw; return new Set(UI.mode === 'cloze' && dr ? (dr.picks[pid] || []) : []); }
-function logBlank(b, ok){ var uid = unit().id, st = bstore(uid); SB.recordAnswer(st, b.cand.w, ok, 'w'); bsave(uid, st); mkBlank(b, ok); }
+function logBlank(b, ok){ dailyRec(ok); var uid = unit().id, st = bstore(uid); SB.recordAnswer(st, b.cand.w, ok, 'w'); bsave(uid, st); mkBlank(b, ok); }
 
 /* ---------- 節點外觀 ---------- */
 /* 一句重點畫成 HTML：看重點＝關鍵詞上色；考考自己＝被抽中的詞變成空格按鈕 */
@@ -769,7 +770,7 @@ function renderQuiz(){
   var ibx = $('#iaBox'); if(ibx) IAx().mount(ibx, q, it.st || (it.st = {}), {map:D.iaMap, done:it.done, toast:toast, onAnswer:function(ok){ quizDone(ok); }});
   var mi = $('#mkIn'); if(mi){ try{ mi.focus(); }catch(e){} mi.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); ACT.qfill(); } }); }
 }
-function quizDone(right){ var it = QZ.items[QZ.i], card = it.q.type === 'card'; it.done = true; it.right = right; if(right) QZ.ok++; if(!card) coinAnswer(right);   // 閃卡自己判斷，不算學習幣
+function quizDone(right){ var it = QZ.items[QZ.i], card = it.q.type === 'card'; it.done = true; it.right = right; if(right) QZ.ok++; if(!card){ coinAnswer(right); dailyRec(right); }   // 閃卡自己判斷，不算學習幣、不算題目
   if(QZ.mk){ try{ if(KMx().record(SUBJ, it.mk, right) === 'graduated') QZ.grad++; }catch(e){} }
   else if(QZ.ia) iaRec(it.q, right);
   else { mkQuiz(it.q, right); if(right) qzOk(it.q); exMarkSeen(['q:' + qHash(it.q.q)]); }   // 單元測驗抽題時避開最近 7 天做過的
@@ -825,7 +826,7 @@ function litResHTML(){
     '<div class="share-row"><button class="mm-b" data-act="litAgain">🔁 再做一次</button><button class="mm-b" data-act="litHome">🧩 回題組</button>' + (nx ? '<button class="mm-b on" data-act="litGo" data-v="' + (LT.i + 1) + '">下一組 ▶</button>' : '') + '</div></div>';
 }
 function litAnswer(i, ok){
-  var q = LT.items[i].q, u = unit(); coinAnswer(ok);
+  var q = LT.items[i].q, u = unit(); coinAnswer(ok); dailyRec(ok);
   mkRec(u.id + '|L|' + LT.st.id + ':' + q.id, ok, {u:u.id, k:'L', s:String(q.q).slice(0, 120), a:String(QKx().answerText(q)).slice(0, 120)});
   litPaint(i); litFinish();
 }
@@ -1062,7 +1063,7 @@ function exSubmit(force){
   exStopTimer(); EXM.done = true;
   var oks = P.items.map(function(it, i){ var st = EXM.st[i], r = M.isRight(it.q, st); st.done = true; st.right = r; return r; }), S = M.score(P.items, oks);
   EXM.S = S;
-  P.items.forEach(function(it, i){ coinAnswer(oks[i]); mkRec(it.mk, oks[i], {u:it.u, k:it.src === 'x' ? 'X' : 'q', s:String(it.q.q).slice(0, 120), a:String(QKx().answerText(it.q)).slice(0, 120)}); });
+  P.items.forEach(function(it, i){ coinAnswer(oks[i]); dailyRec(oks[i]); mkRec(it.mk, oks[i], {u:it.u, k:it.src === 'x' ? 'X' : 'q', s:String(it.q.q).slice(0, 120), a:String(QKx().answerText(it.q)).slice(0, 120)}); });
   coinRound('quiz', S.right, S.total);
   exMarkSeen(P.items.map(function(it){ return it.key; }));
   var all = exAll(), k = SUBJ + ':' + P.id, r = all[k] || {}; r.best = Math.max(r.best || 0, S.score); r.last = S.score; r.n = (r.n || 0) + 1; r.at = Date.now(); all[k] = r; lsSet(XKEY, all);

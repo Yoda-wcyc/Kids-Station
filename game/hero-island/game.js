@@ -729,6 +729,7 @@
     function finish(ok, timeUp) {
       if (answered) return; answered = true; box.classList.add('done');
       au('sfx', ok ? 'correct' : 'wrong');
+      if (root.KidsDaily) root.KidsDaily.rec('english', ok);   // 家長頁每日學習紀錄：遊戲裡的題算英文
       if (o.onAnswer) o.onAnswer(ok);
       if (ok) { fb.className = 'q-fb ok'; fb.textContent = ['答對了！', '漂亮！', '命中！', '好厲害！'][Math.floor(Math.random() * 4)]; setTimeout(() => o.onDone && o.onDone(true), 750); return; }
       fb.className = 'q-fb bad'; fb.innerHTML = '';

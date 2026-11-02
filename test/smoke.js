@@ -629,7 +629,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   };
   // 相容：舊文件（v1 伺服器新建、v2 只有英文）讀進來不會壞，新欄位都是空的
   const v1 = SM.normalize({ v: 1, created: '2026-10-09T00:00:00Z', log: [], learned: {}, mistakes: {} }), v2 = SM.normalize(devA);
-  ok(v1.v === 8 && SM.VERSION === 8 &&   /* 2026-11-02 文件 v8（mmBlanks 只同步答過的、計數封頂、熟練只留旗標）*/ same(v1.mk, {}) && same(v1.mm, {}) && same(v1.mmBlanks, {}) && same(v1.scratch, {}) && same(v1.ctr, {}) && v1.eq.items.length === 0 && same(v1.eq.del, {}), 'v1 doc → v3 with empty sections');
+  ok(v1.v === 9 && SM.VERSION === 9 &&   /* 2026-11-02 文件 v8（mmBlanks 只同步答過的、計數封頂、熟練只留旗標）*/ same(v1.mk, {}) && same(v1.mm, {}) && same(v1.mmBlanks, {}) && same(v1.scratch, {}) && same(v1.ctr, {}) && v1.eq.items.length === 0 && same(v1.eq.del, {}), 'v1 doc → v3 with empty sections');
   ok(v2.log.length === 3 && same(SM.normalize(undefined).mm, {}) && same(SM.normalize({ mm: 5, mmBlanks: [1], eq: 'x', scratch: null, ctr: 7 }).eq, SM.normEq(null)), 'v2 / garbage sections do not throw');
   ok(same(SM.merge(v2, v1).log, SM.merge(devA, {}).log), 'v2 English fields unchanged by v3');
   // 社會／自然過關（kids_mm_progress）：過關聯集＋最佳成績＋最新過關時間；複習跟著最新那次
@@ -826,19 +826,21 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   for (let m = 0; m < 3; m++) for (let l = 1; l <= 7; l++) maxDoc.scratch['K10' + m + '|scratch-td:lesson' + l] = '2026-10-09T01:00:00.000Z';
   for (let d = 0; d < 5; d++) maxDoc.ctr['d' + d + 'mgk2x9abc'] = { stars: 99999, quizzes: 9999 };
   maxDoc.eq = { at: 1.8e12, items: many(30).map(it => Object.assign({ t: 1.8e12 }, it)), del: Object.fromEntries(Array.from({ length: 150 }, (_, i) => ['(x+' + i + ')−(' + i + '−2)=' + (i + 100), 1.7e12])) };
+  // 2026-11-02 v9：每日學習統計 dd 也算進最壞情況：90 天、5 台裝置、每天 8 個代碼全部封頂（整理後被 SM.DD_MAX 限住，超過從最舊的一天丟；正常使用 90 天放得下，見 test/daily-stats.test.js）
+  maxDoc.dd = {}; for (let d = 0; d < 5; d++) { const days = []; for (let i = 0; i < 90; i++) days.push(SM.ddDay(Date.now() - i * 864e5) + 'emcsnhao'.split('').map(c => c + '9999,9999').join('')); maxDoc.dd['d' + d + 'mgk2x9abc123'] = days.reverse().join(';'); }
   // 六下全部上線後的估計：原本估 9 單元（社會 5、自然 4），還沒上線的用六上單元照抄（每單元詞數、節點數、題數＝六上）。
   // 2026-11-02 六下實際上線 6 單元（社會 u15～u17〔第四單元是探究實作、沒有新知識節點，不做〕、自然 n13～n15）＝ maxDoc 已含；這裡照舊再補 3 個六上大小的單元當餘裕，上限不放寬
   const g6a = allUnits.filter(([, u]) => /^六上/.test(u.label || '')), g6bHave = allUnits.filter(([, u]) => /^六下/.test(u.label || '')).length;
   const projDoc = JSON.parse(JSON.stringify(maxDoc));
   for (let i = g6bHave; i < 9; i++) { const [s, u] = g6a[i % g6a.length]; fillUnit(projDoc, s + ':g6b' + i + '-' + u.id, u); }
   const projBytes = SM.bytes(SM.normalize(projDoc));
-  ok(g6a.length === 9 && projBytes <= SM.MAX_BYTES / 4, 'v8 worst case after 六下 (9 units, sized like 六上) still ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes (六下已上線 ' + g6bHave + ' 單元)');
+  ok(g6a.length === 9 && projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats) after 六下 (9 units, sized like 六上) still ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes (六下已上線 ' + g6bHave + ' 單元)');
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
   // 2026-11-02 五下上線塞滿約 156KB 超過 1/4 → v7 壓成字串（114,868 B，六下必超）→ v8 只同步答過的、封頂、熟練旗標
   ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === 100 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,9999')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
   const bigAll = SM.compact(Object.assign({}, maxDoc, { log: big.log.concat(big.log.map(e => Object.assign({}, e, { t: e.t + 1e7, a: e.a + '-again' }))) }));
-  ok(SM.bytes(bigAll) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq), 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(bigAll));
-  console.log('sync v8 doc size: sections max ' + secBytes + ' B (六下全上線估 ' + projBytes + ' B); 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
+  ok(SM.bytes(bigAll) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq) && same(bigAll.dd, sec.dd) && SM.bytes(sec.dd) <= SM.DD_MAX, 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(bigAll));
+  console.log('sync v9 doc size: sections max ' + secBytes + ' B (六下全上線估 ' + projBytes + ' B); 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
 }
 
 // ---- 📕 錯題庫（kids-mistakes.js；社會／自然／數學／AI）＋ 同步 v4 的 mk 欄位 ----

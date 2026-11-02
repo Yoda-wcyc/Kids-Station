@@ -1,4 +1,10 @@
 /* syncmerge.js — 裝置同步的合併規則（純函式，不碰 DOM／網路以外的東西；瀏覽器與 Node 共用）
+   文件格式 v9（2026-11-02 起；v8 欄位完全不變，只多一個 dd 欄位，舊文件少了它就當空的）：
+    dd:{'<裝置id>':'261103e30,5m18,3;261104c5'}   ← kids_daily（每日學習統計；畫面在 kids-daily.js）。每台裝置一個字串，分號隔開每一天：YYMMDD（台北）＋科目代碼＋題數,答錯數（答錯 0 不寫）
+    - G-counter：每台裝置只加自己的計數；合併時同一台、同一天、同一科的題數、答錯數各取大；顯示時才加總各裝置（ddSum）→ 重複同步不會重複算，交換、結合、冪等。
+    - 只留最近 90 天（用現在時間砍，未來日期不砍：時鐘錯的裝置頂多多留幾筆，顯示端會略過）。
+    - 大小：整個 dd 最多 DD_MAX 位元組，超過從最舊的一天開始丟（從新到舊累計，只看「比它新的天」，所以合併順序不影響結果）。iPad 天天 4～5 科＋電腦偶爾用，90 天都放得下（數字見 test/daily-stats.test.js）；只有每天好幾台各做很多科才會提早丟舊的。
+    - 舊版（v8）裝置的 normalize 會丟掉 dd，PUT 回去少了它 → 新版下次同步從本機補回（跟 v4→v5 的 done 一樣，不會掉資料）。
    文件格式 v8（2026-11-02 起；只改 mmBlanks，其他欄位跟 v7 完全一樣）——大小改由「真的答過的詞」決定、每筆有上限，不再跟著題庫長：
     - 只同步答過的詞／節點（ok+wrong＞0）；只抽出來、還沒作答的（commitSession 只記 lastShown）留在本機不上傳。
       'rel:' 開頭的背架構紀錄（關係詞 2026-10-11 起不挖空、不會再有新作答）不同步。
@@ -56,7 +62,7 @@
    - ctr：每台裝置各記自己的星星／回數（各欄取大），本機總數＝全部裝置加總，所以兩台不會互相蓋掉也不會重複算。 */
 (function (root) {
   'use strict';
-  const MAX_BYTES = 500 * 1024, VERSION = 8, MAX_EQ = 30, MAX_EQ_DEL = 100, BL_CAP = 99;
+  const MAX_BYTES = 500 * 1024, VERSION = 9, MAX_EQ = 30, MAX_EQ_DEL = 100, BL_CAP = 99;
 
   function h53(str) {
     let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
@@ -263,6 +269,60 @@
     return normDone({ tb, mm, bal: nums(a.bal, b.bal, first), sd: nums(a.sd, b.sd, best), gw: nums(a.gw, b.gw, best), ai: nums(a.ai, b.ai, first), mp: nums(a.mp, b.mp, best), mx, fr: nums(a.fr, b.fr, best), zh: nums(a.zh, b.zh, first), cy: nums(a.cy, b.cy, first) });
   }
 
+  // ---- dd：每日學習統計（kids_daily；格式見檔頭 v9）----
+  const DD_DAYS = 90, DD_MAX = 3800, DD_CAP = 9999, DD_ID = /^[\w-]{1,32}$/, DD_ENT = /^(\d{6})((?:[a-z]\d+(?:,\d+)?)+)$/;
+  const ddDay = t => new Date(+t + 8 * 3600e3).toISOString().slice(2, 10).replace(/-/g, '');   // 台北時間 YYMMDD
+  // 展開成 {天:{裝置:{科:[題數,答錯數]}}}
+  function ddOpen(x) {
+    const o = {}, d = obj(x);
+    Object.keys(d).forEach(dev => {
+      if (!DD_ID.test(dev) || typeof d[dev] !== 'string') return;
+      d[dev].split(';').forEach(e => {
+        const m = DD_ENT.exec(e); if (!m) return;
+        const c = ((o[m[1]] = o[m[1]] || {})[dev] = {});
+        m[2].replace(/([a-z])(\d+)(?:,(\d+))?/g, (_, k, n, w) => { n = Math.min(+n, DD_CAP); c[k] = [n, Math.min(+w || 0, n)]; return ''; });
+      });
+    });
+    return o;
+  }
+  const ddEnt = (day, c) => { const b = Object.keys(c).sort().filter(k => c[k][0] > 0).map(k => k + c[k][0] + (c[k][1] ? ',' + c[k][1] : '')).join(''); return b ? day + b : ''; };
+  // 收回字串：砍 90 天以前的；由新到舊累計大小，放不下就停（只看比它新的天，合併順序不影響結果）
+  function ddClose(o, now) {
+    const cut = ddDay(now - (DD_DAYS - 1) * 864e5), keep = {}; let left = DD_MAX - 2;
+    for (const day of Object.keys(o).filter(d => d >= cut).sort().reverse()) {
+      const es = Object.keys(o[day]).sort().map(dev => [dev, ddEnt(day, o[day][dev])]).filter(e => e[1]);
+      const size = es.reduce((n, e) => n + e[1].length + 1 + (keep[e[0]] ? 0 : e[0].length + 6), 0);
+      if (size > left) break;
+      left -= size; es.forEach(e => (keep[e[0]] = keep[e[0]] || []).push(e[1]));
+    }
+    const out = {}; Object.keys(keep).sort().forEach(dev => { out[dev] = keep[dev].reverse().join(';'); });
+    return out;
+  }
+  const normDd = (x, now) => ddClose(ddOpen(x), now || Date.now());
+  function mergeDd(a, b, now) {
+    const o = ddOpen(a), y = ddOpen(b);
+    Object.keys(y).forEach(day => {
+      const D = o[day] = o[day] || {};
+      Object.keys(y[day]).forEach(dev => {
+        const c = D[dev] = D[dev] || {};
+        Object.keys(y[day][dev]).forEach(k => { const p = c[k] || [0, 0], q = y[day][dev][k]; c[k] = [Math.max(p[0], q[0]), Math.max(p[1], q[1])]; });
+      });
+    });
+    return ddClose(o, now || Date.now());
+  }
+  // 這台裝置記一題（時間 t）
+  function ddAdd(x, dev, t, code, ok) {
+    const o = ddOpen(x), day = ddDay(t), c = ((o[day] = o[day] || {})[dev] = o[day][dev] || {}), p = c[code] || [0, 0];
+    c[code] = [Math.min(p[0] + 1, DD_CAP), Math.min(p[1] + (ok ? 0 : 1), DD_CAP)];
+    return ddClose(o, t);
+  }
+  // 顯示用：各裝置加總 {天:{科:[n,ok]}}
+  function ddSum(x) {
+    const o = ddOpen(x), s = {};
+    Object.keys(o).forEach(day => { const S = s[day] = {}; Object.keys(o[day]).forEach(dev => Object.keys(o[day][dev]).forEach(k => { const p = S[k] || [0, 0], q = o[day][dev][k]; S[k] = [p[0] + q[0], p[1] + q[0] - q[1]]; })); });
+    return s;
+  }
+
   // 整理成 v7：補 r、去重、排序；t ≤ cut 的舊紀錄只保留「答對過」到 agg；新欄位缺了就是空的（讀舊文件不會壞）
   function normalize(doc) {
     const d = obj(doc), cut = +d.cut || 0, agg = mergeAgg(obj(d.agg), {}), seen = new Map();
@@ -273,14 +333,14 @@
       const p = seen.get(e.r); if (!p || canon(e) > canon(p)) seen.set(e.r, e);
     });
     return { v: VERSION, cut, log: [...seen.values()].sort(cmpLog), agg, learned: mergeMap(obj(d.learned), {}, evL), mistakes: mergeMap(obj(d.mistakes), {}, evM),
-      mm: section(d.mm, normProg), mmBlanks: section(d.mmBlanks, normBl), eq: normEq(d.eq), scratch: normScr(d.scratch), ctr: normCtr(d.ctr), mk: normMk(d.mk), done: normDone(d.done) };
+      mm: section(d.mm, normProg), mmBlanks: section(d.mmBlanks, normBl), eq: normEq(d.eq), scratch: normScr(d.scratch), ctr: normCtr(d.ctr), mk: normMk(d.mk), done: normDone(d.done), dd: normDd(d.dd) };
   }
   function merge(a, b) {
     a = normalize(a); b = normalize(b);
     const cut = Math.max(a.cut, b.cut);
     return normalize({ cut, log: a.log.concat(b.log), agg: mergeAgg(a.agg, b.agg), learned: mergeMap(a.learned, b.learned, evL), mistakes: mergeMap(a.mistakes, b.mistakes, evM),
       mm: mergeSection(a.mm, b.mm, mergeProg), mmBlanks: mergeSection(a.mmBlanks, b.mmBlanks, mergeBl), eq: mergeEq(a.eq, b.eq),
-      scratch: mergeSection(a.scratch, b.scratch, earliest), ctr: mergeSection(a.ctr, b.ctr, mergeCtr), mk: mergeMk(a.mk, b.mk), done: mergeDone(a.done, b.done) });
+      scratch: mergeSection(a.scratch, b.scratch, earliest), ctr: mergeSection(a.ctr, b.ctr, mergeCtr), mk: mergeMk(a.mk, b.mk), done: mergeDone(a.done, b.done), dd: mergeDd(a.dd, b.dd) });
   }
   // 太大就把最舊的 1/4 壓進 agg（保留每題第一次答對的時間），重複到夠小
   function compact(doc, maxBytes) {
@@ -324,7 +384,7 @@
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function normCode(s) { const c = String(s || '').toUpperCase().replace(/[\s-]/g, ''); return c.length === 8 && [...c].every(ch => ALPHA.includes(ch)) ? c.slice(0, 4) + '-' + c.slice(4) : null; }
 
-  const SM = { MAX_BYTES, VERSION, MAX_EQ, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, MP_K, MX_K, FR_K };
+  const SM = { MAX_BYTES, VERSION, MAX_EQ, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, ddDay, normDd, mergeDd, ddAdd, ddSum };
   if (typeof module !== 'undefined' && module.exports) module.exports = SM;
   root.KESyncMerge = SM;
 })(typeof window !== 'undefined' ? window : globalThis);

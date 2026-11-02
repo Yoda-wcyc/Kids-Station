@@ -216,3 +216,14 @@ select{min-height:48px;font:inherit;font-size:1rem;padding:6px 12px;border:2px s
 a.tile{text-decoration:none}
 .tile .tb-st{margin-top:4px;padding:2px 10px;border-radius:999px;font-weight:700;opacity:1;background:rgba(255,255,255,.85)}
 .tile .tb-st-done{color:#145c38}.tile .tb-st-doing{color:#6b4e00}.tile .tb-st-todo{color:#4a5563}
+/* 家長頁：每日學習紀錄（kids-daily.js）*/
+.dl-day{padding:10px 0;border-top:1px solid var(--line)}
+.dl-h{display:flex;flex-wrap:wrap;gap:2px 14px;align-items:baseline}
+.dl-h b{font-size:1.05rem}
+.dl-s{margin-top:2px;line-height:1.7}
+.dl-s span{white-space:nowrap}
+.dl-s small,.dl-note{color:var(--muted)}
+.dl-note{font-size:.9rem}
+.dl-gap{padding:7px 0;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
+#dlMore summary{cursor:pointer;min-height:44px;display:flex;align-items:center;border-top:1px solid var(--line);color:var(--muted)}
+.dl-foot{margin:10px 0 0;font-size:.8rem}

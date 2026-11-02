@@ -235,9 +235,9 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
     const ab = SM.merge(a, b); ok(same(SM.merge(ab, a), ab) && same(SM.merge(ab, b), ab) && same(SM.merge(ab, ab), ab), name + ': idempotent');
     ok(same(SM.merge(SM.merge(a, b), c), SM.merge(a, SM.merge(b, c))), name + ': associative');
   };
-  ok(SM.VERSION === 8, 'sync doc version 8');   // 2026-11-02 v7、v8 只改 mmBlanks 寫法
+  ok(SM.VERSION === 9, 'sync doc version 9');   // 2026-11-02 v7、v8 只改 mmBlanks 寫法；v9 只多 dd
   const v4 = SM.normalize({ v: 4, log: [], learned: {}, mistakes: {}, mk: {} });
-  ok(v4.v === 8 && same(v4.done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: {}, mx: {}, fr: {}, zh: {}, cy: {} }), 'v4 doc → v8 with empty done');
+  ok(v4.v === 9 && same(v4.done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: {}, mx: {}, fr: {}, zh: {}, cy: {} }), 'v4 doc → v9 with empty done');
   // v6：mp 取大、mx acc 取大／sp 取小／ok 取最早；壞資料不會壞
   const P1 = { done: { mp: { circle: 60, test: 85 }, mx: { d21: { acc: 80, sp: 70 }, d22: { acc: 95, sp: 95, ok: 900 } } } }, P2 = { done: { mp: { circle: 90, word: 0 }, mx: { d21: { acc: 95, sp: 120, ok: 500 }, d22: { acc: 70, sp: 60, ok: 700 } } } }, P3 = { done: { mp: { lit: 100 }, mx: { nn: { acc: 100, sp: 20 } } } };
   const P12 = SM.merge(P1, P2).done;
@@ -274,7 +274,7 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
     const dA = { local: SM.normalize(A) }, dB = { local: SM.normalize(B) };
     for (let i = 0; i < 3; i++) { await SM.syncOnce(io(dA), 'X'); await SM.syncOnce(io(dB), 'X'); }
     const last = (await SM.syncOnce(io(dA), 'X')).puts + (await SM.syncOnce(io(dB), 'X')).puts;
-    ok(same(dA.local, dB.local) && same(dA.local.done, AB) && remote.doc.v === 8 && last === 0, 'syncOnce: two devices converge on done, remote doc v8');
+    ok(same(dA.local, dB.local) && same(dA.local.done, AB) && remote.doc.v === 9 && last === 0, 'syncOnce: two devices converge on done, remote doc v9');
     // 第二台的紀錄同步進來 → 判定跟著變（地圖、橫幅讀的就是這份）
     const tbDone = { learned: Object.fromEntries(KC.tbItems(DATA, 'hanlin-5-u1', KE).map(x => [x.id, { at: '2026-10-20T01:00:00Z' }])) };
     const devX = { local: SM.normalize(tbDone) }, devY = { local: SM.normalize({ done: { tb: { 'hanlin-5-u1': { best: 88, last: 88, at: T0 } } } }) };

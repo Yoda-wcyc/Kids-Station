@@ -113,6 +113,7 @@
       if (t.dataset.c === 'retry') { quizStart(); renderSheet(); return; }
       if (t.dataset.c === 'again') { quiz.items = []; go(0); return; }
       const r = QK.act(quiz.items[quiz.i], t.dataset.qk, t.dataset.v) || {};
+      if (r.result != null && window.KidsDaily) KidsDaily.rec('history', r.result);   // 家長頁每日學習紀錄
       if (r.msg) { const m = el('cm-msg'); if (m) m.textContent = r.msg; }
       if (r.render || r.result != null) renderSheet(false);
     });

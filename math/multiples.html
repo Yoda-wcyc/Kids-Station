@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>倍數與公倍數</title>
-<link rel="stylesheet" href="../style.css?v=d8aed364d6">
+<link rel="stylesheet" href="../style.css?v=285bb453ba">
 <style>
 :root{--g:#2477c9;--g-bg:#d6ecff;--l:#d2601a;--l-bg:#ffe1c4}
 body{background:var(--bg)}
@@ -219,7 +219,7 @@ body{background:var(--bg)}
   </section>
 </main>
 
-<script src="../kids-mistakes.js?v=183db2e4df"></script>
+<script src="../kids-mistakes.js?v=687c0b6906"></script>
 <script src="short-division.js?v=17afc65cb7"></script>
 <script src="multiply.js?v=8f29524857"></script>
 <script src="multiples.js?v=1f75dd5120"></script>
@@ -257,7 +257,7 @@ function coinReport(item, c, n) { try { if (window.KidsCoins && n) KidsCoins.rep
 function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
 function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
 function doneRec(sec, key, v) { try { if (window.KidsDone) KidsDone.record(sec, key, v); } catch (e) { } }
-function mkRec(Q, ok) { try { if (!window.KidsMistakes) return null; var m = M.mkEntry(Q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e) { return null; } }
+function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok); try { if (!window.KidsMistakes) return null; var m = M.mkEntry(Q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e) { return null; } }
 function mkMore(types) { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(types) : ''; } catch (e) { return ''; } }
 function inp(f, cls, ph, ml) { return '<input class="num-in' + (cls ? ' ' + cls : '') + '" data-f="' + f + '" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="' + (ml || 6) + '"' + (ph ? ' aria-label="' + esc(ph) + '"' : '') + '>'; }
 
@@ -727,11 +727,12 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=4b2ac9f5f5"></script>
-<script src="../syncmerge.js?v=db1a578788"></script>
+<script src="../syncmerge.js?v=cafc27c76b"></script>
+<script src="../kids-daily.js?v=3a9cda8359"></script>
 <script src="../completion.js?v=e00090d0f2"></script>
 <script src="../kids-done.js?v=de42d7120a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
-<script src="../sync.js?v=f480360ff5"></script>
+<script src="../sync.js?v=7da2209723"></script>
 <script>if (window.MULPage && MULPage.paintDone) MULPage.paintDone();</script>
 </body>
 </html>

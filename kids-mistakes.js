@@ -229,6 +229,7 @@
           if (R.picked != null) return;
           R.picked = +b.getAttribute('data-i'); var right = R.picked === p.c; if (right) R.ok++;
           try { if (window.KidsCoins) KidsCoins.answer(right, 'ai'); } catch (x) { }
+          if (window.KidsDaily) KidsDaily.rec('ai', right);
           if (record('ai', e.id, right) === 'graduated') R.grad++;
           draw();
         };

@@ -34,7 +34,7 @@
     try { if (!A.requireLogin('做成語練習')) return false; if (A.startActivity && !A.startActivity('chinese', retry)) return false; } catch (e) { }
     return true;
   }
-  function coinAnswer(ok) { if (!WIRE) return; try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } }
+  function coinAnswer(ok) { if (!WIRE) return; try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok); }
   function coinRound(item, c, n) { if (!WIRE) return; try { if (window.KidsCoins && n > 0) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); } catch (e) { } }
   function mkRec(id, ok, p) { if (!WIRE) return null; try { return window.KidsMistakes ? KidsMistakes.record('chinese', id, ok, p) : null; } catch (e) { return null; } }
   function doneRec(id, pct) { if (!WIRE) return; try { if (window.KidsDone) KidsDone.record('cy', id, pct); } catch (e) { } }
@@ -284,7 +284,7 @@
       var cc = z.closest('.zr-q'), n = +cc.getAttribute('data-i'), item = R.items[n], ta = cc.querySelector('textarea');
       item.text = ta ? ta.value : item.text;
       if (ZR.countText(item.text) < ZR.OPEN_MIN) { setMsg(n, '再多寫一點：至少 ' + ZR.OPEN_MIN + ' 個字，說出你的想法和理由。'); return; }
-      item.done = true; onAnswerOpen(n);
+      item.done = true; if (WIRE && window.KidsDaily) KidsDaily.rec('chinese', null); onAnswerOpen(n);   // 開放題：算一題、不計答對率
     }
   });
   function onAnswerOpen(n) {
