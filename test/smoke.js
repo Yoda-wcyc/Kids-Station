@@ -959,6 +959,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
     ok(['math:fraction', 'math:fraction-test'].every(it => CK.validEvent(ev(it))) && ['math:fractions', 'math:fraction-tests', 'math:fraction:x', 'english:fraction'].every(it => !CK.validEvent(ev(it))), 'kids-coins: math:fraction／fraction-test valid, look-alikes not');
     require('./fraction.test.js');
+    require('./paper.test.js');
+    ok(sjm.includes("filter(e => !e.p || e.p.type !== 'paper')") && kmj.includes("t === 'paper' || t === 'gcd'") && kmj.includes('function paperBox(') && sdh.includes("t !== 'paper'"), '紙本錯題：只在紙本區出現，不混進其他數學錯題頁');
   }
   // 數學應用題補題（2026-11-01）：分數 ⑥ 應用題、乘法「應用題」、天平「📝 應用題」；都不列入單元完成、沿用既有學習幣事件；每個模板 3000 次獨立驗證在 test/word-bank.test.js
   {
@@ -1021,7 +1023,8 @@ const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 // 2026-11-01：國語 1 張卡（閱讀素養 100 篇 chinese/reading.html）→ 11 個 src
 // 2026-11-01：國語第 2 張卡（成語故事 100 chinese/idioms/idioms.html）→ 12 個 src
 // 2026-11-01：社會、自然各 1 個 hidden 入口（🔁 今天要複習 mindmap/<科>.html?review=1，樣板字串、不算在 srcs；入口按鈕在科目首頁上方）→ hidden 2 個
-ok(srcs.length === 12 && (sj.match(/hidden: true/g) || []).length === 2 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
+// 2026-11-03：數學 2 個 hidden 入口（紙本錯題 math/paper.html?mistakes=1、類題 30 題 ?set=30；入口在錯題庫的紙本區）→ 14 個 src、hidden 4 個
+ok(srcs.length === 14 && (sj.match(/hidden: true/g) || []).length === 4 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----

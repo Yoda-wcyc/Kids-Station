@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>紙本錯題</title>
+<link rel="stylesheet" href="../style.css?v=494b1daab7">
+<style>
+body{background:var(--bg)}
+[hidden]{display:none!important}
+.mu{max-width:1000px;margin:0 auto;padding:12px 16px calc(48px + env(safe-area-inset-bottom))}
+.mu-head h1{font-size:clamp(1.35rem,1rem + 1.4vw,1.8rem);margin:4px 0 2px}
+.mu-head p{margin:0 0 10px}
+.btn[aria-pressed="true"]{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 3px 0 #d96a22}
+.btn.sm{min-height:44px;padding:6px 14px;font-size:1.05rem}
+.prog{display:flex;flex-wrap:wrap;gap:6px 14px;font-weight:700;margin:4px 0 10px}
+.q-text{font-size:clamp(1.15rem,1rem + .6vw,1.4rem);line-height:1.75;font-weight:700;margin:0 0 8px}
+.fig svg{display:block;max-width:100%;height:auto}
+.pt{margin:0 0 14px}.pt:last-child{margin-bottom:0}
+.pt-l{font-weight:700;margin:0 0 6px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0}
+.num-in{width:5.2em;min-height:52px;font:inherit;font-size:1.35rem;font-weight:700;text-align:center;border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-variant-numeric:tabular-nums}
+.num-in:focus{outline:none;border-color:var(--pri)}
+.num-in:disabled{background:#f4f5f7}
+.num-in.wide{width:8em}
+.suf{font-size:1.2rem;font-weight:700}
+.fin{display:inline-flex;flex-direction:column;align-items:center;gap:4px}
+.fin hr{width:100%;border:0;border-top:3px solid var(--ink);margin:0}
+.fin .num-in{min-height:46px;width:4.6em}
+.msg{min-height:1.6em;margin:10px 0;font-size:1.12rem;font-weight:700;line-height:1.55}
+.msg.bad{color:var(--no)}
+.frc{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.1;margin:0 .15em;font-weight:700}
+.frc span:first-child{border-bottom:2px solid currentColor;padding:0 .2em}.frc span:last-child{padding:0 .2em}
+.end .score{font-size:2rem;font-weight:800}
+.end .big{font-size:3rem;margin:0}
+.acts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+</style>
+</head>
+<body>
+<main class="mu">
+  <header class="mu-head"><h1 id="title">📝 紙本錯題</h1><p class="muted" id="lede"></p></header>
+  <div id="q" hidden>
+    <div class="prog" id="prog"></div>
+    <div class="card"><p class="q-text" id="text"></p><div class="fig" id="fig"></div></div>
+    <div class="card" id="act"></div>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <div class="row">
+      <button type="button" class="btn primary" id="sub">確定</button>
+      <button type="button" class="btn" id="show" hidden>看解答</button>
+    </div>
+    <div id="fb"></div>
+  </div>
+  <div class="card center end" id="end" hidden></div>
+</main>
+
+<script src="../kids-mistakes.js?v=64fc6b71fd"></script>
+<script src="paper.js?v=790a11c242"></script>
+<script>
+(function () {
+'use strict';
+/* 紙本錯題頁（題目、判分在 paper.js）。?mistakes=1＝紙本區還沒畢業的題（連對 3 次畢業）；?set=30＝類題 30 題；?add=<碼>＝把紙本 23 題加進這個帳號。
+   每次按確定 KidsCoins.answer(ok,'math')；每日紀錄和錯題庫一題只記一次（第一次的結果），訂正對了不改；一輪結束送 practice_round 'math:mistakes'。 */
+var $ = function (id) { return document.getElementById(id); };
+var P = window.PAPER, esc = P.esc, qs = location.search;
+var SET = /[?&]set=30(?:&|$)/.test(qs), ADD = (/[?&]add=([a-z0-9]+)/.exec(qs) || [])[1];
+var R = null;   // {items:[{Q, set}], i, ok, grad, rec, wrong, done, sent}
+window.PaperPage = { R: function () { return R; }, draw: function () { draw(); } };   // 測試用
+
+function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'math'); } catch (e) { } }
+function coinReport(c, n) { try { if (window.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: 'math:mistakes', correct: c, total: n }); } catch (e) { } }
+function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
+function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok); try { if (!window.KidsMistakes) return null; var m = P.mkEntry(Q, R.items[R.i].set); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e) { return null; } }
+function back() { return '<a class="btn primary" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>'; }
+
+/* ================= 畫題目 ================= */
+function numIn(f, cls, mode) { return '<input class="num-in' + (cls ? ' ' + cls : '') + '" data-f="' + f + '" type="text" inputmode="' + (mode || 'numeric') + '" autocomplete="off" maxlength="10" aria-label="答案">'; }
+function chips(name, opts, val) { return opts.map(function (o, i) { return '<button type="button" class="btn sm" data-chip="' + name + '" data-v="' + esc(val ? val(o, i) : o) + '" aria-pressed="false">' + esc(o) + '</button>'; }).join(''); }
+function partHtml(p, i) {
+  var s = p.label ? '<p class="pt-l">' + esc(p.label) + '</p>' : '', k, row;
+  switch (p.t) {
+    case 'num':
+      s += '<div class="row">' + numIn('v') + (p.suf ? '<span class="suf">' + esc(p.suf) + '</span>' : '') + '</div>';
+      if (p.units) s += '<div class="row"><b>單位：</b>' + chips('u', p.units.slice().sort()) + '</div>';   // 排序：正解放 units[0]，畫面不能照它的順序
+      break;
+    case 'multi':
+      s += '<p class="muted" style="margin:0">有幾個就填幾格，不用填滿。</p><div class="row">';
+      for (k = 0; k < p.n; k++) s += numIn('m' + k);
+      s += (p.suf ? '<span class="suf">' + esc(p.suf) + '</span>' : '') + '</div>';
+      break;
+    case 'frac':
+      s += '<div class="row"><span class="fin">' + numIn('n') + '<hr>' + numIn('d') + '</span><span class="suf">圓</span></div>';
+      break;
+    case 'fracs':
+      s += '<p class="muted" style="margin:0">有幾個就填幾個，不用填滿。</p><div class="row">';
+      for (k = 0; k < p.rows; k++) s += '<span class="row" style="margin:0">' + (p.w ? '<span class="suf">' + p.w + '</span>' : '') + '<span class="fin">' + numIn('n' + k) + '<hr>' + numIn('d' + k) + '</span></span>';
+      s += '</div>';
+      break;
+    case 'choice':
+      s += '<div class="row">' + chips('c', p.opts, function (o, j) { return j; }) + '</div>';
+      break;
+    case 'pick':
+      s += '<div class="row">' + chips('p', p.opts) + '</div>';
+      break;
+    case 'combos':
+      s += '<p class="muted" style="margin:0">一列寫一組，有幾組就填幾列，不用填滿。</p>';
+      for (k = 0; k < p.rows; k++) { row = '第 ' + (k + 1) + ' 組'; s += '<div class="row"><b>' + row + '</b>' + numIn('c' + k + '_0') + numIn('c' + k + '_1') + numIn('c' + k + '_2') + '</div>'; }
+      break;
+    case 'dec':
+      s += '<div class="row">' + numIn('v', 'wide', 'decimal') + '</div>';
+      break;
+  }
+  return '<div class="pt" data-part="' + i + '">' + s + '</div>';
+}
+function readPart(p, el) {
+  var f = function (n) { var x = el.querySelector('[data-f="' + n + '"]'); return x ? x.value : ''; }, on = function (n) { return Array.prototype.map.call(el.querySelectorAll('[data-chip="' + n + '"][aria-pressed="true"]'), function (b) { return b.getAttribute('data-v'); }); }, o = [], k;
+  switch (p.t) {
+    case 'num': return { v: f('v'), u: on('u')[0] };
+    case 'multi': for (k = 0; k < p.n; k++) o.push(f('m' + k)); return o;
+    case 'frac': return { n: f('n'), d: f('d') };
+    case 'fracs': for (k = 0; k < p.rows; k++) o.push({ n: f('n' + k), d: f('d' + k) }); return o;
+    case 'choice': return on('c')[0];
+    case 'pick': return on('p');
+    case 'combos': for (k = 0; k < p.rows; k++) o.push([f('c' + k + '_0'), f('c' + k + '_1'), f('c' + k + '_2')]); return o;
+    case 'dec': return f('v');
+  }
+  return null;
+}
+function msg(t, bad) { var m = $('msg'); m.textContent = t || ''; m.className = 'msg' + (bad ? ' bad' : ''); }
+function lock() { Array.prototype.forEach.call($('act').querySelectorAll('input,button'), function (x) { x.disabled = true; }); $('sub').hidden = true; $('show').hidden = true; }
+function feedback(ok, Q) {
+  var title = ok ? (R.wrong ? '訂正對了！👍' : '答對了！🎉') : '再看一次 👀';
+  $('fb').innerHTML = '<div class="fb ' + (ok ? 'ok' : 'no') + '" id="fb-box"><div class="fbh">' + title + '</div><p><b>答案：</b>' + P.fmt(P.ansText(Q)) + '</p><p>' + P.fmt(Q.why) + '</p></div>' +
+    '<p class="center"><button type="button" class="btn primary big" id="next">' + (R.i + 1 < R.items.length ? '下一題 ▶' : '看結果 🏁') + '</button></p>';
+  $('next').onclick = function () { R.i++; R.rec = R.wrong = R.done = false; draw(); window.scrollTo(0, 0); };
+}
+function draw() {
+  $('fb').innerHTML = ''; msg('');
+  if (R.i >= R.items.length) return finish();
+  var Q = R.items[R.i].Q;
+  $('q').hidden = false; $('end').hidden = true;
+  $('prog').innerHTML = '<span>第 ' + (R.i + 1) + ' / ' + R.items.length + ' 題</span><span>答對 ' + R.ok + '</span>' + (Q.src ? '<span class="badge">' + esc(Q.src) + '</span>' : '');
+  $('text').innerHTML = P.fmt(Q.text);
+  $('fig').innerHTML = Q.fig ? P.FIGS[Q.fig]() : '';
+  $('act').innerHTML = Q.parts.map(partHtml).join('');
+  $('sub').hidden = false; $('show').hidden = true;
+  Array.prototype.forEach.call($('act').querySelectorAll('[data-chip]'), function (b) {
+    b.onclick = function () {
+      var name = b.getAttribute('data-chip'), multi = name === 'p', on = b.getAttribute('aria-pressed') === 'true';
+      if (!multi) Array.prototype.forEach.call(b.parentNode.querySelectorAll('[data-chip="' + name + '"]'), function (x) { x.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', multi && on ? 'false' : 'true');
+    };
+  });
+}
+$('sub').onclick = function () {
+  var Q = R.items[R.i].Q, vals = Q.parts.map(function (p, i) { return readPart(p, $('act').querySelector('[data-part="' + i + '"]')); }), r = P.checkQ(Q, vals);
+  if (r.soft) { msg(r.msg, true); return; }
+  coinAnswer(r.ok);
+  if (!R.rec) { R.rec = true; if (mkRec(Q, r.ok) === 'graduated') R.grad++; }
+  if (r.ok) { if (!R.wrong) R.ok++; msg(''); lock(); feedback(true, Q); return; }
+  R.wrong = true; msg(r.msg, true); $('show').hidden = false;
+};
+$('show').onclick = function () { msg(''); lock(); feedback(false, R.items[R.i].Q); };
+function finish() {
+  var n = R.items.length;
+  if (!R.sent) { R.sent = true; coinReport(R.ok, n); }
+  $('q').hidden = true; $('end').hidden = false;
+  $('end').innerHTML = '<p class="big">' + (R.ok === n ? '🏆' : '💪') + '</p><div class="score" id="end-score">' + R.ok + ' / ' + n + '</div>' +
+    (R.grad ? '<p>🎓 有 ' + R.grad + ' 題畢業了！</p>' : '') + (SET ? '<p>答錯的題目已經收進紙本錯題區。</p>' : '<p>同一題連續答對 3 次就會畢業喔！</p>') + '<div class="acts">' + back() + '</div>';
+}
+function empty(t) { $('end').hidden = false; $('end').innerHTML = '<p id="p-empty">' + esc(t) + '</p><div class="acts">' + back() + '</div>'; }
+
+/* ================= 啟動 ================= */
+if (ADD) {
+  // 把紙本 23 題加進這個帳號（錯題本跟著帳號同步）；已經有的（含畢業的）不動，連結按兩次也不會重來
+  $('title').textContent = '📝 加入紙本錯題';
+  if (KidsMistakes.hash(ADD) !== P.ADD_HASH) empty('這個連結不對。');
+  else if (authOK()) {
+    var book = KidsMistakes.loadAll().math || {}, added = 0;
+    P.PAPER.forEach(function (Q) { var m = P.mkEntry(Q, 'p'); if (book[m.id]) return; if (KidsMistakes.record('math', m.id, false, m.p)) added++; });
+    empty(added ? '已經把 ' + added + ' 題紙本錯題加進這個帳號。' : '這個帳號已經加過了。');
+  } else $('lede').textContent = '請先登入要加入的帳號，再打開一次這個連結。';
+} else if (!authOK()) {
+  $('lede').textContent = '要先登入才能作答。';
+} else {
+  var items = [];
+  if (SET) { $('title').textContent = '🎯 類題 30 題'; $('lede').textContent = '由簡單到難。每題答完都有解說。'; document.title = '類題 30 題'; items = P.VARIANTS.map(function (Q) { return { Q: Q, set: 'v' }; }); }
+  else {
+    $('lede').textContent = '考卷上的題目再做一次。同一題連續答對 3 次就會畢業 🎓';
+    try { KidsMistakes.list('math').forEach(function (e) { var Q = P.fromMistake(e.p); if (Q && items.length < KidsMistakes.ROUND) items.push({ Q: Q, set: e.p.set }); }); } catch (e) { }
+  }
+  R = { items: items, i: 0, ok: 0, grad: 0 };
+  if (items.length) draw(); else empty('紙本錯題都畢業了 🎉');
+}
+})();
+</script>
+<script src="../kids-auth.js?v=42d7c72a13"></script>
+<script src="../kids-coins.js?v=4b2ac9f5f5"></script>
+<script src="../syncmerge.js?v=d14dd9bb71"></script>
+<script src="../kids-daily.js?v=ec37cba982"></script>
+<script src="../completion.js?v=e00090d0f2"></script>
+<script src="../kids-done.js?v=de42d7120a"></script>
+<script src="../syncauto.js?v=d7ed49f73e"></script>
+<script src="../sync.js?v=12631d8738"></script>
+</body>
+</html>

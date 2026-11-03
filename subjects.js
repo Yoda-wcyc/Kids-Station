@@ -17,7 +17,10 @@
       { id: 'multiples', title: '倍數與公倍數', desc: '五上單元三：倍數判斷、範圍內的倍數、最小公倍數、四種應用題判斷（不超過／比它多／剛好／最少幾包），考試可選隨機考卷或紙本練習卷第一回、第二回（照原卷配分）', icon: '✖️', src: 'math/multiples.html', dk: 'math:mul' },
       { id: 'multiply', title: '乘法快算', desc: '九九、二位數×一位數、二位數×二位數、三位數×一位數：練習有拆解提示和直式格子，挑戰一輪 20 題計時', icon: '⚡', src: 'math/multiply.html', dk: 'math:mx' },
       // 2026-10-27：五上〈分數比較大小〉（教學／練習／考試）
-      { id: 'fraction', title: '分數比較大小', desc: '分數條、數線看懂比大小：同分母、同分子、跟 1 跟一半比、通分、先約分、假分數化帶分數；按 ＞＜＝ 大按鈕，考試一份 100 分', icon: '🍰', src: 'math/fraction.html', dk: 'math:frc' }],
+      { id: 'fraction', title: '分數比較大小', desc: '分數條、數線看懂比大小：同分母、同分子、跟 1 跟一半比、通分、先約分、假分數化帶分數；按 ＞＜＝ 大按鈕，考試一份 100 分', icon: '🍰', src: 'math/fraction.html', dk: 'math:frc' },
+      // 2026-11-03：📝 紙本錯題／類題 30 題（入口在數學錯題庫的紙本區，不列卡片）
+      { id: 'paper-mk', title: '紙本錯題', icon: '📝', src: 'math/paper.html?mistakes=1', hidden: true },
+      { id: 'paper-30', title: '類題 30 題', icon: '🎯', src: 'math/paper.html?set=30', hidden: true }],
     // 2026-11-02：世界史漫畫（comics/；整頁開，閱讀不用登入；學習幣、完成標示、錯題庫、課程地圖、小助理等第 1 話看過再接）
     history: [{ id: 'comic-v1e1', title: '世界史漫畫 第 1 冊 古文明・第 1 話：寫下來，才算數！', desc: '試做｜阿凱和小禾搭時光搖搖車到 3800 年前的巴比倫：楔形文字、《漢摩拉比法典》，看完有重點、地圖和 5 題小測驗', icon: '📖', href: 'comics/v1e1.html' }],
     ai: [
@@ -75,7 +78,7 @@
   const cyDesc = () => { let n = 0; try { const d = (JSON.parse(localStorage.getItem('kids_done')) || {}).cy || {}, l = JSON.parse(localStorage.getItem('kids_zh_idioms')) || {}; n = new Set(Object.keys(d).concat(Object.keys(l).filter(k => l[k] && l[k].done)).filter(k => /^cy\d{3}$/.test(k))).size; } catch (e) { } return '守株待兔、塞翁失馬…讀成語故事、分辨用法、用在生活情境，還有單元測驗和總測驗' + (n ? `｜已完成 ${n} 個成語` : ''); };
   const KM = () => window.KidsMistakes;
   const mathMkSrc = () => {
-    let l = []; try { l = KM().list('math'); } catch (e) { }
+    let l = []; try { l = KM().list('math').filter(e => !e.p || e.p.type !== 'paper'); } catch (e) { }   // 紙本錯題有自己的區塊和按鈕，不算這裡
     const n = t => l.filter(e => e.p && e.p.type === t).length, g = n('gcd'), w = n('gcdword'), m = n('multiples'), x = n('multiply'), f = n('fraction');
     return !l.length || g + w + m + x + f < l.length ? 'math/balance.html?mistakes=1' : g ? 'math/short-division.html?mistakes=1' : w ? 'math/short-division.html?mistakes=word' : m ? 'math/multiples.html?mistakes=1' : x ? 'math/multiply.html?mistakes=1' : 'math/fraction.html?mistakes=1';
   };

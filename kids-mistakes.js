@@ -13,6 +13,7 @@
        'mul:<題型>:<數字>'，p＝{type:'multiples', k:題型, v:[數字], q:顯示文字}（倍數與公倍數，math/multiples.js 用 k＋v 原題重做，2026-10-21）；
        'mx:<a>x<b>'，p＝{type:'multiply', a, b, lv, q:'a×b'}（乘法快算，2026-10-21）；
        'frc:<題型>:<數字>'，p＝{type:'fraction', k:題型, v:[aw,an,ad,bw,bn,bd], q:顯示文字}（分數比較大小，math/fraction.js 用 k＋v 原題重做；清單用 v 畫上下排的分數，2026-10-27）
+       'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯），p＝{type:'paper', set:'p'|'v', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
    🔁 隔天複習（間隔重複，2026-11-01，只開在社會、自然＝SPACED；國語、數學、AI 照舊「連對 3 次」）：
      答錯 → c＝0、due＝明天；到期（台北時間的日子 ≥ due）答對 → c＋1，due＝今天＋[1,3,7][c]（1 天 → 3 天 → 7 天）；7 天那次也答對（c 已經是 2）→ 畢業留墓碑。
@@ -135,7 +136,7 @@
   // ================= 瀏覽器：畫面（首頁 #s/<科>/mistakes） =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var KLABEL = { w: '考考自己', a: '背架構', q: '練習題', L: '素養題組', X: '單元測驗', F: '閃卡', I: '互動題' };
-  function badgeOf(subj, p) { if (subj === 'chinese') return p.t || '閱讀'; if (subj === 'math') return p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
+  function badgeOf(subj, p) { if (subj === 'chinese') return p.t || '閱讀'; if (subj === 'math') return p.type === 'paper' ? (p.src || '紙本') : p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
   function textOf(subj, p) {
     if (subj === 'math') return p.q || '';
     if (subj === 'ai') return (p.q || '') + (p.opts && p.opts[p.c] != null ? '　→ ' + p.opts[p.c] : '');
@@ -154,9 +155,28 @@
   function authOK(why) { try { return !window.KidsAuth || KidsAuth.requireLogin(why); } catch (e) { return true; } }
   function quotaOK(kind, retry) { try { return !window.KidsAuth || !KidsAuth.startActivity || KidsAuth.startActivity(kind, retry); } catch (e) { return true; } }
 
+  /* 📝 紙本錯題區（2026-11-03）：只有這個帳號加過紙本錯題（錯題本有 pp: 開頭的題，墓碑也算，跟著同步走）才出現；別的帳號看不到 */
+  function paperOf(k) {
+    if (k !== 'math') return null;
+    var b = loadAll().math || {};
+    if (!Object.keys(b).some(function (id) { return id.indexOf('pp:') === 0; })) return null;
+    return list('math').filter(function (e) { return e.p.type === 'paper'; });
+  }
+  function paperBox(items) {
+    if (!items) return '';
+    var TAG = { x: '打叉', r: '紅筆圈到' };
+    var lis = items.map(function (e) {
+      return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf('math', e.p)) + '</span>' + (TAG[e.p.tag] ? ' <small class="muted">' + TAG[e.p.tag] + '</small>' : '') + ' <span>' + esc(e.p.q) + '</span> <span class="dots">' + dots(e.c) + '</span></li>';
+    }).join('');
+    return '<div class="card" id="mk-paper"><h2 style="margin:0 0 6px">📝 紙本錯題（' + items.length + ' 題）</h2><p>考卷上打叉或紅筆圈到的題目，還有類題答錯的。同一題<b>連續答對 3 次</b>就會畢業 🎓</p>' +
+      '<p style="display:flex;flex-wrap:wrap;gap:10px"><button class="btn primary" id="mk-paper-go" type="button"' + (items.length ? '' : ' disabled') + '>練紙本錯題（' + Math.min(items.length, ROUND) + ' 題）</button>' +
+      '<button class="btn primary" id="mk-paper-30" type="button">🎯 類題 30 題</button></p>' +
+      (items.length ? '<ul class="list" id="mk-paper-list" style="padding:0;margin:0">' + lis + '</ul>' : '<p class="muted">紙本錯題都畢業了 🎉</p>') + '</div>';
+  }
+
   /* page(box, {k, n, i, units:[[id,標題]], unit, back}) — 錯題清單（免登入）；按「只練錯題」才要登入＋練習額度，通過就 location.hash＝'#s/<k>/mistakes-go[-<單元>]' */
   function page(box, o) {
-    var k = o.k, unit = o.unit || '', all = list(k), items = unit ? all.filter(function (e) { return e.p.u === unit; }) : all;
+    var k = o.k, unit = o.unit || '', paper = paperOf(k), all = list(k).filter(function (e) { return e.p.type !== 'paper'; }), items = unit ? all.filter(function (e) { return e.p.u === unit; }) : all;
     var nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'], ulab = {};
     (o.units || []).forEach(function (x, i) { ulab[x[0]] = x[2] || '單元' + nums[i]; });   // x[2]＝資料的 label（五下「五下 單元一」、六上「六上 單元一」）
     var filt = (o.units && o.units.length) ? '<div class="seg mk-units" role="group" aria-label="依單元篩選">' +
@@ -176,19 +196,23 @@
       '<div class="card"><p>' + (sp ? '答錯的題目（還有閃卡按「再想想」的）會來這裡，隔 <b>1 天、3 天、7 天</b>各複習一次；到期都答對就畢業離開 🎓' : '答錯的題目會來這裡。同一題<b>連續答對 3 次</b>就會畢業離開 🎓') + '</p>' + filt +
       '<button class="btn primary big" id="mk-go" type="button"' + (items.length ? '' : ' disabled') + '>只練錯題（' + Math.min(items.length, ROUND) + ' 題）</button>' +
       (items.length > ROUND ? '<p class="muted">一輪最多 ' + ROUND + ' 題，先練最近答錯的。</p>' : '') + '</div>' +
-      (items.length ? '<ul class="list card" id="mk-list">' + lis + '</ul>' : '<p class="center muted" id="mk-empty">目前沒有錯題 🎉</p>');
+      paperBox(paper) + (items.length ? '<ul class="list card" id="mk-list">' + lis + '</ul>' : '<p class="center muted" id="mk-empty">目前沒有錯題 🎉</p>');
     var go = box.querySelector('#mk-go');
     if (go) go.onclick = function start() {
       if (!authOK('練錯題')) return;
       if (!quotaOK(k, start)) return;
       location.hash = '#s/' + k + '/mistakes-go' + (unit ? '-' + unit : '');
     };
+    [['mk-paper-go', 'paper-mk'], ['mk-paper-30', 'paper-30']].forEach(function (b) {
+      var el = box.querySelector('#' + b[0]); if (!el) return;
+      el.onclick = function start() { if (!authOK('練紙本錯題')) return; if (!quotaOK(k, start)) return; location.hash = '#s/math/' + b[1]; };
+    });
   }
 
   /* 數學錯題分頁（2026-10-21）：type → 在哪一頁練。mathMore(types)＝「接著練…錯題」按鈕（math/ 底下的頁面用，href 相對於 math/）；eq＝天平（其他沒標 type 的） */
   var MATH_MK = [['eq', '天平', 'balance.html?mistakes=1'], ['gcd', '短除法', 'short-division.html?mistakes=1'], ['gcdword', '應用題', 'short-division.html?mistakes=word'],
     ['multiples', '倍數', 'multiples.html?mistakes=1'], ['multiply', '乘法', 'multiply.html?mistakes=1'], ['fraction', '分數', 'fraction.html?mistakes=1']];
-  function mathType(p) { var t = p && p.type; return t === 'gcd' || t === 'gcdword' || t === 'multiples' || t === 'multiply' || t === 'fraction' ? t : 'eq'; }
+  function mathType(p) { var t = p && p.type; return t === 'paper' || t === 'gcd' || t === 'gcdword' || t === 'multiples' || t === 'multiply' || t === 'fraction' ? t : 'eq'; }
   function mathCount(type) { return list('math').filter(function (e) { return mathType(e.p) === type; }).length; }
   function mathMore(types) {
     return MATH_MK.filter(function (m) { return types.indexOf(m[0]) >= 0; }).map(function (m) {
