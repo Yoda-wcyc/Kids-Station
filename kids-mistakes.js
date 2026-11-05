@@ -13,7 +13,7 @@
        'mul:<題型>:<數字>'，p＝{type:'multiples', k:題型, v:[數字], q:顯示文字}（倍數與公倍數，math/multiples.js 用 k＋v 原題重做，2026-10-21）；
        'mx:<a>x<b>'，p＝{type:'multiply', a, b, lv, q:'a×b'}（乘法快算，2026-10-21）；
        'frc:<題型>:<數字>'，p＝{type:'fraction', k:題型, v:[aw,an,ad,bw,bn,bd], q:顯示文字}（分數比較大小，math/fraction.js 用 k＋v 原題重做；清單用 v 畫上下排的分數，2026-10-27）
-       'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯），p＝{type:'paper', set:'p'|'v', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
+       'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯）、'pf:<題>'（約分通分 15 題答錯，2026-11-05），p＝{type:'paper', set:'p'|'v'|'f', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
    🔁 隔天複習（間隔重複，2026-11-01，只開在社會、自然＝SPACED；國語、數學、AI 照舊「連對 3 次」）：
      答錯 → c＝0、due＝明天；到期（台北時間的日子 ≥ due）答對 → c＋1，due＝今天＋[1,3,7][c]（1 天 → 3 天 → 7 天）；7 天那次也答對（c 已經是 2）→ 畢業留墓碑。
@@ -168,9 +168,10 @@
     var lis = items.map(function (e) {
       return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf('math', e.p)) + '</span>' + (TAG[e.p.tag] ? ' <small class="muted">' + TAG[e.p.tag] + '</small>' : '') + ' <span>' + esc(e.p.q) + '</span> <span class="dots">' + dots(e.c) + '</span></li>';
     }).join('');
-    return '<div class="card" id="mk-paper"><h2 style="margin:0 0 6px">📝 紙本錯題（' + items.length + ' 題）</h2><p>考卷上打叉或紅筆圈到的題目，還有類題答錯的。同一題<b>連續答對 3 次</b>就會畢業 🎓</p>' +
+    return '<div class="card" id="mk-paper"><h2 style="margin:0 0 6px">📝 紙本錯題（' + items.length + ' 題）</h2><p>考卷上打叉或紅筆圈到的題目，還有類題、約分通分答錯的。同一題<b>連續答對 3 次</b>就會畢業 🎓</p>' +
       '<p style="display:flex;flex-wrap:wrap;gap:10px"><button class="btn primary" id="mk-paper-go" type="button"' + (items.length ? '' : ' disabled') + '>練紙本錯題（' + Math.min(items.length, ROUND) + ' 題）</button>' +
-      '<button class="btn primary" id="mk-paper-30" type="button">🎯 類題 30 題</button></p>' +
+      '<button class="btn primary" id="mk-paper-30" type="button">🎯 類題 30 題</button>' +
+      '<button class="btn primary" id="mk-paper-15" type="button">🧮 約分通分 15 題</button></p>' +
       (items.length ? '<ul class="list" id="mk-paper-list" style="padding:0;margin:0">' + lis + '</ul>' : '<p class="muted">紙本錯題都畢業了 🎉</p>') + '</div>';
   }
 
@@ -203,7 +204,7 @@
       if (!quotaOK(k, start)) return;
       location.hash = '#s/' + k + '/mistakes-go' + (unit ? '-' + unit : '');
     };
-    [['mk-paper-go', 'paper-mk'], ['mk-paper-30', 'paper-30']].forEach(function (b) {
+    [['mk-paper-go', 'paper-mk'], ['mk-paper-30', 'paper-30'], ['mk-paper-15', 'paper-15']].forEach(function (b) {
       var el = box.querySelector('#' + b[0]); if (!el) return;
       el.onclick = function start() { if (!authOK('練紙本錯題')) return; if (!quotaOK(k, start)) return; location.hash = '#s/math/' + b[1]; };
     });

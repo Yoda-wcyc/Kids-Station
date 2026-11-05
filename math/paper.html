@@ -53,16 +53,16 @@ body{background:var(--bg)}
   <div class="card center end" id="end" hidden></div>
 </main>
 
-<script src="../kids-mistakes.js?v=64fc6b71fd"></script>
-<script src="paper.js?v=790a11c242"></script>
+<script src="../kids-mistakes.js?v=eb041ec783"></script>
+<script src="paper.js?v=8d74e80853"></script>
 <script>
 (function () {
 'use strict';
-/* 紙本錯題頁（題目、判分在 paper.js）。?mistakes=1＝紙本區還沒畢業的題（連對 3 次畢業）；?set=30＝類題 30 題；?add=<碼>＝把紙本 23 題加進這個帳號。
+/* 紙本錯題頁（題目、判分在 paper.js）。?mistakes=1＝紙本區還沒畢業的題（連對 3 次畢業）；?set=30＝類題 30 題；?set=15＝約分通分 15 題；?add=<碼>＝把紙本 23 題加進這個帳號。
    每次按確定 KidsCoins.answer(ok,'math')；每日紀錄和錯題庫一題只記一次（第一次的結果），訂正對了不改；一輪結束送 practice_round 'math:mistakes'。 */
 var $ = function (id) { return document.getElementById(id); };
 var P = window.PAPER, esc = P.esc, qs = location.search;
-var SET = /[?&]set=30(?:&|$)/.test(qs), ADD = (/[?&]add=([a-z0-9]+)/.exec(qs) || [])[1];
+var SET = (/[?&]set=(30|15)(?:&|$)/.exec(qs) || [])[1], ADD = (/[?&]add=([a-z0-9]+)/.exec(qs) || [])[1];
 var R = null;   // {items:[{Q, set}], i, ok, grad, rec, wrong, done, sent}
 window.PaperPage = { R: function () { return R; }, draw: function () { draw(); } };   // 測試用
 
@@ -74,7 +74,7 @@ function back() { return '<a class="btn primary" target="_top" href="../index.ht
 
 /* ================= 畫題目 ================= */
 function numIn(f, cls, mode) { return '<input class="num-in' + (cls ? ' ' + cls : '') + '" data-f="' + f + '" type="text" inputmode="' + (mode || 'numeric') + '" autocomplete="off" maxlength="10" aria-label="答案">'; }
-function chips(name, opts, val) { return opts.map(function (o, i) { return '<button type="button" class="btn sm" data-chip="' + name + '" data-v="' + esc(val ? val(o, i) : o) + '" aria-pressed="false">' + esc(o) + '</button>'; }).join(''); }
+function chips(name, opts, val) { return opts.map(function (o, i) { return '<button type="button" class="btn sm" data-chip="' + name + '" data-v="' + esc(val ? val(o, i) : o) + '" aria-pressed="false">' + P.fmt(o) + '</button>'; }).join(''); }
 function partHtml(p, i) {
   var s = p.label ? '<p class="pt-l">' + esc(p.label) + '</p>' : '', k, row;
   switch (p.t) {
@@ -88,7 +88,14 @@ function partHtml(p, i) {
       s += (p.suf ? '<span class="suf">' + esc(p.suf) + '</span>' : '') + '</div>';
       break;
     case 'frac':
-      s += '<div class="row"><span class="fin">' + numIn('n') + '<hr>' + numIn('d') + '</span><span class="suf">圓</span></div>';
+      s += '<div class="row"><span class="fin">' + numIn('n') + '<hr>' + numIn('d') + '</span>' + (p.suf ? '<span class="suf">' + esc(p.suf) + '</span>' : '') + '</div>';
+      if (p.units) s += '<div class="row"><b>單位：</b>' + chips('u', p.units.slice().sort()) + '</div>';
+      break;
+    case 'common':
+      s += '<div class="row">' + [1, 2].map(function (j) { return (p.w ? '<span class="suf">' + p.w + '</span>' : '') + '<span class="fin">' + numIn('n' + j) + '<hr>' + numIn('d' + j) + '</span>'; }).join('<span class="suf">、</span>') + '</div>';
+      break;
+    case 'order':
+      p.opts.forEach(function (o, j) { s += '<div class="row"><b>' + ['最小', '中間', '最大'][j] + '</b>' + chips('o' + j, p.opts, function (x, m) { return m; }) + '</div>'; });
       break;
     case 'fracs':
       s += '<p class="muted" style="margin:0">有幾個就填幾個，不用填滿。</p><div class="row">';
@@ -116,7 +123,9 @@ function readPart(p, el) {
   switch (p.t) {
     case 'num': return { v: f('v'), u: on('u')[0] };
     case 'multi': for (k = 0; k < p.n; k++) o.push(f('m' + k)); return o;
-    case 'frac': return { n: f('n'), d: f('d') };
+    case 'frac': return { n: f('n'), d: f('d'), u: on('u')[0] };
+    case 'common': return { n1: f('n1'), d1: f('d1'), n2: f('n2'), d2: f('d2') };
+    case 'order': return p.opts.map(function (x, j) { return on('o' + j)[0]; });
     case 'fracs': for (k = 0; k < p.rows; k++) o.push({ n: f('n' + k), d: f('d' + k) }); return o;
     case 'choice': return on('c')[0];
     case 'pick': return on('p');
@@ -183,7 +192,11 @@ if (ADD) {
   $('lede').textContent = '要先登入才能作答。';
 } else {
   var items = [];
-  if (SET) { $('title').textContent = '🎯 類題 30 題'; $('lede').textContent = '由簡單到難。每題答完都有解說。'; document.title = '類題 30 題'; items = P.VARIANTS.map(function (Q) { return { Q: Q, set: 'v' }; }); }
+  if (SET) {
+    var F15 = SET === '15', T = F15 ? '🧮 約分通分 15 題' : '🎯 類題 30 題';
+    $('title').textContent = T; $('lede').textContent = '由簡單到難。每題答完都有解說。'; document.title = T.slice(3);
+    items = (F15 ? P.FRACTIONS : P.VARIANTS).map(function (Q) { return { Q: Q, set: F15 ? 'f' : 'v' }; });
+  }
   else {
     $('lede').textContent = '考卷上的題目再做一次。同一題連續答對 3 次就會畢業 🎓';
     try { KidsMistakes.list('math').forEach(function (e) { var Q = P.fromMistake(e.p); if (Q && items.length < KidsMistakes.ROUND) items.push({ Q: Q, set: e.p.set }); }); } catch (e) { }

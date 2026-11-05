@@ -20,7 +20,8 @@
       { id: 'fraction', title: '分數比較大小', desc: '分數條、數線看懂比大小：同分母、同分子、跟 1 跟一半比、通分、先約分、假分數化帶分數；按 ＞＜＝ 大按鈕，考試一份 100 分', icon: '🍰', src: 'math/fraction.html', dk: 'math:frc' },
       // 2026-11-03：📝 紙本錯題／類題 30 題（入口在數學錯題庫的紙本區，不列卡片）
       { id: 'paper-mk', title: '紙本錯題', icon: '📝', src: 'math/paper.html?mistakes=1', hidden: true },
-      { id: 'paper-30', title: '類題 30 題', icon: '🎯', src: 'math/paper.html?set=30', hidden: true }],
+      { id: 'paper-30', title: '類題 30 題', icon: '🎯', src: 'math/paper.html?set=30', hidden: true },
+      { id: 'paper-15', title: '約分通分 15 題', icon: '🧮', src: 'math/paper.html?set=15', hidden: true }],
     // 2026-11-02：世界史漫畫（comics/；整頁開，閱讀不用登入；學習幣、完成標示、錯題庫、課程地圖、小助理等第 1 話看過再接）
     history: [{ id: 'comic-v1e1', title: '世界史漫畫 第 1 冊 古文明・第 1 話：寫下來，才算數！', desc: '試做｜阿凱和小禾搭時光搖搖車到 3800 年前的巴比倫：楔形文字、《漢摩拉比法典》，看完有重點、地圖和 5 題小測驗', icon: '📖', href: 'comics/v1e1.html' }],
     ai: [

@@ -45,6 +45,22 @@ function verify(Q) {
     case 'place': { const s = c.items.reduce((t, [n, e]) => t + n * 10 ** (3 - e), 0), w = Math.floor(s / 1000), f = String(s % 1000).padStart(3, '0'); ok(p[0].ans === w + '.' + f, m + ' ' + w + '.' + f); break; }
     case 'cmp': { const a = milli(c.a), b = milli(c.b), want = a > b ? '＞' : a < b ? '＜' : '＝'; ok(p[0].opts[p[0].ans] === want, m); break; }
     case 'round': ok(p[0].ans === roundStr(c.x, c.dp), m + ' ' + roundStr(c.x, c.dp)); break;
+    case 'simplify': { const t = simp(c.n, c.d); ok(p[0].n === t[0] && p[0].d === t[1] && Q.text.includes(c.n + '/' + c.d), m); ok(gcd(c.n, c.d) > 1, m + ' 真的要約'); break; }
+    case 'isSimple': ok(p[0].opts[p[0].ans] === (gcd(c.n, c.d) === 1 ? '是' : '不是'), m); break;
+    case 'common': {
+      const L = lcm(c.a[1], c.b[1]), x = p[0]; ok(x.den === L && same(x.ans, [[c.a[0] * L / c.a[1], L], [c.b[0] * L / c.b[1], L]]), m + ' L=' + L);
+      ok(x.ans.every((f, i) => f[0] * [c.a, c.b][i][1] === [c.a, c.b][i][0] * f[1]), m + ' 大小不變'); break;
+    }
+    case 'fcmp': {
+      const v = t => t[0] * t[2] + t[1], l = v(c.a) * c.b[2], r = v(c.b) * c.a[2], want = l > r ? 0 : l < r ? 1 : 2;   // 交叉相乘，不走浮點
+      ok(want < 2, m + ' 不相等');
+      if (c.winner) { const x = p[0], f = p[1], w = want === 0 ? c.a : c.b; ok(x.ans === want && f.n === w[1] && f.d === w[2], m + ' winner'); break; }
+      const ch = p[p.length - 1]; ok(ch.ans === want && ch.opts[want] === (want ? '＜' : '＞'), m + ' cmp');
+      if (c.simp) { const s1 = simp(c.a[1], c.a[2]), s2 = simp(c.b[1], c.b[2]); ok(p[0].n === s1[0] && p[0].d === s1[1] && p[1].n === s2[0] && p[1].d === s2[1], m + ' simp'); ok(lcm(c.a[2], c.b[2]) >= 4 * lcm(s1[1], s2[1]), m + ' 先約分明顯省事'); }
+      else { const x = p[0]; ok(same(x.a, [c.a[1], c.a[2]]) && same(x.b, [c.b[1], c.b[2]]) && (x.w || 0) === c.a[0] && c.a[0] === c.b[0], m + ' common 對到題目'); }
+      break;
+    }
+    case 'order': { const idx = c.fr.map((_, i) => i).sort((i, j) => c.fr[i][0] * c.fr[j][1] - c.fr[j][0] * c.fr[i][1]); ok(same(p[0].ans, idx), m + ' ' + idx); c.fr.forEach((f, i) => ok(p[0].opts[i] === '[[' + f[0] + '/' + f[1] + ']]', m + ' opts')); break; }
     case 'judge': {
       const j = p[0], a = p[1], v = parseInt(a.opts[a.ans], 10), vals = c.opts;
       ok(j.opts[j.ans] === (c.kind === 'gcd' ? '公因數' : '公倍數'), m + ' judge');
@@ -56,12 +72,12 @@ function verify(Q) {
     default: ok(false, 'unknown calc ' + c.f);
   }
 }
-P.PAPER.forEach(verify); P.VARIANTS.forEach(verify);
+P.PAPER.forEach(verify); P.VARIANTS.forEach(verify); P.FRACTIONS.forEach(verify);
 
 // ---------- 題數、配比 ----------
 ok(P.PAPER.length === 23 && P.PAPER.filter(q => q.tag === 'x').length === 10 && P.PAPER.filter(q => q.tag === 'r').length === 13, 'paper: 23 題＝打叉 10＋紅筆圈到 13');
 ok(P.VARIANTS.length === 30, 'variants 30');
-const ids = P.PAPER.concat(P.VARIANTS).map(q => q.id); ok(new Set(ids).size === ids.length, 'ids unique');
+const ids = P.PAPER.concat(P.VARIANTS, P.FRACTIONS).map(q => q.id); ok(new Set(ids).size === ids.length, 'ids unique');
 const V = P.VARIANTS, by = pre => V.filter(q => q.id[0] === pre);
 ok(by('m').length === 4 && by('g').length === 5 && by('f').length === 4 && by('s').length === 3 && by('a').length === 3 && by('t').length === 3 && by('r').length === 2 && by('d').length === 6, '配比 4・5・4・3・3・3・2・6');
 ok(by('g').filter(q => /最少/.test(q.text)).length >= 2, '公因公倍應用：至少 2 題「最少幾…」');
@@ -77,6 +93,33 @@ const rs = by('d').filter(q => q.calc.f === 'round').map(q => +q.calc.x.split('.
 V.concat(P.PAPER).forEach(q => { ok(q.why && q.why.length <= 140, 'why 要短：' + q.id); ok(P.ansText(q), 'ansText ' + q.id); });
 // 不放個資：題目裡不寫人名以外的班級座號
 ok(!/座號|班級|[一二三四五六七八九]年[一二三四五六七八九]?班/.test(JSON.stringify([P.PAPER, V])), '沒有班級座號');
+
+// ---------- 約分通分 15 題 ----------
+{
+  const F = P.FRACTIONS, n = f => F.filter(q => q.calc.f === f).length;
+  ok(F.length === 15 && F.every((q, i) => [1, 2, 3].includes(q.d) && (!i || F[i - 1].d <= q.d)), '15 題由易到難');
+  ok(n('simplify') === 3 && n('isSimple') === 1 && n('reduce') === 2 && F.filter(q => q.calc.f === 'reduce' && q.calc.w > 0).length === 1, '約分 6：最簡 3、判斷 1、全部列出 2（帶分數 1）');
+  const com = F.filter(q => q.calc.f === 'common').map(q => q.calc), cmpQ = F.filter(q => q.calc.f === 'fcmp' && !q.calc.winner && !q.calc.simp);
+  ok(com.length === 3 && cmpQ.length === 3 && cmpQ.filter(q => q.calc.a[0] > 0).length === 1, '通分 6：通分 3、比大小 3（帶分數 1）');
+  ok(com.some(c => gcd(c.a[1], c.b[1]) === 1) && com.some(c => c.b[1] % c.a[1] === 0) && com.some(c => gcd(c.a[1], c.b[1]) > 1 && c.b[1] % c.a[1] && c.a[1] % c.b[1]), '通分：互質、倍數、有公因數但不是倍數都有');
+  ok(n('order') === 1 && F.filter(q => q.calc.winner).length === 1 && F.filter(q => q.calc.simp).length === 1, '綜合 3：排列、情境、先約分再通分');
+  ok(!F.some(q => /加起來|合起來|相差|差多少|還剩|一共/.test(q.text)), '沒有異分母加減');
+  F.forEach(q => { ok(q.why.length <= 140, 'why 要短 ' + q.id + ' ' + q.why.length); ok(P.ansText(q), 'ansText ' + q.id); });
+  ok(/\[\[2\/3\]\]/.test(P.ansText(F[0])), '答案用上下排的分數');
+  // 情境題要先通分：不是同分母、也不是倍數
+  { const c = F.find(q => q.calc.winner).calc; ok(c.a[2] !== c.b[2] && c.a[2] % c.b[2] && c.b[2] % c.a[2], '情境題要先通分才比得出來'); ok(F.find(q => q.calc.winner).parts[1].units[0] === '公升', '情境題單位'); }
+  const by2 = id => F.find(q => q.id === id), c1 = by2('c1').parts[0];
+  ok(P.check(c1, { n1: '10', d1: '15', n2: '9', d2: '15' }).ok, 'common 對');
+  ok(P.check(c1, { n1: '20', d1: '30', n2: '18', d2: '30' }).soft && /最小公倍數/.test(P.check(c1, { n1: '20', d1: '30', n2: '18', d2: '30' }).msg), 'common：公分母不是最小，提醒、不算錯');
+  ok(/一樣/.test(P.check(c1, { n1: '2', d1: '3', n2: '3', d2: '5' }).msg) && !P.check(c1, { n1: '2', d1: '15', n2: '3', d2: '15' }).ok && P.check(c1, { n1: '10', d1: '15' }).soft, 'common：分母不同、分子沒跟著乘、沒填完');
+  ok(P.check(by2('c4').parts[0], { n1: '42', d1: '70', n2: '40', d2: '70' }).ok, 'anyDen：比大小時公分母不限');
+  const yy = by2('y6').parts[0], r6 = a => a.map(x => ({ n: String(x[0]), d: String(x[1]) }));
+  ok(P.check(yy, r6(yy.ans)).ok && /還有別的/.test(P.check(yy, r6(yy.ans.slice(0, 4))).msg) && yy.rows === 6, '全部列出：全對才算、漏答提示、格子數不洩漏答案數');
+  ok(P.check(by2('y2').parts[0], { n: '18', d: '30' }).soft && P.check(by2('y2').parts[0], { n: '3', d: '5' }).ok, '要求最簡：沒約完提醒');
+  const z2 = by2('z2'); ok(P.checkQ(z2, [0, { n: '5', d: '6', u: '公升' }]).ok && /單位/.test(P.checkQ(z2, [0, { n: '5', d: '6', u: '公斤' }]).msg) && P.checkQ(z2, [0, { n: '5', d: '6' }]).soft && !P.checkQ(z2, [1, { n: '5', d: '6', u: '公升' }]).ok, 'z2：瓶、分數、單位');
+  const z1 = by2('z1').parts[0]; ok(P.check(z1, ['2', '1', '0']).ok && /順序/.test(P.check(z1, ['0', '1', '2']).msg) && P.check(z1, ['2', '2', '0']).soft && P.check(z1, ['2', '']).soft, 'order');
+  const ef = P.mkEntry(by2('y6'), 'f'); ok(ef.id === 'pf:y6' && ef.p.src === '約分通分' && P.fromMistake(ef.p) === by2('y6'), 'mkEntry f');
+}
 
 // ---------- 圖的比例：量出來的角要跟標示的一樣（±1.5°）----------
 const ang = (v, a, b) => { const x = [a[0] - v[0], a[1] - v[1]], y = [b[0] - v[0], b[1] - v[1]]; return Math.acos((x[0] * y[0] + x[1] * y[1]) / Math.hypot(...x) / Math.hypot(...y)) * 180 / Math.PI; };

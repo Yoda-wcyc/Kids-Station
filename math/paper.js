@@ -1,7 +1,9 @@
 /* paper.js — 紙本錯題（2026-11-03）：考卷上打叉、紅筆圈到的題目 PAPER＋類題 30 題 VARIANTS，加判分（純函式；瀏覽器 window.PAPER，Node require）。
    題目數字與題意照紙本、敘述改寫；不放姓名、班級、照片。文字裡 [[n/d]] ＝上下排的分數。
    每題 {id, text, parts:[…], why, calc?}；類題多 d:1|2|3（照 d 排）、紙本多 src（來源）、tag:'x'（打叉）|'r'（紅筆圈到）。
-   part：num {ans, units?|suf?}｜multi {ans:[…], n:格數, suf}｜frac {n, d}（要最簡）｜fracs {w, ans:[[n,d],…], rows}（約分：全部列出）｜
+   FRACTIONS＝約分通分 15 題（2026-11-05），格式同類題。
+   part：num {ans, units?|suf?}｜multi {ans:[…], n:格數, suf}｜frac {n, d, suf, units?}（要最簡）｜fracs {w, ans:[[n,d],…], rows}（約分：全部列出）｜
+         common {a:[n,d], b:[n,d], w?, den, ans:[[n,den],[n,den]], anyDen?}（通分：要最小公倍數當公分母；anyDen＝公分母不限）｜order {opts:['[[n/d]]',…], ans:[索引由小到大]}｜
          choice {opts, ans:索引}｜pick {opts, ans:[…]}｜combos {sticks, want:'can'|'cannot', ans:[[a,b,c],…], rows}｜dec {ans:'字串'}
    calc＝驗算用的算式（test/paper.test.js 用獨立的暴力法重算，答案不靠手寫）。
    check(part, input) → {ok, soft?, msg}；soft＝還沒算作答（沒填完、分數沒約到最簡），不記對錯。 */
@@ -54,8 +56,11 @@
   var ALL = '（全部列出）';
   function num(ans, units, label) { return Array.isArray(units) ? { t: 'num', ans: ans, units: units, label: label } : { t: 'num', ans: ans, suf: units || '', label: label }; }
   function multi(ans, n, suf, label) { return { t: 'multi', ans: ans, n: n || 4, suf: suf || '', label: label }; }
-  function frac(n, d, label) { return { t: 'frac', n: n, d: d, label: label }; }
-  function fracs(w, ans) { return { t: 'fracs', w: w, ans: ans, rows: 5 }; }
+  function frac(n, d, label, suf, units) { return { t: 'frac', n: n, d: d, label: label, suf: suf === undefined ? '圓' : suf, units: units }; }
+  function fracs(w, ans, rows) { return { t: 'fracs', w: w, ans: ans, rows: rows || 5 }; }
+  function lcmOf(a, b) { return a / gcd(a, b) * b; }
+  function common(a, b, label, w, anyDen) { var L = lcmOf(a[1], b[1]); return { t: 'common', a: a, b: b, w: w, den: L, anyDen: anyDen, label: label, ans: [[a[0] * L / a[1], L], [b[0] * L / b[1], L]] }; }
+  function order(opts, ans) { return { t: 'order', opts: opts, ans: ans }; }
   function choice(opts, ans, label) { return { t: 'choice', opts: opts, ans: ans, label: label }; }
   function pick(opts, ans) { return { t: 'pick', opts: opts, ans: ans }; }
   function combos(sticks, want, ans) { return { t: 'combos', sticks: sticks, want: want, ans: ans, rows: 4 }; }
@@ -178,6 +183,40 @@
       why: '看第三位：6 要進位，9 進位變 10，所以是 8.40。要留到第二位，最後的 0 要寫。' }
   ];
 
+  // 約分通分 15 題：由易到難（d 1→2→3），約分、通分、綜合混排；只有約分、通分、比大小，沒有異分母加減
+  var FRACTIONS = [
+    { id: 'y1', d: 1, text: '把 [[12/18]] 約成最簡分數。', parts: [frac(2, 3, '', '')], calc: { f: 'simplify', n: 12, d: 18 },
+      why: '12 和 18 的最大公因數是 6，上下同除以 6，得到 [[2/3]]。也可以先除以 2 得 [[6/9]]，再除以 3。' },
+    { id: 'c1', d: 1, text: '用最小公倍數當公分母，把 [[2/3]] 和 [[3/5]] 通分。', parts: [common([2, 3], [3, 5])], calc: { f: 'common', a: [2, 3], b: [3, 5] },
+      why: '3 和 5 互質，公分母是 3×5＝15。[[2/3]] 上下乘 5 得 [[10/15]]，[[3/5]] 上下乘 3 得 [[9/15]]。' },
+    { id: 'y4', d: 1, text: '[[21/35]] 是最簡分數嗎？', parts: [choice(['是', '不是'], 1)], calc: { f: 'isSimple', n: 21, d: 35 },
+      why: '21 和 35 都能被 7 整除，除了 1 還有公因數 7，所以不是最簡分數。上下同除以 7 得 [[3/5]]。' },
+    { id: 'c2', d: 1, text: '用最小公倍數當公分母，把 [[3/4]] 和 [[5/8]] 通分。', parts: [common([3, 4], [5, 8])], calc: { f: 'common', a: [3, 4], b: [5, 8] },
+      why: '8 是 4 的倍數，公分母就是 8。[[3/4]] 上下乘 2 得 [[6/8]]，[[5/8]] 不用動。' },
+    { id: 'y2', d: 2, text: '把 [[36/60]] 約成最簡分數。', parts: [frac(3, 5, '', '')], calc: { f: 'simplify', n: 36, d: 60 },
+      why: '36 和 60 的最大公因數是 12，同除以 12 一次得 [[3/5]]。一步一步也可以：除以 2 得 [[18/30]]，除以 2 得 [[9/15]]，除以 3 得 [[3/5]]。' },
+    { id: 'c4', d: 2, text: '先通分，再比大小：[[3/5]] ○ [[4/7]]', parts: [common([3, 5], [4, 7], '通分', 0, true), choice(CMP, 0, '比大小')], calc: { f: 'fcmp', a: [0, 3, 5], b: [0, 4, 7] },
+      why: '公分母 35：[[3/5]]＝[[21/35]]、[[4/7]]＝[[20/35]]。21 比 20 大，所以 [[3/5]] 比較大。' },
+    { id: 'y5', d: 2, text: '用約分的方法，找出和 [[16/40]] 一樣大的分數。' + ALL, parts: [fracs(0, [[8, 20], [4, 10], [2, 5]], 6)], calc: { f: 'reduce', w: 0, n: 16, d: 40 },
+      why: '16 和 40 的公因數有 1、2、4、8。同除以 2 得 [[8/20]]、除以 4 得 [[4/10]]、除以 8 得 [[2/5]]，三個都要寫。' },
+    { id: 'c3', d: 2, text: '用最小公倍數當公分母，把 [[5/6]] 和 [[3/8]] 通分。', parts: [common([5, 6], [3, 8])], calc: { f: 'common', a: [5, 6], b: [3, 8] },
+      why: '6 和 8 的最小公倍數是 24，公分母用 24，不用 48。[[5/6]] 上下乘 4 得 [[20/24]]，[[3/8]] 上下乘 3 得 [[9/24]]。' },
+    { id: 'z2', d: 2, text: '媽媽買了兩瓶果汁：蘋果汁 [[5/6]] 公升，柳橙汁 [[7/9]] 公升。哪一瓶比較多？那一瓶有多少？', parts: [choice(['蘋果汁', '柳橙汁'], 0, '哪一瓶比較多'), frac(5, 6, '那一瓶有多少', '', ['公升', '公分', '公斤'])], calc: { f: 'fcmp', a: [0, 5, 6], b: [0, 7, 9], winner: true },
+      why: '公分母 18：[[5/6]]＝[[15/18]]、[[7/9]]＝[[14/18]]。15 比 14 大，蘋果汁比較多，有 [[5/6]] 公升。' },
+    { id: 'c5', d: 2, text: '先通分，再比大小：[[7/10]] ○ [[11/15]]', parts: [common([7, 10], [11, 15], '通分', 0, true), choice(CMP, 1, '比大小')], calc: { f: 'fcmp', a: [0, 7, 10], b: [0, 11, 15] },
+      why: '10 和 15 的最小公倍數是 30：[[7/10]]＝[[21/30]]、[[11/15]]＝[[22/30]]。21 比 22 小，所以 [[7/10]] 比較小。' },
+    { id: 'y3', d: 3, text: '把 [[84/132]] 約成最簡分數。', parts: [frac(7, 11, '', '')], calc: { f: 'simplify', n: 84, d: 132 },
+      why: '84 和 132 的最大公因數是 12，同除以 12 得 [[7/11]]。先除以 2、再除以 2、再除以 3 也一樣。7 和 11 只剩公因數 1，才算約完。' },
+    { id: 'c6', d: 3, text: '先通分，再比大小：3[[5/8]] ○ 3[[7/12]]', parts: [common([5, 8], [7, 12], '通分', 3, true), choice(CMP, 0, '比大小')], calc: { f: 'fcmp', a: [3, 5, 8], b: [3, 7, 12] },
+      why: '整數都是 3，只要比分數。8 和 12 的最小公倍數是 24：[[5/8]]＝[[15/24]]、[[7/12]]＝[[14/24]]。15 比 14 大，所以 3[[5/8]] 比較大。' },
+    { id: 'y6', d: 3, text: '用約分的方法，找出和 4[[24/60]] 一樣大的帶分數。' + ALL, parts: [fracs(4, [[12, 30], [8, 20], [6, 15], [4, 10], [2, 5]], 6)], calc: { f: 'reduce', w: 4, n: 24, d: 60 },
+      why: '24 和 60 的公因數有 1、2、3、4、6、12。同除以 2、3、4、6、12，得 [[12/30]]、[[8/20]]、[[6/15]]、[[4/10]]、[[2/5]]，五個都要寫；整數 4 不變。' },
+    { id: 'z3', d: 3, text: '先約分，再通分比大小：[[28/48]] ○ [[45/72]]', parts: [frac(7, 12, '左邊約成最簡', ''), frac(5, 8, '右邊約成最簡', ''), choice(CMP, 1, '比大小')], calc: { f: 'fcmp', a: [0, 28, 48], b: [0, 45, 72], simp: true },
+      why: '先約分：28、48 同除以 4 得 [[7/12]]；45、72 同除以 9 得 [[5/8]]。公分母 24：[[14/24]]、[[15/24]]，14 比 15 小。不先約分，公分母要用到 144。' },
+    { id: 'z1', d: 3, text: '把 [[2/3]]、[[5/8]]、[[7/12]] 由小到大排列。', parts: [order(['[[2/3]]', '[[5/8]]', '[[7/12]]'], [2, 1, 0])], calc: { f: 'order', fr: [[2, 3], [5, 8], [7, 12]] },
+      why: '3、8、12 的最小公倍數是 24：[[2/3]]＝[[16/24]]、[[5/8]]＝[[15/24]]、[[7/12]]＝[[14/24]]。14＜15＜16，所以 [[7/12]]＜[[5/8]]＜[[2/3]]。' }
+  ];
+
   // ================= 文字 =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   // [[n/d]] → 上下排的分數
@@ -187,8 +226,10 @@
     switch (p.t) {
       case 'num': return p.ans + (p.units ? p.units[0] : p.suf || '');
       case 'multi': return p.ans.join('、') + (p.suf ? ' ' + p.suf : '');
-      case 'frac': return p.n + '/' + p.d + ' 圓';
-      case 'fracs': return p.ans.map(function (a) { return (p.w ? p.w + ' 又 ' : '') + a[0] + '/' + a[1]; }).join('、');
+      case 'frac': return '[[' + p.n + '/' + p.d + ']]' + (p.units ? ' ' + p.units[0] : p.suf ? ' ' + p.suf : '');
+      case 'fracs': return p.ans.map(function (a) { return (p.w || '') + '[[' + a[0] + '/' + a[1] + ']]'; }).join('、');
+      case 'common': return p.ans.map(function (a) { return (p.w || '') + '[[' + a[0] + '/' + a[1] + ']]'; }).join('、');
+      case 'order': return p.ans.map(function (i) { return p.opts[i]; }).join(' ＜ ');
       case 'choice': return p.opts[p.ans];
       case 'pick': return p.ans.join('、');
       case 'combos': return p.ans.map(function (a) { return a.join('、'); }).join('／');
@@ -227,6 +268,7 @@
         var a = intOf(v && v.n), b = intOf(v && v.d); if (a === null || b === null || !b) return soft('分子、分母都要填。');
         if (a * p.d !== b * p.n) return bad('不是這個分數，再算一次。');
         if (gcd(a, b) !== 1) return soft('一樣大了，但還可以再約分，約到最簡。');
+        if (p.units) { if (!v.u) return soft('還要選單位。'); if (v.u !== p.units[0]) return bad('分數對了，但單位不對。'); }
         return GOOD;
       }
       case 'fracs': {
@@ -240,6 +282,20 @@
         }
         if (rows.length < p.ans.length) return bad('寫的都對，但還有別的可能，再找找看！');
         return GOOD;
+      }
+      case 'common': {
+        var f1 = intOf(v && v.n1), g1 = intOf(v && v.d1), f2 = intOf(v && v.n2), g2 = intOf(v && v.d2);
+        if (f1 === null || g1 === null || f2 === null || g2 === null || !g1 || !g2) return soft('兩個分數的分子、分母都要填。');
+        if (g1 !== g2) return bad('兩個分母要一樣才算通分。');
+        if (f1 * p.a[1] !== g1 * p.a[0] || f2 * p.b[1] !== g2 * p.b[0]) return bad('大小變了：分母乘多少，分子也要乘多少。');
+        if (!p.anyDen && g1 !== p.den) return soft('大小對了，但公分母可以更小，用最小公倍數。');
+        return GOOD;
+      }
+      case 'order': {
+        var o = (v || []).map(function (x) { return x == null || x === '' ? null : +x; });
+        if (o.length < p.ans.length || o.some(function (x) { return x === null; })) return soft('每一格都要選一個分數。');
+        if (o.some(function (x, j) { return o.indexOf(x) !== j; })) return soft('每個分數只能用一次。');
+        return o.join() === p.ans.join() ? GOOD : bad('順序不對，先通分再比比看。');
       }
       case 'choice': return v == null || v === '' ? soft('先選一個。') : +v === p.ans ? GOOD : bad('再想想看。');
       case 'pick': {
@@ -278,14 +334,14 @@
 
   // ================= 錯題庫 =================
   // 紙本 23 題用 pp:<id>、類題答錯用 pv:<id>；p 只存顯示用的字，題目本身用 pid 查回來
-  function mkEntry(Q, set) { return { id: (set === 'v' ? 'pv:' : 'pp:') + Q.id, p: { type: 'paper', set: set, pid: Q.id, src: Q.src || '類題', tag: Q.tag || '', q: plain(Q.text) } }; }
+  function mkEntry(Q, set) { return { id: (set === 'v' ? 'pv:' : set === 'f' ? 'pf:' : 'pp:') + Q.id, p: { type: 'paper', set: set, pid: Q.id, src: Q.src || (set === 'f' ? '約分通分' : '類題'), tag: Q.tag || '', q: plain(Q.text) } }; }
   function fromMistake(p) {
     if (!p || p.type !== 'paper') return null;
-    var a = p.set === 'v' ? VARIANTS : PAPER;
+    var a = p.set === 'v' ? VARIANTS : p.set === 'f' ? FRACTIONS : PAPER;
     return a.filter(function (q) { return q.id === p.pid; })[0] || null;
   }
 
-  var API = { PAPER: PAPER, VARIANTS: VARIANTS, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
+  var API = { PAPER: PAPER, VARIANTS: VARIANTS, FRACTIONS: FRACTIONS, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
     ADD_HASH: 'uwj3ic' };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else G.PAPER = API;
