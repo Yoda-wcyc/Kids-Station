@@ -835,6 +835,9 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   for (let i = g6bHave; i < 9; i++) { const [s, u] = g6a[i % g6a.length]; fillUnit(projDoc, s + ':g6b' + i + '-' + u.id, u); }
   // 目標 dg 也算最壞（只留最新 6 筆）；dd 用上限算，不靠上面這份資料剛好沒塞滿
   const dg6 = {}; for (let i = 0; i < 9; i++) dg6['2611' + String(i + 10)] = '999,999,20,99'; maxDoc.dg = projDoc.dg = dg6;
+  // 2026-11-06 數學五下～六下 done.mg：三冊全部單元的練習％、測驗分＋三冊總複習，全部 100（最壞情況）
+  { const MGb = require(path.join(root, 'math', 'grade.js')).BOOKS, mg = {}; MGb.forEach(b => { mg[b.id + 'R'] = 100; b.units.forEach(x => { mg[x[0] + 'q'] = 100; mg[x[0] + 't'] = 100; }); });
+    projDoc.done = Object.assign({}, projDoc.done, { mg }); ok(Object.keys(SM.normDone({ mg }).mg).length === 53, 'done.mg worst case: 25 單元×2＋3 冊 = 53 keys kept'); }
   ok(SM.bytes(SM.normDg(dg6)) <= SM.DG_MAX_BYTES && SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX <= SM.MAX_BYTES / 4, 'daily stats + goals at their caps fit the budget: ' + (SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX));
   const projBytes = SM.bytes(SM.normalize(projDoc));
   ok(g6a.length === 9 && projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats) after 六下 (9 units, sized like 六上) still ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes (六下已上線 ' + g6bHave + ' 單元)');
@@ -954,7 +957,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     ok(frh.includes("coinReport(P.mk ? 'math:mistakes' : 'math:fraction'") && frh.includes("coinReport('math:fraction-test'") && frh.includes("KidsCoins.answer(!!ok, 'math')") && frh.includes("KidsAuth.startActivity('math'") && frh.includes('requireLogin') &&
       frh.includes("doneRec('fr', P.group") && frh.includes("doneRec('fr', 'test'") && frh.includes("KidsDone.mount(el, 'math:frc'") && /<script src="fraction\.js(\?v=[0-9a-f]+)?"><\/script>/.test(frh), 'fraction.html: coins / auth / done wiring');
     ok(frh.includes('inputmode="numeric"') && frh.includes('class="signs') && !/\d\/\d/.test(frh.replace(/<script[\s\S]*?<\/script>/g, '')), 'fraction.html: 數字鍵盤＋＞＜＝大按鈕；頁面沒有寫死的斜線分數');
-    ok(sjm.includes('math/fraction.html?mistakes=1') && kmj.includes("p.type === 'fraction' ? '分數'") && kmj.includes("['fraction', '分數', 'fraction.html?mistakes=1']") && kmj.includes("t === 'multiply' || t === 'fraction' ? t : 'eq'") && kmj.includes('function frItem(') &&
+    ok(sjm.includes('math/fraction.html?mistakes=1') && kmj.includes("p.type === 'fraction' ? '分數'") && kmj.includes("['fraction', '分數', 'fraction.html?mistakes=1']") && kmj.includes("t === 'multiply' || t === 'fraction' || t === 'grade' ? t : 'eq'") && kmj.includes('function frItem(') &&
       sdh.includes("t !== 'multiply' && t !== 'fraction'") && muh.includes("'multiply', 'fraction'])") && mxh.includes("'multiples', 'fraction'])"), 'fraction mistakes: route + badge + stacked list + 接著練 links; 天平／短除法 count excludes them');
     const CK = require(path.join(root, 'kids-coins.js'))._core, ev = it => ({ event_id: 'e-1', type: 'practice_round', item: it, correct: 4, total: 5 });
     ok(['math:fraction', 'math:fraction-test'].every(it => CK.validEvent(ev(it))) && ['math:fractions', 'math:fraction-tests', 'math:fraction:x', 'english:fraction'].every(it => !CK.validEvent(ev(it))), 'kids-coins: math:fraction／fraction-test valid, look-alikes not');
@@ -1004,7 +1007,7 @@ const idx = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 ok(/<title>小朋友學習站<\/title>/.test(idx), 'site title');
 ok(idx.indexOf('subjects.js') < idx.indexOf('app.js'), 'subjects.js loads before app.js');
 ok(idx.indexOf('syncmerge.js') < idx.indexOf('syncauto.js') && idx.indexOf('syncauto.js') < idx.indexOf('sync.js') && idx.indexOf('sync.js') < idx.indexOf('app.js'), 'syncmerge.js → syncauto.js → sync.js → app.js (sync card renders on first paint)');
-['account.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/short-division.html', 'math/multiples.html', 'math/multiply.html', 'math/fraction.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'), a = h.search(/src="(\.\.\/)?syncauto\.js(\?v=[0-9a-f]+)?"/), s = h.search(/src="(\.\.\/)?sync\.js(\?v=[0-9a-f]+)?"/); ok(h.search(/src="(\.\.\/)?syncmerge\.js(\?v=[0-9a-f]+)?"/) < a && a >= 0 && a < s, f + ' loads syncmerge.js → syncauto.js → sync.js'); });
+['account.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/short-division.html', 'math/multiples.html', 'math/multiply.html', 'math/fraction.html', 'math/grade.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'), a = h.search(/src="(\.\.\/)?syncauto\.js(\?v=[0-9a-f]+)?"/), s = h.search(/src="(\.\.\/)?sync\.js(\?v=[0-9a-f]+)?"/); ok(h.search(/src="(\.\.\/)?syncmerge\.js(\?v=[0-9a-f]+)?"/) < a && a >= 0 && a < s, f + ' loads syncmerge.js → syncauto.js → sync.js'); });
 const sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
 ['國語', '數學', '社會', '歷史', '自然', '英文', "n: 'AI'", '遊戲', '#s/', 'math/balance.html', '準備中，敬請期待', '← 回'].forEach(t => ok(sj.includes(t), 'subjects.js has ' + t));
 ok((sj.match(/\{ k: '[a-z]+', n: /g) || []).length === 8, '8 subject tabs');
@@ -1132,7 +1135,7 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
   ['completion.js', 'kids-done.js', 'map.html'].forEach(f => ok(nonEmpty(f), f + ' exists'));
   const loads = (f, pre) => { const h = fs.readFileSync(path.join(root, f), 'utf8'), at = s => h.search(new RegExp('<script src="' + (pre + s).replace(/[.]/g, '\\.') + '(\\?v=[0-9a-f]+)?"></script>'));
     return at('syncmerge.js') >= 0 && at('syncmerge.js') < at('completion.js') && at('completion.js') < at('kids-done.js'); };
-  [['index.html', ''], ['map.html', ''], ['mindmap/social.html', '../'], ['mindmap/science.html', '../'], ['math/balance.html', '../'], ['math/short-division.html', '../'], ['math/multiples.html', '../'], ['math/multiply.html', '../'], ['math/fraction.html', '../'], ['ai/hallucinate.html', '../'], ['ai/ask-well.html', '../'], ['ai/secrets.html', '../']]
+  [['index.html', ''], ['map.html', ''], ['mindmap/social.html', '../'], ['mindmap/science.html', '../'], ['math/balance.html', '../'], ['math/short-division.html', '../'], ['math/multiples.html', '../'], ['math/multiply.html', '../'], ['math/fraction.html', '../'], ['math/grade.html', '../'], ['ai/hallucinate.html', '../'], ['ai/ask-well.html', '../'], ['ai/secrets.html', '../']]
     .forEach(([f, pre]) => ok(loads(f, pre), f + ' loads syncmerge.js → completion.js → kids-done.js'));
   ['ai/hallucinate.html', 'ai/ask-well.html', 'ai/secrets.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'); ok(h.includes("KidsDone.record('ai'") && h.includes('KidsDone.mount(') && h.includes('id="kdone"'), f + ': records 玩完 + banner'); });
   // AI 三頁練習題（2026-11-01）：GAME.practice 每頁 ≥30 題；每輪 draw() 抽 PN 題（10～15）、不重複、不改題庫順序；練習題錯題用固定 id
@@ -1316,6 +1319,7 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
   console.log(`typed rule: ${stat.set} item sets, ${stat.tb} textbook units (practice+exam ×30), ${stat.round} round configs ×50 — all pass`);
 }
 // 五下、六上、六下社會／自然資料檢查（2026-11-02）：作者的檢查也跑一遍
+{ const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'math-grade.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/math-grade.test.js passes (數學五下～六下：每題答案驗算): ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
 ['g5b-social.test.js', 'g5b-science.test.js', 'g6a-social.test.js', 'g6a-science.test.js', 'g6b-social.test.js', 'g6b-science.test.js'].forEach(f => { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'mindmap', 'test', f)], { encoding: 'utf8' }); ok(r.status === 0, 'mindmap/test/' + f + ' passes: ' + (r.stdout || '').slice(-1500) + (r.stderr || '').slice(-1500)); });
 console.log(`bank build: engine ${msEngine.toFixed(0)} ms, all ${allQs.length} questions ${msBank.toFixed(0)} ms`);
 console.log(`OK  ${checks} checks | words ${W.length} (lv ${lvCount.join('/')}/${W800.length}) | phrases ${PH.length} (${[1, 2, 3].map(l => PH.filter(p => p.lv === l).length).join('/')}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);

@@ -13,6 +13,7 @@
        'mul:<題型>:<數字>'，p＝{type:'multiples', k:題型, v:[數字], q:顯示文字}（倍數與公倍數，math/multiples.js 用 k＋v 原題重做，2026-10-21）；
        'mx:<a>x<b>'，p＝{type:'multiply', a, b, lv, q:'a×b'}（乘法快算，2026-10-21）；
        'frc:<題型>:<數字>'，p＝{type:'fraction', k:題型, v:[aw,an,ad,bw,bn,bd], q:顯示文字}（分數比較大小，math/fraction.js 用 k＋v 原題重做；清單用 v 畫上下排的分數，2026-10-27）
+       'mg:<題目id>'，p＝{type:'grade', qid, b:'五下 單元一', q:題目純文字}（五下～六下 math/grade.js 用 qid 找回原題，2026-11-06）；
        'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯）、'pf:<題>'（約分通分 15 題答錯，2026-11-05），p＝{type:'paper', set:'p'|'v'|'f', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
    🔁 隔天複習（間隔重複，2026-11-01，只開在社會、自然＝SPACED；國語、數學、AI 照舊「連對 3 次」）：
@@ -136,7 +137,7 @@
   // ================= 瀏覽器：畫面（首頁 #s/<科>/mistakes） =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var KLABEL = { w: '考考自己', a: '背架構', q: '練習題', L: '素養題組', X: '單元測驗', F: '閃卡', I: '互動題' };
-  function badgeOf(subj, p) { if (subj === 'chinese') return p.t || '閱讀'; if (subj === 'math') return p.type === 'paper' ? (p.src || '紙本') : p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
+  function badgeOf(subj, p) { if (subj === 'chinese') return p.t || '閱讀'; if (subj === 'math') return p.type === 'paper' ? (p.src || '紙本') : p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : p.type === 'grade' ? (p.b || '數學') : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
   function textOf(subj, p) {
     if (subj === 'math') return p.q || '';
     if (subj === 'ai') return (p.q || '') + (p.opts && p.opts[p.c] != null ? '　→ ' + p.opts[p.c] : '');
@@ -212,10 +213,12 @@
 
   /* 數學錯題分頁（2026-10-21）：type → 在哪一頁練。mathMore(types)＝「接著練…錯題」按鈕（math/ 底下的頁面用，href 相對於 math/）；eq＝天平（其他沒標 type 的） */
   var MATH_MK = [['eq', '天平', 'balance.html?mistakes=1'], ['gcd', '短除法', 'short-division.html?mistakes=1'], ['gcdword', '應用題', 'short-division.html?mistakes=word'],
-    ['multiples', '倍數', 'multiples.html?mistakes=1'], ['multiply', '乘法', 'multiply.html?mistakes=1'], ['fraction', '分數', 'fraction.html?mistakes=1']];
-  function mathType(p) { var t = p && p.type; return t === 'paper' || t === 'gcd' || t === 'gcdword' || t === 'multiples' || t === 'multiply' || t === 'fraction' ? t : 'eq'; }
+    ['multiples', '倍數', 'multiples.html?mistakes=1'], ['multiply', '乘法', 'multiply.html?mistakes=1'], ['fraction', '分數', 'fraction.html?mistakes=1'], ['grade', '五下～六下', 'grade.html?mistakes=1']];
+  function mathType(p) { var t = p && p.type; return t === 'paper' || t === 'gcd' || t === 'gcdword' || t === 'multiples' || t === 'multiply' || t === 'fraction' || t === 'grade' ? t : 'eq'; }
   function mathCount(type) { return list('math').filter(function (e) { return mathType(e.p) === type; }).length; }
-  function mathMore(types) {
+  // grade（五下～六下，math/grade.html，2026-11-06）：五上各頁沒列它，一律接在最後；grade 頁自己傳 self＝true 不列自己
+  function mathMore(types, self) {
+    if (!self && types.indexOf('grade') < 0) types = types.concat(['grade']);
     return MATH_MK.filter(function (m) { return types.indexOf(m[0]) >= 0; }).map(function (m) {
       var n = mathCount(m[0]); return n ? '<a class="btn" data-mk-more="' + m[0] + '" href="' + m[2] + '">接著練' + m[1] + '錯題（' + n + ' 題）▶</a>' : '';
     }).join('');

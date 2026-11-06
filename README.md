@@ -36,6 +36,7 @@
 | 分數比較大小（五上，2026-10-27） | `math\fraction.html`（📖 教學免登入：分數條、數線、自己出題比比看／✏️ 練習五種題型：同分母・同分子、跟 1 跟一半比、通分再比、先約分再比、假分數・帶分數；＞＜＝ 大按鈕＋數字鍵盤／📝 考試固定一份 30 題 100 分）＋`math\fraction.js`（純函式，交叉相乘整數比，`node test/fraction.test.js`）；瀏覽器實測 kids-member `tests\fraction-browser.js` | 同一批 |
 | 紙本錯題＋類題 30 題（2026-11-03）＋約分通分 15 題（2026-11-05） | `math\paper.html`＋`math\paper.js`（題目、判分：多答案、組合、約分；`node test/paper.test.js` 暴力法驗算每題答案）。入口在數學錯題庫的「📝 紙本錯題」區，只有打開過加入連結（`math/paper.html?add=<碼>`，要先登入）的帳號才看得到；紙本卷由 `考卷\gen_paper30.js [30|15]` 產生（只留本機） | 同一批 |
 | 乘法快算（2026-10-21） | `math\multiply.html`（✏️ 練習含拆解提示與直式格子／⏱️ 挑戰 20 題計時／📕 錯題重練）＋`math\multiply.js`（純函式，`node test/multiply.test.js`） | 同一批 |
+| 數學五下／六上／六下（康軒，2026-11-06） | `math\grade.html`（`?u=<單元>` 📖 看重點／✏️ 練習 15 題／📝 單元測驗 20 題；`?r=<冊>` 總複習 30 題；`?mistakes=1` 錯題重做）＋`math\grade.js`（引擎：有理數、抽題、判分，純函式）＋`math\grade\<單元>.js`（每單元重點卡＋出題）；`node test/math-grade.test.js` 用 `test\mg-verify\<單元>.js` 的另一種算法逐題驗算；瀏覽器實測 kids-member `tests\grade-browser.js <正本> <暫存> <冊>`。細節見下方「數學五下起」 | 同一批（不含 test） |
 | 社會／自然心智圖 | `mindmap\`：`social.html`、`science.html`、`mindmap.js`／`.css`（兩科共用引擎）、`blanks.js`、`data\social\`、`data\science\`；`test\`、`_demo\`、`.md` 只留本機 | 同一批（不含 test、_demo、.md） |
 | AI 三頁 | `ai\hallucinate.html`、`ai\ask-well.html`、`ai\secrets.html` | 同一支 |
 | Scratch 塔防 | `game\scratch-td\`：`_build\`（產生器與驗證）、`積木腳本規格.md`、中文檔名講義與 .sb3 | `game\scratch-td\web\`（ASCII 檔名，由 `_build\gen_handout.py` 產生，不要手改） |
@@ -107,6 +108,15 @@ map.html          🗺️ 課程地圖（首頁、帳號頁、各科卡片頁有
 - **隱私**：拿到同步碼的人都看得到練習紀錄（只有練習資料，沒有姓名等個人資料），不要公開分享。「取消同步」只是讓這台不再同步，這台的紀錄會留著。
 - **後端**：獨立的 Vercel 專案 `kids-sync`（https://kids-sync.vercel.app/api/sync，原始碼在 `G:\Yoda x Claude\_deploy\kids-sync\`），只用自己的 Blob store `kids-sync-store`。要換後端只改 `sync.js` 裡的 `backend`（create/get/put）。
 - **測試**：`node test/smoke.js`（含合併規則、自動同步計時零件）；`node test/live-sync.js`（要網路：兩台假裝置對線上 API 同步、確認收斂）。
+
+## 數學五下起（2026-11-06）
+
+- **單元清單**：依屏東縣國小公開的 115 學年度康軒數學領域教學計畫（https://www.cp.ptc.edu.tw/storage/134712/134712_115_B-04_5A.pdf 、…_6A.pdf；另一校 134614 與 114 學年度版本相同）。全部「待課本核對」：重點、例題、題目都是原創，沒有課本。
+- **分冊**：數學頁 📗 五上（原本 5 張卡，加 `grp:'五上'`）、五下、六上、六下收合；預設打開第一冊沒做完的（`subjects.js`；畫出來就 open 的 details 發的 toggle 不算使用者開關）。上線的冊寫在 `subjects.js`、`completion.js` 的 `MG_BOOKS`，要跟 `grade.html` 載入的 `grade/<單元>.js` 一致（測試會對）。
+- **抽題**：練習一輪 15 題＝沒答對過 → 錯題 → 其他，同層照難度 d 由小到大（跟心智圖 pickQuiz 同規則）；每一種難度都混排填答與選擇／列舉。測驗 20 題、總複習 30 題（每單元輪流）不重複，難度 4:4:2。答對過的題記在本機 `kids_mg`（不同步，只影響抽題順序）。
+- **判分**：照分數頁（math/paper.js）：等值都對（0.5＝1/2、沒約分的分數）；題目要最簡分數或帶分數時，一樣大但沒約分只提醒、不算對錯；列舉題全對才算對，漏選（選的都對）只提醒。
+- **紀錄**：每題 `KidsCoins.answer(ok,'math')`＋`KidsDaily.rec('math', ok)`；錯題 id `mg:<題目id>`（p.type 'grade'，連對 3 次畢業）；完成紀錄 `kids_done.mg`（`<單元>q` 練習最佳 %、`<單元>t` 測驗最高分、`<冊>R` 總複習最高分，跟著同步、取大）。單元完成＝練習一輪 ≥80%＋單元測驗 ≥80；總複習 ≥80。
+- **還沒做**：練習一輪／測驗的 `practice_round` 學習幣事件（要先在 GAS 白名單加 `math:grade`、`math:grade-test` 並部署），目前不送。
 
 ## 單元完成與課程地圖（2026-10-20）
 

@@ -182,7 +182,7 @@ body{background:var(--bg)}
   </section>
 </main>
 
-<script src="../kids-mistakes.js?v=eb041ec783"></script>
+<script src="../kids-mistakes.js?v=c06d0b384f"></script>
 <script src="short-division.js?v=17afc65cb7"></script>
 <script src="gcd-word.js?v=889d7b62a4"></script>
 <script src="word-level.js?v=0dd1455f2c"></script>
@@ -579,7 +579,7 @@ var W = null;                           // 這一輪
 window.SDPage.W = function () { return W; };
 window.SDPage.wQ = function () { wQ(); };   // 測試用：換掉 W.items 後重畫目前這一題
 function mkLeft(type) {   // 數學錯題庫裡還有幾題：'gcd'＝短除法、'gcdword'＝應用題、'eq'＝天平（其他；倍數 'multiples'、乘法 'multiply'、分數 'fraction' 不算）
-  try { return KidsMistakes.list('math').filter(function (e) { var t = e.p && e.p.type; return type === 'eq' ? (t !== 'gcd' && t !== 'gcdword' && t !== 'multiples' && t !== 'multiply' && t !== 'fraction' && t !== 'paper') : t === type; }).length; } catch (e) { return 0; }
+  try { return KidsMistakes.list('math').filter(function (e) { var t = e.p && e.p.type; return type === 'eq' ? (t !== 'gcd' && t !== 'gcdword' && t !== 'multiples' && t !== 'multiply' && t !== 'fraction' && t !== 'paper' && t !== 'grade') : t === type; }).length; } catch (e) { return 0; }
 }
 function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['multiples', 'multiply', 'fraction']) : ''; } catch (e) { return ''; } }
 function wMsg(t, kind) { var m = $('w-msg'); m.innerHTML = t || ''; m.className = 'sd-msg' + (kind ? ' ' + kind : ''); }
@@ -972,9 +972,9 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=4b2ac9f5f5"></script>
-<script src="../syncmerge.js?v=d14dd9bb71"></script>
+<script src="../syncmerge.js?v=f24985e0d0"></script>
 <script src="../kids-daily.js?v=ec37cba982"></script>
-<script src="../completion.js?v=e00090d0f2"></script>
+<script src="../completion.js?v=285bdddfa0"></script>
 <script src="../kids-done.js?v=de42d7120a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
 <script src="../sync.js?v=12631d8738"></script>

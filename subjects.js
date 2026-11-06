@@ -9,15 +9,15 @@
     // 2026-11-01：國語〈成語故事 100〉（chinese/idioms/idioms.html；規格 kids-member/docs/CHINESE_IDIOM_SPEC.md）
     chinese: [{ id: 'reading', title: '閱讀素養 100 篇', desc: () => zhDesc(), icon: '📚', src: 'chinese/reading.html' },
       { id: 'idioms', title: '成語故事 100', desc: () => cyDesc(), icon: '📜', src: 'chinese/idioms/idioms.html' }],
-    math: [{ id: 'balance', title: '天平解方程式', desc: '用天平學加減方程式，可以自己出題，也有括號題', icon: '⚖️', src: 'math/balance.html', dk: 'math:balance' },
-      { id: 'short-division', title: '短除法：最大公因數・最小公倍數', desc: '看短除法一步一步畫，再換你算：公因數、商、互質了停！兩個數、三個數都有，還有生活應用題', icon: '🧮', src: 'math/short-division.html', dk: 'math:sd' },
+    math: [{ id: 'balance', title: '天平解方程式', desc: '用天平學加減方程式，可以自己出題，也有括號題', icon: '⚖️', src: 'math/balance.html', dk: 'math:balance', grp: '五上' },
+      { id: 'short-division', title: '短除法：最大公因數・最小公倍數', desc: '看短除法一步一步畫，再換你算：公因數、商、互質了停！兩個數、三個數都有，還有生活應用題', icon: '🧮', src: 'math/short-division.html', dk: 'math:sd', grp: '五上' },
       // 課程地圖「短除法：應用題」直接開到 📝 應用題分頁（不另外列卡片）
       { id: 'short-division-word', title: '短除法：應用題', icon: '🧮', src: 'math/short-division.html?tab=word', hidden: true },
       // 2026-10-21：五上單元三〈倍數與公倍數〉（教學／練習／考試）＋〈乘法快算〉（考卷上算錯最多的乘法）
-      { id: 'multiples', title: '倍數與公倍數', desc: '五上單元三：倍數判斷、範圍內的倍數、最小公倍數、四種應用題判斷（不超過／比它多／剛好／最少幾包），考試可選隨機考卷或紙本練習卷第一回、第二回（照原卷配分）', icon: '✖️', src: 'math/multiples.html', dk: 'math:mul' },
-      { id: 'multiply', title: '乘法快算', desc: '九九、二位數×一位數、二位數×二位數、三位數×一位數：練習有拆解提示和直式格子，挑戰一輪 20 題計時', icon: '⚡', src: 'math/multiply.html', dk: 'math:mx' },
+      { id: 'multiples', title: '倍數與公倍數', desc: '五上單元三：倍數判斷、範圍內的倍數、最小公倍數、四種應用題判斷（不超過／比它多／剛好／最少幾包），考試可選隨機考卷或紙本練習卷第一回、第二回（照原卷配分）', icon: '✖️', src: 'math/multiples.html', dk: 'math:mul', grp: '五上' },
+      { id: 'multiply', title: '乘法快算', desc: '九九、二位數×一位數、二位數×二位數、三位數×一位數：練習有拆解提示和直式格子，挑戰一輪 20 題計時', icon: '⚡', src: 'math/multiply.html', dk: 'math:mx', grp: '五上' },
       // 2026-10-27：五上〈分數比較大小〉（教學／練習／考試）
-      { id: 'fraction', title: '分數比較大小', desc: '分數條、數線看懂比大小：同分母、同分子、跟 1 跟一半比、通分、先約分、假分數化帶分數；按 ＞＜＝ 大按鈕，考試一份 100 分', icon: '🍰', src: 'math/fraction.html', dk: 'math:frc' },
+      { id: 'fraction', title: '分數比較大小', desc: '分數條、數線看懂比大小：同分母、同分子、跟 1 跟一半比、通分、先約分、假分數化帶分數；按 ＞＜＝ 大按鈕，考試一份 100 分', icon: '🍰', src: 'math/fraction.html', dk: 'math:frc', grp: '五上' },
       // 2026-11-03：📝 紙本錯題／類題 30 題（入口在數學錯題庫的紙本區，不列卡片）
       { id: 'paper-mk', title: '紙本錯題', icon: '📝', src: 'math/paper.html?mistakes=1', hidden: true },
       { id: 'paper-30', title: '類題 30 題', icon: '🎯', src: 'math/paper.html?set=30', hidden: true },
@@ -62,6 +62,13 @@
     // 🔁 今天要複習（2026-11-01）：錯題庫裡到期的題＋閃卡（間隔 1 → 3 → 7 天，規則在 kids-mistakes.js）；入口是科目首頁上方的按鈕（reviewBar），不另列卡片
     ACTS[k].push({ id: 'review', title: '今天要複習', icon: '🔁', src: `mindmap/${k}.html?review=1`, hidden: true });
   });
+  // 數學五下起（2026-11-06，康軒）：每個單元一張卡 → iframe 開 math/grade.html?u=<單元>，每冊最後一張「總複習」（?r=<冊>）。
+  // 要跟 math/grade.js 的 BOOKS、completion.js 的 MG_BOOKS 一致（只列已上線的冊；test/math-grade.test.js 會對）。五上是上面寫死的卡片（grp '五上'）。
+  const MG_BOOKS = [['g5b', '五下', ['體積', '分數的計算', '容積', '小數的乘法', '大數與折線圖', '整數、小數除以整數', '表面積', '比率與百分率', '時間的乘除', '生活中的大單位']]];
+  MG_BOOKS.forEach(([b, g, ts]) => {
+    ts.forEach((t, i) => ACTS.math.push({ id: b + (i + 1), title: `${g} 單元${NUMS[i]}　${t}`, grp: g, icon: '📐', desc: '看重點（例題＋為什麼）→ 練習一輪 15 題 → 單元測驗 20 題', src: `math/grade.html?u=${b}${i + 1}`, dk: `mg:${b}${i + 1}` }));
+    ACTS.math.push({ id: b + 'r', title: `${g}總複習`, grp: g, icon: '🏁', desc: `從${g}每個單元抽 30 題，80 分過關`, src: `math/grade.html?r=${b}`, dk: `mg:${b}R` });
+  });
   const reviewBar = k => {
     if (!MM_UNITS[k] || !KM() || !KM().due) return '';
     let n = 0; try { n = KM().due(k).length; } catch (e) { }
@@ -80,8 +87,8 @@
   const KM = () => window.KidsMistakes;
   const mathMkSrc = () => {
     let l = []; try { l = KM().list('math').filter(e => !e.p || e.p.type !== 'paper'); } catch (e) { }   // 紙本錯題有自己的區塊和按鈕，不算這裡
-    const n = t => l.filter(e => e.p && e.p.type === t).length, g = n('gcd'), w = n('gcdword'), m = n('multiples'), x = n('multiply'), f = n('fraction');
-    return !l.length || g + w + m + x + f < l.length ? 'math/balance.html?mistakes=1' : g ? 'math/short-division.html?mistakes=1' : w ? 'math/short-division.html?mistakes=word' : m ? 'math/multiples.html?mistakes=1' : x ? 'math/multiply.html?mistakes=1' : 'math/fraction.html?mistakes=1';
+    const n = t => l.filter(e => e.p && e.p.type === t).length, g = n('gcd'), w = n('gcdword'), m = n('multiples'), x = n('multiply'), f = n('fraction'), gr = n('grade');   // grade＝五下起（math/grade.html，2026-11-06）
+    return !l.length || g + w + m + x + f + gr < l.length ? 'math/balance.html?mistakes=1' : g ? 'math/short-division.html?mistakes=1' : w ? 'math/short-division.html?mistakes=word' : m ? 'math/multiples.html?mistakes=1' : x ? 'math/multiply.html?mistakes=1' : f ? 'math/fraction.html?mistakes=1' : 'math/grade.html?mistakes=1';
   };
   const mkDesc = k => { let n = 0; try { n = KM() ? KM().count(k) : 0; } catch (e) { } return n ? `有 ${n} 題等你復仇` : '目前沒有錯題 🎉'; };
   MK_SUBJ.forEach(k => { if (ACTS[k]) ACTS[k].push({ id: 'mistakes', title: '錯題庫', desc: () => mkDesc(k), icon: '📕', href: `#s/${k}/mistakes` }); });
@@ -133,13 +140,14 @@
       const unfinished = sec => sec.xs.some(x => { try { const r = x.dk && window.KidsDone && KidsDone.result(x.dk); return !r || r.status !== 'done'; } catch (e) { return true; } });
       const firstOpen = (secs.find(sec => sec.g && unfinished(sec)) || secs.find(sec => sec.g) || {}).g;
       const isOpen = g => (bookOpen[k + ':' + g] != null ? bookOpen[k + ':' + g] : g === firstOpen);
-      box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header>${reviewBar(k)}${secs.map(sec => sec.g ? `<details class="book" data-g="${sec.g}"${isOpen(sec.g) ? ' open' : ''}><summary class="tiles-h">📗 ${sec.g}</summary>${tilesOf(sec.xs)}</details>` : tilesOf(sec.xs)).join('')}<p class="center"><a class="btn" href="map.html">🗺️ 課程地圖：看哪些單元學完了</a></p>`;
+      box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header>${reviewBar(k)}${secs.map(sec => sec.g ? `<details class="book" data-g="${sec.g}" data-def="${isOpen(sec.g) ? 1 : 0}"${isOpen(sec.g) ? ' open' : ''}><summary class="tiles-h">📗 ${sec.g}</summary>${tilesOf(sec.xs)}</details>` : tilesOf(sec.xs)).join('')}<p class="center"><a class="btn" href="map.html">🗺️ 課程地圖：看哪些單元學完了</a></p>`;
     }
     else box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header><div class="card center soon"><div class="soon-i">${s.i}</div><h2>${s.n}準備中，敬請期待！</h2><p class="muted">先去其他科目玩玩看吧 😊</p></div>`;
     window.scrollTo(0, 0); setH();
   }
   // 打開網站一律到首頁（今天的清單）；冊別收合的開關記在這一頁
-  box.addEventListener('toggle', e => { const d = e.target; if (d && d.classList && d.classList.contains('book')) bookOpen[parse().k + ':' + d.dataset.g] = d.open; }, true);
+  // 畫出來就是 open 的 <details> 也會發一次 toggle：跟畫的時候一樣（data-def）就不算使用者開關，不記（不然 kids-done.js 晚載入後「第一冊沒學完的」會被蓋掉）
+  box.addEventListener('toggle', e => { const d = e.target; if (!d || !d.classList || !d.classList.contains('book')) return; const key = parse().k + ':' + d.dataset.g; if (String(+d.open) === d.dataset.def) delete bookOpen[key]; else bookOpen[key] = d.open; }, true);
   window.addEventListener('hashchange', route);
   // 帳號同步把別台的心智圖過關紀錄合併進來：正在看單元卡（不是開著 iframe）就重畫，卡片上的「過了幾關」才會是新的
   // （AI 錯題正在重答時不重畫，免得打斷）

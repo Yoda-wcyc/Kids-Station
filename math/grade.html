@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>數學單元</title>
+<link rel="stylesheet" href="../style.css?v=494b1daab7">
+<style>
+body{background:var(--bg)}
+[hidden]{display:none!important}
+.mg{max-width:1000px;margin:0 auto;padding:12px 16px calc(48px + env(safe-area-inset-bottom))}
+.mg-head h1{font-size:clamp(1.35rem,1rem + 1.4vw,1.8rem);margin:4px 0 2px}
+.mg-head p{margin:0 0 10px}
+.pend{display:inline-block;background:#fff4d6;color:#7a5200;border-radius:999px;padding:2px 10px;font-size:.85rem;font-weight:700;margin-left:6px;vertical-align:middle}
+.btn[aria-pressed="true"],.btn[aria-selected="true"]{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 3px 0 #d96a22}
+.mg-tabs{display:flex;gap:10px;margin:10px 0 14px}
+.mg-tabs .btn{flex:1 1 0;min-height:56px;font-size:1.1rem}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.15;margin:0 .12em;font-variant-numeric:tabular-nums;font-weight:800}
+.fr>span{padding:0 .18em;min-width:.9em;text-align:center}
+.fr .fr-n{border-bottom:.1em solid currentColor}
+.mg-svg{max-width:100%;height:auto;display:block;margin:8px 0}
+.lc h2{font-size:1.2rem;margin:0 0 8px;line-height:1.6}
+.lc .ex{background:#fff8ec;border-left:6px solid var(--pri);border-radius:10px;padding:8px 12px;margin:8px 0;line-height:2;font-weight:600}
+.lc .why{background:#eef6ff;border-radius:10px;padding:8px 12px;margin:8px 0;line-height:1.9}
+.q-text{font-size:clamp(1.1rem,1rem + .5vw,1.3rem);line-height:1.9;font-weight:700;margin:0 0 6px}
+.ans{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0;font-size:1.25rem;font-weight:700}
+.num-in{width:5.5em;min-height:52px;font:inherit;font-size:1.3rem;font-weight:700;text-align:center;border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
+.num-in.s{width:3.2em}
+.num-in:focus{outline:none;border-color:var(--pri)}
+.fin{display:inline-flex;flex-direction:column;align-items:center;gap:4px}
+.fin .bar{width:100%;border-top:4px solid var(--ink)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:8px 0}
+.opts .btn{min-height:56px;font-size:1.1rem;white-space:normal;line-height:1.5;text-align:center}
+.msg{min-height:1.4em;margin:8px 0 0;font-size:1.08rem;font-weight:700;line-height:1.7}
+.msg.bad{color:var(--no)}.msg.good{color:var(--ok)}
+.fb{border-radius:12px;padding:10px 14px;margin:10px 0;line-height:1.9}
+.fb.ok{background:var(--ok-bg)}.fb.no{background:var(--no-bg)}
+.prog{display:flex;flex-wrap:wrap;gap:6px 14px;font-weight:700;margin:4px 0 10px}
+.ex-item{border-top:2px dashed var(--line);padding:12px 0}
+.ex-item:first-child{border-top:0}
+.res-tot{font-size:2.6rem;font-weight:900;margin:0}
+.ri{border-top:2px dashed var(--line);padding:8px 0;line-height:1.9}
+.ri .mk{font-weight:900;margin-right:6px}
+.ri.ok .mk{color:var(--ok)}.ri.no .mk{color:var(--no)}
+.ri .yours{color:var(--muted)}
+.ri .right{font-weight:800;color:#145c38}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:10px 0 0}
+</style>
+</head>
+<body>
+<main class="mg">
+  <div id="kdone" hidden></div>
+  <header class="mg-head">
+    <h1 id="title">🔢 數學</h1>
+    <p class="muted" id="lede"></p>
+  </header>
+  <div class="mg-tabs" role="tablist" id="tabs" hidden>
+    <button type="button" class="btn" role="tab" id="tab-learn" aria-selected="true">📖 看重點</button>
+    <button type="button" class="btn" role="tab" id="tab-prac" aria-selected="false">✏️ 練習</button>
+    <button type="button" class="btn" role="tab" id="tab-exam" aria-selected="false">📝 單元測驗</button>
+  </div>
+  <section id="learn" hidden></section>
+  <section id="prac" hidden></section>
+  <section id="exam" hidden></section>
+</main>
+
+<script src="../kids-mistakes.js?v=c06d0b384f"></script>
+<script src="grade.js?v=04823a308b"></script>
+<script src="grade/g5b1.js?v=e8e8371405"></script>
+<script src="grade/g5b2.js?v=5dcb9ecea0"></script>
+<script src="grade/g5b3.js?v=4a04931d63"></script>
+<script src="grade/g5b4.js?v=f98992c7ee"></script>
+<script src="grade/g5b5.js?v=c88ea94acc"></script>
+<script src="grade/g5b6.js?v=45d3178732"></script>
+<script src="grade/g5b7.js?v=c929f1f172"></script>
+<script src="grade/g5b8.js?v=ac8feb6f14"></script>
+<script src="grade/g5b9.js?v=1c9c793bce"></script>
+<script src="grade/g5b10.js?v=e965cd0a00"></script>
+<script>
+(function () {
+'use strict';
+/* 五下／六上／六下數學單元頁（2026-11-06；引擎 math/grade.js，資料 math/grade/<單元>.js）
+   ?u=<單元>：📖 看重點（免登入）／✏️ 練習（一輪 15 題：沒答對過 → 錯題 → 其他，照難度）／📝 單元測驗（20 題，交卷才看分數與解說）
+   ?r=<冊>：📝 總複習（整冊 30 題）　?mistakes=1：數學錯題庫裡 type 'grade' 的題（原題重做，連對 3 次畢業）
+   每題作答：KidsCoins.answer(ok,'math')＋KidsDaily.rec('math', ok)（同 mkRec，錯題庫同一點）；答對過的題記在本機 kids_mg（不同步，只影響抽題順序）。
+   完成：KidsDone.record('mg', '<單元>q'＝練習一輪最佳 %、'<單元>t'＝測驗最高分、'<冊>R'＝總複習最高分)；判定在 completion.js（mg:<單元>、mg:<冊>R）。
+   學習幣「一輪」事件（practice_round）要後端白名單，還沒加，先不送（每題的 answer 照算）。 */
+var $ = function (id) { return document.getElementById(id); };
+var M = window.MG, H = M.H, html = M.html, esc = M.esc;
+var Q_ = new URLSearchParams(location.search), UID = Q_.get('u') || '', BID = Q_.get('r') || '', MK = Q_.get('mistakes') === '1';
+var U = M.UNITS[UID], BK = M.BOOKS.filter(function (b) { return b.id === BID; })[0];
+var P = null, E = null;
+window.MGPage = { P: function () { return P; }, E: function () { return E; } };   // 測試用
+
+function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'math'); } catch (e) { } }
+function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
+function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
+function doneRec(key, v) { try { if (window.KidsDone) KidsDone.record('mg', key, v); } catch (e) { } }
+function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok); try { if (!window.KidsMistakes) return null; var m = M.mkEntry(Q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e) { return null; } }
+function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['eq', 'gcd', 'gcdword', 'multiples', 'multiply', 'fraction'], true) : ''; } catch (e) { return ''; } }
+// 本機：答對過的題（抽題用）
+function ldOk() { try { return (JSON.parse(localStorage.getItem('kids_mg')) || {}).c || {}; } catch (e) { return {}; } }
+function markOk(id) { try { var s = JSON.parse(localStorage.getItem('kids_mg')) || {}; s.c = s.c || {}; s.c[id] = 1; localStorage.setItem('kids_mg', JSON.stringify(s)); } catch (e) { } }
+function mkSet() { var o = {}; try { KidsMistakes.list('math').forEach(function (e) { if (e.p && e.p.type === 'grade') o[e.p.qid] = 1; }); } catch (e) { } return o; }
+
+/* ---------- 一題的畫面 ---------- */
+function inp(f, lab, cls, mode) { return '<input class="num-in' + (cls ? ' ' + cls : '') + '" data-f="' + f + '" type="text" inputmode="' + (mode || 'decimal') + '" autocomplete="off" aria-label="' + esc(lab) + '">'; }
+function inputHTML(Q) {
+  if (Q.t === 'num' && Q.form === 'f') return '<div class="ans">' + inp('w', '整數（可以空著）', 's', 'numeric') + '<span class="fin">' + inp('n', '分子', 's', 'numeric') + '<span class="bar"></span>' + inp('d', '分母', 's', 'numeric') + '</span>' + (Q.suf ? '<span>' + esc(Q.suf) + '</span>' : '') + '</div>' +
+    '<p class="muted" style="margin:0">整數可以空著；答案是整數就只填整數格。' + (Q.simp ? '<b>要約成最簡分數。</b>' : '') + (Q.mixed ? '<b>要寫成帶分數。</b>' : '') + '</p>';
+  if (Q.t === 'num') return '<div class="ans">' + inp('v', '答案') + (Q.suf ? '<span>' + esc(Q.suf) + '</span>' : '') + '</div>';
+  if (Q.t === 'nums') return '<div class="ans">' + Q.a.map(function (x, i) { return inp('v' + i, '第 ' + (i + 1) + ' 格', 's') + '<span>' + esc((Q.labels || [])[i] || '') + '</span>'; }).join('') + '</div>';
+  var many = Q.t === 'set';
+  return (many ? '<p class="muted" style="margin:0">可以選好幾個，全部選對才算對。</p>' : '') + '<div class="opts" data-many="' + many + '">' + M.optOrder(Q).map(function (i) { return '<button type="button" class="btn" data-o="' + i + '" aria-pressed="false">' + html(Q.opts[i]) + '</button>'; }).join('') + '</div>';
+}
+function qHTML(Q, no) { return '<p class="q-text">' + (no ? '(' + no + ') ' : '') + html(Q.q) + '</p>' + (Q.svg || '') + inputHTML(Q); }
+function readIn(el, Q) {
+  var g = function (f) { var x = el.querySelector('[data-f="' + f + '"]'); return x ? x.value : ''; };
+  if (Q.t === 'num' && Q.form === 'f') return { w: g('w'), n: g('n'), d: g('d') };
+  if (Q.t === 'num') return g('v');
+  if (Q.t === 'nums') return Q.a.map(function (x, i) { return g('v' + i); });
+  var on = Array.prototype.map.call(el.querySelectorAll('[data-o][aria-pressed="true"]'), function (b) { return +b.getAttribute('data-o'); });
+  return Q.t === 'mc' ? (on.length ? on[0] : '') : on;
+}
+function yours(Q, v) {
+  if (Q.t === 'num' && Q.form === 'f') { var f = M.parseFrac(v); return f ? (f.w ? f.w + ' ' : '') + (f.n ? H.fr(f.n, f.d) : '') : '（沒寫）'; }
+  if (Q.t === 'num') return String(v || '').trim() ? esc(v) : '（沒寫）';
+  if (Q.t === 'nums') return v.map(function (x, i) { return esc(x || '—') + ' ' + esc((Q.labels || [])[i] || ''); }).join(' ');
+  if (Q.t === 'mc') return v === '' || v == null ? '（沒選）' : Q.opts[v];
+  return v.length ? v.map(function (i) { return Q.opts[i]; }).join('、') : '（沒選）';
+}
+function onOpt(e) {
+  var b = e.target.closest('[data-o]'); if (!b || b.disabled) return false;
+  var box = b.parentNode, many = box.getAttribute('data-many') === 'true', on = b.getAttribute('aria-pressed') !== 'true';
+  if (!many) Array.prototype.forEach.call(box.querySelectorAll('[data-o]'), function (x) { x.setAttribute('aria-pressed', 'false'); });
+  b.setAttribute('aria-pressed', String(on));
+  return true;
+}
+
+/* ---------- 📖 看重點 ---------- */
+function learnHTML() {
+  return U.cards.map(function (c, i) {
+    return '<div class="card lc"><h2>' + (i + 1) + '. ' + html(c.t) + '</h2>' + (c.svg || '') + '<div class="ex"><b>例題</b><br>' + html(c.ex) + '</div><div class="why">💡 <b>為什麼？</b>' + html(c.why) + '</div></div>';
+  }).join('') + '<p class="center"><button type="button" class="btn primary big" id="go-prac">✏️ 去練習 ▶</button></p>';
+}
+
+/* ---------- ✏️ 練習（一題一題） ---------- */
+function pHome() {
+  P = null;
+  $('prac').innerHTML = '<div class="card center"><h2>✏️ 練習</h2><p>一輪 ' + M.ROUND + ' 題，由簡單到難。先出還沒答對過的、再出錯題，答錯會看到解說、收進 📕 錯題庫。<br>一輪答對 ' + M.PASS + '% 以上就算練習過關。</p><button type="button" class="btn primary big" id="p-go">開始這一輪 ▶</button></div>';
+}
+function pStart() {
+  if (!authOK() || !startAct(pStart)) return;
+  P = { items: M.pickRound(M.bank(UID), M.ROUND, ldOk(), mkSet(), Math.random), idx: 0, ok: 0, grad: 0, mk: false };
+  pQ();
+}
+function pQ() {
+  var Q = P.items[P.idx]; P.done = false;
+  $('prac').innerHTML = '<div class="prog">' + (P.mk ? '📕 錯題練習　' + esc(Q.b || M.label(Q.u)) + '　' : '') + '<span>第 ' + (P.idx + 1) + ' / ' + P.items.length + ' 題</span><span class="muted">答對 ' + P.ok + ' 題</span></div>' +
+    '<div class="card" id="p-card">' + qHTML(Q) + '<p class="msg" id="p-msg" role="status" aria-live="polite"></p><div class="row" id="p-row"><button type="button" class="btn primary big" id="p-ok">確定</button></div></div>';
+  var f = $('p-card').querySelector('input'); if (f) try { f.focus({ preventScroll: true }); } catch (e) { }
+  window.scrollTo(0, 0);
+}
+function pCheck() {
+  var Q = P.items[P.idx], card = $('p-card'), r = M.check(Q, readIn(card, Q));
+  if (r.soft) { $('p-msg').className = 'msg bad'; $('p-msg').textContent = r.msg; return; }
+  P.done = true; coinAnswer(r.ok);
+  var g = mkRec(Q, r.ok); if (r.ok) { P.ok++; markOk(Q.id); if (g === 'graduated') P.grad++; }
+  Array.prototype.forEach.call(card.querySelectorAll('input,[data-o]'), function (x) { x.disabled = true; });
+  $('p-msg').textContent = '';
+  var more = P.idx + 1 < P.items.length;
+  $('p-row').outerHTML = '<div class="fb ' + (r.ok ? 'ok' : 'no') + '" id="p-fb">' + (r.ok ? '🎉 答對了！' : '✘ ' + esc(r.msg) + '<br>正確答案：<b>' + html(M.ansText(Q)) + '</b>') +
+    '<br>💡 ' + html(Q.why) + '</div><div class="row"><button type="button" class="btn primary big" id="p-next">' + (more ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
+  try { $('p-next').focus({ preventScroll: true }); } catch (e) { }
+}
+function pEnd() {
+  var n = P.items.length, pct = n ? Math.round(P.ok / n * 100) : 0;
+  if (!P.mk && !P.sent) { P.sent = true; doneRec(UID + 'q', pct); }
+  $('prac').innerHTML = '<div class="card center"><p style="font-size:3rem;margin:0">' + (pct >= M.PASS ? '🏆' : '💪') + '</p><p class="res-tot" id="p-score">' + P.ok + ' / ' + n + '</p><p>答對 ' + pct + '%' + (P.grad ? '，🎓 有 ' + P.grad + ' 題錯題畢業了！' : P.ok < n ? '；答錯的題在 📕 錯題庫等你復仇。' : '！') + '</p><div class="row">' +
+    (P.mk ? '<a class="btn primary" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + mkMore()
+      : '<button type="button" class="btn primary big" id="p-go">再來一輪 ▶</button><button type="button" class="btn" id="go-exam">📝 去單元測驗</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a>') + '</div></div>';
+  window.scrollTo(0, 0);
+}
+$('prac').addEventListener('click', function (e) {
+  var t = e.target;
+  if (t.id === 'p-go') return pStart();
+  if (t.id === 'go-exam') return setTab('exam');
+  if (!P) return;
+  if (!P.done && onOpt(e)) return;
+  if (t.id === 'p-ok') pCheck();
+  else if (t.id === 'p-next') { P.idx++; if (P.idx >= P.items.length) pEnd(); else pQ(); }
+});
+$('prac').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.tagName === 'INPUT' && P && !P.done) { e.preventDefault(); pCheck(); } });
+
+/* ---------- 📝 單元測驗／總複習（整張卷，交卷才看） ---------- */
+function bestOf(key) { try { var d = JSON.parse(localStorage.getItem('kids_done') || 'null'), v = d && d.mg && d.mg[key]; return typeof v === 'number' ? v : null; } catch (e) { return null; } }
+function eKey() { return BK ? BK.id + 'R' : UID + 't'; }
+function eHome() {
+  E = null; var b = bestOf(eKey()), n = BK ? M.REVIEW_N : M.TEST_N;
+  $('exam').innerHTML = '<div class="card center"><h2>' + (BK ? '📝 ' + BK.name + '總複習' : '📝 單元測驗') + '</h2>' + (b != null ? '<p><b>最高 ' + b + ' 分</b>' + (b >= M.PASS ? ' ✅' : '') + '</p>' : '') +
+    '<p>' + n + ' 題' + (BK ? '，從' + BK.name + '每個單元抽' : '，從這個單元的題庫抽') + '，題目不重複、由簡單到難。寫完按「交卷」才看分數和每題解說，答錯的題會收進 📕 錯題庫。<b>' + M.PASS + ' 分以上就過關。</b></p><button type="button" class="btn primary big" id="e-go">開始 ▶</button></div>';
+}
+function eStart() {
+  if (!authOK() || !startAct(eStart)) return;
+  var qs = BK ? M.review(BK.id, M.REVIEW_N, Math.random) : M.exam(M.bank(UID), M.TEST_N, Math.random);
+  E = { qs: qs, confirm: false };
+  $('exam').innerHTML = '<div class="card">' + qs.map(function (Q, i) { return '<div class="ex-item" data-i="' + i + '">' + qHTML(Q, i + 1) + '</div>'; }).join('') + '</div>' +
+    '<div class="card center"><p class="msg" id="e-msg" role="status" aria-live="polite"></p><button type="button" class="btn primary big" id="e-submit">交卷 📝</button></div>';
+  window.scrollTo(0, 0);
+}
+function eSubmit() {
+  var items = Array.prototype.map.call($('exam').querySelectorAll('.ex-item'), function (el) { var Q = E.qs[+el.getAttribute('data-i')], v = readIn(el, Q); return { Q: Q, v: v, r: M.grade(Q, v) }; });
+  var blanks = items.filter(function (x) { return x.r.blank; }).length;
+  if (blanks && !E.confirm) { E.confirm = true; $('e-msg').className = 'msg bad'; $('e-msg').textContent = '還有 ' + blanks + ' 題沒有寫，確定要交卷嗎？再按一次「交卷」就交出去。'; return; }
+  var right = 0;
+  items.forEach(function (x) { coinAnswer(x.r.ok); mkRec(x.Q, x.r.ok); if (x.r.ok) { right++; markOk(x.Q.id); } });
+  var score = Math.round(right / items.length * 100); doneRec(eKey(), score);
+  $('exam').innerHTML = '<div class="card center"><p class="res-tot" id="e-score">' + score + ' 分</p><p>' + (score >= M.PASS ? '🎉 ' + M.PASS + ' 分以上，過關！' : '💪 再練一下，' + M.PASS + ' 分就過關') + '　答對 ' + right + ' / ' + items.length + ' 題</p>' +
+    '<div class="row"><button type="button" class="btn primary big" id="e-go">再考一次 ▶</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a></div></div>' +
+    '<div class="card">' + items.map(function (x, i) {
+      return '<div class="ri ' + (x.r.ok ? 'ok' : 'no') + '" data-ok="' + x.r.ok + '"><span class="mk">' + (x.r.ok ? '✔' : '✘') + '</span><b>(' + (i + 1) + ')</b> ' + html(x.Q.q) +
+        (x.r.ok ? '' : '<br><span class="yours">你的答案：' + html(yours(x.Q, x.v)) + (x.r.msg ? '（' + esc(x.r.msg) + '）' : '') + '</span><br><span class="right">正解：' + html(M.ansText(x.Q)) + '</span><br>💡 ' + html(x.Q.why)) + '</div>';
+    }).join('') + '</div>';
+  window.scrollTo(0, 0);
+}
+$('exam').addEventListener('click', function (e) {
+  var t = e.target;
+  if (t.id === 'e-go') return eStart();
+  if (t.id === 'e-submit') return eSubmit();
+  if (E && onOpt(e)) E.confirm = false;
+});
+$('exam').addEventListener('input', function () { if (E) E.confirm = false; });
+$('exam').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.preventDefault(); });
+
+/* ---------- 分頁、啟動 ---------- */
+function setTab(k) {
+  if ((k === 'prac' || k === 'exam') && !authOK()) return;
+  ['learn', 'prac', 'exam'].forEach(function (x) { $('tab-' + x).setAttribute('aria-selected', String(x === k)); $(x).hidden = x !== k; });
+  if (k === 'prac' && !P) pHome();
+  if (k === 'exam' && !E) eHome();
+  window.scrollTo(0, 0);
+}
+$('tab-learn').onclick = function () { setTab('learn'); };
+$('tab-prac').onclick = function () { setTab('prac'); };
+$('tab-exam').onclick = function () { setTab('exam'); };
+$('learn').addEventListener('click', function (e) { if (e.target.id === 'go-prac') setTab('prac'); });
+function paintDone(key, title) { try { var el = $('kdone'); if (el && window.KidsDone) KidsDone.mount(el, key, { title: title }); } catch (e) { } }
+window.MGPage.paintDone = function () { if (U) paintDone('mg:' + UID, M.label(UID) + '　' + M.bookOf(UID).title); else if (BK) paintDone('mg:' + BK.id + 'R', BK.name + '總複習'); };
+
+if (MK) {
+  var items = [], seen = {};
+  try { KidsMistakes.list('math').forEach(function (e) { var Q = M.fromMistake(e.p); if (Q && !seen[Q.id] && items.length < 30) { seen[Q.id] = 1; items.push(Q); } }); } catch (e) { }
+  document.title = '數學錯題練習';
+  $('title').textContent = '📕 數學錯題練習（五下～六下）';
+  $('lede').textContent = '答錯過的題目再做一次。同一題連續答對 3 次就會畢業 🎓';
+  $('prac').hidden = false;
+  P = { items: items, idx: 0, ok: 0, grad: 0, mk: true };   // 練習額度在錯題庫按「只練錯題」時已經算過
+  if (items.length) pQ(); else $('prac').innerHTML = '<div class="card center"><p id="mk-empty">目前沒有這幾冊的數學錯題 🎉</p><div class="row"><a class="btn primary" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>' + mkMore() + '</div></div>';
+} else if (BK && M.ready(BK.id)) {
+  document.title = BK.name + '數學總複習';
+  $('title').textContent = '📝 ' + BK.name + '數學總複習';
+  $('lede').innerHTML = BK.units.map(function (x, i) { return '單元' + '一二三四五六七八九十'.charAt(i) + ' ' + esc(x[1]); }).join('、') + '<span class="pend">待課本核對</span>';
+  $('exam').hidden = false; eHome();
+} else if (U) {
+  var b = M.bookOf(UID);
+  document.title = b.title;
+  $('title').innerHTML = '🔢 ' + esc(M.label(UID)) + '　' + esc(b.title) + '<span class="pend">' + esc(U.pending || '') + '</span>';
+  $('lede').textContent = '先看重點（有例題和為什麼），再練習 15 題一輪，最後考單元測驗 20 題。';
+  $('tabs').hidden = false; $('learn').innerHTML = learnHTML(); $('learn').hidden = false;
+  if (Q_.get('tab') === 'prac') setTab('prac');
+} else {
+  $('title').textContent = '🔢 找不到這個單元';
+  $('lede').innerHTML = '<a class="btn" target="_top" href="../index.html#s/math">← 回數學</a>';
+}
+})();
+</script>
+<script src="../kids-auth.js?v=42d7c72a13"></script>
+<script src="../kids-coins.js?v=4b2ac9f5f5"></script>
+<script src="../syncmerge.js?v=f24985e0d0"></script>
+<script src="../kids-daily.js?v=ec37cba982"></script>
+<script src="../completion.js?v=285bdddfa0"></script>
+<script src="../kids-done.js?v=de42d7120a"></script>
+<script src="../syncauto.js?v=d7ed49f73e"></script>
+<script src="../sync.js?v=12631d8738"></script>
+<script>if (window.MGPage && MGPage.paintDone) MGPage.paintDone();</script>
+</body>
+</html>
