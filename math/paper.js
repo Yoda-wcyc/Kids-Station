@@ -1,7 +1,7 @@
 /* paper.js — 紙本錯題（2026-11-03）：考卷上打叉、紅筆圈到的題目 PAPER＋類題 30 題 VARIANTS，加判分（純函式；瀏覽器 window.PAPER，Node require）。
    題目數字與題意照紙本、敘述改寫；不放姓名、班級、照片。文字裡 [[n/d]] ＝上下排的分數。
    每題 {id, text, parts:[…], why, calc?}；類題多 d:1|2|3（照 d 排）、紙本多 src（來源）、tag:'x'（打叉）|'r'（紅筆圈到）。
-   FRACTIONS＝約分通分 15 題（2026-11-05），格式同類題。MIDTERM＝期中考錯題 10 題（格式同紙本）、EXAM＝期中類題 20 題（格式同類題），2026-11-06。
+   FRACTIONS＝約分通分 15 題（2026-11-05），格式同類題。MIDTERM＝期中考錯題 10 題（格式同紙本）、EXAM＝期中類題 20 題（格式同類題），2026-11-06。SECTOR＝扇形小考錯題 7 題（格式同紙本），2026-11-06。
    part：num {ans, units?|suf?}｜multi {ans:[…], n:格數, suf}｜frac {n, d, suf, units?}（要最簡）｜fracs {w, ans:[[n,d],…], rows}（約分：全部列出）｜
          common {a:[n,d], b:[n,d], w?, den, ans:[[n,den],[n,den]], anyDen?}（通分：要最小公倍數當公分母；anyDen＝公分母不限）｜order {opts:['[[n/d]]',…], ans:[索引由小到大]}｜
          choice {opts, ans:索引}｜pick {opts, ans:[…]}｜combos {sticks, want:'can'|'cannot', ans:[[a,b,c],…], rows}｜dec {ans:'字串'}
@@ -287,12 +287,31 @@
       why: '4÷9＝[[4/9]] 公尺：被分的長度 4 當分子、段數 9 當分母。[[1/9]] 是 1 公尺分 9 段，這裡有 4 公尺。' }
   ];
 
+  // 扇形小考錯題 7 題（2026-11-06，五上單元五）：題目、選項照原卷、敘述改寫；跟紙本、期中錯題用同一個 ?add= 連結加進帳號（ps:）
+  var YN = ['對', '不對'];
+  var SECTOR = [
+    { id: 'sc1', src: '扇形 是非 4', tag: 'x', text: '判斷對錯：「在大、小兩個不同的圓裡各畫一個扇形，只要圓心角都是 90 度，兩個扇形占各自圓形的比例（幾分之幾圓）就一樣。」', parts: [choice(YN, 0)], calc: { f: 'secfact' },
+      why: '幾分之幾圓只看圓心角：90 度是 360 度的 [[1/4]]，大圓、小圓都是 [[1/4]] 圓。圓的大小只會讓扇形大小不同，比例不變。' },
+    { id: 'sc2', src: '扇形 是非 5', tag: 'x', text: '判斷對錯：「兩個圓心角一樣大的扇形，合起來剛好是一個完整的圓。」', parts: [choice(YN, 1)], calc: { f: 'secfact' },
+      why: '要剛好合成一個圓，兩個扇形都要是 180 度（半圓）。例如兩個 30 度的扇形，合起來只有 60 度，不是一個圓，所以不一定。' },
+    { id: 'sc3', src: '扇形 是非 15', tag: 'x', text: '判斷對錯：「圓心角是指兩條直徑所夾的角，而且頂點一定在圓周上。」', parts: [choice(YN, 1)], calc: { f: 'secfact' },
+      why: '這句錯兩處：圓心角是兩條「半徑」夾的角，不是直徑；頂點在「圓心」，不是在圓周上。' },
+    { id: 'sc4', src: '扇形 選擇 8', tag: 'x', text: '關於扇形，下面哪一句是對的？', parts: [choice(['扇形的圓心角一定小於 180°', '扇形的頂點是圓心', '兩條不一樣長的直線邊和一段圓弧可以組成扇形', '扇形是由直徑和圓弧組成的'], 1)], calc: { f: 'secfact' },
+      why: '扇形由兩條半徑和一段圓弧圍成，頂點就是圓心。圓心角可以大於 180°（例如 300°）；兩條直線邊都是半徑，一定一樣長；是半徑不是直徑。' },
+    { id: 'sc5', src: '扇形 選擇 11', tag: 'x', text: '圓心角 315° 的扇形，是幾分之幾圓？', parts: [choice(['[[5/8]] 圓', '[[3/4]] 圓', '[[7/8]] 圓', '[[9/10]] 圓'], 2)], calc: { f: 'secopt', deg: 315 },
+      why: '[[315/360]] 上下同除以 45，等於 [[7/8]] 圓。[[3/4]] 圓是 270 度。也可以想：再 45 度（[[1/8]] 圓）就滿一圈，所以是 [[7/8]] 圓。' },
+    { id: 'sc6', src: '扇形 選擇 17', tag: 'x', text: '下面哪一個「不是」組成扇形的基本要素？', parts: [choice(['圓心', '半徑', '圓周', '圓弧'], 2)], calc: { f: 'secfact' },
+      why: '扇形由圓心、兩條半徑和一段圓弧組成。圓弧只是圓周上的一段；整圈的圓周不是扇形的一部分。' },
+    { id: 'sc7', src: '扇形 選擇 27', tag: 'x', text: '把一張圓形色紙對摺 3 次，得到的扇形是幾分之幾圓？', parts: [choice(['[[1/2]] 圓', '[[1/3]] 圓', '[[1/4]] 圓', '[[1/8]] 圓'], 3)], calc: { f: 'secopt', fold: 3 },
+      why: '對摺 1 次是 [[1/2]] 圓，2 次 [[1/4]] 圓，3 次 [[1/8]] 圓：每摺一次再分一半，不是摺 3 次就變 [[1/3]]。' }
+  ];
+
   // 單元（康軒五上，115 學年度課程計畫）：從 calc.f 推（judge 看找公因或公倍），錯題庫按單元分組用，不另外存
   var UNIT_F = { place: 'g5a1', cmp: 'g5a1', round: 'g5a1', zeros: 'g5a1', dorder: 'g5a1',
     gcd: 'g5a2', cf: 'g5a2', factors: 'g5a2', atleast2: 'g5a2', onefac: 'g5a2', chain: 'g5a2',
     lcm: 'g5a3', mult: 'g5a3', range: 'g5a3', digits: 'g5a3',
     reduce: 'g5a4', simplify: 'g5a4', isSimple: 'g5a4', common: 'g5a4', fcmp: 'g5a4', order: 'g5a4', div: 'g5a4', fsum: 'g5a4',
-    tri: 'g5a5', combo: 'g5a5', tri3: 'g5a5', iso: 'g5a5', quad: 'g5a5', 'tri-ang': 'g5a5', sec2frac: 'g5a5', frac2deg: 'g5a5' };
+    tri: 'g5a5', combo: 'g5a5', tri3: 'g5a5', iso: 'g5a5', quad: 'g5a5', 'tri-ang': 'g5a5', sec2frac: 'g5a5', frac2deg: 'g5a5', secopt: 'g5a5', secfact: 'g5a5' };
   function unitOf(Q) { return !Q || !Q.calc ? '' : Q.calc.f === 'judge' ? (Q.calc.kind === 'gcd' ? 'g5a2' : 'g5a3') : UNIT_F[Q.calc.f] || ''; }
 
   // ================= 文字 =================
@@ -411,8 +430,8 @@
   }
 
   // ================= 錯題庫 =================
-  // 紙本 23 題用 pp:<id>、類題答錯用 pv:<id>、約分通分 pf:、期中錯題 pm:、期中類題 pe:；p 只存顯示用的字，題目本身用 pid 查回來
-  var SETS = { p: PAPER, v: VARIANTS, f: FRACTIONS, m: MIDTERM, e: EXAM }, SRC = { v: '類題', f: '約分通分', e: '期中類題' };
+  // 紙本 23 題用 pp:<id>、類題答錯用 pv:<id>、約分通分 pf:、期中錯題 pm:、期中類題 pe:、扇形小考錯題 ps:；p 只存顯示用的字，題目本身用 pid 查回來
+  var SETS = { p: PAPER, v: VARIANTS, f: FRACTIONS, m: MIDTERM, e: EXAM, s: SECTOR }, SRC = { v: '類題', f: '約分通分', e: '期中類題' };
   function mkEntry(Q, set) { set = SETS[set] ? set : 'p'; return { id: 'p' + set + ':' + Q.id, p: { type: 'paper', set: set, pid: Q.id, src: Q.src || SRC[set] || '紙本', tag: Q.tag || '', q: plain(Q.text) } }; }
   function fromMistake(p) {
     if (!p || p.type !== 'paper') return null;
@@ -420,7 +439,7 @@
   }
   function unitOfMistake(p) { return unitOf(fromMistake(p)); }
 
-  var API = { PAPER: PAPER, VARIANTS: VARIANTS, FRACTIONS: FRACTIONS, MIDTERM: MIDTERM, EXAM: EXAM, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
+  var API = { PAPER: PAPER, VARIANTS: VARIANTS, FRACTIONS: FRACTIONS, MIDTERM: MIDTERM, EXAM: EXAM, SECTOR: SECTOR, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
     unitOf: unitOf, unitOfMistake: unitOfMistake, ADD_HASH: 'uwj3ic' };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else G.PAPER = API;

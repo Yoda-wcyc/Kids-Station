@@ -92,10 +92,35 @@ function verify(Q) {
     }
     case 'range': { const want = mults(c.a, c.lo, c.hi); ok(want.length >= 2 && p[0].ans === want[0] && p[1].ans === want[want.length - 1], m + ' ' + want); ok(c.lo % c.a && c.hi % c.a, m + ' 範圍兩端不是倍數'); ok(Q.text.includes(c.lo + '～' + c.hi) && Q.text.includes(String(c.a)), m + ' text'); break; }
     case 'fsum': { const l = c.k * c.a[0] * c.b[1], r = c.b[0] * c.a[1], want = l > r ? '＞' : l < r ? '＜' : '＝'; ok(p[0].opts[p[0].ans] === want, m); break; }   // k 個 a/b 相加，交叉相乘比
+    // ---- 扇形小考錯題（2026-11-06）----
+    case 'secopt': {   // 圓心角（或對摺 fold 次）→ 幾分之幾圓：選項裡剛好一個等於 deg/360
+      const deg = c.deg || 360 / 2 ** c.fold, x = p[0], val = o => { const r = /\[\[(\d+)\/(\d+)\]\]/.exec(o); return [+r[1], +r[2]]; }, eq = o => { const f = val(o); return f[0] * 360 === f[1] * deg; };
+      ok(eq(x.opts[x.ans]) && x.opts.filter(eq).length === 1, m + ' ' + deg); ok(Q.text.includes(c.deg ? c.deg + '°' : '對摺 ' + c.fold + ' 次'), m + ' text'); break;
+    }
+    case 'secfact': {   // 定義題：答案照原卷正解（照片核對過）；是非題另外用反例驗
+      const want = { sc1: '對', sc2: '不對', sc3: '不對', sc4: '扇形的頂點是圓心', sc6: '圓周' }[Q.id]; ok(want && p[0].opts[p[0].ans] === want, m + ' ' + want);
+      if (Q.id === 'sc1') ok([1, 5, 30].every(r => 90 / 360 === (Math.PI * r * r * 90 / 360) / (Math.PI * r * r)), m + ' 比例跟半徑無關');
+      if (Q.id === 'sc2') { const deg = []; for (let d = 1; d < 360; d++) if (d * 2 === 360) deg.push(d); ok(same(deg, [180]), m + ' 只有 180 度可以'); }
+      break;
+    }
     default: ok(false, 'unknown calc ' + c.f);
   }
 }
-P.PAPER.forEach(verify); P.VARIANTS.forEach(verify); P.FRACTIONS.forEach(verify); P.MIDTERM.forEach(verify); P.EXAM.forEach(verify);
+P.PAPER.forEach(verify); P.VARIANTS.forEach(verify); P.FRACTIONS.forEach(verify); P.MIDTERM.forEach(verify); P.EXAM.forEach(verify); P.SECTOR.forEach(verify);
+
+// ---------- 扇形小考錯題 7 題 ----------
+{
+  const S = P.SECTOR, srcs = S.map(q => q.src);
+  ok(S.length === 7 && S.every(q => q.tag === 'x') && same(srcs, ['扇形 是非 4', '扇形 是非 5', '扇形 是非 15', '扇形 選擇 8', '扇形 選擇 11', '扇形 選擇 17', '扇形 選擇 27']), 'sector 7 題、來源照原卷題號');
+  ok(S.every(q => P.unitOf(q) === 'g5a5') && P.unitOfMistake(P.mkEntry(S[0], 's').p) === 'g5a5', 'sector 全在單元五');
+  S.forEach(q => { ok(q.why && q.why.length <= 140, 'why 要短：' + q.id + ' ' + q.why.length); ok(P.ansText(q), 'ansText ' + q.id); ok(!q.fig, 'sector 沒有圖 ' + q.id); });
+  ok(!/座號|班級|姓名|國民小學|國小|50\d/.test(JSON.stringify(S)), 'sector 沒有姓名班級座號');
+  // 他原本的答案判錯（是非 4 答 ✗、5 答 ○、15 答 ○；選擇 8 選④、11 選②、17 選④、27 選②），正解判對
+  const kid = { sc1: 1, sc2: 0, sc3: 0, sc4: 3, sc5: 1, sc6: 3, sc7: 1 };
+  S.forEach(q => { ok(!P.checkQ(q, [kid[q.id]]).ok && P.checkQ(q, [q.parts[0].ans]).ok, 'sector 判分 ' + q.id); });
+  const es = P.mkEntry(S[4], 's'); ok(es.id === 'ps:sc5' && es.p.set === 's' && es.p.src === '扇形 選擇 11' && P.fromMistake(es.p) === S[4] && JSON.stringify(es.p).length < 400, 'mkEntry s');
+  const all = [P.PAPER, P.MIDTERM, S].flat().map(q => q.id); ok(new Set(all).size === all.length, '?add= 加的三組 id 不重複');
+}
 
 // ---------- 期中錯題 10 題＋期中類題 20 題 ----------
 {
@@ -123,7 +148,7 @@ P.PAPER.forEach(verify); P.VARIANTS.forEach(verify); P.FRACTIONS.forEach(verify)
 
 // ---------- 單元（錯題庫分組）：每一題都推得出五上單元，而且推得對 ----------
 {
-  const U = ['g5a1', 'g5a2', 'g5a3', 'g5a4', 'g5a5'], all = [['p', P.PAPER], ['v', P.VARIANTS], ['f', P.FRACTIONS], ['m', P.MIDTERM], ['e', P.EXAM]];
+  const U = ['g5a1', 'g5a2', 'g5a3', 'g5a4', 'g5a5'], all = [['p', P.PAPER], ['v', P.VARIANTS], ['f', P.FRACTIONS], ['m', P.MIDTERM], ['e', P.EXAM], ['s', P.SECTOR]];
   all.forEach(([s, a]) => a.forEach(q => { const u = P.unitOfMistake(P.mkEntry(q, s).p); ok(U.includes(u), 'unit ' + s + ':' + q.id + ' → ' + u); }));
   const u = (s, id) => P.unitOfMistake({ type: 'paper', set: s, pid: id });
   ok(u('m', 'mt1') === 'g5a2' && u('m', 'mt2') === 'g5a5' && u('m', 'mt3') === 'g5a3' && u('m', 'mt4') === 'g5a4' && u('m', 'mt7') === 'g5a1' && u('m', 'mt10') === 'g5a3' && u('p', 'C') === 'g5a2' && u('p', 'N') === 'g5a3' && u('f', 'y1') === 'g5a4', 'unit 抽查');
