@@ -64,7 +64,7 @@
   });
   // 數學五下起（2026-11-06，康軒）：每個單元一張卡 → iframe 開 math/grade.html?u=<單元>，每冊最後一張「總複習」（?r=<冊>）。
   // 要跟 math/grade.js 的 BOOKS、completion.js 的 MG_BOOKS 一致（只列已上線的冊；test/math-grade.test.js 會對）。五上是上面寫死的卡片（grp '五上'）。
-  const MG_BOOKS = [['g5b', '五下', ['體積', '分數的計算', '容積', '小數的乘法', '大數與折線圖', '整數、小數除以整數', '表面積', '比率與百分率', '時間的乘除', '生活中的大單位']]];
+  const MG_BOOKS = [['g5b', '五下', ['體積', '分數的計算', '容積', '小數的乘法', '大數與折線圖', '整數、小數除以整數', '表面積', '比率與百分率', '時間的乘除', '生活中的大單位']], ['g6a', '六上', ['最大公因數與最小公倍數', '分數除法', '數量關係', '小數除法', '比與比值', '圓周長與扇形周長', '圓面積與扇形面積', '認識速率', '放大圖、縮圖與比例尺']]];
   MG_BOOKS.forEach(([b, g, ts]) => {
     ts.forEach((t, i) => ACTS.math.push({ id: b + (i + 1), title: `${g} 單元${NUMS[i]}　${t}`, grp: g, icon: '📐', desc: '看重點（例題＋為什麼）→ 練習一輪 15 題 → 單元測驗 20 題', src: `math/grade.html?u=${b}${i + 1}`, dk: `mg:${b}${i + 1}` }));
     ACTS.math.push({ id: b + 'r', title: `${g}總複習`, grp: g, icon: '🏁', desc: `從${g}每個單元抽 30 題，80 分過關`, src: `math/grade.html?r=${b}`, dk: `mg:${b}R` });

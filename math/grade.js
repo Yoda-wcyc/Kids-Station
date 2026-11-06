@@ -225,7 +225,7 @@
         return OK;
       }
       case 'nums': {
-        var xs = (v || []).map(parseNum); if (xs.length < Q.a.length || xs.some(function (x) { return !x; })) return soft('每一格都要填數字。');
+        var xs = (v || []).map(parseNum); if (xs.length < Q.a.length || xs.some(function (x) { return !x; })) return soft(xs.some(function (x) { return x; }) ? '每一格都要填數字。' : '先把每一格都填上數字。');
         for (i = 0; i < Q.a.length; i++) if (!eq(xs[i], Q.a[i])) return bad(errMsg(Q, xs[i]) || '有一格不對。');
         return OK;
       }
