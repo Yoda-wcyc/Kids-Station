@@ -44,6 +44,7 @@ have.forEach(uid => {
   qs.forEach(q => {
     const t = tag + ' ' + q.id + ' ' + MG.plain(q.q).slice(0, 40);
     ok(q.q && q.why && !bad(q.q) && !bad(q.why) && !bad(JSON.stringify(q.opts || [])), t + ': 題目、解說完整');
+    ok(![q.q, q.why, MG.ansText(q)].concat(q.opts || []).some(s => /\[\[|\]\]/.test(MG.html(s))), t + ': 分數記號都畫得出來');
     if (/π|圓周率/.test(MG.plain(q.q))) ok(/3\.14/.test(MG.plain(q.q)), t + ': 用到圓周率要寫明 3.14');
     if (typeof V[q.k] !== 'function') return;
     let exp; try { exp = V[q.k](q.v, q); } catch (e) { ok(false, t + ': verifier threw ' + e.message); return; }

@@ -256,8 +256,10 @@
   // ================= 顯示 =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   // [[n/d]] → 上下排分數（資料檔是我們自己寫的固定字，可以有 <b>、<br>）
-  function html(s) { return String(s == null ? '' : s).replace(/\[\[(\d+)\/(\d+)\]\]/g, '<span class="fr"><span class="fr-n">$1</span><span class="fr-d">$2</span></span>'); }
-  function plain(s) { return String(s == null ? '' : s).replace(/\[\[(\d+)\/(\d+)\]\]/g, ' $1/$2 ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim(); }
+  // 分子分母也可以是字（例 [[圓心角/360]]）
+  var FR_RE = /\[\[([^\[\]\/<>]{1,12})\/([^\[\]\/<>]{1,12})\]\]/g;
+  function html(s) { return String(s == null ? '' : s).replace(FR_RE, '<span class="fr"><span class="fr-n">$1</span><span class="fr-d">$2</span></span>'); }
+  function plain(s) { return String(s == null ? '' : s).replace(FR_RE, ' $1/$2 ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim(); }
 
   // ================= 錯題庫（kids-mistakes.js 數學 type 'grade'）=================
   // id 'mg:<題目id>'，p＝{type:'grade', qid, b:冊別 單元X, q:題目純文字（清單顯示）}；重做用 qid 找回原題
