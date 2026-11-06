@@ -313,6 +313,10 @@
     reduce: 'g5a4', simplify: 'g5a4', isSimple: 'g5a4', common: 'g5a4', fcmp: 'g5a4', order: 'g5a4', div: 'g5a4', fsum: 'g5a4',
     tri: 'g5a5', combo: 'g5a5', tri3: 'g5a5', iso: 'g5a5', quad: 'g5a5', 'tri-ang': 'g5a5', sec2frac: 'g5a5', frac2deg: 'g5a5', secopt: 'g5a5', secfact: 'g5a5' };
   function unitOf(Q) { return !Q || !Q.calc ? '' : Q.calc.f === 'judge' ? (Q.calc.kind === 'gcd' ? 'g5a2' : 'g5a3') : UNIT_F[Q.calc.f] || ''; }
+  // 🎬 動畫教學（math/anim.html?id=…，2026-11-06）：錯題庫紙本區每題旁的「🎬 看動畫」；觀念對不上的（約分通分、扇形、因數判斷、0 能不能去掉）不放
+  var ANIM_F = { range: 'A', mult: 'A', digits: 'A', judge: 'B', lcm: 'B', gcd: 'B', cf: 'B',
+    tri: 'D', tri3: 'D', iso: 'D', combo: 'D', quad: 'E', 'tri-ang': 'E', div: 'F', fsum: 'F', dorder: 'G', place: 'G', cmp: 'G', round: 'G' };
+  function animOf(Q) { return Q && Q.calc && ANIM_F[Q.calc.f] || ''; }
 
   // ================= 文字 =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -438,9 +442,10 @@
     return (SETS[p.set] || PAPER).filter(function (q) { return q.id === p.pid; })[0] || null;
   }
   function unitOfMistake(p) { return unitOf(fromMistake(p)); }
+  function animOfMistake(p) { return animOf(fromMistake(p)); }
 
   var API = { PAPER: PAPER, VARIANTS: VARIANTS, FRACTIONS: FRACTIONS, MIDTERM: MIDTERM, EXAM: EXAM, SECTOR: SECTOR, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
-    unitOf: unitOf, unitOfMistake: unitOfMistake, ADD_HASH: 'uwj3ic' };
+    unitOf: unitOf, unitOfMistake: unitOfMistake, animOf: animOf, animOfMistake: animOfMistake, ADD_HASH: 'uwj3ic' };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else G.PAPER = API;
 })(typeof window !== 'undefined' ? window : globalThis);

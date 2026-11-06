@@ -963,6 +963,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     ok(['math:fraction', 'math:fraction-test'].every(it => CK.validEvent(ev(it))) && ['math:fractions', 'math:fraction-tests', 'math:fraction:x', 'english:fraction'].every(it => !CK.validEvent(ev(it))), 'kids-coins: math:fraction／fraction-test valid, look-alikes not');
     require('./fraction.test.js');
     require('./paper.test.js');
+    require('./anim.test.js');   // 🎬 動畫教學（2026-11-06）：共用檢查＋每段 test/anim-<段>.test.js
     ok(sjm.includes("filter(e => !e.p || e.p.type !== 'paper')") && kmj.includes("t === 'paper' || t === 'gcd'") && kmj.includes('function paperBox(') && sdh.includes("t !== 'paper'"), '紙本錯題：只在紙本區出現，不混進其他數學錯題頁');
   }
   // 數學應用題補題（2026-11-01）：分數 ⑥ 應用題、乘法「應用題」、天平「📝 應用題」；都不列入單元完成、沿用既有學習幣事件；每個模板 3000 次獨立驗證在 test/word-bank.test.js
@@ -1029,7 +1030,8 @@ const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 // 2026-11-03：數學 2 個 hidden 入口（紙本錯題 math/paper.html?mistakes=1、類題 30 題 ?set=30；入口在錯題庫的紙本區）→ 14 個 src、hidden 4 個
 // 2026-11-05：再 1 個 hidden 入口（約分通分 15 題 ?set=15）→ 15 個 src、hidden 5 個
 // 2026-11-06：再 1 個 hidden 入口（期中類題 20 題 ?set=20）→ 16 個 src、hidden 6 個
-ok(srcs.length === 16 && (sj.match(/hidden: true/g) || []).length === 6 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
+// 2026-11-06：🎬 動畫教學 1 張卡（math/anim.html）＋anim-a～g hidden 入口（樣板字串，1 處 hidden: true）→ 17 個 src、hidden 7 個
+ok(srcs.length === 17 && (sj.match(/hidden: true/g) || []).length === 7 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----

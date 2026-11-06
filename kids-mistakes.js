@@ -185,7 +185,9 @@
     if (!items) return '';
     var TAG = { x: '打叉', r: '紅筆圈到' };
     var li = function (e) {
-      return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf('math', e.p)) + '</span>' + (TAG[e.p.tag] ? ' <small class="muted">' + TAG[e.p.tag] + '</small>' : '') + ' <span>' + esc(e.p.q) + '</span> <span class="dots">' + dots(e.c) + '</span></li>';
+      var an = ''; try { an = G.PAPER && G.PAPER.animOfMistake ? G.PAPER.animOfMistake(e.p) : ''; } catch (x) { }   // 🎬 看動畫（math/anim.html，2026-11-06；對應表在 paper.js ANIM_F）
+      return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf('math', e.p)) + '</span>' + (TAG[e.p.tag] ? ' <small class="muted">' + TAG[e.p.tag] + '</small>' : '') + ' <span>' + esc(e.p.q) + '</span> <span class="dots">' + dots(e.c) + '</span>' +
+        (an ? ' <a class="btn sm mk-anim" data-anim="' + an + '" href="#s/math/anim-' + an.toLowerCase() + '">🎬 看動畫</a>' : '') + '</li>';
     };
     return '<div class="card" id="mk-paper"><h2 style="margin:0 0 6px">📝 紙本錯題（' + items.length + ' 題）</h2><p>考卷上打叉或紅筆圈到的題目，還有類題、約分通分答錯的。同一題<b>連續答對 3 次</b>就會畢業 🎓</p>' +
       '<p style="display:flex;flex-wrap:wrap;gap:10px"><button class="btn primary" id="mk-paper-go" type="button"' + (items.length ? '' : ' disabled') + '>練紙本錯題（' + Math.min(items.length, ROUND) + ' 題）</button>' +

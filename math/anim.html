@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>動畫教學</title>
+<link rel="stylesheet" href="../style.css?v=494b1daab7">
+<style>
+/* 🎬 動畫教學（2026-11-06）：?id=A～G 播一段；沒有 id＝清單。引擎 anim.js，每段 anim/<段>.js */
+body{background:var(--bg)}
+[hidden]{display:none!important}
+.mu{max-width:900px;margin:0 auto;padding:12px 16px calc(48px + env(safe-area-inset-bottom))}
+.mu-head h1{font-size:clamp(1.3rem,1rem + 1.4vw,1.8rem);margin:4px 0 2px}
+.mu-head p{margin:0 0 10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+#list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.seg{display:flex;flex-direction:column;gap:4px;margin:0;text-decoration:none;color:var(--ink);min-height:44px}
+.seg .seg-i{font-size:2rem}
+.seg b{font-size:1.1rem}
+.seg.seen{border-color:#9fe0bd;background:#fbfffc}
+.seg.seen small{color:#16784a;font-weight:700}
+.stage{padding:8px;overflow:hidden}
+.stage svg{display:block;width:100%;height:auto;font-family:inherit}
+.cap{font-size:clamp(1.12rem,1rem + .5vw,1.3rem);line-height:1.7;font-weight:700;min-height:3.4em;margin:6px 2px 10px}
+.ctl{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:center}
+.ctl .btn{min-height:52px;padding:8px 6px;font-size:1.05rem}
+.stepno{font-weight:700;color:var(--muted);margin:0 0 6px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0}
+.q-text{font-size:clamp(1.12rem,1rem + .5vw,1.3rem);line-height:1.75;font-weight:700;margin:0 0 6px}
+.num-in{width:5.2em;min-height:52px;font:inherit;font-size:1.35rem;font-weight:700;text-align:center;border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
+.num-in:focus{outline:none;border-color:var(--pri)}
+.num-in.wide{width:7em}
+.suf{font-size:1.2rem;font-weight:700}
+.btn.opt{min-height:52px;font-size:1.15rem}
+.btn[aria-pressed="true"]{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 3px 0 #d96a22}
+.msg{min-height:1.4em;margin:8px 0;font-size:1.1rem;font-weight:700}
+.msg.bad{color:var(--no)}
+.frc{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.1;margin:0 .15em;font-weight:700}
+.frc span:first-child{border-bottom:2px solid currentColor;padding:0 .2em}.frc span:last-child{padding:0 .2em}
+a.btn{text-decoration:none}
+.acts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+#prac h2{margin:0 0 6px;font-size:1.25rem}
+</style>
+</head>
+<body>
+<main class="mu">
+  <header class="mu-head"><h1 id="title">🎬 動畫教學</h1><p class="muted" id="lede"></p></header>
+  <div id="list" hidden></div>
+  <div id="play" hidden>
+    <p class="stepno" id="stepno"></p>
+    <div class="card stage"><svg id="svg" viewBox="0 0 640 300" role="img" aria-label="動畫"></svg></div>
+    <p class="cap" id="cap" aria-live="polite"></p>
+    <div class="ctl">
+      <button type="button" class="btn" id="prev">◀ 上一步</button>
+      <button type="button" class="btn" id="again">↻ 重播</button>
+      <button type="button" class="btn primary" id="next">下一步 ▶</button>
+    </div>
+    <div class="card" id="prac" hidden style="margin-top:14px"></div>
+  </div>
+</main>
+<script src="anim.js?v=bd7e1e720a"></script>
+<script src="anim/A.js?v=f9641c6be6"></script>
+<script src="anim/B.js?v=6f0499a8df"></script>
+<script src="anim/C.js?v=224dfb3dcd"></script>
+<script src="anim/D.js?v=f2a5197004"></script>
+<script src="anim/E.js?v=1e180e348c"></script>
+<script src="anim/F.js?v=7721dd5842"></script>
+<script src="anim/G.js?v=268c3609af"></script>
+<script>ANIM.page();</script>
+</body>
+</html>

@@ -22,7 +22,9 @@
       { id: 'paper-mk', title: '紙本錯題', icon: '📝', src: 'math/paper.html?mistakes=1', hidden: true },
       { id: 'paper-30', title: '類題 30 題', icon: '🎯', src: 'math/paper.html?set=30', hidden: true },
       { id: 'paper-15', title: '約分通分 15 題', icon: '🧮', src: 'math/paper.html?set=15', hidden: true },
-      { id: 'paper-20', title: '期中類題 20 題', icon: '📋', src: 'math/paper.html?set=20', hidden: true }],
+      { id: 'paper-20', title: '期中類題 20 題', icon: '📋', src: 'math/paper.html?set=20', hidden: true },
+      // 2026-11-06：🎬 動畫教學 7 段（math/anim.html；看完＝練習答對，記在本機 kids_anim、不同步）；anim-a～anim-g＝錯題庫「🎬 看動畫」直接開某一段
+      { id: 'anim', title: '🎬 動畫教學', desc: () => animDesc(), icon: '🎬', src: 'math/anim.html', grp: '五上' }],
     // 2026-11-02：世界史漫畫（comics/；整頁開，閱讀不用登入；學習幣、完成標示、錯題庫、課程地圖、小助理等第 1 話看過再接）
     history: [{ id: 'comic-v1e1', title: '世界史漫畫 第 1 冊 古文明・第 1 話：寫下來，才算數！', desc: '試做｜阿凱和小禾搭時光搖搖車到 3800 年前的巴比倫：楔形文字、《漢摩拉比法典》，看完有重點、地圖和 5 題小測驗', icon: '📖', href: 'comics/v1e1.html' }],
     ai: [
@@ -47,6 +49,9 @@
       ['n9', '熱的影響與傳播', '六上 單元一'], ['n10', '多變的天氣', '六上 單元二'], ['n11', '發現大地的奧祕', '六上 單元三'], ['n12', '電磁與生活', '六上 單元四'],
       ['n13', '簡單機械', '六下 單元一'], ['n14', '生活中的聲音', '六下 單元二'], ['n15', '寰宇永續護地球', '六下 單元三']]
   };
+  // 🎬 動畫教學 7 段（標題要跟 math/anim/<段>.js 一致，test/anim.test.js 會對）；卡片小字列 7 段、看完的打 ✓
+  const ANIM_SEGS = [['A', '範圍裡的倍數'], ['B', '拼大找公倍、切小找公因'], ['C', '公車何時再同時開'], ['D', '三角形邊長條件'], ['E', '內角和'], ['F', '分數是平分'], ['G', '小數位值和排大小']];
+  function animDesc() { let s = {}; try { s = (JSON.parse(localStorage.getItem('kids_anim')) || {}).seen || {}; } catch (e) { } return ANIM_SEGS.map(([c, t]) => `${s[c] ? '✓' : '・'}${c} ${t}`).join('　'); }
   const NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
   const mmLab = (x, i) => x[2] || '單元' + NUMS[i], mmBook = x => x[2] ? x[2].split(' ')[0] : '五上';
   // 卡片小字：背架構過了幾關＋複習提醒（kids_mm_progress，key＝'<科>:<單元id>'；最後過關後第 1、3、7 天）
@@ -63,6 +68,7 @@
     // 🔁 今天要複習（2026-11-01）：錯題庫裡到期的題＋閃卡（間隔 1 → 3 → 7 天，規則在 kids-mistakes.js）；入口是科目首頁上方的按鈕（reviewBar），不另列卡片
     ACTS[k].push({ id: 'review', title: '今天要複習', icon: '🔁', src: `mindmap/${k}.html?review=1`, hidden: true });
   });
+  ANIM_SEGS.forEach(([c, t]) => ACTS.math.push({ id: 'anim-' + c.toLowerCase(), title: `🎬 ${c} ${t}`, icon: '🎬', src: `math/anim.html?id=${c}`, hidden: true }));
   // 數學五下起（2026-11-06，康軒）：每個單元一張卡 → iframe 開 math/grade.html?u=<單元>，每冊最後一張「總複習」（?r=<冊>）。
   // 要跟 math/grade.js 的 BOOKS、completion.js 的 MG_BOOKS 一致（只列已上線的冊；test/math-grade.test.js 會對）。五上是上面寫死的卡片（grp '五上'）。
   const MG_BOOKS = [['g5b', '五下', ['體積', '分數的計算', '容積', '小數的乘法', '大數與折線圖', '整數、小數除以整數', '表面積', '比率與百分率', '時間的乘除', '生活中的大單位']], ['g6a', '六上', ['最大公因數與最小公倍數', '分數除法', '數量關係', '小數除法', '比與比值', '圓周長與扇形周長', '圓面積與扇形面積', '認識速率', '放大圖、縮圖與比例尺']], ['g6b', '六下', ['小數與分數的計算', '速率的應用', '柱體體積與表面積', '基準量與比較量', '怎樣解題', '圓形圖']]];
