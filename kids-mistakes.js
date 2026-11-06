@@ -112,7 +112,25 @@
   function hash(s) { var h = 5381; s = String(s == null ? '' : s); for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h.toString(36); }
   function plain(s) { return String(s == null ? '' : s).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim(); }
 
-  var core = { SUBJ: SUBJ, GRAD: GRAD, MAX_DEL: MAX_DEL, ROUND: ROUND, SPACED: SPACED, IV: IV, canon: canon, normBook: normBook, normAll: normAll, mergeBook: mergeBook, mergeAll: mergeAll, mark: mark, liveList: liveList, dueList: dueList, isDue: isDue, dayIdx: dayIdx, hash: hash, plain: plain };
+  /* 單元（錯題庫按「冊 → 單元」分組，2026-11-06）：從題目 id／p 推，不另外存。社會／自然＝p.u；數學單元碼 g5a1～（五上，康軒 115 學年度課程計畫）、g5b1～／g6a1～／g6b1～（math/grade.js）：
+     grade＝id 'mg:<單元>-…'；紙本＝paper.js 的 PAPER.unitOfMistake（首頁有載 math/paper.js）；短除法看 mode、應用題看模板（LCM_T＝math/gcd-word.js kind 'lcm' 的，test 會對）；
+     倍數→單元三、分數比大小→單元四；天平、乘法快算不在課本單元裡 → ''（畫面放「其他」） */
+  var LCM_T = ['bus', 'brick', 'light', 'run', 'gear', 'stack', 'duty', 'zongzi', 'rem', 'meet3', 'pack3'];
+  function unitOf(k, id, p) {
+    p = p || {};
+    if (k !== 'math') return p.u || '';
+    switch (p.type) {
+      case 'grade': return (/^mg:(g[56][ab]\d+)-/.exec(id) || [])[1] || '';
+      case 'paper': try { return G.PAPER && G.PAPER.unitOfMistake ? G.PAPER.unitOfMistake(p) : ''; } catch (e) { return ''; }
+      case 'gcd': return p.mode === 'lcm' ? 'g5a3' : 'g5a2';
+      case 'gcdword': return LCM_T.indexOf(p.t) >= 0 ? 'g5a3' : 'g5a2';
+      case 'multiples': return 'g5a3';
+      case 'fraction': return 'g5a4';
+    }
+    return '';
+  }
+
+  var core = { SUBJ: SUBJ, GRAD: GRAD, MAX_DEL: MAX_DEL, ROUND: ROUND, SPACED: SPACED, IV: IV, canon: canon, normBook: normBook, normAll: normAll, mergeBook: mergeBook, mergeAll: mergeAll, mark: mark, liveList: liveList, dueList: dueList, isDue: isDue, dayIdx: dayIdx, hash: hash, plain: plain, unitOf: unitOf, LCM_T: LCM_T };
   if (typeof module !== 'undefined' && module.exports) { module.exports = { _core: core }; return; }
 
   // ================= 瀏覽器：存取 =================
@@ -163,20 +181,40 @@
     if (!Object.keys(b).some(function (id) { return id.indexOf('pp:') === 0; })) return null;
     return list('math').filter(function (e) { return e.p.type === 'paper'; });
   }
-  function paperBox(items) {
+  function paperBox(items, ulist) {
     if (!items) return '';
     var TAG = { x: '打叉', r: '紅筆圈到' };
-    var lis = items.map(function (e) {
+    var li = function (e) {
       return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf('math', e.p)) + '</span>' + (TAG[e.p.tag] ? ' <small class="muted">' + TAG[e.p.tag] + '</small>' : '') + ' <span>' + esc(e.p.q) + '</span> <span class="dots">' + dots(e.c) + '</span></li>';
-    }).join('');
+    };
     return '<div class="card" id="mk-paper"><h2 style="margin:0 0 6px">📝 紙本錯題（' + items.length + ' 題）</h2><p>考卷上打叉或紅筆圈到的題目，還有類題、約分通分答錯的。同一題<b>連續答對 3 次</b>就會畢業 🎓</p>' +
       '<p style="display:flex;flex-wrap:wrap;gap:10px"><button class="btn primary" id="mk-paper-go" type="button"' + (items.length ? '' : ' disabled') + '>練紙本錯題（' + Math.min(items.length, ROUND) + ' 題）</button>' +
       '<button class="btn primary" id="mk-paper-30" type="button">🎯 類題 30 題</button>' +
-      '<button class="btn primary" id="mk-paper-15" type="button">🧮 約分通分 15 題</button></p>' +
-      (items.length ? '<ul class="list" id="mk-paper-list" style="padding:0;margin:0">' + lis + '</ul>' : '<p class="muted">紙本錯題都畢業了 🎉</p>') + '</div>';
+      '<button class="btn primary" id="mk-paper-15" type="button">🧮 約分通分 15 題</button>' +
+      '<button class="btn primary" id="mk-paper-20" type="button">📋 期中類題 20 題</button></p>' +
+      (items.length ? '<div id="mk-paper-list">' + groups('math', items, ulist, li, '') + '</div>' : '<p class="muted">紙本錯題都畢業了 🎉</p>') + '</div>';
+  }
+  /* 分組清單：冊（<details class="book">，跟科目首頁的分冊收合同一套樣式）→ 單元（小標＋清單）；推不出單元的放最後的「其他」。
+     ulist＝[[單元碼, 單元名, '五下 單元一'?], …]（第 3 欄沒有＝五上，照順序叫單元一、二…）；ulCls＝每個單元清單 <ul> 多加的 class */
+  function groups(k, items, ulist, li, ulCls) {
+    var nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'], meta = {}, by = {};
+    (ulist || []).forEach(function (x, i) { var lab = (x[2] || '五上 單元' + nums[i]).split(' '); meta[x[0]] = { i: i, bk: lab[0], lab: lab[1] + '　' + x[1] }; });
+    items.forEach(function (e) { var u = unitOf(k, e.id, e.p); u = meta[u] ? u : ''; (by[u] = by[u] || []).push(e); });
+    var books = [];
+    Object.keys(by).sort(function (a, b) { return (a ? meta[a].i : 1e9) - (b ? meta[b].i : 1e9); }).forEach(function (u) {
+      var bk = u ? meta[u].bk : '其他', last = books[books.length - 1];
+      if (!last || last.bk !== bk) books.push(last = { bk: bk, us: [], n: 0 });
+      last.us.push(u); last.n += by[u].length;
+    });
+    return books.map(function (b) {
+      return '<details class="book mk-book" open><summary class="tiles-h">' + (b.bk === '其他' ? '📦 ' : '📗 ') + esc(b.bk) + '（' + b.n + ' 題）</summary>' + b.us.map(function (u) {
+        return (u ? '<h3 class="mk-uh">' + esc(meta[u].lab) + '（' + by[u].length + '）</h3>' : '') + '<ul class="list ' + ulCls + '" data-u="' + esc(u || 'other') + '">' + by[u].map(li).join('') + '</ul>';
+      }).join('') + '</details>';
+    }).join('');
   }
 
-  /* page(box, {k, n, i, units:[[id,標題]], unit, back}) — 錯題清單（免登入）；按「只練錯題」才要登入＋練習額度，通過就 location.hash＝'#s/<k>/mistakes-go[-<單元>]' */
+  /* page(box, {k, n, i, units:[[id,標題]], unit, ulist, back}) — 錯題清單（免登入）；按「只練錯題」才要登入＋練習額度，通過就 location.hash＝'#s/<k>/mistakes-go[-<單元>]'
+     units＝上方的單元篩選鈕（社會、自然）；清單依「冊 → 單元」分組（ulist，沒給就用 units；數學由 subjects.js 給 MATH_UNITS） */
   function page(box, o) {
     var k = o.k, unit = o.unit || '', paper = paperOf(k), all = list(k).filter(function (e) { return e.p.type !== 'paper'; }), items = unit ? all.filter(function (e) { return e.p.u === unit; }) : all;
     var nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'], ulab = {};
@@ -190,22 +228,22 @@
       })).join('') + '</div>' : '';
     var sp = spaced(k), today = dayIdx(now());
     function dueText(e) { var d = (e.due || today) - today; return d <= 0 ? '🔁 今天複習' : d === 1 ? '明天複習' : d + ' 天後複習'; }
-    var lis = items.map(function (e) {
+    var li = function (e) {
       var u = e.p.u && ulab[e.p.u] ? '<small class="muted">' + ulab[e.p.u] + '</small> ' : '';
       return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf(k, e.p)) + '</span> ' + u + '<span>' + ((k === 'math' && e.p.type === 'fraction' && frItem(e.p.v)) || esc(textOf(k, e.p))) + '</span> <span class="dots">' + dots(e.c) + '</span> <small class="muted">錯 ' + e.w + ' 次' + (sp ? '・' + dueText(e) : '') + '</small></li>';
-    }).join('');
+    }, ulist = o.ulist || o.units;
     box.innerHTML = '<header class="top"><a class="btn" href="#s/' + k + '">← 回' + esc(o.n) + '</a><h1>📕 ' + esc(o.n) + '錯題庫</h1></header>' +
       '<div class="card"><p>' + (sp ? '答錯的題目（還有閃卡按「再想想」的）會來這裡，隔 <b>1 天、3 天、7 天</b>各複習一次；到期都答對就畢業離開 🎓' : '答錯的題目會來這裡。同一題<b>連續答對 3 次</b>就會畢業離開 🎓') + '</p>' + filt +
       '<button class="btn primary big" id="mk-go" type="button"' + (items.length ? '' : ' disabled') + '>只練錯題（' + Math.min(items.length, ROUND) + ' 題）</button>' +
       (items.length > ROUND ? '<p class="muted">一輪最多 ' + ROUND + ' 題，先練最近答錯的。</p>' : '') + '</div>' +
-      paperBox(paper) + (items.length ? '<ul class="list card" id="mk-list">' + lis + '</ul>' : '<p class="center muted" id="mk-empty">目前沒有錯題 🎉</p>');
+      paperBox(paper, ulist) + (items.length ? '<div id="mk-list">' + groups(k, items, ulist, li, 'card') + '</div>' : '<p class="center muted" id="mk-empty">目前沒有錯題 🎉</p>');
     var go = box.querySelector('#mk-go');
     if (go) go.onclick = function start() {
       if (!authOK('練錯題')) return;
       if (!quotaOK(k, start)) return;
       location.hash = '#s/' + k + '/mistakes-go' + (unit ? '-' + unit : '');
     };
-    [['mk-paper-go', 'paper-mk'], ['mk-paper-30', 'paper-30'], ['mk-paper-15', 'paper-15']].forEach(function (b) {
+    [['mk-paper-go', 'paper-mk'], ['mk-paper-30', 'paper-30'], ['mk-paper-15', 'paper-15'], ['mk-paper-20', 'paper-20']].forEach(function (b) {
       var el = box.querySelector('#' + b[0]); if (!el) return;
       el.onclick = function start() { if (!authOK('練紙本錯題')) return; if (!quotaOK(k, start)) return; location.hash = '#s/math/' + b[1]; };
     });

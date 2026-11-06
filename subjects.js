@@ -21,7 +21,8 @@
       // 2026-11-03：📝 紙本錯題／類題 30 題（入口在數學錯題庫的紙本區，不列卡片）
       { id: 'paper-mk', title: '紙本錯題', icon: '📝', src: 'math/paper.html?mistakes=1', hidden: true },
       { id: 'paper-30', title: '類題 30 題', icon: '🎯', src: 'math/paper.html?set=30', hidden: true },
-      { id: 'paper-15', title: '約分通分 15 題', icon: '🧮', src: 'math/paper.html?set=15', hidden: true }],
+      { id: 'paper-15', title: '約分通分 15 題', icon: '🧮', src: 'math/paper.html?set=15', hidden: true },
+      { id: 'paper-20', title: '期中類題 20 題', icon: '📋', src: 'math/paper.html?set=20', hidden: true }],
     // 2026-11-02：世界史漫畫（comics/；整頁開，閱讀不用登入；學習幣、完成標示、錯題庫、課程地圖、小助理等第 1 話看過再接）
     history: [{ id: 'comic-v1e1', title: '世界史漫畫 第 1 冊 古文明・第 1 話：寫下來，才算數！', desc: '試做｜阿凱和小禾搭時光搖搖車到 3800 年前的巴比倫：楔形文字、《漢摩拉比法典》，看完有重點、地圖和 5 題小測驗', icon: '📖', href: 'comics/v1e1.html' }],
     ai: [
@@ -69,6 +70,9 @@
     ts.forEach((t, i) => ACTS.math.push({ id: b + (i + 1), title: `${g} 單元${NUMS[i]}　${t}`, grp: g, icon: '📐', desc: '看重點（例題＋為什麼）→ 練習一輪 15 題 → 單元測驗 20 題', src: `math/grade.html?u=${b}${i + 1}`, dk: `mg:${b}${i + 1}` }));
     ACTS.math.push({ id: b + 'r', title: `${g}總複習`, grp: g, icon: '🏁', desc: `從${g}每個單元抽 30 題，80 分過關`, src: `math/grade.html?r=${b}`, dk: `mg:${b}R` });
   });
+  // 數學錯題庫按「冊 → 單元」分組（kids-mistakes.js，2026-11-06）：五上照康軒 115 學年度課程計畫（屏東縣公開版），五下起照 MG_BOOKS；單元碼 g5a1～、g5b1～…
+  const G5A = ['多位小數與加減', '因數與公因數', '倍數與公倍數', '擴分、約分與通分', '多邊形與扇形', '異分母分數的加減', '線對稱圖形', '整數四則運算', '面積', '柱體、錐體和球'];
+  const MATH_UNITS = [['g5a', '五上', G5A]].concat(MG_BOOKS).flatMap(([b, g, ts]) => ts.map((t, i) => [b + (i + 1), t, `${g} 單元${NUMS[i]}`]));
   const reviewBar = k => {
     if (!MM_UNITS[k] || !KM() || !KM().due) return '';
     let n = 0; try { n = KM().due(k).length; } catch (e) { }
@@ -122,7 +126,7 @@
       const unit = mk[2] && (MM_UNITS[k] || []).some(x => x[0] === mk[2]) ? mk[2] : '', back = `#s/${k}/mistakes${unit ? '-' + unit : ''}`;
       if (!mk[1] || k === 'ai') {
         document.documentElement.classList.remove('frame-mode');
-        if (mk[1]) KM().aiPlay(box); else KM().page(box, { k, n: s.n, units: MM_UNITS[k], unit });
+        if (mk[1]) KM().aiPlay(box); else KM().page(box, { k, n: s.n, units: MM_UNITS[k], unit, ulist: k === 'math' ? MATH_UNITS : undefined });
       } else {
         document.documentElement.classList.add('frame-mode');
         const src = k === 'math' ? mathMkSrc() : k === 'chinese' ? 'chinese/reading.html?mistakes=1' : `mindmap/${k}.html?mistakes=1${unit ? '&u=' + unit : ''}`;
@@ -147,7 +151,7 @@
   }
   // 打開網站一律到首頁（今天的清單）；冊別收合的開關記在這一頁
   // 畫出來就是 open 的 <details> 也會發一次 toggle：跟畫的時候一樣（data-def）就不算使用者開關，不記（不然 kids-done.js 晚載入後「第一冊沒學完的」會被蓋掉）
-  box.addEventListener('toggle', e => { const d = e.target; if (!d || !d.classList || !d.classList.contains('book')) return; const key = parse().k + ':' + d.dataset.g; if (String(+d.open) === d.dataset.def) delete bookOpen[key]; else bookOpen[key] = d.open; }, true);
+  box.addEventListener('toggle', e => { const d = e.target; if (!d || !d.classList || !d.classList.contains('book') || !d.dataset.g) return; /* 錯題庫的分冊（.mk-book）沒有 data-g，不記 */ const key = parse().k + ':' + d.dataset.g; if (String(+d.open) === d.dataset.def) delete bookOpen[key]; else bookOpen[key] = d.open; }, true);
   window.addEventListener('hashchange', route);
   // 帳號同步把別台的心智圖過關紀錄合併進來：正在看單元卡（不是開著 iframe）就重畫，卡片上的「過了幾關」才會是新的
   // （AI 錯題正在重答時不重畫，免得打斷）

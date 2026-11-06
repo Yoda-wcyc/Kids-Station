@@ -65,14 +65,80 @@ function verify(Q) {
       const j = p[0], a = p[1], v = parseInt(a.opts[a.ans], 10), vals = c.opts;
       ok(j.opts[j.ans] === (c.kind === 'gcd' ? '公因數' : '公倍數'), m + ' judge');
       const fits = vals.filter(x => c.kind === 'gcd' ? (c.a % x === 0 && c.b % x === 0) : (x % c.a === 0 && x % c.b === 0));
-      if (c.max) ok(v === Math.max(...fits) && v === gcd(c.a, c.b), m + ' max'); else ok(fits.length === 1 && fits[0] === v, m + ' 選項只有一個對 ' + fits);
+      if (c.max) ok(v === Math.max(...fits) && v === gcd(c.a, c.b), m + ' max'); else if (c.min) ok(v === Math.min(...fits) && v === lcm(c.a, c.b) && fits.length > 1, m + ' min'); else ok(fits.length === 1 && fits[0] === v, m + ' 選項只有一個對 ' + fits);
       ok(same(a.opts.map(s => parseInt(s, 10)), vals), m + ' opts'); break;
     }
     case 'zeros': { const a = p[0]; ok(same(a.opts.filter(zeroMustStay), a.ans), m); a.opts.forEach(s => ok(!(zeroMustStay(s) && zeroAnyGoes(s)), m + ' 不准有一部分能去、一部分不能去的數：' + s)); break; }
+    // ---- 期中錯題＋期中類題（2026-11-06）----
+    case 'atleast2': { const bad1 = []; for (let n = 1; n <= 100; n++) if (divs(n).length < 2) bad1.push(n); ok(same(bad1, [1]) && p[0].opts[p[0].ans] === '不對', m); break; }
+    case 'onefac': { const v = p[0].opts.map(Number); ok(same(v, c.opts), m + ' opts'); const fits = v.filter(n => divs(n).length === 1); ok(fits.length === 1 && fits[0] === v[p[0].ans], m); break; }
+    case 'tri3': { const v = p[0].opts.map(s => parseInt(s, 10)); ok(same(v, c.opts), m + ' opts'); const fits = v.filter(x => triOK([c.a, c.b, x]) === (c.want === 'can')); ok(fits.length === 1 && fits[0] === v[p[0].ans], m + ' ' + fits); ok(Q.text.includes(c.a + ' 公分') && Q.text.includes(c.b + ' 公分'), m + ' text'); break; }
+    case 'div': {
+      const s = simp(c.a, c.b), x = p[0];
+      if (x.t === 'frac') ok(x.n === s[0] && x.d === s[1], m);
+      else { const val = o => { const r = /\[\[(\d+)\/(\d+)\]\]/.exec(o); return r ? [+r[1], +r[2]] : null; }, eq = o => { const f = val(o); return f && f[0] * c.b === f[1] * c.a; }; ok(eq(x.opts[x.ans]) && x.opts.filter(eq).length === 1, m); }
+      ok(Q.text.includes(String(c.a)) && Q.text.includes(String(c.b)), m + ' text'); break;
+    }
+    case 'chain': {
+      const works = c.nums.filter(r => { const rest = c.nums.filter(n => n !== r); return rest.every((a, i) => rest.every((b, j) => i >= j || Math.max(a, b) % Math.min(a, b) === 0)); });
+      ok(works.length === 1 && String(works[0]) === p[0].opts[p[0].ans] && same(p[0].opts.map(Number), c.nums), m + ' ' + works); break;
+    }
+    case 'iso': { const third = [c.a, c.b].filter(x => triOK([c.a, c.b, x])); ok(third.length === 1 && p[0].ans === third[0], m + ' ' + third); if (c.per) ok(p[1].ans === c.a + c.b + third[0], m + ' 周長'); break; }
+    case 'dorder': { const idx = c.xs.map((_, i) => i).sort((i, j) => (milli(c.xs[i]) < milli(c.xs[j]) ? -1 : 1)); ok(same(p[0].ans, idx) && same(p[0].opts, c.xs), m + ' ' + idx); ok(/由小到大/.test(Q.text), m + ' 由小到大'); break; }
+    case 'digits': {
+      const got = []; for (let s = 0; s <= 9; s++) for (let b = 0; b <= 9; b++) { const n = +c.tpl.replace('★', s).replace('□', b); if (s + b === c.sum && n % c.m === 0) got.push(n); }
+      ok(got.length >= 2 && p[0].ans === Math.min(...got) && p[1].ans === Math.max(...got) && p[0].label === '最小' && p[1].label === '最大', m + ' ' + got);
+      ok(Q.text.includes(c.tpl) && Q.text.includes(c.m + ' 的倍數') && Q.text.includes('數字和是 ' + c.sum), m + ' text'); break;
+    }
+    case 'range': { const want = mults(c.a, c.lo, c.hi); ok(want.length >= 2 && p[0].ans === want[0] && p[1].ans === want[want.length - 1], m + ' ' + want); ok(c.lo % c.a && c.hi % c.a, m + ' 範圍兩端不是倍數'); ok(Q.text.includes(c.lo + '～' + c.hi) && Q.text.includes(String(c.a)), m + ' text'); break; }
+    case 'fsum': { const l = c.k * c.a[0] * c.b[1], r = c.b[0] * c.a[1], want = l > r ? '＞' : l < r ? '＜' : '＝'; ok(p[0].opts[p[0].ans] === want, m); break; }   // k 個 a/b 相加，交叉相乘比
     default: ok(false, 'unknown calc ' + c.f);
   }
 }
-P.PAPER.forEach(verify); P.VARIANTS.forEach(verify); P.FRACTIONS.forEach(verify);
+P.PAPER.forEach(verify); P.VARIANTS.forEach(verify); P.FRACTIONS.forEach(verify); P.MIDTERM.forEach(verify); P.EXAM.forEach(verify);
+
+// ---------- 期中錯題 10 題＋期中類題 20 題 ----------
+{
+  const M = P.MIDTERM, E = P.EXAM, f = (a, x) => a.filter(q => q.calc.f === x).length;
+  ok(M.length === 10 && M.every(q => q.tag === 'x' && /^期中 /.test(q.src)), 'midterm 10 題、都有來源');
+  // 原卷數字（照片核對過）：這幾題的數字不准改
+  const mid = id => M.find(q => q.id === id).calc;
+  ok(same(mid('mt2').opts, [5, 6, 11, 12]) && mid('mt3').a === 38 && mid('mt4').a === 7 && mid('mt4').b === 27 && same(mid('mt5').nums, [10, 15, 20, 40]) && mid('mt6').b === 14 && mid('mt8').sum === 13 && mid('mt10').lo === 380 && mid('mt10').hi === 520, 'midterm 數字照原卷');
+  ok(E.length === 20 && E.every((q, i) => [1, 2, 3].includes(q.d) && (!i || E[i - 1].d <= q.d)), 'exam 20 題由易到難');
+  ok(f(E, 'range') === 3 && f(E, 'judge') === 3 && f(E, 'tri3') + f(E, 'iso') === 4 && f(E, 'div') === 3 && f(E, 'dorder') === 2 && f(E, 'digits') === 2 && f(E, 'onefac') === 1 && f(E, 'chain') === 1 && f(E, 'fsum') === 1, '配比：範圍倍數 3、公因公倍 3、三角形 4、整數相除 3、由小到大 2、最小最大 2、其他 3');
+  ok(E.filter(q => q.calc.f === 'judge').some(q => q.calc.kind === 'gcd') && E.filter(q => q.calc.f === 'judge' && q.calc.kind === 'lcm').length >= 2, '公因公倍：拼大（公倍）多、剪小（公因）也有');
+  ok(E.some(q => q.calc.f === 'div' && q.parts[0].t === 'frac') && E.some(q => q.calc.f === 'tri3' && q.calc.want === 'cannot'), '整數相除有自己填分數、三角形有「不能」');
+  M.concat(E).forEach(q => { ok(q.why && q.why.length <= 140, 'why 要短：' + q.id + ' ' + q.why.length); ok(P.ansText(q), 'ansText ' + q.id); });
+  ok(!/座號|班級|國民小學|國小|[一二三四五六七八九]年[一二三四五六七八九]?班/.test(JSON.stringify([M, E])), '沒有學校班級座號');
+  // 判分
+  const m8 = M.find(q => q.id === 'mt8'); ok(P.checkQ(m8, [{ v: '7558' }, { v: '7594' }]).ok && !P.checkQ(m8, [{ v: '7549' }, { v: '7594' }]).ok, 'mt8：他原本的 7549 判錯');
+  const m7 = M.find(q => q.id === 'mt7').parts[0]; ok(P.check(m7, ['1', '3', '0', '2']).ok && /由小到大/.test(P.check(m7, ['2', '0', '3', '1']).msg), 'mt7：他寫成由大到小，提醒看清題目');
+  const m10 = M.find(q => q.id === 'mt10'); ok(!P.checkQ(m10, [{ v: '368' }, { v: '512' }]).ok && P.checkQ(m10, [{ v: '384' }, { v: '512' }]).ok, 'mt10：368 判錯');
+  const e11 = E.find(q => q.id === 'e11').parts[0]; ok(P.check(e11, { n: '7', d: '4' }).ok && !P.check(e11, { n: '4', d: '7' }).ok, 'e11：寫反判錯');
+  // 錯題庫
+  const em = P.mkEntry(M[0], 'm'), ee = P.mkEntry(E[0], 'e');
+  ok(em.id === 'pm:mt1' && em.p.src === '期中 是非 3' && P.fromMistake(em.p) === M[0] && ee.id === 'pe:e1' && ee.p.src === '期中類題' && P.fromMistake(ee.p) === E[0], 'mkEntry m／e');
+  ok(M.concat(E).every(q => JSON.stringify(P.mkEntry(q, 'm').p).length < 400), 'p 夠小');
+}
+
+// ---------- 單元（錯題庫分組）：每一題都推得出五上單元，而且推得對 ----------
+{
+  const U = ['g5a1', 'g5a2', 'g5a3', 'g5a4', 'g5a5'], all = [['p', P.PAPER], ['v', P.VARIANTS], ['f', P.FRACTIONS], ['m', P.MIDTERM], ['e', P.EXAM]];
+  all.forEach(([s, a]) => a.forEach(q => { const u = P.unitOfMistake(P.mkEntry(q, s).p); ok(U.includes(u), 'unit ' + s + ':' + q.id + ' → ' + u); }));
+  const u = (s, id) => P.unitOfMistake({ type: 'paper', set: s, pid: id });
+  ok(u('m', 'mt1') === 'g5a2' && u('m', 'mt2') === 'g5a5' && u('m', 'mt3') === 'g5a3' && u('m', 'mt4') === 'g5a4' && u('m', 'mt7') === 'g5a1' && u('m', 'mt10') === 'g5a3' && u('p', 'C') === 'g5a2' && u('p', 'N') === 'g5a3' && u('f', 'y1') === 'g5a4', 'unit 抽查');
+  ok(P.FRACTIONS.every(q => P.unitOf(q) === 'g5a4') && u('x', 'nope') === '' && P.unitOfMistake(null) === '', 'unit：約分通分全在單元四；查不到回空字串');
+  // kids-mistakes.js 的 unitOf（錯題庫分組）：各種數學錯題都推得到單元；應用題模板的公倍數清單要跟 gcd-word.js 一致
+  const fs = require('fs'), KM = require(path.join(__dirname, '..', 'kids-mistakes.js'))._core, src = fs.readFileSync(path.join(__dirname, '..', 'math', 'gcd-word.js'), 'utf8');
+  const lcmT = [...src.matchAll(/\{ id: '(\w+)'[^\n]*?kind: '(gcd|lcm)'/g)].filter(m => m[2] === 'lcm').map(m => m[1]);
+  ok(lcmT.length > 5 && same(lcmT.slice().sort(), KM.LCM_T.slice().sort()), 'LCM_T 跟 gcd-word.js 一致 ' + lcmT);
+  globalThis.PAPER = P;
+  const mu = (id, p) => KM.unitOf('math', id, p);
+  ok(mu('pm:mt3', P.mkEntry(P.MIDTERM[2], 'm').p) === 'g5a3' && mu('mg:g6a2-x3', { type: 'grade' }) === 'g6a2' && mu('gcd:12,18:lcm', { type: 'gcd', mode: 'lcm' }) === 'g5a3' && mu('gcd:12,18', { type: 'gcd', mode: 'both' }) === 'g5a2' &&
+    mu('gcdword:bus:1', { type: 'gcdword', t: 'bus' }) === 'g5a3' && mu('gcdword:share:1', { type: 'gcdword', t: 'share' }) === 'g5a2' && mu('mul:x', { type: 'multiples' }) === 'g5a3' && mu('frc:x', { type: 'fraction' }) === 'g5a4' &&
+    mu('eq:x+1=2', { q: 'x+1=2' }) === '' && mu('mx:3x4', { type: 'multiply' }) === '' && KM.unitOf('social', 'u2|q|abc', { u: 'u2' }) === 'u2' && KM.unitOf('ai', 'a|1', {}) === '', 'kids-mistakes unitOf');
+  delete globalThis.PAPER;
+}
 
 // ---------- 題數、配比 ----------
 ok(P.PAPER.length === 23 && P.PAPER.filter(q => q.tag === 'x').length === 10 && P.PAPER.filter(q => q.tag === 'r').length === 13, 'paper: 23 題＝打叉 10＋紅筆圈到 13');

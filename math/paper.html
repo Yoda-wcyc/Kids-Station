@@ -53,16 +53,17 @@ body{background:var(--bg)}
   <div class="card center end" id="end" hidden></div>
 </main>
 
-<script src="../kids-mistakes.js?v=c06d0b384f"></script>
-<script src="paper.js?v=8d74e80853"></script>
+<script src="../kids-mistakes.js?v=c7a60f1941"></script>
+<script src="paper.js?v=9bf84d1671"></script>
 <script>
 (function () {
 'use strict';
-/* 紙本錯題頁（題目、判分在 paper.js）。?mistakes=1＝紙本區還沒畢業的題（連對 3 次畢業）；?set=30＝類題 30 題；?set=15＝約分通分 15 題；?add=<碼>＝把紙本 23 題加進這個帳號。
+/* 紙本錯題頁（題目、判分在 paper.js）。?mistakes=1＝紙本區還沒畢業的題（連對 3 次畢業）；?set=30＝類題 30 題；?set=15＝約分通分 15 題；?set=20＝期中類題 20 題；
+   ?add=<碼>＝把紙本 23 題＋期中錯題 10 題加進這個帳號。
    每次按確定 KidsCoins.answer(ok,'math')；每日紀錄和錯題庫一題只記一次（第一次的結果），訂正對了不改；一輪結束送 practice_round 'math:mistakes'。 */
 var $ = function (id) { return document.getElementById(id); };
 var P = window.PAPER, esc = P.esc, qs = location.search;
-var SET = (/[?&]set=(30|15)(?:&|$)/.exec(qs) || [])[1], ADD = (/[?&]add=([a-z0-9]+)/.exec(qs) || [])[1];
+var SET = (/[?&]set=(30|15|20)(?:&|$)/.exec(qs) || [])[1], ADD = (/[?&]add=([a-z0-9]+)/.exec(qs) || [])[1];
 var R = null;   // {items:[{Q, set}], i, ok, grad, rec, wrong, done, sent}
 window.PaperPage = { R: function () { return R; }, draw: function () { draw(); } };   // 測試用
 
@@ -95,7 +96,7 @@ function partHtml(p, i) {
       s += '<div class="row">' + [1, 2].map(function (j) { return (p.w ? '<span class="suf">' + p.w + '</span>' : '') + '<span class="fin">' + numIn('n' + j) + '<hr>' + numIn('d' + j) + '</span>'; }).join('<span class="suf">、</span>') + '</div>';
       break;
     case 'order':
-      p.opts.forEach(function (o, j) { s += '<div class="row"><b>' + ['最小', '中間', '最大'][j] + '</b>' + chips('o' + j, p.opts, function (x, m) { return m; }) + '</div>'; });
+      p.opts.forEach(function (o, j) { s += '<div class="row"><b>' + (p.opts.length === 3 ? ['最小', '中間', '最大'] : ['最小', '第二小', '第三小', '最大'])[j] + '</b>' + chips('o' + j, p.opts, function (x, m) { return m; }) + '</div>'; });
       break;
     case 'fracs':
       s += '<p class="muted" style="margin:0">有幾個就填幾個，不用填滿。</p><div class="row">';
@@ -180,12 +181,12 @@ function empty(t) { $('end').hidden = false; $('end').innerHTML = '<p id="p-empt
 
 /* ================= 啟動 ================= */
 if (ADD) {
-  // 把紙本 23 題加進這個帳號（錯題本跟著帳號同步）；已經有的（含畢業的）不動，連結按兩次也不會重來
+  // 把紙本 23 題＋期中錯題 10 題加進這個帳號（錯題本跟著帳號同步）；已經有的（含畢業的）不動，連結按兩次也不會重來，之前加過的帳號再開一次只會補上新的
   $('title').textContent = '📝 加入紙本錯題';
   if (KidsMistakes.hash(ADD) !== P.ADD_HASH) empty('這個連結不對。');
   else if (authOK()) {
     var book = KidsMistakes.loadAll().math || {}, added = 0;
-    P.PAPER.forEach(function (Q) { var m = P.mkEntry(Q, 'p'); if (book[m.id]) return; if (KidsMistakes.record('math', m.id, false, m.p)) added++; });
+    [['p', P.PAPER], ['m', P.MIDTERM]].forEach(function (s) { s[1].forEach(function (Q) { var m = P.mkEntry(Q, s[0]); if (book[m.id]) return; if (KidsMistakes.record('math', m.id, false, m.p)) added++; }); });
     empty(added ? '已經把 ' + added + ' 題紙本錯題加進這個帳號。' : '這個帳號已經加過了。');
   } else $('lede').textContent = '請先登入要加入的帳號，再打開一次這個連結。';
 } else if (!authOK()) {
@@ -193,9 +194,9 @@ if (ADD) {
 } else {
   var items = [];
   if (SET) {
-    var F15 = SET === '15', T = F15 ? '🧮 約分通分 15 題' : '🎯 類題 30 題';
+    var S = { '15': ['🧮 約分通分 15 題', P.FRACTIONS, 'f'], '20': ['📋 期中類題 20 題', P.EXAM, 'e'], '30': ['🎯 類題 30 題', P.VARIANTS, 'v'] }[SET], T = S[0];
     $('title').textContent = T; $('lede').textContent = '由簡單到難。每題答完都有解說。'; document.title = T.slice(3);
-    items = (F15 ? P.FRACTIONS : P.VARIANTS).map(function (Q) { return { Q: Q, set: F15 ? 'f' : 'v' }; });
+    items = S[1].map(function (Q) { return { Q: Q, set: S[2] }; });
   }
   else {
     $('lede').textContent = '考卷上的題目再做一次。同一題連續答對 3 次就會畢業 🎓';

@@ -1,7 +1,7 @@
 /* paper.js — 紙本錯題（2026-11-03）：考卷上打叉、紅筆圈到的題目 PAPER＋類題 30 題 VARIANTS，加判分（純函式；瀏覽器 window.PAPER，Node require）。
    題目數字與題意照紙本、敘述改寫；不放姓名、班級、照片。文字裡 [[n/d]] ＝上下排的分數。
    每題 {id, text, parts:[…], why, calc?}；類題多 d:1|2|3（照 d 排）、紙本多 src（來源）、tag:'x'（打叉）|'r'（紅筆圈到）。
-   FRACTIONS＝約分通分 15 題（2026-11-05），格式同類題。
+   FRACTIONS＝約分通分 15 題（2026-11-05），格式同類題。MIDTERM＝期中考錯題 10 題（格式同紙本）、EXAM＝期中類題 20 題（格式同類題），2026-11-06。
    part：num {ans, units?|suf?}｜multi {ans:[…], n:格數, suf}｜frac {n, d, suf, units?}（要最簡）｜fracs {w, ans:[[n,d],…], rows}（約分：全部列出）｜
          common {a:[n,d], b:[n,d], w?, den, ans:[[n,den],[n,den]], anyDen?}（通分：要最小公倍數當公分母；anyDen＝公分母不限）｜order {opts:['[[n/d]]',…], ans:[索引由小到大]}｜
          choice {opts, ans:索引}｜pick {opts, ans:[…]}｜combos {sticks, want:'can'|'cannot', ans:[[a,b,c],…], rows}｜dec {ans:'字串'}
@@ -60,7 +60,7 @@
   function fracs(w, ans, rows) { return { t: 'fracs', w: w, ans: ans, rows: rows || 5 }; }
   function lcmOf(a, b) { return a / gcd(a, b) * b; }
   function common(a, b, label, w, anyDen) { var L = lcmOf(a[1], b[1]); return { t: 'common', a: a, b: b, w: w, den: L, anyDen: anyDen, label: label, ans: [[a[0] * L / a[1], L], [b[0] * L / b[1], L]] }; }
-  function order(opts, ans) { return { t: 'order', opts: opts, ans: ans }; }
+  function order(opts, ans, hint) { return { t: 'order', opts: opts, ans: ans, hint: hint }; }
   function choice(opts, ans, label) { return { t: 'choice', opts: opts, ans: ans, label: label }; }
   function pick(opts, ans) { return { t: 'pick', opts: opts, ans: ans }; }
   function combos(sticks, want, ans) { return { t: 'combos', sticks: sticks, want: want, ans: ans, rows: 4 }; }
@@ -217,6 +217,84 @@
       why: '3、8、12 的最小公倍數是 24：[[2/3]]＝[[16/24]]、[[5/8]]＝[[15/24]]、[[7/12]]＝[[14/24]]。14＜15＜16，所以 [[7/12]]＜[[5/8]]＜[[2/3]]。' }
   ];
 
+  // 期中考錯題 10 題（2026-11-06，五上期中評量 75 分）：題目數字照原卷、敘述改寫；家長用 ?add= 連結跟紙本 23 題一起加進帳號（pm:）
+  var MIDTERM = [
+    { id: 'mt1', src: '期中 是非 3', tag: 'x', text: '判斷對錯：「任何大於 0 的整數，都至少有 2 個因數。」', parts: [choice(['對', '不對'], 1)], calc: { f: 'atleast2' },
+      why: '1 的因數只有 1 自己，只有 1 個因數，所以「任何」不成立。只要找到一個不行的，這句話就不對。' },
+    { id: 'mt2', src: '期中 選擇 3', tag: 'x', text: '三角形的兩條邊是 3 公分和 8 公分，第三邊可以是多少？', parts: [choice(['5 公分', '6 公分', '11 公分', '12 公分'], 1)], calc: { f: 'tri3', a: 3, b: 8, opts: [5, 6, 11, 12], want: 'can' },
+      why: '第三邊要比兩邊的差大、比兩邊的和小：8−3＝5、8＋3＝11，要在 5 和 11 中間。5 和 11 剛好等於，會躺平；12 太長。只有 6 可以。' },
+    { id: 'mt3', src: '期中 選擇 4', tag: 'x', text: '長 38 公分、寬 19 公分的長方形拼圖，全部朝同一個方向排成一片正方形。正方形的邊長最短是多少？', parts: judge('lcm', ['1 公分', '19 公分', '38 公分', '57 公分'], 2), calc: { f: 'judge', a: 38, b: 19, kind: 'lcm', opts: [1, 19, 38, 57] },
+      why: '拼圖是拼大，邊長要同時是 38 和 19 的倍數＝公倍數。38 是 19 的 2 倍，所以最短 38 公分。19 是公因數，那是「剪小」才用的。' },
+    { id: 'mt4', src: '期中 選擇 5', tag: 'x', text: '全班加老師一共 27 人，7 個蛋糕平分，每人可以分到幾個蛋糕？', parts: [choice(['[[1/7]] 個', '[[1/27]] 個', '[[27/7]] 個', '[[7/27]] 個'], 3)], calc: { f: 'div', a: 7, b: 27 },
+      why: '7 個蛋糕分給 27 人＝7÷27＝[[7/27]] 個：被分的蛋糕當分子、人數當分母。蛋糕比人少，每人分不到 1 個，[[27/7]] 比 1 大，一定不對。' },
+    { id: 'mt5', src: '期中 選擇 6', tag: 'x', text: '有 10、15、20、40 四個數，去掉哪一個數後，剩下的三個數任取兩個，較大的都能被較小的整除？', parts: [choice(['10', '15', '20', '40'], 1)], calc: { f: 'chain', nums: [10, 15, 20, 40] },
+      why: '一個一個試：去掉 15，剩 10、20、40，20÷10、40÷10、40÷20 都整除。留著 15 的話，20÷15 除不盡，所以要去掉 15。' },
+    { id: 'mt6', src: '期中 填充 (2)', tag: 'x', text: '一個等腰三角形，其中兩條邊是 7 公分和 14 公分，第三邊是幾公分？', parts: [num(14, '公分')], calc: { f: 'iso', a: 7, b: 14 },
+      why: '等腰三角形有兩邊一樣長，第三邊只能是 7 或 14。7、7、14：7＋7＝14 只是剛好等於，圍不起來；7、14、14 可以，所以是 14 公分。' },
+    { id: 'mt7', src: '期中 填充 (6)', tag: 'x', text: '把 1.0894、0.0523、1.521、0.1 由小到大排出來。', parts: [order(['1.0894', '0.0523', '1.521', '0.1'], [1, 3, 0, 2], '順序不對。先看清楚題目要「由小到大」，再一位一位比。')], calc: { f: 'dorder', xs: ['1.0894', '0.0523', '1.521', '0.1'] },
+      why: '先看清楚是「由小到大」。整數部分 0 的比較小：0.0523＜0.1；1.0894 和 1.521 比十分位 0＜5。所以 0.0523＜0.1＜1.0894＜1.521。' },
+    { id: 'mt8', src: '期中 填充 (8)', tag: 'x', text: '75★□ 是一個四位數，是 2 的倍數，★ 和 □ 的數字和是 13。這個四位數最小是多少？最大是多少？', parts: [num(7558, '', '最小'), num(7594, '', '最大')], calc: { f: 'digits', tpl: '75★□', m: 2, sum: 13 },
+      why: '2 的倍數個位是雙數，□ 只能 4、6、8（□ 是 0、2 時 ★ 要 13、11，不行）：7594、7576、7558。最小 7558、最大 7594。7549 個位是 9，不是 2 的倍數。' },
+    { id: 'mt9', src: '期中 比大小 (4)', tag: 'x', text: '比大小：[[2/3]]＋[[2/3]] ○ [[4/6]]', parts: [choice(CMP, 0)], calc: { f: 'fsum', a: [2, 3], k: 2, b: [4, 6] },
+      why: '同分母相加，分母不變、分子相加：[[2/3]]＋[[2/3]]＝[[4/3]]，比 1 大。[[4/6]]＝[[2/3]] 比 1 小，所以左邊大。分母不能也加成 6。' },
+    { id: 'mt10', src: '期中 應用 (2)', tag: 'x', text: '一箱水梨大約有 380～520 個，每 16 個裝成一盒，剛好裝完。一箱水梨最少有幾個？最多有幾個？', parts: [num(384, '個', '最少'), num(512, '個', '最多')], calc: { f: 'range', a: 16, lo: 380, hi: 520 },
+      why: '380÷16＝23…12，16×23＝368 比 380 小，不在範圍裡，要再多一盒：16×24＝384。520÷16＝32…8，16×32＝512。' }
+  ];
+
+  // 期中類題 20 題（2026-11-06）：針對 MIDTERM 的錯，由易到難；範圍內倍數、公因或公倍、三角形邊長、整數相除、看清題目要求（由小到大／最小）多出
+  var EXAM = [
+    { id: 'e1', d: 1, text: '下面哪一個數只有 1 個因數？', parts: [choice(['1', '2', '11', '25'], 0)], calc: { f: 'onefac', opts: [1, 2, 11, 25] },
+      why: '1 的因數只有 1。2、11 有 2 個因數（1 和自己），25 有 1、5、25 三個。所以「每個數都至少有 2 個因數」不對，1 是例外。' },
+    { id: 'e2', d: 1, text: '三角形的兩條邊是 4 公分和 9 公分，第三邊可以是多少？', parts: [choice(['4 公分', '5 公分', '10 公分', '13 公分'], 2)], calc: { f: 'tri3', a: 4, b: 9, opts: [4, 5, 10, 13], want: 'can' },
+      why: '9−4＝5、9＋4＝13，第三邊要比 5 大、比 13 小。5 和 13 剛好等於，圍不起來；只有 10 可以。' },
+    { id: 'e3', d: 1, text: '3 個蛋糕平分給 5 個人，每人分到幾個蛋糕？', parts: [choice(['[[5/3]] 個', '[[1/3]] 個', '[[3/5]] 個', '[[1/5]] 個'], 2)], calc: { f: 'div', a: 3, b: 5 },
+      why: '3÷5＝[[3/5]]：被分的蛋糕 3 當分子，人數 5 當分母。蛋糕比人少，每人一定分不到 1 個。' },
+    { id: 'e4', d: 1, text: '把 2.07、2.7、0.207、2.0701 由小到大排出來。', parts: [order(['2.07', '2.7', '0.207', '2.0701'], [2, 0, 3, 1], '順序不對。先看清楚題目要「由小到大」，再一位一位比。')], calc: { f: 'dorder', xs: ['2.07', '2.7', '0.207', '2.0701'] },
+      why: '整數部分 0.207 最小。其他都是 2 開頭，比十分位：2.7 最大。2.07 和 2.0701 前面一樣，2.0701 多了萬分位的 1。0.207＜2.07＜2.0701＜2.7。' },
+    { id: 'e5', d: 1, text: '等腰三角形的兩條邊是 5 公分和 11 公分，第三邊是幾公分？', parts: [num(11, '公分')], calc: { f: 'iso', a: 5, b: 11 },
+      why: '第三邊只能是 5 或 11。5、5、11：5＋5＝10 比 11 小，圍不起來；5、11、11 可以，所以是 11 公分。' },
+    { id: 'e6', d: 1, text: '一盒彈珠大約有 200～260 顆，18 顆裝一袋，剛好裝完。最少有幾顆？最多有幾顆？', parts: [num(216, '顆', '最少'), num(252, '顆', '最多')], calc: { f: 'range', a: 18, lo: 200, hi: 260 },
+      why: '200÷18＝11…2，18×11＝198 不到 200，要 12 袋：18×12＝216。260÷18＝14…8，18×14＝252。' },
+
+    { id: 'e7', d: 2, text: '長 12 公分、寬 8 公分的長方形磁磚，全部朝同一個方向排成一個正方形。正方形的邊長最短是多少？', parts: judge('lcm', ['4 公分', '8 公分', '24 公分', '48 公分'], 2), calc: { f: 'judge', a: 12, b: 8, kind: 'lcm', opts: [4, 8, 24, 48], min: true },
+      why: '磁磚是拼大，邊長要同時是 12 和 8 的倍數＝公倍數。24 和 48 都是，問最短，是最小公倍數 24。4 是公因數，剪小才用。' },
+    { id: 'e8', d: 2, text: '長 30 公分、寬 18 公分的紙，剪成一樣大的正方形，剛好剪完。正方形的邊長最長是多少？', parts: judge('gcd', ['3 公分', '6 公分', '18 公分', '90 公分'], 1), calc: { f: 'judge', a: 30, b: 18, kind: 'gcd', opts: [3, 6, 18, 90], max: true },
+      why: '剪小，邊長要能同時把 30 和 18 分完＝公因數。3 和 6 都可以，問最長，是最大公因數 6。18 分不完 30；90 是公倍數。' },
+    { id: 'e9', d: 2, text: '一箱橘子大約有 300～400 顆，24 顆裝一盒，剛好裝完。最少有幾顆？最多有幾顆？', parts: [num(312, '顆', '最少'), num(384, '顆', '最多')], calc: { f: 'range', a: 24, lo: 300, hi: 400 },
+      why: '300÷24＝12…12，24×12＝288 比 300 少，不算，要 13 盒：24×13＝312。400÷24＝16…16，24×16＝384。算完要檢查有沒有在範圍裡。' },
+    { id: 'e10', d: 2, text: '64★□ 是一個四位數，是 5 的倍數，★ 和 □ 的數字和是 9。這個四位數最小是多少？最大是多少？', parts: [num(6445, '', '最小'), num(6490, '', '最大')], calc: { f: 'digits', tpl: '64★□', m: 5, sum: 9 },
+      why: '5 的倍數個位是 0 或 5。□＝0 時 ★＝9：6490；□＝5 時 ★＝4：6445。最小 6445、最大 6490，看清楚哪一格填最小。' },
+    { id: 'e11', d: 2, text: '7 公升果汁平分裝成 4 瓶，每瓶有幾公升？（用分數表示）', parts: [frac(7, 4, '', '公升')], calc: { f: 'div', a: 7, b: 4 },
+      why: '7÷4＝[[7/4]] 公升（也就是 1[[3/4]] 公升）。果汁 7 當分子、瓶數 4 當分母，不要寫反成 [[4/7]]。' },
+    { id: 'e12', d: 2, text: '三角形的兩條邊是 6 公分和 10 公分，下面哪一個「不能」當第三邊？', parts: [choice(['5 公分', '8 公分', '12 公分', '16 公分'], 3)], calc: { f: 'tri3', a: 6, b: 10, opts: [5, 8, 12, 16], want: 'cannot' },
+      why: '10−6＝4、10＋6＝16，第三邊要比 4 大、比 16 小。5、8、12 都在中間；16 剛好等於兩邊的和，會躺平，不能。' },
+    { id: 'e13', d: 2, text: '比大小：[[3/4]]＋[[3/4]] ○ [[6/8]]', parts: [choice(CMP, 0)], calc: { f: 'fsum', a: [3, 4], k: 2, b: [6, 8] },
+      why: '同分母相加，分母不變：[[3/4]]＋[[3/4]]＝[[6/4]]，比 1 大。[[6/8]]＝[[3/4]] 比 1 小。分母不能跟著加成 8。' },
+    { id: 'e14', d: 2, text: '把 0.36、0.306、3.06、0.0366 由小到大排出來。', parts: [order(['0.36', '0.306', '3.06', '0.0366'], [3, 1, 0, 2], '順序不對。先看清楚題目要「由小到大」，再一位一位比。')], calc: { f: 'dorder', xs: ['0.36', '0.306', '3.06', '0.0366'] },
+      why: '3.06 整數是 3，最大。其他比十分位：0.0366 是 0，最小；0.36 和 0.306 十分位都是 3，比百分位 6＞0。0.0366＜0.306＜0.36＜3.06。' },
+
+    { id: 'e15', d: 3, text: '有 6、9、12、24 四個數，去掉哪一個數後，剩下的三個數任取兩個，較大的都能被較小的整除？', parts: [choice(['6', '9', '12', '24'], 1)], calc: { f: 'chain', nums: [6, 9, 12, 24] },
+      why: '去掉 9，剩 6、12、24：12÷6、24÷6、24÷12 都整除。留著 9 的話，12÷9 除不盡，所以要去掉 9。' },
+    { id: 'e16', d: 3, text: '一批鉛筆大約有 150～210 枝，12 枝一打，剛好裝完。最少有幾枝？最多有幾枝？', parts: [num(156, '枝', '最少'), num(204, '枝', '最多')], calc: { f: 'range', a: 12, lo: 150, hi: 210 },
+      why: '150÷12＝12…6，12×12＝144 不到 150，要 13 打：12×13＝156。210÷12＝17…6，12×17＝204。' },
+    { id: 'e17', d: 3, text: '一批糖果不管 15 顆裝一包，或 20 顆裝一包，都剛好裝完。糖果最少有幾顆？', parts: judge('lcm', ['5 顆', '20 顆', '60 顆', '300 顆'], 2), calc: { f: 'judge', a: 15, b: 20, kind: 'lcm', opts: [5, 20, 60, 300], min: true },
+      why: '顆數要同時被 15 和 20 整除＝公倍數。60 和 300 都是，問最少，是最小公倍數 60。5 是公因數；20 不是 15 的倍數。' },
+    { id: 'e18', d: 3, text: '等腰三角形的兩條邊是 8 公分和 3 公分，第三邊是幾公分？周長是幾公分？', parts: [num(8, '公分', '第三邊'), num(19, '公分', '周長')], calc: { f: 'iso', a: 8, b: 3, per: true },
+      why: '第三邊只能是 3 或 8。3、3、8：3＋3＝6 比 8 小，圍不起來；3、8、8 可以。周長 3＋8＋8＝19 公分。' },
+    { id: 'e19', d: 3, text: '5★3□ 是一個四位數，是 2 的倍數，★ 和 □ 的數字和是 15。這個四位數最小是多少？最大是多少？', parts: [num(5738, '', '最小'), num(5936, '', '最大')], calc: { f: 'digits', tpl: '5★3□', m: 2, sum: 15 },
+      why: '□ 要是雙數，★＝15−□ 不能超過 9，所以 □ 只能 6 或 8：5936、5738。最小 5738、最大 5936。□＝9 的 5639 是單數，不行。' },
+    { id: 'e20', d: 3, text: '4 公尺長的緞帶，平分剪成 9 段，每段長幾公尺？', parts: [choice(['[[9/4]] 公尺', '[[4/9]] 公尺', '[[1/9]] 公尺', '[[1/4]] 公尺'], 1)], calc: { f: 'div', a: 4, b: 9 },
+      why: '4÷9＝[[4/9]] 公尺：被分的長度 4 當分子、段數 9 當分母。[[1/9]] 是 1 公尺分 9 段，這裡有 4 公尺。' }
+  ];
+
+  // 單元（康軒五上，115 學年度課程計畫）：從 calc.f 推（judge 看找公因或公倍），錯題庫按單元分組用，不另外存
+  var UNIT_F = { place: 'g5a1', cmp: 'g5a1', round: 'g5a1', zeros: 'g5a1', dorder: 'g5a1',
+    gcd: 'g5a2', cf: 'g5a2', factors: 'g5a2', atleast2: 'g5a2', onefac: 'g5a2', chain: 'g5a2',
+    lcm: 'g5a3', mult: 'g5a3', range: 'g5a3', digits: 'g5a3',
+    reduce: 'g5a4', simplify: 'g5a4', isSimple: 'g5a4', common: 'g5a4', fcmp: 'g5a4', order: 'g5a4', div: 'g5a4', fsum: 'g5a4',
+    tri: 'g5a5', combo: 'g5a5', tri3: 'g5a5', iso: 'g5a5', quad: 'g5a5', 'tri-ang': 'g5a5', sec2frac: 'g5a5', frac2deg: 'g5a5' };
+  function unitOf(Q) { return !Q || !Q.calc ? '' : Q.calc.f === 'judge' ? (Q.calc.kind === 'gcd' ? 'g5a2' : 'g5a3') : UNIT_F[Q.calc.f] || ''; }
+
   // ================= 文字 =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   // [[n/d]] → 上下排的分數
@@ -295,7 +373,7 @@
         var o = (v || []).map(function (x) { return x == null || x === '' ? null : +x; });
         if (o.length < p.ans.length || o.some(function (x) { return x === null; })) return soft('每一格都要選一個分數。');
         if (o.some(function (x, j) { return o.indexOf(x) !== j; })) return soft('每個分數只能用一次。');
-        return o.join() === p.ans.join() ? GOOD : bad('順序不對，先通分再比比看。');
+        return o.join() === p.ans.join() ? GOOD : bad(p.hint || '順序不對，先通分再比比看。');
       }
       case 'choice': return v == null || v === '' ? soft('先選一個。') : +v === p.ans ? GOOD : bad('再想想看。');
       case 'pick': {
@@ -333,16 +411,17 @@
   }
 
   // ================= 錯題庫 =================
-  // 紙本 23 題用 pp:<id>、類題答錯用 pv:<id>；p 只存顯示用的字，題目本身用 pid 查回來
-  function mkEntry(Q, set) { return { id: (set === 'v' ? 'pv:' : set === 'f' ? 'pf:' : 'pp:') + Q.id, p: { type: 'paper', set: set, pid: Q.id, src: Q.src || (set === 'f' ? '約分通分' : '類題'), tag: Q.tag || '', q: plain(Q.text) } }; }
+  // 紙本 23 題用 pp:<id>、類題答錯用 pv:<id>、約分通分 pf:、期中錯題 pm:、期中類題 pe:；p 只存顯示用的字，題目本身用 pid 查回來
+  var SETS = { p: PAPER, v: VARIANTS, f: FRACTIONS, m: MIDTERM, e: EXAM }, SRC = { v: '類題', f: '約分通分', e: '期中類題' };
+  function mkEntry(Q, set) { set = SETS[set] ? set : 'p'; return { id: 'p' + set + ':' + Q.id, p: { type: 'paper', set: set, pid: Q.id, src: Q.src || SRC[set] || '紙本', tag: Q.tag || '', q: plain(Q.text) } }; }
   function fromMistake(p) {
     if (!p || p.type !== 'paper') return null;
-    var a = p.set === 'v' ? VARIANTS : p.set === 'f' ? FRACTIONS : PAPER;
-    return a.filter(function (q) { return q.id === p.pid; })[0] || null;
+    return (SETS[p.set] || PAPER).filter(function (q) { return q.id === p.pid; })[0] || null;
   }
+  function unitOfMistake(p) { return unitOf(fromMistake(p)); }
 
-  var API = { PAPER: PAPER, VARIANTS: VARIANTS, FRACTIONS: FRACTIONS, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
-    ADD_HASH: 'uwj3ic' };
+  var API = { PAPER: PAPER, VARIANTS: VARIANTS, FRACTIONS: FRACTIONS, MIDTERM: MIDTERM, EXAM: EXAM, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
+    unitOf: unitOf, unitOfMistake: unitOfMistake, ADD_HASH: 'uwj3ic' };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else G.PAPER = API;
 })(typeof window !== 'undefined' ? window : globalThis);

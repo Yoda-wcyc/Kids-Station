@@ -1028,7 +1028,8 @@ const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 // 2026-11-01：社會、自然各 1 個 hidden 入口（🔁 今天要複習 mindmap/<科>.html?review=1，樣板字串、不算在 srcs；入口按鈕在科目首頁上方）→ hidden 2 個
 // 2026-11-03：數學 2 個 hidden 入口（紙本錯題 math/paper.html?mistakes=1、類題 30 題 ?set=30；入口在錯題庫的紙本區）→ 14 個 src、hidden 4 個
 // 2026-11-05：再 1 個 hidden 入口（約分通分 15 題 ?set=15）→ 15 個 src、hidden 5 個
-ok(srcs.length === 15 && (sj.match(/hidden: true/g) || []).length === 5 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
+// 2026-11-06：再 1 個 hidden 入口（期中類題 20 題 ?set=20）→ 16 個 src、hidden 6 個
+ok(srcs.length === 16 && (sj.match(/hidden: true/g) || []).length === 6 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----

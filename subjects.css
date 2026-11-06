@@ -27,6 +27,9 @@ html.frame-mode,html.frame-mode body{overflow:hidden;height:100%}
 .tiles-h{margin:6px 2px 10px;font-size:1.15rem}
 /* 錯題庫單元篩選分冊（kids-mistakes.js）：冊別標題自成一行 */
 .mk-units .mk-bk{flex-basis:100%;margin-top:4px;font-size:.95rem}
+/* 錯題庫清單按「冊 → 單元」分組（kids-mistakes.js groups()）：冊用下面的 .book 收合，單元是小標 */
+.mk-uh{margin:10px 4px 6px;font-size:1.02rem}
+.mk-book>ul.list{margin-top:0}
 /* 首頁：科目卡在頁面裡，分頁列收起來 */
 body.home-page .stabs{display:none}
 .hs-h{margin:18px 2px 10px;font-size:1.1rem;color:var(--muted);font-weight:700}
