@@ -106,7 +106,26 @@ function verify(Q) {
     default: ok(false, 'unknown calc ' + c.f);
   }
 }
-P.PAPER.forEach(verify); P.VARIANTS.forEach(verify); P.FRACTIONS.forEach(verify); P.MIDTERM.forEach(verify); P.EXAM.forEach(verify); P.SECTOR.forEach(verify);
+P.PAPER.forEach(verify); P.VARIANTS.forEach(verify); P.FRACTIONS.forEach(verify); P.MIDTERM.forEach(verify); P.EXAM.forEach(verify); P.SECTOR.forEach(verify); P.EXAM1517.forEach(verify);
+
+// ---------- 期中第 15、17 題類題 5 題（pc:，2026-11-06）----------
+{
+  const C = P.EXAM1517, byId = id => C.find(q => q.id === id);
+  ok(C.length === 5 && same(C.map(q => q.calc.f), ['judge', 'chain', 'judge', 'chain', 'chain']), '1517：5 題，公倍 2、去掉一數 3');
+  C.forEach(q => { const o = q.parts[q.parts.length - 1].opts; ok(new Set(o).size === o.length, '1517 選項不重複 ' + q.id); ok(q.why && q.why.length <= 140 && P.ansText(q), '1517 why／ansText ' + q.id); });
+  // 暴力：1～1000 裡最小的公倍數＝正解，而且正解在選項裡只有一個
+  C.filter(q => q.calc.f === 'judge').forEach(q => { const c = q.calc; let n = 1; while (n % c.a || n % c.b) n++; ok(parseInt(q.parts[1].opts[q.parts[1].ans], 10) === n, '1517 暴力最小公倍數 ' + q.id + ' ' + n); });
+  // 孩子常見錯：直接相乘（96、216）、選公因數（4、6）、題型判成公因數 → 都判錯
+  const c1 = byId('c1'), c3 = byId('c3');
+  ok(P.checkQ(c1, [1, 2]).ok && !P.checkQ(c1, [1, 3]).ok && !P.checkQ(c1, [1, 0]).ok && !P.checkQ(c1, [0, 2]).ok, 'c1：96（8×12）、4 判錯');
+  ok(P.checkQ(c3, [1, 2]).ok && !P.checkQ(c3, [1, 3]).ok && !P.checkQ(c3, [1, 0]).ok && !P.checkQ(c3, [0, 2]).ok, 'c3：216（12×18）、6 判錯');
+  ok(['c2', 'c4', 'c5'].every(id => { const q = byId(id); return P.checkQ(q, [q.parts[0].ans]).ok && q.parts[0].opts.every((_, j) => j === q.parts[0].ans || !P.checkQ(q, [j]).ok); }), '去掉一數：只有正解判對');
+  // 單元、動畫：1、3 → 單元三＋B 段；2、4、5 → 跟期中第 6 題（mt5 去掉一數）同單元、沒動畫
+  const mt5u = P.unitOf(P.MIDTERM.find(q => q.id === 'mt5'));
+  ok(P.unitOf(c1) === 'g5a3' && P.unitOf(c3) === 'g5a3' && ['c2', 'c4', 'c5'].every(id => P.unitOf(byId(id)) === mt5u) && mt5u === 'g5a2', '1517 單元');
+  ok(P.animOf(c1) === 'B' && P.animOf(c3) === 'B' && ['c2', 'c4', 'c5'].every(id => P.animOf(byId(id)) === ''), '1517 動畫');
+  const ec = P.mkEntry(c3, 'c'); ok(ec.id === 'pc:c3' && ec.p.set === 'c' && P.fromMistake(ec.p) === c3 && P.unitOfMistake(ec.p) === 'g5a3' && P.animOfMistake(ec.p) === 'B' && JSON.stringify(ec.p).length < 400, 'mkEntry c');
+}
 
 // ---------- 扇形小考錯題 7 題 ----------
 {
@@ -148,7 +167,7 @@ P.PAPER.forEach(verify); P.VARIANTS.forEach(verify); P.FRACTIONS.forEach(verify)
 
 // ---------- 單元（錯題庫分組）：每一題都推得出五上單元，而且推得對 ----------
 {
-  const U = ['g5a1', 'g5a2', 'g5a3', 'g5a4', 'g5a5'], all = [['p', P.PAPER], ['v', P.VARIANTS], ['f', P.FRACTIONS], ['m', P.MIDTERM], ['e', P.EXAM], ['s', P.SECTOR]];
+  const U = ['g5a1', 'g5a2', 'g5a3', 'g5a4', 'g5a5'], all = [['p', P.PAPER], ['v', P.VARIANTS], ['f', P.FRACTIONS], ['m', P.MIDTERM], ['e', P.EXAM], ['s', P.SECTOR], ['c', P.EXAM1517]];
   all.forEach(([s, a]) => a.forEach(q => { const u = P.unitOfMistake(P.mkEntry(q, s).p); ok(U.includes(u), 'unit ' + s + ':' + q.id + ' → ' + u); }));
   const u = (s, id) => P.unitOfMistake({ type: 'paper', set: s, pid: id });
   ok(u('m', 'mt1') === 'g5a2' && u('m', 'mt2') === 'g5a5' && u('m', 'mt3') === 'g5a3' && u('m', 'mt4') === 'g5a4' && u('m', 'mt7') === 'g5a1' && u('m', 'mt10') === 'g5a3' && u('p', 'C') === 'g5a2' && u('p', 'N') === 'g5a3' && u('f', 'y1') === 'g5a4', 'unit 抽查');

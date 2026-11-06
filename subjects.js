@@ -23,6 +23,7 @@
       { id: 'paper-30', title: '類題 30 題', icon: '🎯', src: 'math/paper.html?set=30', hidden: true },
       { id: 'paper-15', title: '約分通分 15 題', icon: '🧮', src: 'math/paper.html?set=15', hidden: true },
       { id: 'paper-20', title: '期中類題 20 題', icon: '📋', src: 'math/paper.html?set=20', hidden: true },
+      { id: 'paper-1517', title: '第15、17題類題 5 題', icon: '📋', src: 'math/paper.html?set=1517', hidden: true },
       // 2026-11-06：🎬 動畫教學 7 段（math/anim.html；看完＝練習答對，記在本機 kids_anim、不同步）；anim-a～anim-g＝錯題庫「🎬 看動畫」直接開某一段
       { id: 'anim', title: '🎬 動畫教學', desc: () => animDesc(), icon: '🎬', src: 'math/anim.html', grp: '五上' }],
     // 2026-11-02：世界史漫畫（comics/；整頁開，閱讀不用登入；學習幣、完成標示、錯題庫、課程地圖、小助理等第 1 話看過再接）

@@ -14,7 +14,7 @@
        'mx:<a>x<b>'，p＝{type:'multiply', a, b, lv, q:'a×b'}（乘法快算，2026-10-21）；
        'frc:<題型>:<數字>'，p＝{type:'fraction', k:題型, v:[aw,an,ad,bw,bn,bd], q:顯示文字}（分數比較大小，math/fraction.js 用 k＋v 原題重做；清單用 v 畫上下排的分數，2026-10-27）
        'mg:<題目id>'，p＝{type:'grade', qid, b:'五下 單元一', q:題目純文字}（五下～六下 math/grade.js 用 qid 找回原題，2026-11-06）；
-       'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯）、'pf:<題>'（約分通分 15 題答錯，2026-11-05）、'pm:'／'pe:'（期中錯題／期中類題）、'ps:'（扇形小考錯題，2026-11-06），p＝{type:'paper', set:'p'|'v'|'f'|'m'|'e'|'s', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
+       'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯）、'pf:<題>'（約分通分 15 題答錯，2026-11-05）、'pm:'／'pe:'（期中錯題／期中類題）、'ps:'（扇形小考錯題，2026-11-06）、'pc:'（期中第 15、17 題類題 5 題，2026-11-06），p＝{type:'paper', set:'p'|'v'|'f'|'m'|'e'|'s'|'c', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
    🔁 隔天複習（間隔重複，2026-11-01，只開在社會、自然＝SPACED；國語、數學、AI 照舊「連對 3 次」）：
      答錯 → c＝0、due＝明天；到期（台北時間的日子 ≥ due）答對 → c＋1，due＝今天＋[1,3,7][c]（1 天 → 3 天 → 7 天）；7 天那次也答對（c 已經是 2）→ 畢業留墓碑。
@@ -193,7 +193,8 @@
       '<p style="display:flex;flex-wrap:wrap;gap:10px"><button class="btn primary" id="mk-paper-go" type="button"' + (items.length ? '' : ' disabled') + '>練紙本錯題（' + Math.min(items.length, ROUND) + ' 題）</button>' +
       '<button class="btn primary" id="mk-paper-30" type="button">🎯 類題 30 題</button>' +
       '<button class="btn primary" id="mk-paper-15" type="button">🧮 約分通分 15 題</button>' +
-      '<button class="btn primary" id="mk-paper-20" type="button">📋 期中類題 20 題</button></p>' +
+      '<button class="btn primary" id="mk-paper-20" type="button">📋 期中類題 20 題</button>' +
+      '<button class="btn primary" id="mk-paper-1517" type="button">📋 第15、17題類題 5 題</button></p>' +
       (items.length ? '<div id="mk-paper-list">' + groups('math', items, ulist, li, '') + '</div>' : '<p class="muted">紙本錯題都畢業了 🎉</p>') + '</div>';
   }
   /* 分組清單：冊（<details class="book">，跟科目首頁的分冊收合同一套樣式）→ 單元（小標＋清單）；推不出單元的放最後的「其他」。
@@ -245,7 +246,7 @@
       if (!quotaOK(k, start)) return;
       location.hash = '#s/' + k + '/mistakes-go' + (unit ? '-' + unit : '');
     };
-    [['mk-paper-go', 'paper-mk'], ['mk-paper-30', 'paper-30'], ['mk-paper-15', 'paper-15'], ['mk-paper-20', 'paper-20']].forEach(function (b) {
+    [['mk-paper-go', 'paper-mk'], ['mk-paper-30', 'paper-30'], ['mk-paper-15', 'paper-15'], ['mk-paper-20', 'paper-20'], ['mk-paper-1517', 'paper-1517']].forEach(function (b) {
       var el = box.querySelector('#' + b[0]); if (!el) return;
       el.onclick = function start() { if (!authOK('練紙本錯題')) return; if (!quotaOK(k, start)) return; location.hash = '#s/math/' + b[1]; };
     });

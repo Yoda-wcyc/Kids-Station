@@ -1,7 +1,7 @@
 /* paper.js — 紙本錯題（2026-11-03）：考卷上打叉、紅筆圈到的題目 PAPER＋類題 30 題 VARIANTS，加判分（純函式；瀏覽器 window.PAPER，Node require）。
    題目數字與題意照紙本、敘述改寫；不放姓名、班級、照片。文字裡 [[n/d]] ＝上下排的分數。
    每題 {id, text, parts:[…], why, calc?}；類題多 d:1|2|3（照 d 排）、紙本多 src（來源）、tag:'x'（打叉）|'r'（紅筆圈到）。
-   FRACTIONS＝約分通分 15 題（2026-11-05），格式同類題。MIDTERM＝期中考錯題 10 題（格式同紙本）、EXAM＝期中類題 20 題（格式同類題），2026-11-06。SECTOR＝扇形小考錯題 7 題（格式同紙本），2026-11-06。
+   FRACTIONS＝約分通分 15 題（2026-11-05），格式同類題。MIDTERM＝期中考錯題 10 題（格式同紙本）、EXAM＝期中類題 20 題（格式同類題），2026-11-06。SECTOR＝扇形小考錯題 7 題（格式同紙本），2026-11-06。EXAM1517＝期中第 15、17 題類題 5 題（格式同類題），2026-11-06。
    part：num {ans, units?|suf?}｜multi {ans:[…], n:格數, suf}｜frac {n, d, suf, units?}（要最簡）｜fracs {w, ans:[[n,d],…], rows}（約分：全部列出）｜
          common {a:[n,d], b:[n,d], w?, den, ans:[[n,den],[n,den]], anyDen?}（通分：要最小公倍數當公分母；anyDen＝公分母不限）｜order {opts:['[[n/d]]',…], ans:[索引由小到大]}｜
          choice {opts, ans:索引}｜pick {opts, ans:[…]}｜combos {sticks, want:'can'|'cannot', ans:[[a,b,c],…], rows}｜dec {ans:'字串'}
@@ -287,6 +287,20 @@
       why: '4÷9＝[[4/9]] 公尺：被分的長度 4 當分子、段數 9 當分母。[[1/9]] 是 1 公尺分 9 段，這裡有 4 公尺。' }
   ];
 
+  // 期中第 15（去掉一數整除鏈）、17（最小公倍數）題的類題 5 題（2026-11-06，紙本 考卷/gen_paper30.js 1517 也印這份）：?set=1517，答錯收 pc:
+  var EXAM1517 = [
+    { id: 'c1', text: '一盒餅乾不管 8 片裝一包，或 12 片裝一包，都剛好裝完。餅乾最少有幾片？', parts: judge('lcm', ['4 片', '12 片', '24 片', '96 片'], 2), calc: { f: 'judge', a: 8, b: 12, kind: 'lcm', opts: [4, 12, 24, 96], min: true },
+      why: '片數要同時是 8 和 12 的倍數＝公倍數，最少就是最小公倍數 24；4 是公因數，96 是 8×12，不是最少。' },
+    { id: 'c2', text: '有 4、8、10、16 四個數，去掉哪一個數後，剩下的三個數任取兩個，較大的都能被較小的整除？', parts: [choice(['4', '8', '10', '16'], 2)], calc: { f: 'chain', nums: [4, 8, 10, 16] },
+      why: '去掉 10，剩 4、8、16：8÷4、16÷4、16÷8 都整除；留著 10 的話，10÷4、16÷10 都除不盡。' },
+    { id: 'c3', text: '一群小朋友不管每排 12 人，或每排 18 人，都剛好排完。小朋友最少有幾人？', parts: judge('lcm', ['6 人', '18 人', '36 人', '216 人'], 2), calc: { f: 'judge', a: 12, b: 18, kind: 'lcm', opts: [6, 18, 36, 216], min: true },
+      why: '人數要同時是 12 和 18 的倍數，最少是最小公倍數 36；216＝12×18 也是公倍數但不是最少，6 是公因數。' },
+    { id: 'c4', text: '有 5、15、20、45 四個數，去掉哪一個數後，剩下的三個數任取兩個，較大的都能被較小的整除？', parts: [choice(['5', '15', '20', '45'], 2)], calc: { f: 'chain', nums: [5, 15, 20, 45] },
+      why: '去掉 20，剩 5、15、45：15÷5、45÷5、45÷15 都整除；留著 20 的話，20÷15、45÷20 都除不盡。' },
+    { id: 'c5', text: '有 3、6、8、12、24 五個數，去掉哪一個數後，剩下的四個數任取兩個，較大的都能被較小的整除？', parts: [choice(['3', '6', '8', '12', '24'], 2)], calc: { f: 'chain', nums: [3, 6, 8, 12, 24] },
+      why: '去掉 8，剩 3、6、12、24，每個都是前一個的倍數，任兩個都整除；8 雖然能整除 24，但 8÷3、8÷6、12÷8 都除不盡。' }
+  ];
+
   // 扇形小考錯題 7 題（2026-11-06，五上單元五）：題目、選項照原卷、敘述改寫；跟紙本、期中錯題用同一個 ?add= 連結加進帳號（ps:）
   var YN = ['對', '不對'];
   var SECTOR = [
@@ -434,8 +448,8 @@
   }
 
   // ================= 錯題庫 =================
-  // 紙本 23 題用 pp:<id>、類題答錯用 pv:<id>、約分通分 pf:、期中錯題 pm:、期中類題 pe:、扇形小考錯題 ps:；p 只存顯示用的字，題目本身用 pid 查回來
-  var SETS = { p: PAPER, v: VARIANTS, f: FRACTIONS, m: MIDTERM, e: EXAM, s: SECTOR }, SRC = { v: '類題', f: '約分通分', e: '期中類題' };
+  // 紙本 23 題用 pp:<id>、類題答錯用 pv:<id>、約分通分 pf:、期中錯題 pm:、期中類題 pe:、扇形小考錯題 ps:、期中第 15、17 題類題 pc:；p 只存顯示用的字，題目本身用 pid 查回來
+  var SETS = { p: PAPER, v: VARIANTS, f: FRACTIONS, m: MIDTERM, e: EXAM, s: SECTOR, c: EXAM1517 }, SRC = { v: '類題', f: '約分通分', e: '期中類題', c: '期中類題' };
   function mkEntry(Q, set) { set = SETS[set] ? set : 'p'; return { id: 'p' + set + ':' + Q.id, p: { type: 'paper', set: set, pid: Q.id, src: Q.src || SRC[set] || '紙本', tag: Q.tag || '', q: plain(Q.text) } }; }
   function fromMistake(p) {
     if (!p || p.type !== 'paper') return null;
@@ -444,7 +458,7 @@
   function unitOfMistake(p) { return unitOf(fromMistake(p)); }
   function animOfMistake(p) { return animOf(fromMistake(p)); }
 
-  var API = { PAPER: PAPER, VARIANTS: VARIANTS, FRACTIONS: FRACTIONS, MIDTERM: MIDTERM, EXAM: EXAM, SECTOR: SECTOR, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
+  var API = { PAPER: PAPER, VARIANTS: VARIANTS, FRACTIONS: FRACTIONS, MIDTERM: MIDTERM, EXAM: EXAM, SECTOR: SECTOR, EXAM1517: EXAM1517, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
     unitOf: unitOf, unitOfMistake: unitOfMistake, animOf: animOf, animOfMistake: animOfMistake, ADD_HASH: 'uwj3ic' };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else G.PAPER = API;
