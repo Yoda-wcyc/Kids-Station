@@ -57,9 +57,16 @@
 
   /* ---------- 地點、圓圈 ---------- */
   // pin：places.js 的 id，或 {id, n, lon, lat}（經緯度），或 {id, n, x, y}（示意圖座標）；area 1＝大圈
+  // 範圍跨換日線（box 東邊 > 180 或西邊 < −180）時，框外的點換到另一邊的經度（例 太平洋置中的圖上，夏威夷 −157 → 203）
+  function wrapLon(V, lon) {
+    if (!V.box || V.polar) return lon;
+    if (lon < V.box[0] && lon + 360 <= V.box[2]) return lon + 360;
+    if (lon > V.box[2] && lon - 360 >= V.box[0]) return lon - 360;
+    return lon;
+  }
   function pinXY(pin, V) {
     var p = typeof pin === 'string' ? places()[pin] : pin; if (!p) return null;
-    var id = typeof pin === 'string' ? pin : p.id, xy = p.x != null ? [p.x, p.y] : V.P(p.lon, p.lat);
+    var id = typeof pin === 'string' ? pin : p.id, xy = p.x != null ? [p.x, p.y] : V.P(wrapLon(V, p.lon), p.lat);
     return { id: id, x: xy[0], y: xy[1], r: p.area ? R_AREA : R_PIN, n: p.n || id };
   }
   function pinsOf(q, V) { return (q.pins || []).map(function (p) { return pinXY(p, V); }); }
@@ -99,7 +106,12 @@
     rings.forEach(function (r) {
       if (V.polar) { var mn = 90; for (var j = 1; j < r.length; j += 2) mn = Math.min(mn, r[j] / q); if (mn > V.edge) return; }   // 南極圖：碰不到圓圈裡的環不畫
       var sh = wrapShift(r, q, V), o = [];
-      for (var i = 0; i + 1 < r.length; i += 2) { var lon = r[i] / q + sh, lat = r[i + 1] / q; if (V.polar && lat > V.edge + 1) lat = V.edge + 1; o.push(V.P(lon, lat)); }
+      for (var i = 0; i + 1 < r.length; i += 2) {
+        var lon = r[i] / q + sh, lat = r[i + 1] / q;
+        if (V.polar && lat < -89.9) continue;   // 繞著南極點的環（南極洲）用 −90 封口；南極圖上那兩點都是圓心，略過才不會畫出接縫線
+        if (V.polar && lat > V.edge + 1) lat = V.edge + 1;
+        o.push(V.P(lon, lat));
+      }
       d += 'M' + o.map(function (p) { return p[0] + ' ' + p[1]; }).join('L') + 'Z';
     });
     return d;
@@ -148,7 +160,8 @@
     var errs = [], P = places(), err = function (m) { errs.push(u.id + ' ' + m); };
     if (!UNIT_RE.test(u.id || '')) { err('單元 id 要是 m1～m5、t1～t6、w1～w7'); return errs; }
     if (!Array.isArray(u.learn) || u.learn.length < 3 || u.learn.length > 5) err('learn 要 3～5 張');
-    (u.learn || []).forEach(function (c, i) { if (!c.t || len(c.t) > LIM.learnT) err('learn[' + i + '].t 要有、≤ ' + LIM.learnT + ' 字'); if (!c.p || len(c.p) > LIM.learnP) err('learn[' + i + '].p 要有、≤ ' + LIM.learnP + ' 字'); });
+    (u.learn || []).forEach(function (c, i) { if (!c.t || len(c.t) > LIM.learnT) err('learn[' + i + '].t 要有、≤ ' + LIM.learnT + ' 字'); if (!c.p || len(c.p) > LIM.learnP) err('learn[' + i + '].p 要有、≤ ' + LIM.learnP + ' 字');
+      if (c.fig) { var LV = view(c.fig); (c.fig.names || []).concat((c.fig.marks || []).map(function (m) { return m.p; })).forEach(function (n) { var s = pinXY(n, LV); if (!s || !inView(LV, s.x, s.y)) err('learn[' + i + '] names／marks 找不到或在圖外 ' + JSON.stringify(n)); }); } });
     if (!Array.isArray(u.practice) || u.practice.length !== N_PRAC) err('practice 要剛好 ' + N_PRAC + ' 題');
     if (!Array.isArray(u.test) || u.test.length !== N_TEST) err('test 要剛好 ' + N_TEST + ' 題');
     var seen = {}, all = (u.practice || []).concat(u.test || []), mcN = 0, longN = 0;
@@ -164,6 +177,7 @@
       if (q.fig && q.fig.map && ['tw', 'world'].indexOf(q.fig.map) < 0) err(tag + ' fig.map 只能是 tw、world');
       if (q.fig && q.fig.map && !q.fig.box && q.fig.map === 'world' && !q.fig.proj && (q.type === 'tap' || q.type === 'drag')) { /* 全世界也可以，只是圈圈會很擠 */ }
       if (q.fig && q.fig.marks) q.fig.marks.forEach(function (m) { var s = pinXY(m.p, V); if (!s) err(tag + ' marks 找不到地點 ' + JSON.stringify(m.p)); else if (!inView(V, s.x, s.y)) err(tag + ' marks 在圖外 ' + JSON.stringify(m.p)); });
+      if (q.fig && q.fig.names) q.fig.names.forEach(function (n) { var s = pinXY(n, V); if (!s) err(tag + ' names 找不到地點 ' + JSON.stringify(n)); else if (!inView(V, s.x, s.y)) err(tag + ' names 在圖外 ' + JSON.stringify(n)); });
       if (q.type === 'tap' || q.type === 'drag') {
         var sp = pinsOf(q, V);
         if (sp.length < 2 || sp.length > 6) err(tag + ' pins 要 2～6 個');
@@ -211,9 +225,42 @@
   var C = { sea: '#cfe9fb', land: '#efe3c6', landS: '#b9a77d', tw: '#d8ecc0', twS: '#5d8a3a', hl: '#ffb36b', pin: '#2b8fd6', ok: '#22a565', no: '#e5484d', sel: '#ff8a3d', mark: '#8350d6' };
   var CONT = { as: '#f4d79b', eu: '#c9b8e8', af: '#f2b8a2', na: '#a8d5a2', sa: '#9fd3d9', oc: '#f6c3d9', an: '#e6eef3' };
   function bbOverlap(a, b) { return a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1]; }
+  // 字的寬度（粗體）：中文一個字＝字級，英數約 0.6 個字級
+  function textW(t, fs) { return Array.from(String(t)).reduce(function (a, c) { return a + (c.charCodeAt(0) > 255 ? fs : fs * 0.6); }, 0); }
+  // names：地點旁寫名字（不建圓圈、不算答案）。可以是 places.js 的 id，或 {n, lon, lat}／{n, x, y}（參考標字，例 海洋中間的「太平洋」），fs＝字級
+  // 字靠圖邊時往內推，太靠上就改寫在點的下面，不會被切掉。回傳 {svg, box:[外框…]}（指北針要避開）
+  function namesSVG(fig, V) {
+    var o = [], box = [];
+    (fig.names || []).forEach(function (id) {
+      var s = pinXY(id, V); if (!s) return;
+      var fs = (typeof id === 'object' && id.fs) || 15, w = textW(s.n, fs), x = r1(Math.max(w / 2 + 3, Math.min(V.w - w / 2 - 3, s.x))), y = s.y - 8;
+      if (y - fs < 2) y = s.y + fs + 6;
+      y = Math.min(y, V.h - 4);
+      o.push('<text x="' + x + '" y="' + y + '" text-anchor="middle" font-size="' + fs + '" font-weight="800" fill="#263445" stroke="#fff" stroke-width="4" paint-order="stroke">' + esc(s.n) + '</text>');
+      box.push({ x0: x - w / 2, y0: y - fs, x1: x + w / 2, y1: y + 4, r: 0 });
+    });
+    return { svg: o.join(''), box: box };
+  }
+  function marksSVG(fig, V) {
+    return (fig.marks || []).map(function (m) { var s = pinXY(m.p, V); return s ? '<g><circle cx="' + s.x + '" cy="' + s.y + '" r="16" fill="' + C.mark + '" stroke="#fff" stroke-width="3"/><text x="' + s.x + '" y="' + (s.y + 6) + '" text-anchor="middle" font-size="17" font-weight="800" fill="#fff">' + esc(m.t) + '</text></g>' : ''; }).join('');
+  }
+  // 指北針：右下、右上、左下、左上，挑第一個不會壓到圓圈、標記、地名、拼圖位置、線的名字的角；都會壓到就挑最空的那個
+  function compassSVG(fig, V, obs) {
+    if (fig.compass === false || V.polar || V.schem) return '';
+    var lx = fig.grid && fig.grid.lab !== false ? 90 : 34;   // 有經緯度數字時，左邊的位置讓開緯度數字
+    var R = 27, cand = [[V.w - 34, V.h - 40], [V.w - 34, 50], [lx, V.h - 40], [lx, 50]], best = null, bc = -1e9;
+    for (var i = 0; i < cand.length; i++) {
+      var cx = cand[i][0], cy = cand[i][1] - 5, c = 1e9;   // 圓＋上面的「北」字，圓心往上 5
+      obs.forEach(function (b) { var dx = Math.max(b.x0 - cx, 0, cx - b.x1), dy = Math.max(b.y0 - cy, 0, cy - b.y1); c = Math.min(c, Math.hypot(dx, dy) - b.r - R); });
+      if (c >= 0) { best = cand[i]; break; }
+      if (c > bc) { bc = c; best = cand[i]; }
+    }
+    return '<g class="geo-compass" transform="translate(' + best[0] + ',' + best[1] + ')"><circle r="20" fill="#fff" stroke="#888" stroke-width="2"/><path d="M0 -15 L6 5 L0 1 L-6 5Z" fill="' + C.no + '"/><text y="-23" text-anchor="middle" font-size="14" font-weight="800" fill="#333" stroke="#fff" stroke-width="3" paint-order="stroke">北</text></g>';
+  }
+  function circ(x, y, r) { return { x0: x, y0: y, x1: x, y1: y, r: r }; }
   function baseSVG(fig, V) {
     var o = [], M = maps(), hl = fig.hl || [];
-    if (V.schem) return fig.svg;
+    if (V.schem) return fig.svg + namesSVG(fig, V).svg + marksSVG(fig, V);   // 示意圖也能寫 names、標 marks
     o.push(V.polar ? '<rect width="' + V.w + '" height="' + V.h + '" fill="#fff"/><circle cx="' + W / 2 + '" cy="' + W / 2 + '" r="' + (W / 2 - 14) + '" fill="' + C.sea + '"/>' : '<rect width="' + V.w + '" height="' + V.h + '" fill="' + C.sea + '"/>');
     // 區域圖（東西不到 60 度）跟臺灣重疊時，臺灣改畫 1:10m 的詳細輪廓（＋小島點）；整個世界的圖照 1:110m
     var showTw = fig.map === 'tw' || (V.box && !V.polar && M.tw && V.box[2] - V.box[0] <= 60 && bbOverlap(V.box, M.tw.box) && fig.tw !== false);
@@ -235,10 +282,21 @@
     if (fig.grid) o.push(gridSVG(fig.grid, V));
     (fig.lines || []).forEach(function (l) { o.push(lineSVG(l, V)); });
     if (fig.svg) o.push(fig.svg);   // 地圖上再疊一層示意（座標＝圖上座標）
-    (fig.names || []).forEach(function (id) { var s = pinXY(id, V); if (s) o.push('<text x="' + s.x + '" y="' + (s.y - 8) + '" text-anchor="middle" font-size="15" font-weight="800" fill="#263445" stroke="#fff" stroke-width="4" paint-order="stroke">' + esc(s.n) + '</text>'); });
-    (fig.marks || []).forEach(function (m) { var s = pinXY(m.p, V); if (s) o.push('<g><circle cx="' + s.x + '" cy="' + s.y + '" r="16" fill="' + C.mark + '" stroke="#fff" stroke-width="3"/><text x="' + s.x + '" y="' + (s.y + 6) + '" text-anchor="middle" font-size="17" font-weight="800" fill="#fff">' + esc(m.t) + '</text></g>'); });
-    if (fig.compass !== false && !V.polar) o.push('<g transform="translate(' + (V.w - 34) + ',' + (V.h - 40) + ')"><circle r="20" fill="#fff" stroke="#888" stroke-width="2"/><path d="M0 -15 L6 5 L0 1 L-6 5Z" fill="' + C.no + '"/><text y="-23" text-anchor="middle" font-size="14" font-weight="800" fill="#333" stroke="#fff" stroke-width="3" paint-order="stroke">北</text></g>');
+    o.push(namesSVG(fig, V).svg, marksSVG(fig, V));
     return o.join('');
+  }
+  // 指北針要避開的東西（圖上座標的框，r＝再往外留的距離）
+  function figObstacles(q, V) {
+    var fig = q.fig || {}, obs = namesSVG(fig, V).box.slice();
+    (fig.marks || []).forEach(function (m) { var s = pinXY(m.p, V); if (s) obs.push(circ(s.x, s.y, 18)); });
+    if (q.type === 'tap' || q.type === 'drag') pinsOf(q, V).forEach(function (s) { if (s) obs.push(circ(s.x, s.y, s.r + 14)); });   // 號碼小圓凸出圓圈，再留一點空
+    if (q.type === 'puzzle') slotsOf(q, V).forEach(function (s) { obs.push(q.outline === false ? circ(s.x, s.y, 30) : { x0: s.b.x0, y0: s.b.y0, x1: s.b.x1, y1: s.b.y1, r: 0 }); });
+    (fig.lines || []).forEach(function (l) {   // 線的名字：緯線寫在右端、經線寫在上面
+      var w = textW(l.t || '', 14);
+      if (l.lat != null) { var a = V.P(V.box ? V.box[2] : 180, l.lat); obs.push({ x0: a[0] - 6 - w, y0: a[1] - 19, x1: a[0], y1: a[1] - 2, r: 0 }); }
+      else { var b = V.P(l.lon, 0); obs.push({ x0: b[0] + 5, y0: 2, x1: b[0] + 5 + w, y1: 20, r: 0 }); }
+    });
+    return obs;
   }
   function degTxt(v, pos, neg) { return v === 0 ? '0°' : (v > 0 ? pos : neg) + Math.abs(v) + '°'; }
   // 經緯線：step 度一條，標在左邊（緯度）和下面（經度）
@@ -265,7 +323,7 @@
   }
   // 題目要的那一層：圓圈（tap、drag）、拼圖位置
   function figSVG(q, st, done) {
-    var fig = q.fig || {}, V = view(fig), o = [baseSVG(fig, V)];
+    var fig = q.fig || {}, V = view(fig), o = [baseSVG(fig, V), compassSVG(fig, V, figObstacles(q, V))];
     if (q.type === 'tap') pinsOf(q, V).forEach(function (s, i) {
       var col = C.pin, fill = 'rgba(43,143,214,.12)', w = 3, bx = r1(s.x + s.r * 0.72), by = r1(s.y + s.r * 0.72);   // 號碼放在圓圈右下角，圓圈中間的東西（符號、圖示）才看得到
       if (done && s.id === q.a) { col = C.ok; fill = 'rgba(34,165,101,.35)'; w = 5; } else if (done && s.id === st.pick) { col = C.no; fill = 'rgba(229,72,77,.3)'; w = 5; } else if (s.id === st.pick) { col = C.sel; fill = 'rgba(255,138,61,.35)'; w = 5; }
@@ -291,7 +349,7 @@
       q.pieces.forEach(function (p, i) {
         var at = st.at[i]; if (at == null) return;
         var home = sl[i], to = sl.filter(function (s) { return s.id === at; })[0], dx = r1(to.x - home.x), dy = r1(to.y - home.y), col = done ? (at === p.id ? C.ok : C.no) : '#f08c3a';
-        o.push('<g data-placed="' + i + '" transform="translate(' + dx + ',' + dy + ')"><path d="' + home.d + '" fill="' + col + '" fill-opacity=".85" stroke="#7a3d0c" stroke-width="1.5" fill-rule="evenodd"/><text x="' + home.x + '" y="' + (home.y + 6) + '" text-anchor="middle" font-size="15" font-weight="800" fill="#263445" stroke="#fff" stroke-width="4" paint-order="stroke">' + esc(p.t) + '</text></g>');
+        o.push('<g data-placed="' + i + '" transform="translate(' + dx + ',' + dy + ')"><path d="' + home.d + '" fill="' + col + '" fill-opacity=".85" stroke="#7a3d0c" stroke-width="1.5" fill-rule="evenodd"/>' + (q.names === false && !done ? '' : '<text x="' + home.x + '" y="' + (home.y + 6) + '" text-anchor="middle" font-size="15" font-weight="800" fill="#263445" stroke="#fff" stroke-width="4" paint-order="stroke">' + esc(p.t) + '</text>') + '</g>');   // names:false 作答時不露名字
       });
       if (done) q.pieces.forEach(function (p, i) { if (st.at[i] !== p.id) o.push('<text x="' + sl[i].x + '" y="' + (sl[i].y + sl[i].b.h / 2 + 18) + '" text-anchor="middle" font-size="15" font-weight="800" fill="' + C.ok + '" stroke="#fff" stroke-width="4" paint-order="stroke">這裡是 ' + esc(p.t) + '</text>'); });
     }
@@ -317,7 +375,8 @@
     '.geo-card svg{display:block;pointer-events:none}.geo-card small{font-size:.85rem}' +
     '.geo-card.sel{outline:4px solid var(--pri,#ff8a3d);outline-offset:2px}.geo-card.ghost{position:fixed;z-index:999;pointer-events:none;opacity:.92;transform:rotate(-2deg);box-shadow:0 8px 20px rgba(0,0,0,.25)}' +
     '.geo-card.lift{opacity:.35}.geo-hint{color:var(--muted,#6b6b6b);text-align:center;margin:0;font-size:.95rem}' +
-    '@media(min-width:1000px){.geo-q.wide{grid-template-columns:minmax(0,560px) minmax(0,1fr);align-items:start}}';
+    '.geo-q.dnd .geo-fig svg{max-height:max(240px,calc(100vh - 480px))}' +   // 拖拉題：地圖在上、卡片在下（窄畫面），高的圖要讓出位置，卡片才看得到、拖得到
+    '@media(min-width:1000px){.geo-q.wide{grid-template-columns:minmax(0,560px) minmax(0,1fr);align-items:start}.geo-q.dnd .geo-fig svg{max-height:calc(100vh - 230px)}}';
   function css() { if (typeof document === 'undefined' || document.getElementById('geo-css')) return; var s = document.createElement('style'); s.id = 'geo-css'; s.textContent = CSS; document.head.appendChild(s); }
   function bt(attrs, text, cls, dis) { return '<button type="button" class="geo-b' + (cls ? ' ' + cls : '') + '" ' + attrs + (dis ? ' disabled' : '') + '>' + text + '</button>'; }
   function qHTML(q, st, o) {
@@ -335,7 +394,7 @@
       }).join('') || '<span class="geo-hint">都放好了，按「確定」</span>') + '</div><p class="geo-hint">' + (q.type === 'drag' ? '把地名拖到地圖上的圓圈；或先點地名，再點圓圈。點地圖上的地名可以拿回來。' : '把拼圖片拖回地圖上原來的位置；或先點一片，再點地圖上的虛線框。點已經放好的片可以拿回來。') + '</p>';
     }
     if (!done && q.type !== 'mc') act += '<div class="geo-ctl">' + (q.type === 'drag' || q.type === 'puzzle' ? bt('data-g="clear"', '↩ 全部拿回來', '') : '') + bt('data-g="ok"', '✅ 確定', 'go', !ready(q, st)) + '</div>';
-    return '<div class="geo-q' + (q.fig ? ' wide' : '') + '"><div>' + fig + '</div><div class="geo-q">' + act + '</div></div>';
+    return '<div class="geo-q' + (q.fig ? ' wide' : '') + (q.type === 'drag' || q.type === 'puzzle' ? ' dnd' : '') + '"><div>' + fig + '</div><div class="geo-q">' + act + '</div></div>';
   }
 
   /* ---------- 互動：一題（mount 回傳 {state, act}；o.onAnswer(對錯)） ---------- */
@@ -455,7 +514,7 @@
       host.innerHTML = '<div class="prog"><span>' + (run.mode === 'test' ? '📝 單元測驗' : '✏️ 第 ' + run.g + ' 組') + '　第 ' + (run.i + 1) + ' / ' + run.qs.length + ' 題</span>' + (run.mode === 'test' ? '' : '<span class="muted">答對 ' + run.ok + ' 題</span>') + '<span class="geo-kind">' + LAB[q.type] + '</span></div>' +
         '<div class="card" id="g-card"><p class="q-text">' + esc(q.q) + '</p><div id="g-q"></div><p class="msg" id="g-msg" role="status" aria-live="polite"></p><div id="g-fb"></div></div>';
       run.m = mount($('g-q'), q, { feedback: run.mode !== 'test', toast: function (t) { var m = $('g-msg'); if (m) m.textContent = t; }, onAnswer: function (ok, st) { after(q, ok, st); } });
-      window.scrollTo(0, 0);
+      window.scrollTo(0, Math.max(0, host.getBoundingClientRect().top + window.pageYOffset - 6));   // 捲到這一題（頁首、分頁按鈕捲上去），拖拉題的地圖和卡片才放得進同一個畫面
     }
     function after(q, ok, st) {
       rec(ok); if (ok) run.ok++; run.res.push({ q: q, ok: ok, st: JSON.parse(JSON.stringify(st)) });

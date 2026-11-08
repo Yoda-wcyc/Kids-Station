@@ -55,8 +55,16 @@ const ok = r => r.length >= 8;   // 至少 4 個點
   const miss = o.countries.filter(c => !cont[c.name]).map(c => c.name);
   if (miss.length) { console.error('沒有洲代碼：', miss); process.exit(1); }
   // world-atlas 的環沒有在 ±180 度切開（d3 畫的時候才切）：跨過的環（斐濟、俄羅斯楚科奇、南極洲）先把西經 +360 接成連續的，再切成 180 度以西、以東兩塊
+  // 南極洲的大環繞著南極點、只跨 180 度一次：+360 會在東經 0 度又斷一次（2026-11-08 修：那條橫切南極的直線）。
+  // 這種環改成從 −180 沿海岸走到 +180，再經過南極點（−90）接回起點：等距圓柱圖沿圖底封口，南極圖把 −90 的點略過就沒有接縫線
   function cutAnti(p) {
-    const r = p[0]; if (!r.some((q, i) => i && Math.abs(q[0] - r[i - 1][0]) > 180)) return [p];
+    const r = p[0], jumps = []; r.forEach((q, i) => { if (i && Math.abs(q[0] - r[i - 1][0]) > 180) jumps.push(i); });
+    if (!jumps.length) return [p];
+    if (jumps.length % 2) {
+      const k = jumps[0], body = r.slice(k).concat(r.slice(1, k)), pole = T.bbox(r)[1] < 0 ? -90 : 90;   // r[0]＝r[末]（封閉環），接起來時去掉重複的那一點
+      const a = body[0], b = body[body.length - 1];
+      return [[body.concat([[b[0], pole], [a[0], pole], a])]];
+    }
     const u = r.map(([x, y]) => [x < 0 ? x + 360 : x, y]), out = [];
     const a = T.clip(u, [-180, -90, 180, 90]), b = T.clip(u, [180, -90, 540, 90]).map(([x, y]) => [x - 360, y]);
     if (a.length >= 4) out.push([a]); if (b.length >= 4) out.push([b]);

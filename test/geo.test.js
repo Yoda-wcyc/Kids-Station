@@ -55,6 +55,25 @@ ok(JSON.stringify(Geo.perm('x', 4)) === JSON.stringify(Geo.perm('x', 4)) && Geo.
 { const V = Geo.view({ map: 'world', proj: 'polar', edge: -60 }), c = V.P(0, -90); ok(c[0] === 250 && c[1] === 250, 'polar view: south pole at centre'); }
 ok(Geo.shapePath({ tw: 'penghu' }, Geo.view({ map: 'tw' })).split('M').length - 1 === 3, 'tw.land.penghu has 3 rings');
 ok(Geo.shapePath({ c: 'af' }, Geo.view({ map: 'world' })).length > 1000 && Geo.shapePath({ w: '158' }, Geo.view({ map: 'world' })).length > 20, 'world shapes: continent, country by ISO id');
+// 換日線：太平洋置中的圖（東邊 > 180），西經的地點自己換到右邊；names 也一樣
+{ const V = Geo.view({ map: 'world', box: [105, -50, 215, 30] }), h = Geo.pinXY('hawaii', V), f = Geo.pinXY('fiji', V);
+  ok(h.x > f.x && h.x > 400 && h.x <= 500, 'antimeridian: hawaii (west lon) lands east of fiji on a Pacific map: ' + h.x);
+  ok(/>夏威夷</.test(Geo.figSVG({ type: 'mc', fig: { map: 'world', box: [105, -50, 215, 30], names: ['hawaii'] } }, {}, false)), 'antimeridian: names drawn'); }
+// 示意圖也畫 marks、names；names 靠邊的字不超出圖
+{ const s = Geo.figSVG({ type: 'mc', fig: { svg: '<rect width="500" height="300"/>', w: 500, h: 300, marks: [{ p: { id: 'a', x: 100, y: 100 }, t: '甲' }], names: [{ n: '很長的參考標字', x: 495, y: 5 }] } }, {}, false);
+  const m = /<text x="([\d.]+)" y="([\d.]+)"[^>]*>很長的參考標字</.exec(s);
+  ok(/>甲</.test(s) && m && +m[1] + 7 * 15 / 2 <= 500 && +m[2] - 15 >= 0, 'schematic: marks + names drawn, edge label kept inside: ' + (m && m.slice(1))); }
+// 指北針：右下角有圓圈時換到別的角
+{ const q = { id: 'x', type: 'tap', fig: { map: 'world', box: [0, 0, 50, 40] }, pins: [{ id: 'a', n: 'a', lon: 48, lat: 2 }, { id: 'b', n: 'b', lon: 10, lat: 30 }], a: 'a' }, V = Geo.view(q.fig);
+  const t = /class="geo-compass" transform="translate\(([\d.]+),([\d.]+)\)"/.exec(Geo.figSVG(q, Geo.initState(q), false));
+  ok(t && !(+t[1] === V.w - 34 && +t[2] === V.h - 40), 'compass moves away from a bottom-right pin: ' + (t && t.slice(1))); }
+// 拼圖 names:false：放上去的片作答時不寫名字，揭曉後才寫
+{ const q = { id: 'x', type: 'puzzle', names: false, fig: { map: 'world', box: [110, -50, 180, 0] }, pieces: [{ id: 'au', t: '澳洲', shape: { w: '036' } }, { id: 'nz', t: '紐西蘭', shape: { w: '554' } }] }, st = { at: ['au', 'nz'], sel: null };
+  ok(!/>澳洲</.test(Geo.figSVG(q, st, false)) && />澳洲</.test(Geo.figSVG(q, st, true)), 'puzzle names:false hides placed names until reveal'); }
+// world.js：除了經過極點的封口，沒有經度跳超過 90 度的線段（2026-11-08 南極洲那條橫切的直線）
+{ const bad = []; GeoMaps.world.countries.forEach(c => c.r.forEach(r => { r = r.h || r; for (let i = 2; i + 1 < r.length; i += 2) { const a = r[i - 2] / 10, b = r[i] / 10; if (Math.abs(a - b) > 90 && !(Math.abs(r[i - 1]) === 900 && Math.abs(r[i + 1]) === 900)) bad.push(c.n + ' ' + a + '→' + b); } }));
+  ok(!bad.length, 'world.js: no long jumps across a ring ' + bad.join(', ')); }
+{ const d = Geo.shapePath({ c: 'an' }, Geo.view({ map: 'world', proj: 'polar' })); ok(d && !/250 250/.test(d), 'polar: Antarctica drawn without a seam to the pole'); }
 // validate 抓得到錯
 { const bad = { id: 'm1', learn: [], practice: [{ id: 'x', type: 'tap', q: '?', fig: { map: 'tw' }, pins: ['taipei', 'taipei'], a: 'nowhere', why: '' }], test: [] }, e = Geo.validate(bad).join('\n');
   ok(/learn 要 3/.test(e) && /practice 要剛好 30/.test(e) && /id 要是 m1-p01/.test(e) && /why 要有/.test(e) && /重疊/.test(e) && /a 要是 pins/.test(e), 'validate catches errors'); }
@@ -62,6 +81,10 @@ ok(Geo.shapePath({ c: 'af' }, Geo.view({ map: 'world' })).length > 1000 && Geo.s
 // ---- 地點表：每筆都有名稱、經緯度、洲；臺灣的在臺灣附近 ----
 const P = globalThis.GeoPlaces;
 Object.keys(P).forEach(k => { const p = P[k]; ok(p.n && typeof p.lon === 'number' && typeof p.lat === 'number' && Math.abs(p.lon) <= 180 && Math.abs(p.lat) <= 90 && /^(as|eu|af|na|sa|oc|an|oce)$/.test(p.co) && typeof p.cn === 'string' && p.k, 'place fields: ' + k); });
+{ const KINDS = 'island islands cape peninsula sandbar land mountain rock reef iceShelf pole trench sea strait ocean lake river reservoir canal city port airport industry station country'.split(' ');
+  const bad = Object.keys(P).filter(k => KINDS.indexOf(P[k].k) < 0); ok(!bad.length, 'place kinds in the CONTRACT list: ' + bad.map(k => k + ':' + P[k].k).join(' '));
+  const keys = [...read('geo/places.js').matchAll(/^\s{4}([A-Za-z0-9_]+):\s*\{/gm)].map(m => m[1]), dup = keys.filter((k, i) => keys.indexOf(k) !== i);   // 物件字面值重複的 key 會被後面的蓋掉，要看原始碼
+  ok(keys.length === Object.keys(P).length && !dup.length, 'places.js ids unique in source: ' + keys.length + ' ' + dup.join(' ')); }
 Object.keys(P).filter(k => P[k].cn === 'TW').forEach(k => ok(P[k].lon > 114 && P[k].lon < 123 && P[k].lat > 10 && P[k].lat < 27, 'TW place in range: ' + k));
 
 // ---- 地圖檔：出處、授權寫在檔頭；大小 ----

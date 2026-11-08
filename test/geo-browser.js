@@ -1,6 +1,6 @@
 // test/geo-browser.js — 🌍 地理 headless Chrome 實測（CDP；本機靜態伺服器、擋掉所有外連）。改自國語〈作文〉的 writing-browser.js。
 // 用法：node test/geo-browser.js [單元 id…]（預設＝geo/data 裡全部）；環境變數 GEO_PS／GEO_PD 換 port（平行跑時每個人用不同的）、GEO_SHOTS＝截圖資料夾
-// 每個單元：820 寬（iPad 直放）重點／練習 3 組／測驗每一題都畫得出來；第一題 drag、第一題 puzzle 用「模擬觸控」拖拉作答到答對；
+// 每個單元：820 寬（iPad 直放）重點／練習 3 組／測驗每一題都畫得出來、拖拉題的卡片不用捲就看得到；第一題 drag、第一題 puzzle 用「模擬觸控」拖拉作答到答對；
 //           375 寬（手機）重點、各題型都不能左右捲動；全程 JS 例外、console.error 要 0。
 // 第一個單元另外：整組 10 題答對 → kids_done.geo.<u>p1＝100；測驗 10 題答對 → <u>t＝100、頁首橫幅顯示；首頁地理分頁 9 個科目分頁、三區可收合、18 張卡。
 'use strict';
@@ -52,6 +52,10 @@ async function unitRun(u, first) {
       await ev(`GeoPage.goto(${i}); return 1`);
       const q = await ev(`const R = GeoPage.run(), q = R.qs[R.i]; return { id: q.id, type: q.type, card: !!document.getElementById('g-card'), svg: !!document.querySelector('#g-q svg.geo-svg') === !!q.fig, n: (q.items || q.pieces || []).length }`);
       assert(q.card && q.svg, `${q.id} (${q.type}) renders`);
+      if (q.type === 'drag' || q.type === 'puzzle') {   // 高的圖不能把卡片擠出畫面（820×1180；換題時引擎捲到題目，地圖頂端也要看得到）
+        const b = await ev(`const cs = [...document.querySelectorAll('#g-q .geo-card')].map(c => c.getBoundingClientRect()), s = document.querySelector('#g-q svg.geo-svg').getBoundingClientRect(); return { top: Math.round(s.top), bottom: Math.round(Math.max(...cs.map(c => c.bottom))), h: innerHeight }`);
+        assert(b.top >= 0 && b.bottom <= b.h, `${q.id}: map top ${b.top} and all drag cards (bottom ${b.bottom}) on one screen`);
+      }
       if ((q.type === 'drag' && !dragDone) || (q.type === 'puzzle' && !puzzleDone)) {
         for (let k = 0; k < q.n; k++) {
           const c = await ev(`${COORDS} const card = document.querySelector('.geo-card[data-v="${k}"]').getBoundingClientRect(); return { from: [Math.round(card.left + card.width / 2), Math.round(card.top + card.height / 2)], to: scr(tg[${k}]) }`);
