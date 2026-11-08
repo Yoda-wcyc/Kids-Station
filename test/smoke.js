@@ -1032,7 +1032,8 @@ const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 // 2026-11-06：再 1 個 hidden 入口（期中類題 20 題 ?set=20）→ 16 個 src、hidden 6 個
 // 2026-11-06：🎬 動畫教學 1 張卡（math/anim.html）＋anim-a～g hidden 入口（樣板字串，1 處 hidden: true）→ 17 個 src、hidden 7 個
 // 2026-11-06：再 1 個 hidden 入口（期中第 15、17 題類題 5 題 ?set=1517）→ 18 個 src、hidden 8 個
-ok(srcs.length === 18 && (sj.match(/hidden: true/g) || []).length === 8 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
+// 2026-11-08：國語第 3 張卡（作文 chinese/writing/writing.html）→ 19 個 src
+ok(srcs.length === 19 &&(sj.match(/hidden: true/g) || []).length === 8 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----
@@ -1221,6 +1222,8 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
   ok(ps.length > 1000 && ps.every(([id, p]) => /^cyr?\d+:[rpxq]\d$/.test(id) && p.t === '成語' && JSON.stringify(p).length < 1000) && Object.keys(mkDoc.chinese).length === ps.length && SM.bytes(mkDoc) < 400 * 1024 && Object.values(mkDoc.chinese).every(e => e.p && e.p.t === '成語'), 'idiom mistakes: id 成語:題, t 成語, p small, kept by normMk (' + ps.length + ' auto-graded questions, all wrong = ' + SM.bytes(mkDoc) + ' B)');
   require('./chinese-idiom.test.js');
 }
+// 國語〈作文〉（2026-11-08）：目錄 50 題 22 課、每題每課一支檔、資料格式、審題正解在題目裡、四段、課程練習單一正解、心智圖、頁面載入 → test/chinese-writing.test.js
+require('./chinese-writing.test.js');
 // 社會、自然〈🧩 素養題組〉40 組 160 題（2026-11-01）：資料格式、題數、d 遞增、單選唯一正解、開放題要點、錯題 id、頁面接線 → test/mindmap-literacy.test.js
 require('./mindmap-literacy.test.js');
 // 社會〈🗺️ 互動圖題〉60 題、自然〈🧪 實驗模擬〉40 題（2026-11-02）：資料、熱區不重疊、時間軸順序、模擬數學關係 → test/interactive.test.js

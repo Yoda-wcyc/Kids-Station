@@ -1,0 +1,99 @@
+/* 國語〈作文〉頁面樣式（版面、卡片、標籤沿用 ../reading.css 的 .zr-*；按鈕、.opt、.fb 沿用 ../../style.css） */
+[hidden]{display:none!important}
+.zr-top{padding-right:0}
+.wr-flow{background:#fff;border:2px dashed #f1c27d;border-radius:14px;padding:8px 12px;font-size:.95rem;line-height:1.7;color:#7a4a0f;margin:0 0 12px}
+/* 題庫：依文體可收合 */
+.wr-grp{margin:0 0 14px;background:#fffdf7;border:2px solid var(--line);border-radius:18px;padding:4px 12px 12px}
+.wr-grp summary{cursor:pointer;min-height:48px;display:flex;align-items:center;gap:12px;font-size:1.2rem;list-style-position:inside}
+.wr-grp summary small{font-size:.85rem;color:var(--muted);font-weight:600}
+.wr-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))}
+.wr-grid .zr-card{min-height:96px}
+.wr-grid .zr-card small{line-height:1.45}
+/* 步驟列 */
+.wr-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:0 0 12px}
+.wr-step{min-height:48px;border:2px solid var(--line);border-radius:14px;background:#fff;font:inherit;font-size:.95rem;font-weight:700;color:var(--ink);padding:4px 2px;cursor:pointer;touch-action:manipulation;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wr-step.ok{border-color:#9fe0bd;background:#f3fbf6}
+.wr-step.on{border-color:var(--pri);background:var(--pri);color:#fff}
+.wr-step:disabled{opacity:.4;cursor:default}
+.wr-tip{font-size:.92rem;font-weight:700;color:#7a4a0f}
+.wr-msg{min-height:1.5em;color:#b4232a;font-weight:700;margin:4px 0}
+.wr-nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin:8px 0 0}
+.wr-topic h3{margin:0 0 8px;font-size:1.1rem;line-height:1.5}
+/* ① 審題 */
+.wr-toks{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 14px}
+.wr-tok{min-height:64px;min-width:64px;padding:6px 16px;border:3px solid var(--line);border-radius:999px;background:#fff;font:inherit;font-size:1.7rem;font-weight:800;color:var(--ink);cursor:pointer;touch-action:manipulation}
+.wr-tok.on{border-color:#e5484d;box-shadow:0 0 0 4px rgba(229,72,77,.25);color:#b4232a;background:#fff7f7}
+.wr-keys{list-style:none;padding:0;margin:0}
+.wr-keys li{display:flex;gap:10px;align-items:center;margin:6px 0;line-height:1.5}
+.wr-circle{flex:none;border:3px solid #e5484d;border-radius:999px;padding:0 10px;color:#b4232a}
+/* ② 發想 */
+.wr-kind{display:inline-block;border-radius:99px;padding:1px 10px;background:#e8f4ff;color:#1d5d99;font-size:.82rem;font-weight:700;margin-bottom:4px}
+.wr-chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.wr-chip{min-height:48px;padding:6px 14px;border:2px solid #9fd0f5;border-radius:14px;background:#fff;font:inherit;font-size:1.05rem;font-weight:600;color:#1d5d99;cursor:pointer;touch-action:manipulation;text-align:left}
+.wr-chip.on{background:#ffefe2;border-color:var(--pri);color:#c2410c}
+.wr-chips.sm{margin:6px 0 8px}.wr-chips.sm .wr-chip{min-height:44px;font-size:.95rem}
+.wr-add{display:flex;gap:8px;margin-top:10px}
+.wr-add input,.wr-main{flex:1;min-width:0;min-height:48px;font:inherit;font-size:1.05rem;padding:6px 12px;border:3px solid var(--line);border-radius:14px;background:#fffdf7;color:var(--ink)}
+.wr-add input:focus,.wr-main:focus{outline:none;border-color:var(--pri)}
+.wr-count{margin:6px 0 0;font-weight:700}
+/* ③ 選材 */
+.wr-remind{background:#fff4c2;border-radius:12px;padding:8px 12px;font-weight:700;line-height:1.6}
+.wr-pick{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:2px dashed var(--line)}
+.wr-pick:last-child{border-bottom:0}
+.wr-pt{font-size:1.15rem;font-weight:700;min-width:0}
+.wr-pick.drop .wr-pt{color:var(--muted);text-decoration:line-through}
+.wr-pick.bad{background:var(--no-bg);border-radius:12px;padding:8px}
+.wr-why{display:block;color:#b4232a;font-size:.92rem;text-decoration:none}
+.wr-2{display:flex;gap:8px}
+.wr-2 .btn{min-height:48px;padding:6px 12px}
+.btn.wr-off{background:#eef0f3;border-color:#c3c9d2}
+/* ④ 架構 */
+.wr-lab{display:block;font-weight:700;margin:6px 0 4px}
+.wr-main{width:100%}
+.wr-items{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.wr-item{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:#f7f9fc;border-radius:12px;padding:6px 10px}
+.wr-item span{font-weight:700}
+.wr-item select{min-height:44px;font:inherit;font-size:1rem;border:2px solid var(--line);border-radius:12px;background:#fff;padding:2px 8px}
+/* ⑤ 心智圖＋段落提示 */
+.wr-ck{display:flex;gap:10px;align-items:center;min-height:44px;font-weight:700}
+.wr-ck input{width:26px;height:26px;accent-color:var(--pri)}
+.wr-sheet{background:#fff;border:2px solid var(--line);border-radius:20px;padding:12px;margin:0 0 14px}
+.wr-svg{display:block;width:100%;height:auto;max-width:760px;margin:0 auto}
+.wr-list h2{font-size:1.2rem;margin:4px 0 10px}
+.wr-lp{margin:0 0 10px;padding:0 0 8px;border-bottom:2px dashed var(--line)}
+.wr-lp h3{margin:0 0 2px;font-size:1.05rem}
+.wr-lp p{margin:2px 0}
+.wr-lt{display:flex;flex-wrap:wrap;gap:2px 16px}
+.wr-check{list-style:none;padding:0;margin:0}
+.wr-check li{margin:6px 0;line-height:1.55;padding-left:1.7em;text-indent:-1.7em}
+.wr-check li::before{content:'□　'}
+.wr-next{margin:0 0 10px;padding-left:1.3em;line-height:1.8}
+/* 課程 */
+.wr-goal{font-weight:700;background:#fff;border:2px solid var(--line);border-radius:14px;padding:8px 12px}
+.wr-lesson h2{margin:16px 0 8px}
+.wr-lcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px}
+.wr-lc{margin:0}.wr-lc h3{margin:0 0 6px;font-size:1.08rem;color:#b45309}.wr-lc p{margin:0 0 4px;line-height:1.6}
+.wr-cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wr-bad,.wr-good{border-radius:14px;padding:8px 12px;line-height:1.7}
+.wr-bad{background:#f4f5f7;border:2px solid #c3c9d2}.wr-good{background:var(--ok-bg);border:2px solid #9fe0bd}
+.wr-bad p,.wr-good p{margin:4px 0 0}
+.wr-cw{grid-column:1 / -1;margin:0;font-weight:700;color:#7a4a0f}
+@media (max-width:600px){ .wr-cmp{grid-template-columns:1fr} .wr-step{font-size:.8rem} .wr-tok{font-size:1.4rem;min-height:56px} }
+/* 列印：只印心智圖（第 1 頁）＋段落提示與檢查清單（第 2 頁），A4 直式 */
+@page{size:A4 portrait;margin:10mm}
+@media print{
+  body{background:#fff;font-size:12pt}
+  .zr-top,.zr-meta,.wr-steps,.wr-noprint,.wr-msg,.wr-nav,.zr-auth{display:none!important}
+  .zr-wrap{max-width:none;padding:0}
+  .wr-sheet{border:0;border-radius:0;padding:0;margin:0}
+  .wr-map{break-after:page;page-break-after:always;text-align:center}
+  .wr-map .wr-svg{width:auto;height:262mm;max-width:100%;margin:0 auto}
+  .wr-list{font-size:12pt;line-height:1.5}
+  .wr-list h2{font-size:15pt;margin:0 0 6px}
+  .wr-lp{margin:0 0 6px;padding:0 0 4px}
+  .wr-lp h3{font-size:12.5pt}
+  .wr-lp .muted{font-size:10pt}
+  .wr-check li{margin:3px 0}
+  body.wr-maponly .wr-list{display:none}
+  body.wr-maponly .wr-map{break-after:auto;page-break-after:auto}
+}
