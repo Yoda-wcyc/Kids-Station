@@ -1499,6 +1499,8 @@
     { "id": "paper", "name_zh": "紙", "in": { "planks": 2 }, "out": { "id": "paper", "count": 3 }, "needs": null },
     { "id": "book", "name_zh": "英文小書", "in": { "leather": 1, "paper": 3 }, "out": { "id": "book", "count": 1 }, "needs": null },
     { "id": "arrow", "name_zh": "箭", "in": { "feather": 1, "stick": 1, "cobblestone": 1 }, "out": { "id": "arrow", "count": 4 }, "needs": null },
+    { "id": "stick_bamboo", "name_zh": "木棍（竹子做的）", "in": { "bamboo": 2 }, "out": { "id": "stick", "count": 2 }, "needs": null },
+    { "id": "paper_bamboo", "name_zh": "紙（竹子做的）", "in": { "bamboo": 3 }, "out": { "id": "paper", "count": 3 }, "needs": null },
     { "id": "bow", "name_zh": "弓", "in": { "stick": 3, "wool": 2 }, "out": { "id": "bow", "count": 1 }, "needs": "crafting_table" }
   ],
   "smelt": [
