@@ -17,6 +17,7 @@
      （隨機考卷 test、練習卷第一回 p1、第二回 p2，任何一份 ≥ 80 都算）。
    - 分數比較大小（math:frc，2026-10-27）：✏️ 練習五種題型（同分母・同分子、跟 1 跟一半比、通分再比、先約分再比、假分數・帶分數）各有一輪 ≥ 80%＋📝 考試（固定一份）≥ 80。
    - 數學五下～六下（mg:<單元>，2026-11-06，math/grade.html）：✏️ 練習一輪（15 題）答對 ≥ 80%＋📝 單元測驗（20 題）≥ 80 分；每冊總複習（mg:<冊>R，30 題）≥ 80 分。
+   - 🌍 地理（geo:<單元>，2026-11-08，geo/unit.html）：✏️ 練習 3 組（每組 10 題）各有一輪答對 ≥ 80%＋📝 單元測驗（10 題）≥ 80 分（kids_done.geo）。
    - 乘法快算（math:mx，2026-10-21）：⏱️ 挑戰「二位數×一位數」「二位數×二位數」各有一輪（20 題）答對 ≥ 90% 而且平均每題在秒數內（同一輪兩個都要到；記在 mx.<題型>.ok）：
      二位數×一位數 ≤ 10 秒、二位數×二位數 ≤ 20 秒（Yoda 2026-10-21 由 10 秒放寬）；其他題型（九九、整十、三位×一位）不算完成，達標記號照 10 秒。
    - AI 三頁（ai:<頁>）：各玩完一次（看到結果頁）。
@@ -53,6 +54,10 @@
   const NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
   // 數學五下起（2026-11-06，math/grade.html）：只列已上線的冊；要跟 math/grade.js 的 BOOKS、subjects.js 的 MG_BOOKS 一致（test/math-grade.test.js 會對）
   const MG_BOOKS = [['g5b', '五下', ['體積', '分數的計算', '容積', '小數的乘法', '大數與折線圖', '整數、小數除以整數', '表面積', '比率與百分率', '時間的乘除', '生活中的大單位']], ['g6a', '六上', ['最大公因數與最小公倍數', '分數除法', '數量關係', '小數除法', '比與比值', '圓周長與扇形周長', '圓面積與扇形面積', '認識速率', '放大圖、縮圖與比例尺']], ['g6b', '六下', ['小數與分數的計算', '速率的應用', '柱體體積與表面積', '基準量與比較量', '怎樣解題', '圓形圖']]];
+  // 🌍 地理（2026-11-08，geo/unit.html?u=<單元>；規格 geo/CONTRACT.md）：[id, 標題, 部分]；要跟 subjects.js 的 GEO_UNITS 一樣（test/geo.test.js 會對）。只加不改 id
+  const GEO_UNITS = [['m1', '方位', '地圖技能'], ['m2', '比例尺', '地圖技能'], ['m3', '經緯度', '地圖技能'], ['m4', '等高線與地形圖', '地圖技能'], ['m5', '圖例與地圖種類', '地圖技能'],
+    ['t1', '位置與範圍', '臺灣篇'], ['t2', '地形', '臺灣篇'], ['t3', '氣候', '臺灣篇'], ['t4', '河川與水資源', '臺灣篇'], ['t5', '縣市與區域', '臺灣篇'], ['t6', '人口與產業分布', '臺灣篇'],
+    ['w1', '亞洲', '世界篇'], ['w2', '歐洲', '世界篇'], ['w3', '非洲', '世界篇'], ['w4', '北美洲', '世界篇'], ['w5', '南美洲', '世界篇'], ['w6', '大洋洲', '世界篇'], ['w7', '南極洲', '世界篇']];
   const mmCells = k => MM_UNITS[k].map((x, i) => ({ key: `mm:${k}:${x[0]}`, group: x[2] ? x[2].split(' ')[0] : '五上', title: `${x[2] || '單元' + NUMS[i]}　${x[1]}`, href: `index.html#s/${k}/${x[0]}` }));
   // 天平內建 8 題（要跟 math/balance.html 的 BUILTIN 一樣，smoke 會對）
   const BAL = ['x+5=12', 'x−3=9', '12+x=20', 'x+8−2=15', '(x+3)−2=10', '(x−5)+4=12', 'x−(6−2)=7', 'x+(10−4)=15'];
@@ -99,6 +104,7 @@
     else if (sec === 'fr') s.fr[key] = Math.max(s.fr[key] == null ? 0 : s.fr[key], v);
     else if (sec === 'mp') s.mp[key] = Math.max(s.mp[key] == null ? 0 : s.mp[key], v);
     else if (sec === 'mg') s.mg[key] = Math.max(s.mg[key] == null ? 0 : s.mg[key], v);   // 五下～六下：'<單元>q'／'<單元>t'／'<冊>R'
+    else if (sec === 'geo') s.geo[key] = Math.max(s.geo[key] == null ? 0 : s.geo[key], v);   // 地理：'<單元>p1'～'p3' 練習各組最佳 %、'<單元>t' 測驗最高分
     else if (sec === 'mx') {   // val＝{acc:%, sec:平均每題秒數}；同一輪 acc ≥ 90 且 sec ≤ 該題型門檻（mxSec）才記 ok
       const o = val && typeof val === 'object' ? val : {}, acc = Math.max(0, Math.min(100, Math.round(+o.acc || 0))), sp = Math.max(1, Math.round((+o.sec || 0) * 10)), p = s.mx[key] || {};
       const n = { acc: Math.max(p.acc == null ? 0 : p.acc, acc) }; n.sp = p.sp ? Math.min(p.sp, sp) : sp;
@@ -200,6 +206,13 @@
     const t = num(SM.normDone(ctx.done).mg[bid + 'R']), label = `📝 總複習 ${PASS} 分以上`;
     return result([t == null ? { label, ok: false, p: 0, detail: '還沒有紀錄：做一次總複習（30 題）' } : t >= PASS ? { label, ok: true, p: 1, detail: `最高 ${t} 分` } : { label, ok: false, p: 0, detail: `最高 ${t} 分，要考到 ${PASS} 分以上` }], t != null);
   }
+  // 🌍 地理（geo:<單元>）：✏️ 練習 3 組（每組 10 題）各有一輪 ≥ 80%＋📝 單元測驗（10 題）≥ 80 分
+  function geoUnit(uid, ctx) {
+    const s = SM.normDone(ctx.done).geo, t = num(s[uid + 't']), label = `📝 單元測驗 ${PASS} 分以上`;
+    const checks = [1, 2, 3].map(g => scoreCheck(`✏️ 練習第 ${g} 組一輪答對 ${PASS}% 以上`, s[uid + 'p' + g], `第 ${g} 組練習（10 題）`));
+    checks.push(t == null ? { label, ok: false, p: 0, detail: '還沒有測驗紀錄：到 📝 測驗考一次（10 題）' } : t >= PASS ? { label, ok: true, p: 1, detail: `最高 ${t} 分` } : { label, ok: false, p: 0, detail: `最高 ${t} 分，要考到 ${PASS} 分以上` });
+    return result(checks, [1, 2, 3].some(g => s[uid + 'p' + g] != null) || t != null);
+  }
   function multiply(ctx) {
     const s = SM.normDone(ctx.done).mx;
     const checks = MX_REQ.map(([k, n]) => {
@@ -253,6 +266,7 @@
     if (key === 'math:frc') return fraction(ctx);
     if ((m = /^mg:(g[56][ab])R$/.exec(key))) return mgReview(m[1], ctx);
     if ((m = /^mg:(g[56][ab]\d{1,2})$/.exec(key))) return mgUnit(m[1], ctx);
+    if ((m = /^geo:([mtw]\d)$/.exec(key)) && GEO_UNITS.some(x => x[0] === m[1])) return geoUnit(m[1], ctx);
     if ((m = /^ai:(.+)$/.exec(key))) return aiPage(m[1], ctx);
     if ((m = /^zh:L([1-4])$/.exec(key))) return zhLevel(+m[1], data, ctx);
     if ((m = /^cy:L([1-4])$/.exec(key))) return cyLevel(+m[1], data, ctx);
@@ -278,6 +292,7 @@
         { key: 'math:mx', group: '五上', title: '乘法快算', href: 'index.html#s/math/multiply' },
         { key: 'math:frc', group: '五上', title: '分數比較大小', href: 'index.html#s/math/fraction' }].concat(MG_BOOKS.flatMap(([b, g, ts]) =>
         ts.map((t, i) => ({ key: `mg:${b}${i + 1}`, group: g, title: `單元${NUMS[i]}　${t}`, href: `index.html#s/math/${b}${i + 1}` })).concat([{ key: `mg:${b}R`, group: g, title: `${g}總複習`, href: `index.html#s/math/${b}r` }]))) },
+      { k: 'geo', name: '地理', icon: '🌍', units: GEO_UNITS.map(([id, t, g]) => ({ key: 'geo:' + id, group: g, title: t, href: `index.html#s/geo/${id}` })) },
       { k: 'ai', name: 'AI', icon: '🤖', units: AI.map(([id, t, i]) => ({ key: 'ai:' + id, title: `${i} ${t}`, href: `index.html#s/ai/${id}` })) },
       { k: 'scratch', name: 'Scratch 塔防', icon: '🏰', units: SCRATCH.map((t, i) => ({ key: 'scratch:' + (i + 1), title: `第 ${i + 1} 堂　${t}`, href: `game/scratch-td/web/lesson${i + 1}.html` })) }
     ]);
@@ -308,7 +323,7 @@
   const STATUS_TEXT = { done: '✅ 已完成', doing: '🟡 進行中', todo: '⚪ 還沒開始' };
   const statusText = r => (r.status === 'doing' ? `${STATUS_TEXT.doing} ${r.pct}%` : STATUS_TEXT[r.status]);
 
-  const KC = { PASS, MM_UNITS, MG_BOOKS, BAL, SD_LV, GW_LV, MP_G, FR_G, MX_REQ, MX_ACC, MX_SEC, MX_SEC0, MX_N, mxSec, mxPass, AI, SCRATCH, record, tbItems, evaluate, catalog, bank, build, statusText, STATUS_TEXT, _: { tbUnit, mmUnit, balance, shortDiv, gcdWord, multiples, multiply, fraction, aiPage, scratchLesson, result } };
+  const KC = { PASS, MM_UNITS, MG_BOOKS, GEO_UNITS, BAL, SD_LV, GW_LV, MP_G, FR_G, MX_REQ, MX_ACC, MX_SEC, MX_SEC0, MX_N, mxSec, mxPass, AI, SCRATCH, record, tbItems, evaluate, catalog, bank, build, statusText, STATUS_TEXT, _: { tbUnit, mmUnit, balance, shortDiv, gcdWord, multiples, multiply, fraction, aiPage, scratchLesson, result } };
   if (typeof module !== 'undefined' && module.exports) module.exports = KC;
   root.KidsCompletion = KC;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -11,7 +11,7 @@
   'use strict';
   const SMx = () => G.KESyncMerge || (typeof require === 'function' ? require('./syncmerge.js') : null);
   const K = 'kids_daily', START = '261103', SHOW = 14, DAY = 864e5;   // START＝上線日（台北時間 YYMMDD）
-  const SUBJ = [['english', 'e', '英文'], ['math', 'm', '數學'], ['chinese', 'c', '國語'], ['social', 's', '社會'], ['science', 'n', '自然'], ['history', 'h', '歷史'], ['ai', 'a', 'AI']];
+  const SUBJ = [['english', 'e', '英文'], ['math', 'm', '數學'], ['chinese', 'c', '國語'], ['social', 's', '社會'], ['science', 'n', '自然'], ['history', 'h', '歷史'], ['geo', 'g', '地理'], ['ai', 'a', 'AI']];   // geo＝🌍 地理（2026-11-08，geo/geo.js）
   const OPEN = 'o', MX = 'x', CODE = { mathx: MX }, NAME = {};   // o＝國語開放題：加進國語題數，不進答對率分母；x＝乘法快算：加進數學題數，清單 3 題折 1 題
   SUBJ.forEach(s => { CODE[s[0]] = s[1]; NAME[s[0]] = s[2]; });
   const GOAL_DEF = [60, 30, 1], MX_RATE = 3, K_GOAL = 'kids_daily_goal', K_PARTY = 'kids_daily_party';

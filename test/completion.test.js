@@ -180,7 +180,7 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   const M = KC.build(DATA, {});
   const nS = KC.MM_UNITS.social.length, nN = KC.MM_UNITS.science.length;   // 社會／自然單元數照 MM_UNITS（11-02 加五下：社會 9、自然 8）
   const nMG = KC.MG_BOOKS.reduce((n, b) => n + b[2].length + 1, 0);   // 數學五下起（2026-11-06）：每冊單元數＋總複習
-  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:' + DATA.textbook.length + `,social:${nS},science:${nN},math:${6 + nMG},ai:3,scratch:7` && M.total === 16 + nMG + nS + nN + DATA.textbook.length && M.done === 0 && M.pct === 0, 'map: judgeable units (英文課本單元數照 textbook.js，11-01 加六上 4 課): ' + M.subjects.map(s => s.k + ':' + s.total).join());
+  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:' + DATA.textbook.length + `,social:${nS},science:${nN},math:${6 + nMG},geo:18,ai:3,scratch:7` && M.total === 16 + 18 + nMG + nS + nN + DATA.textbook.length && M.done === 0 && M.pct === 0, 'map: judgeable units (英文課本單元數照 textbook.js，11-01 加六上 4 課): ' + M.subjects.map(s => s.k + ':' + s.total).join());
   // 五上／五下分冊（2026-11-02）：沒 label 的＝五上「單元X」照舊；有 label 的照 label 顯示、group＝冊別；五上排在五下前面
   [['social', 1], ['science', 2]].forEach(([k, i]) => {
     const us = M.subjects[i].units, up = us.filter(u => u.group === '五上'), dn = us.filter(u => u.group === '五下');
@@ -203,7 +203,7 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   ok(M.subjects.every(s => s.units.every(u => u.href && u.title && ['done', 'doing', 'todo'].includes(u.status))), 'map: every cell has href, title, status');
   const ctx = { learned: Object.fromEntries(KC.tbItems(DATA, 'hanlin-5-u2', KE).map(x => [x.id, { at: '2026-10-20T01:00:00Z' }])), done: { tb: { 'hanlin-5-u2': { best: 85, last: 85, at: T0 } }, ai: { secrets: T0 } } };
   const M2 = KC.build(DATA, ctx);
-  ok(M2.done === 2 && M2.subjects[0].done === 1 && M2.subjects[0].units.find(u => u.key === 'tb:hanlin-5-u2').status === 'done' && M2.subjects[4].done === 1, 'map: one textbook unit + one AI page done → 2/32');
+  ok(M2.done === 2 && M2.subjects[0].done === 1 && M2.subjects[0].units.find(u => u.key === 'tb:hanlin-5-u2').status === 'done' && M2.subjects[5].done === 1, 'map: one textbook unit + one AI page done → 2/32');
   const bw = M2.bank.find(b => b.k === 'words');
   ok(M2.bank.map(b => b.k).join() === 'words,phrases,roots,grammar,patterns' && bw.total === W.DATA_WORDS.length && bw.levels.map(l => l.lv).join() === '1,2,3,4' && bw.learned >= 15, 'bank: categories + word levels 1–4, learned counted: ' + bw.learned + '/' + bw.total);
   ok(M2.bank.find(b => b.k === 'patterns').levels.length === 3 && M2.bank.find(b => b.k === 'roots').levels.length === 0, 'bank: pattern levels 簡單／基本／進階, roots no levels');
@@ -238,13 +238,13 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   };
   ok(SM.VERSION === 9, 'sync doc version 9');   // 2026-11-02 v7、v8 只改 mmBlanks 寫法；v9 只多 dd
   const v4 = SM.normalize({ v: 4, log: [], learned: {}, mistakes: {}, mk: {} });
-  ok(v4.v === 9 && same(v4.done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: {}, mx: {}, fr: {}, zh: {}, cy: {}, mg: {} }), 'v4 doc → v9 with empty done');
+  ok(v4.v === 9 && same(v4.done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: {}, mx: {}, fr: {}, zh: {}, cy: {}, mg: {}, geo: {} }), 'v4 doc → v9 with empty done');
   // v6：mp 取大、mx acc 取大／sp 取小／ok 取最早；壞資料不會壞
   const P1 = { done: { mp: { circle: 60, test: 85 }, mx: { d21: { acc: 80, sp: 70 }, d22: { acc: 95, sp: 95, ok: 900 } } } }, P2 = { done: { mp: { circle: 90, word: 0 }, mx: { d21: { acc: 95, sp: 120, ok: 500 }, d22: { acc: 70, sp: 60, ok: 700 } } } }, P3 = { done: { mp: { lit: 100 }, mx: { nn: { acc: 100, sp: 20 } } } };
   const P12 = SM.merge(P1, P2).done;
   ok(same(P12.mp, { circle: 90, test: 85, word: 0 }) && same(P12.mx.d21, { acc: 95, sp: 70, ok: 500 }) && same(P12.mx.d22, { acc: 95, sp: 60, ok: 700 }), 'done.mp／mx merge: ' + C(P12.mp) + ' ' + C(P12.mx));
   props(P1, P2, P3, 'done v6 mp/mx');
-  ok(same(SM.normalize({ done: { mp: { circle: 150, zz: 5, test: 'x' }, mx: { d21: { acc: 'abc' }, d22: { acc: 50, sp: -3, ok: 'y' }, qq: { acc: 1 } } } }).done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: { circle: 100 }, mx: { d22: { acc: 50 } }, fr: {}, zh: {}, cy: {}, mg: {} }), 'garbage mp／mx: clamps, drops unknown');
+  ok(same(SM.normalize({ done: { mp: { circle: 150, zz: 5, test: 'x' }, mx: { d21: { acc: 'abc' }, d22: { acc: 50, sp: -3, ok: 'y' }, qq: { acc: 1 } } } }).done, { tb: {}, mm: {}, bal: {}, sd: {}, gw: {}, ai: {}, mp: { circle: 100 }, mx: { d22: { acc: 50 } }, fr: {}, zh: {}, cy: {}, mg: {}, geo: {} }), 'garbage mp／mx: clamps, drops unknown');
   const strip5 = d => { const n = SM.normalize(d); delete n.done.mp; delete n.done.mx; n.v = 5; return n; }, full6 = SM.merge(SM.merge(P1, P2), P3);
   ok(same(SM.merge(full6, strip5(full6)), full6), 'v5 device drops mp/mx → v6 merge restores them from local');
   ok(same(SM.normalize({ done: 'x' }).done, SM.normDone(null)) && same(SM.normalize({ done: { tb: [1], sd: { l20: 'abc', l100: 150, zz: 5 }, ai: { '': 5, ok: -1 } } }).done.sd, { l100: 100 }), 'garbage done does not throw, clamps %, drops unknown');

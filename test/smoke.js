@@ -838,6 +838,9 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 2026-11-06 數學五下～六下 done.mg：三冊全部單元的練習％、測驗分＋三冊總複習，全部 100（最壞情況）
   { const MGb = require(path.join(root, 'math', 'grade.js')).BOOKS, mg = {}; MGb.forEach(b => { mg[b.id + 'R'] = 100; b.units.forEach(x => { mg[x[0] + 'q'] = 100; mg[x[0] + 't'] = 100; }); });
     projDoc.done = Object.assign({}, projDoc.done, { mg }); ok(Object.keys(SM.normDone({ mg }).mg).length === 53, 'done.mg worst case: 25 單元×2＋3 冊 = 53 keys kept'); }
+  // 2026-11-08 🌍 地理 done.geo：18 單元 × 練習 3 組＋測驗，全部 100（最壞情況）
+  { const geo = {}; require(path.join(root, 'completion.js')).GEO_UNITS.forEach(([id]) => ['p1', 'p2', 'p3', 't'].forEach(k => { geo[id + k] = 100; }));
+    projDoc.done = Object.assign({}, projDoc.done, { geo }); ok(Object.keys(SM.normDone({ geo }).geo).length === 72, 'done.geo worst case: 18 單元×4 = 72 keys kept'); }
   ok(SM.bytes(SM.normDg(dg6)) <= SM.DG_MAX_BYTES && SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX <= SM.MAX_BYTES / 4, 'daily stats + goals at their caps fit the budget: ' + (SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX));
   const projBytes = SM.bytes(SM.normalize(projDoc));
   ok(g6a.length === 9 && projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats) after 六下 (9 units, sized like 六上) still ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes (六下已上線 ' + g6bHave + ' 單元)');
@@ -1011,8 +1014,8 @@ ok(idx.indexOf('syncmerge.js') < idx.indexOf('syncauto.js') && idx.indexOf('sync
 ['account.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/short-division.html', 'math/multiples.html', 'math/multiply.html', 'math/fraction.html', 'math/grade.html'].forEach(f => { const h = fs.readFileSync(path.join(root, f), 'utf8'), a = h.search(/src="(\.\.\/)?syncauto\.js(\?v=[0-9a-f]+)?"/), s = h.search(/src="(\.\.\/)?sync\.js(\?v=[0-9a-f]+)?"/); ok(h.search(/src="(\.\.\/)?syncmerge\.js(\?v=[0-9a-f]+)?"/) < a && a >= 0 && a < s, f + ' loads syncmerge.js → syncauto.js → sync.js'); });
 const sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
 ['國語', '數學', '社會', '歷史', '自然', '英文', "n: 'AI'", '遊戲', '#s/', 'math/balance.html', '準備中，敬請期待', '← 回'].forEach(t => ok(sj.includes(t), 'subjects.js has ' + t));
-ok((sj.match(/\{ k: '[a-z]+', n: /g) || []).length === 8, '8 subject tabs');
-ok(/repeat\(8,/.test(fs.readFileSync(path.join(root, 'subjects.css'), 'utf8')) && sj.includes("href: 'comics/index.html'") && fs.existsSync(path.join(root, 'comics/index.html')) && fs.existsSync(path.join(root, 'comics/catalog.js')), '歷史科：分頁列 8 欄、漫畫卡指到目錄頁 comics/index.html（各話檢查在 test/comics.test.js）');
+ok((sj.match(/\{ k: '[a-z]+', n: /g) || []).length === 9, '9 subject tabs（2026-11-08 加 🌍 地理）');
+ok(/repeat\(9,/.test(fs.readFileSync(path.join(root, 'subjects.css'), 'utf8')) && sj.includes("href: 'comics/index.html'") && fs.existsSync(path.join(root, 'comics/index.html')) && fs.existsSync(path.join(root, 'comics/catalog.js')), '歷史科：分頁列 9 欄、漫畫卡指到目錄頁 comics/index.html（各話檢查在 test/comics.test.js）');
 
 // ---- AI 與 遊戲（Scratch 塔防）：檔案存在、非空；活動卡片的 src 都找得到 ----
 const nonEmpty = rel => { const p = path.join(root, rel); return fs.existsSync(p) && fs.statSync(p).size > 0; };

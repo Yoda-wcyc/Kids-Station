@@ -31,6 +31,7 @@
     done.zh:{'<篇id>':第一次完成的時間}   ← 國語〈閱讀素養〉完成的篇（2026-11-01 加，跟 fr 一樣不升版；聯集，留最早的時間；判定在 completion.js zh:L1～L4）
     done.cy:{'<成語／篇／單元測驗 id>':第一次完成的時間}   ← 國語〈成語故事〉完成的成語 cy001～cy100、素養閱讀 cyr01～cyr10、單元測驗 cyu01～cyu10、總測驗 cyall（2026-11-01 加，同 zh）
     done.mg:{'g5b1q':%, 'g5b1t':分, 'g5bR':分}   ← 數學五下～六下（math/grade.html，2026-11-06 加，跟 fr 一樣不升版）：單元練習一輪最佳 %、單元測驗最高分、整冊總複習最高分；各項取大
+    done.geo:{'m1p1':%, 'm1t':分}   ← 🌍 地理（geo/unit.html，2026-11-08 加，跟 mg 一樣不升版）：練習各組（p1～p3）最佳 %、單元測驗最高分；各項取大
     mk.chinese                              ← 國語錯題庫（2026-11-01 加；舊版裝置的 normMk 會丟掉、新版下次同步從本機補回）
     mk.<科>.<id>.due                         ← 🔁 隔天複習（社會／自然）下次到期的日子（台北時間第幾天；2026-11-01 加，不升版：舊版裝置會丟掉 → 那題當今天到期；一樣新時 墓碑 ＞ 有 due ＞ 沒 due）
    - mp、fr：各項取大。mx：acc 取大、sp 取小、ok 取最早（聯集）。舊版（v5）裝置的 normDone 會丟掉 mp／mx → 新版下次同步從本機補回來（跟 v4→v5 的 done 一樣）。
@@ -247,6 +248,8 @@
   // mp：倍數與公倍數（各題型練習最佳 %、考試最高分）；mx：乘法快算挑戰（acc 最佳 %、sp 最快平均秒數×10、ok 第一次達標時間）
   // mg：五下～六下數學（2026-11-06）'<單元>q'＝練習一輪最佳 %、'<單元>t'＝單元測驗最高分、'<冊>R'＝總複習最高分（key 用 MG_RE 擋，最多 25 單元×2＋3 冊）
   const MG_RE = /^g[56][ab](\d{1,2}[qt]|R)$/;
+  // geo：🌍 地理（2026-11-08，geo/unit.html）'<單元>p1'～'p3'＝練習各組最佳 %、'<單元>t'＝單元測驗最高分（18 單元×4＝最多 72 個 key）
+  const GEO_RE = /^(m[1-5]|t[1-6]|w[1-7])(p[1-3]|t)$/;
   const MP_K = ['circle', 'both', 'fill', 'lcm', 'word', 'lit', 'test', 'p1', 'p2'], FR_K = ['basic', 'bench', 'lcd', 'red', 'mix', 'test'], MX_K = ['nn', 'd21', 'd22t', 'd22', 'd31'];
   function normMx(e) {
     if (!e || typeof e !== 'object') return null; const acc = pct(e.acc); if (acc == null) return null;
@@ -258,7 +261,7 @@
   function normMmD(e) { if (!e || typeof e !== 'object') return null; const o = {}; MM_F.forEach(k => { const v = pct(e[k]); if (v != null) o[k] = v; }); return Object.keys(o).length ? o : null; }
   function normDone(x) {
     const d = obj(x), once = v => ms(v) || null;
-    return { tb: dsec(d.tb, normTb), mm: dsec(d.mm, normMmD), bal: dsec(d.bal, once), sd: dsec(d.sd, pct, SD_K), gw: dsec(d.gw, pct, GW_K), ai: dsec(d.ai, once), mp: dsec(d.mp, pct, MP_K), mx: dsec(d.mx, normMx, MX_K), fr: dsec(d.fr, pct, FR_K), zh: dsec(d.zh, once), cy: dsec(d.cy, once), mg: dsec(d.mg, pct, MG_RE) };
+    return { tb: dsec(d.tb, normTb), mm: dsec(d.mm, normMmD), bal: dsec(d.bal, once), sd: dsec(d.sd, pct, SD_K), gw: dsec(d.gw, pct, GW_K), ai: dsec(d.ai, once), mp: dsec(d.mp, pct, MP_K), mx: dsec(d.mx, normMx, MX_K), fr: dsec(d.fr, pct, FR_K), zh: dsec(d.zh, once), cy: dsec(d.cy, once), mg: dsec(d.mg, pct, MG_RE), geo: dsec(d.geo, pct, GEO_RE) };
   }
   const maxOf = (a, b) => Math.max(a == null ? -Infinity : a, b == null ? -Infinity : b);
   function mergeDone(a, b) {
@@ -270,7 +273,7 @@
     const first = (x, y) => Math.min(x, y), best = (x, y) => Math.max(x, y);
     const lo = (x, y) => (x == null ? y : y == null ? x : Math.min(x, y));
     const mx = mergeSection(a.mx, b.mx, (x, y) => { const o = { acc: Math.max(x.acc, y.acc) }, sp = lo(x.sp, y.sp), ok = lo(x.ok, y.ok); if (sp != null) o.sp = sp; if (ok != null) o.ok = ok; return o; });
-    return normDone({ tb, mm, bal: nums(a.bal, b.bal, first), sd: nums(a.sd, b.sd, best), gw: nums(a.gw, b.gw, best), ai: nums(a.ai, b.ai, first), mp: nums(a.mp, b.mp, best), mx, fr: nums(a.fr, b.fr, best), zh: nums(a.zh, b.zh, first), cy: nums(a.cy, b.cy, first), mg: nums(a.mg, b.mg, best) });
+    return normDone({ tb, mm, bal: nums(a.bal, b.bal, first), sd: nums(a.sd, b.sd, best), gw: nums(a.gw, b.gw, best), ai: nums(a.ai, b.ai, first), mp: nums(a.mp, b.mp, best), mx, fr: nums(a.fr, b.fr, best), zh: nums(a.zh, b.zh, first), cy: nums(a.cy, b.cy, first), mg: nums(a.mg, b.mg, best), geo: nums(a.geo, b.geo, best) });
   }
 
   // ---- dd：每日學習統計（kids_daily；格式見檔頭 v9）----

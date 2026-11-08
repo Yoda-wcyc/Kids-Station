@@ -271,6 +271,8 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       ['AI 錯題回合', 'kids-mistakes.js', "KidsDaily.rec('ai', right)"],
       // 歷史
       ['歷史漫畫測驗', 'comics/comic.js', "KidsDaily.rec('history', r.result)"],
+      // 地理（2026-11-08）：練習、測驗每題都記（geo/geo.js page → rec）
+      ['地理單元', 'geo/geo.js', "KidsDaily.rec('geo', !!ok)"],
       // 遊戲（算英文）：勇者島戰鬥／夜襲／競技場都走 askQ.finish；方塊世界石碑／錯題怪／任務都走 recordAnswer；小朋友鎮只有執照考試／工作任務（閒聊不算）
       ['勇者島', 'game/hero-island/game.js', "root.KidsDaily.rec('english', ok)"],
       ['方塊世界（打包檔）', 'game/hero-world/assets/hw.js', /KidsDaily\.rec\("english",/],
@@ -296,7 +298,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     const entryFiles = found.filter(f => f !== 'kids-coins.js' && /KidsCoins\.answer\(/.test(read(f).replace(/\/\*[\s\S]*?\*\//g, '')));
     ok(entryFiles.length >= 12, 'found entry files: ' + entryFiles.length);
     entryFiles.forEach(f => { const s = read(f); ok(s.includes(R) || s.includes('dailyRec(') || f === 'chinese/reading-core.js', 'file with KidsCoins.answer must record too: ' + f); });
-    const PAGES = ['index.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/fraction.html', 'math/multiples.html', 'math/multiply.html', 'math/short-division.html', 'math/paper.html', 'math/grade.html', 'chinese/reading.html', 'chinese/idioms/idioms.html', 'ai/ask-well.html', 'ai/hallucinate.html', 'ai/secrets.html', 'game/hero-island/index.html', 'game/hero-world/index.html', 'game/kids-town/index.html']
+    const PAGES = ['index.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/fraction.html', 'math/multiples.html', 'math/multiply.html', 'math/short-division.html', 'math/paper.html', 'math/grade.html', 'geo/unit.html', 'chinese/reading.html', 'chinese/idioms/idioms.html', 'ai/ask-well.html', 'ai/hallucinate.html', 'ai/secrets.html', 'game/hero-island/index.html', 'game/hero-world/index.html', 'game/kids-town/index.html']
       .concat(fs.readdirSync(path.join(root, 'comics')).filter(f => /^v\d+e\d+\.html$/.test(f)).map(f => 'comics/' + f));   // 漫畫每一話（comic.js 記錄）自動列進來
     PAGES.forEach(f => { const s = read(f), a = s.indexOf('syncmerge.js"'), a2 = s.indexOf('syncmerge.js?'), m = a >= 0 ? a : a2, b = s.search(/kids-daily\.js["?]/); ok(m >= 0 && b > m, 'page loads syncmerge.js then kids-daily.js: ' + f); });
     // 每個有記錄的 html 都在清單裡（新頁面忘了載 kids-daily.js 會擋）

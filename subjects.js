@@ -1,8 +1,8 @@
-/* subjects.js — 科目切換列（國語／數學／社會／歷史／自然／英文／AI／遊戲）。英文＝原本的 app.js；其他科目由這支畫在 #subject。
+/* subjects.js — 科目切換列（國語／數學／社會／歷史／地理／自然／英文／AI／遊戲）。英文＝原本的 app.js；其他科目由這支畫在 #subject。
    社會、自然＝心智圖（mindmap/），每單元一張卡（MM_UNITS）。 */
 (function () {
   'use strict';
-  const SUBJ = [{ k: 'chinese', n: '國語', i: '📝' }, { k: 'math', n: '數學', i: '🔢' }, { k: 'social', n: '社會', i: '🌏' }, { k: 'history', n: '歷史', i: '🏛️' }, { k: 'science', n: '自然', i: '🔬' }, { k: 'english', n: '英文', i: '🔤' }, { k: 'ai', n: 'AI', i: '🤖' }, { k: 'game', n: '遊戲', i: '🎮' }];
+  const SUBJ = [{ k: 'chinese', n: '國語', i: '📝' }, { k: 'math', n: '數學', i: '🔢' }, { k: 'social', n: '社會', i: '🌏' }, { k: 'history', n: '歷史', i: '🏛️' }, { k: 'geo', n: '地理', i: '🌍' }, { k: 'science', n: '自然', i: '🔬' }, { k: 'english', n: '英文', i: '🔤' }, { k: 'ai', n: 'AI', i: '🤖' }, { k: 'game', n: '遊戲', i: '🎮' }];
   // 有活動卡片的科目：點卡片 → iframe 開正本頁面（有 href 的卡片改成整頁開，例如勇者島；icon 可放小 SVG）
   const ACTS = {
     // 2026-11-01：國語〈閱讀素養 100 篇〉（chinese/reading.html；L1～L4 循序解鎖，規格 kids-member/docs/CHINESE_READING_SPEC.md）
@@ -72,6 +72,17 @@
     // 🔁 今天要複習（2026-11-01）：錯題庫裡到期的題＋閃卡（間隔 1 → 3 → 7 天，規則在 kids-mistakes.js）；入口是科目首頁上方的按鈕（reviewBar），不另列卡片
     ACTS[k].push({ id: 'review', title: '今天要複習', icon: '🔁', src: `mindmap/${k}.html?review=1`, hidden: true });
   });
+  // 🌍 地理（2026-11-08）：地圖技能／臺灣篇／世界篇三部分（grp → 可收合的分區），每單元一張卡 → iframe 開 geo/unit.html?u=<單元>。
+  //   要跟 completion.js 的 GEO_UNITS 一樣（test/geo.test.js 會對）；卡片小字＝練習各組最佳 %、測驗最高分（kids_done.geo，跟著同步）
+  const GEO_UNITS = [['m1', '方位', '地圖技能'], ['m2', '比例尺', '地圖技能'], ['m3', '經緯度', '地圖技能'], ['m4', '等高線與地形圖', '地圖技能'], ['m5', '圖例與地圖種類', '地圖技能'],
+    ['t1', '位置與範圍', '臺灣篇'], ['t2', '地形', '臺灣篇'], ['t3', '氣候', '臺灣篇'], ['t4', '河川與水資源', '臺灣篇'], ['t5', '縣市與區域', '臺灣篇'], ['t6', '人口與產業分布', '臺灣篇'],
+    ['w1', '亞洲', '世界篇'], ['w2', '歐洲', '世界篇'], ['w3', '非洲', '世界篇'], ['w4', '北美洲', '世界篇'], ['w5', '南美洲', '世界篇'], ['w6', '大洋洲', '世界篇'], ['w7', '南極洲', '世界篇']];
+  const geoDesc = id => {
+    let g = {}; try { g = (JSON.parse(localStorage.getItem('kids_done')) || {}).geo || {}; } catch (e) { }
+    const p = [1, 2, 3].map(k => g[id + 'p' + k]).filter(v => v != null), t = g[id + 't'];
+    return p.length || t != null ? `練習 ${[1, 2, 3].filter(k => g[id + 'p' + k] >= 80).length}/3 組過關｜測驗 ${t == null ? '還沒考' : t + ' 分'}` : '重點 → 練習 3 組 → 測驗';
+  };
+  ACTS.geo = GEO_UNITS.map(([id, t, g]) => ({ id, title: `${GEO_UNITS.filter(x => x[2] === g).findIndex(x => x[0] === id) + 1}. ${t}`, grp: g, icon: g === '地圖技能' ? '🧭' : g === '臺灣篇' ? '🏝️' : '🌐', desc: () => geoDesc(id), src: `geo/unit.html?u=${id}`, dk: `geo:${id}` }));
   ANIM_SEGS.forEach(([c, t]) => ACTS.math.push({ id: 'anim-' + c.toLowerCase(), title: `🎬 ${c} ${t}`, icon: '🎬', src: `math/anim.html?id=${c}`, hidden: true }));
   // 數學五下起（2026-11-06，康軒）：每個單元一張卡 → iframe 開 math/grade.html?u=<單元>，每冊最後一張「總複習」（?r=<冊>）。
   // 要跟 math/grade.js 的 BOOKS、completion.js 的 MG_BOOKS 一致（只列已上線的冊；test/math-grade.test.js 會對）。五上是上面寫死的卡片（grp '五上'）。

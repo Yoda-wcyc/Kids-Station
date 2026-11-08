@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>地理單元</title>
+<link rel="stylesheet" href="../style.css?v=494b1daab7">
+<style>
+body{background:var(--bg)}
+[hidden]{display:none!important}
+.gu{max-width:1000px;margin:0 auto;padding:12px 16px calc(48px + env(safe-area-inset-bottom))}
+.gu-head h1{font-size:clamp(1.3rem,1rem + 1.4vw,1.8rem);margin:4px 0 2px}
+.gu-head p{margin:0 0 10px}
+.btn[aria-selected="true"]{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 3px 0 #d96a22}
+.gu-tabs{display:flex;gap:10px;margin:10px 0 14px}
+.gu-tabs .btn{flex:1 1 0;min-height:56px;font-size:1.05rem;padding-left:6px;padding-right:6px}
+.lc h2{font-size:1.2rem;margin:0 0 8px;line-height:1.6}
+.lc p{line-height:1.9;margin:8px 0 0}
+.q-text{font-size:clamp(1.08rem,1rem + .5vw,1.28rem);line-height:1.8;font-weight:700;margin:0 0 8px}
+.prog{display:flex;flex-wrap:wrap;gap:6px 14px;font-weight:700;margin:4px 0 10px;align-items:center}
+.geo-kind{margin-left:auto;background:#eef5ff;border-radius:999px;padding:2px 10px;font-size:.9rem}
+.msg{min-height:1.4em;margin:8px 0 0;font-size:1.05rem;font-weight:700;line-height:1.7;color:var(--no)}
+.fb{border-radius:12px;padding:10px 14px;margin:10px 0;line-height:1.9}
+.fb.ok{background:var(--ok-bg)}.fb.no{background:var(--no-bg)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:10px 0 0}
+.res-tot{font-size:2.6rem;font-weight:900;margin:0}
+.ri{border-top:2px dashed var(--line);padding:8px 0;line-height:1.9}
+.ri .mk{font-weight:900;margin-right:6px}.ri.ok .mk{color:var(--ok)}.ri.no .mk{color:var(--no)}
+.ri .right{font-weight:800;color:#145c38}
+.geo-groups{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.geo-grp{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;border:2px solid var(--line);border-radius:16px;padding:12px;background:#fff}
+.geo-grp.ok{border-color:var(--ok);background:var(--ok-bg)}
+.geo-grp small{color:var(--muted)}
+</style>
+</head>
+<body>
+<main class="gu">
+  <div id="kdone" hidden></div>
+  <header class="gu-head">
+    <h1 id="title">🌍 地理</h1>
+    <p class="muted" id="lede"></p>
+  </header>
+  <div class="gu-tabs" role="tablist" id="tabs" hidden>
+    <button type="button" class="btn" role="tab" id="tab-learn" aria-selected="true">📖 重點</button>
+    <button type="button" class="btn" role="tab" id="tab-prac" aria-selected="false">✏️ 練習</button>
+    <button type="button" class="btn" role="tab" id="tab-exam" aria-selected="false">📝 測驗</button>
+  </div>
+  <section id="learn" hidden></section>
+  <section id="prac" hidden></section>
+  <section id="exam" hidden></section>
+</main>
+
+<script src="../syncmerge.js?v=ddb7957867"></script>
+<script src="../completion.js?v=39bc9551b3"></script>
+<script src="places.js?v=9ca550db5c"></script>
+<script src="maps/tw.js?v=343cf4c0c4"></script>
+<script src="maps/world.js?v=f6b50c5d77"></script>
+<script src="geo.js?v=5b5fee6b7e"></script>
+<script>
+/* 地理單元頁（2026-11-08；引擎 geo/geo.js，規格 geo/CONTRACT.md）。?u=<單元 m1～m5、t1～t6、w1～w7>［&tab=prac|exam］
+   單元資料 data/<單元>.js 照網址載（只載這一個單元）；還沒做好的單元顯示「準備中」。 */
+var GEO_U = (/[?&]u=([a-z0-9]+)/.exec(location.search) || [])[1] || '';
+if (Geo.UNIT_RE.test(GEO_U)) document.write('<script src="data/' + GEO_U + '.js"><\/script>');
+</script>
+<script>
+(function () {
+  var meta = null;
+  try { (KidsCompletion.GEO_UNITS || []).forEach(function (x) { if (x[0] === GEO_U) meta = { title: x[1], group: x[2] }; }); } catch (e) { }
+  window.GeoPage = Geo.page(document, GEO_U, meta);
+})();
+</script>
+<script src="../kids-auth.js?v=42d7c72a13"></script>
+<script src="../kids-coins.js?v=94d7e71619"></script>
+<script src="../kids-daily.js?v=ccba824243"></script>
+<script src="../kids-done.js?v=de42d7120a"></script>
+<script src="../syncauto.js?v=d7ed49f73e"></script>
+<script src="../sync.js?v=12631d8738"></script>
+<script>try { if (window.GeoPage && window.KidsDone) KidsDone.mount(document.getElementById('kdone'), 'geo:' + GEO_U, {}); } catch (e) { }</script>
+</body>
+</html>
