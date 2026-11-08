@@ -8,5 +8,8 @@
   "post": { "patterns": ["where-is-the", "next-to-between", "in-front-of", "go-straight", "where-are-you-going", "how-go"], "phrases": ["see-you-later", "have-a-nice-day", "excuse-me", "you-re-welcome", "take-your-time", "thank-you-very-much"] },
   "vet": { "patterns": ["he-she-is", "what-is-this", "can-he", "is-it", "you-look", "i-have"], "phrases": ["don-t-worry", "take-care", "good-job", "be-careful", "get-well-soon", "what-happened"] },
   "park": { "patterns": ["lets", "whats-the-weather", "do-you-want-to", "what-are-you-doing", "can-i", "how-about"], "phrases": ["good-idea", "sounds-good", "let-s-go", "me-too", "come-on", "that-s-a-good-idea"] },
+  "police": { "patterns": ["what-look-like", "what-color", "is-there", "where-is-the", "can-you", "help-me"], "phrases": ["police-officer", "police-station", "excuse-me", "don-t-worry", "look-for", "get-lost"] },
+  "bus": { "patterns": ["how-go", "where-are-you-going", "how-get-to", "how-far", "what-time", "go-straight"], "phrases": ["bus-stop", "by-bus", "get-on", "get-off", "miss-the-bus", "hurry-up"] },
+  "library": { "patterns": ["may-i", "what-kind-of", "looking-for", "do-you-have", "is-this-your", "i-like"], "phrases": ["read-a-book", "go-to-the-library", "in-the-library", "be-quiet", "look-for", "give-back"] },
   "neighbor": { "patterns": ["how-are-you", "where-from", "what-did-you-do", "i-usually", "every-day", "going-to"], "phrases": ["long-time-no-see", "nice-to-meet-you", "welcome-back", "have-a-good-weekend", "see-you-later", "good-evening"] }
 }

@@ -1,5 +1,5 @@
 {
- "_doc": "小朋友鎮的地圖（固定、手工設計）。座標：x 往東、z 往南，地面 y＝GY。roads：[x0,z0,x1,z1]（含兩端）；馬路兩側自動加 sidewalk 格人行道、路口自動畫斑馬線、沿路自動放路燈。buildings：公共建築（w×d×h，door＝門開在哪一邊，doorW＝門寬，props＝裡面的擺設 [方塊, dx, dy, dz]，dx/dz 從建築西北角算、dy 從地板上一格算）。homes：可以認領的家（門有真的門板）。park：公園範圍（草地、花、樹、池塘）。npcs：居民（route＝走路的點，dlg＝對話清單，輪流講）。furniture：家具模式能放的東西。secrets：秘密房間（P2 第 3 段）。wallColors／floorColors：家裡牆壁／地板能換的顏色。",
+ "_doc": "小朋友鎮的地圖（固定、手工設計）。座標：x 往東、z 往南，地面 y＝GY。roads：[x0,z0,x1,z1]（含兩端）；馬路兩側自動加 sidewalk 格人行道、路口自動畫斑馬線、沿路自動放路燈。buildings：公共建築（w×d×h，door＝門開在哪一邊，doorW＝門寬，props＝裡面的擺設 [方塊, dx, dy, dz]，dx/dz 從建築西北角算、dy 從地板上一格算）。homes：可以認領的家（門有真的門板）。park：公園範圍（草地、花、樹、池塘）。npcs：居民（route＝走路的點，dlg＝對話清單，輪流講）。furniture：家具模式能放的東西。secrets：秘密房間（P2 第 3 段）。wallColors／floorColors：家裡牆壁／地板能換的顏色。P4 B 加了警察局（police）、公車總站（bus）、圖書館（library）和金警官、司機包伯、蘿莎館員；公車站牌在 jobs.json 的 busdriver.task.stops。",
  "GY": 20,
  "bound": 70,
  "sidewalk": 2,
@@ -401,6 +401,108 @@
     ["bed", 11, 0, 8],
     ["lantern", 7, 2, 5]
    ]
+  },
+  {
+   "id": "police",
+   "en": "Police Station",
+   "zh": "警察局",
+   "x": 55,
+   "z": -24,
+   "w": 12,
+   "d": 12,
+   "h": 5,
+   "wall": "paper_blue",
+   "roof": "roof_blue",
+   "floor": "smooth_stone",
+   "door": "s",
+   "doorW": 2,
+   "props": [
+    ["crafting_table", 2, 0, 3],
+    ["crafting_table", 3, 0, 3],
+    ["crafting_table", 8, 0, 3],
+    ["crafting_table", 9, 0, 3],
+    ["chest", 1, 0, 1],
+    ["chest", 10, 0, 1],
+    ["bookshelf", 5, 0, 1],
+    ["bookshelf", 6, 0, 1],
+    ["paper_blue", 5, 2, 0],
+    ["paper_blue", 6, 2, 0],
+    ["lantern", 6, 2, 5]
+   ]
+  },
+  {
+   "id": "bus",
+   "en": "Bus Station",
+   "zh": "公車總站",
+   "x": -66,
+   "z": -24,
+   "w": 13,
+   "d": 12,
+   "h": 5,
+   "wall": "paper_yellow",
+   "roof": "roof_green",
+   "floor": "smooth_stone",
+   "door": "s",
+   "doorW": 2,
+   "props": [
+    ["stairs_planks_s", 2, 0, 5],
+    ["stairs_planks_s", 3, 0, 5],
+    ["stairs_planks_s", 4, 0, 5],
+    ["stairs_planks_s", 8, 0, 5],
+    ["stairs_planks_s", 9, 0, 5],
+    ["stairs_planks_s", 10, 0, 5],
+    ["crafting_table", 6, 0, 2],
+    ["paper_yellow", 6, 2, 0],
+    ["lantern", 6, 2, 6]
+   ]
+  },
+  {
+   "id": "library",
+   "en": "Library",
+   "zh": "圖書館",
+   "x": -64,
+   "z": 20,
+   "w": 13,
+   "d": 12,
+   "h": 5,
+   "wall": "bricks",
+   "roof": "roof_red",
+   "floor": "planks",
+   "door": "s",
+   "doorW": 2,
+   "props": [
+    ["bookshelf", 1, 0, 1],
+    ["bookshelf", 2, 0, 1],
+    ["bookshelf", 3, 0, 1],
+    ["bookshelf", 4, 0, 1],
+    ["bookshelf", 8, 0, 1],
+    ["bookshelf", 9, 0, 1],
+    ["bookshelf", 10, 0, 1],
+    ["bookshelf", 11, 0, 1],
+    ["bookshelf", 1, 0, 4],
+    ["bookshelf", 2, 0, 4],
+    ["bookshelf", 3, 0, 4],
+    ["bookshelf", 4, 0, 4],
+    ["bookshelf", 8, 0, 4],
+    ["bookshelf", 9, 0, 4],
+    ["bookshelf", 10, 0, 4],
+    ["bookshelf", 11, 0, 4],
+    ["bookshelf", 1, 0, 7],
+    ["bookshelf", 2, 0, 7],
+    ["bookshelf", 3, 0, 7],
+    ["bookshelf", 9, 0, 7],
+    ["bookshelf", 10, 0, 7],
+    ["bookshelf", 11, 0, 7],
+    ["bookshelf", 1, 1, 1],
+    ["bookshelf", 2, 1, 1],
+    ["bookshelf", 10, 1, 1],
+    ["bookshelf", 11, 1, 1],
+    ["crafting_table", 6, 0, 8],
+    ["carpet_red", 5, 0, 6],
+    ["carpet_red", 6, 0, 6],
+    ["carpet_red", 7, 0, 6],
+    ["lantern", 6, 2, 4]
+   ]
   }
  ],
  "homes": [
@@ -597,6 +699,42 @@
    "route": [
     [56, 6],
     [62, 6]
+   ]
+  },
+  {
+   "id": "police",
+   "en": "Officer Kim",
+   "zh": "金警官",
+   "dlg": ["police", "police2", "police3"],
+   "robe": "#2B3F5C",
+   "hat": "#2B3F5C",
+   "route": [
+    [56, -7],
+    [66, -7]
+   ]
+  },
+  {
+   "id": "driver",
+   "en": "Driver Bob",
+   "zh": "司機包伯",
+   "dlg": ["bus", "bus2", "bus3"],
+   "robe": "#D9A63A",
+   "hat": "#26302A",
+   "route": [
+    [-65, -8],
+    [-55, -8]
+   ]
+  },
+  {
+   "id": "librarian",
+   "en": "Ms. Rosa",
+   "zh": "蘿莎館員",
+   "dlg": ["library", "library2", "library3"],
+   "robe": "#6E3F8C",
+   "hat": "#C9709F",
+   "route": [
+    [-63, 33],
+    [-53, 33]
    ]
   },
   {

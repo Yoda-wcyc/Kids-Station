@@ -2113,5 +2113,635 @@
    "options": ["爸爸", "媽媽", "小朋友自己"],
    "answer": 0
   }
+ },
+ "police": {
+  "place": "Police Station",
+  "turns": [
+   {
+    "npc": "Hello! I am Officer Kim. Can I help you?",
+    "zh": "你好！我是金警官。需要幫忙嗎？",
+    "cards": [
+     {
+      "en": "Yes, please. I lost my umbrella.",
+      "ok": true
+     },
+     {
+      "en": "Yes, please. I ate my umbrella.",
+      "ok": false
+     },
+     {
+      "en": "No, I am a police station.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Oh no. What color is it?",
+    "zh": "喔不。是什麼顏色的？",
+    "cards": [
+     {
+      "en": "It's yellow with white dots.",
+      "ok": true
+     },
+     {
+      "en": "It's very delicious.",
+      "ok": false
+     },
+     {
+      "en": "It's three o'clock.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Where did you lose it?",
+    "zh": "你在哪裡弄丟的？",
+    "cards": [
+     {
+      "en": "I think I left it at the bus stop.",
+      "ok": true
+     },
+     {
+      "en": "I think it is a happy dog.",
+      "ok": false
+     },
+     {
+      "en": "I think it is Monday.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Here it is! Someone brought it this morning.",
+    "zh": "在這裡！今天早上有人送來了。",
+    "cards": [
+     {
+      "en": "Thank you so much, Officer Kim!",
+      "ok": true
+     },
+     {
+      "en": "Please take it to the moon.",
+      "ok": false
+     },
+     {
+      "en": "I like your shoes.",
+      "ok": false
+     }
+    ]
+   }
+  ],
+  "check": {
+   "q": "你的雨傘是什麼樣子？",
+   "options": ["黃色有白點點", "紅色有星星", "藍色條紋"],
+   "answer": 0
+  }
+ },
+ "police2": {
+  "place": "Police Station",
+  "turns": [
+   {
+    "npc": "Look at the street. What do we do at a red light?",
+    "zh": "看看馬路。紅燈的時候要怎麼做？",
+    "cards": [
+     {
+      "en": "We stop and wait.",
+      "ok": true
+     },
+     {
+      "en": "We run fast.",
+      "ok": false
+     },
+     {
+      "en": "We close our eyes.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Good. And where do we cross the street?",
+    "zh": "很好。那我們在哪裡過馬路？",
+    "cards": [
+     {
+      "en": "We cross at the crosswalk.",
+      "ok": true
+     },
+     {
+      "en": "We cross on the roof.",
+      "ok": false
+     },
+     {
+      "en": "We cross in the pond.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Before you cross, what do you do?",
+    "zh": "過馬路之前要做什麼？",
+    "cards": [
+     {
+      "en": "I look left and right.",
+      "ok": true
+     },
+     {
+      "en": "I look at my phone.",
+      "ok": false
+     },
+     {
+      "en": "I sing a loud song.",
+      "ok": false
+     }
+    ]
+   }
+  ],
+  "check": {
+   "q": "過馬路之前要做什麼？",
+   "options": ["看左右兩邊", "用跑的", "看手機"],
+   "answer": 0
+  }
+ },
+ "police3": {
+  "place": "Police Station",
+  "turns": [
+   {
+    "npc": "Hi there! Do you want to be a police officer?",
+    "zh": "嗨！你想當警察嗎？",
+    "cards": [
+     {
+      "en": "Yes! I want to help people.",
+      "ok": true
+     },
+     {
+      "en": "Yes! I want to eat pizza.",
+      "ok": false
+     },
+     {
+      "en": "Yes! I want to sleep all day.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Police officers need to be brave and kind. Are you brave?",
+    "zh": "警察要勇敢又親切。你勇敢嗎？",
+    "cards": [
+     {
+      "en": "Yes, I am brave and kind.",
+      "ok": true
+     },
+     {
+      "en": "Yes, I am a banana.",
+      "ok": false
+     },
+     {
+      "en": "No, I am a car.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Great! Come and take the police test with me.",
+    "zh": "太好了！來跟我考警察執照吧。",
+    "cards": [
+     {
+      "en": "OK! I'll do my best.",
+      "ok": true
+     },
+     {
+      "en": "OK! I will go to bed.",
+      "ok": false
+     },
+     {
+      "en": "No, thank you. I am a fish.",
+      "ok": false
+     }
+    ]
+   }
+  ],
+  "check": {
+   "q": "金警官說警察要怎麼樣？",
+   "options": ["勇敢又親切", "跑得很快", "很會唱歌"],
+   "answer": 0
+  }
+ },
+ "bus": {
+  "place": "Bus Station",
+  "turns": [
+   {
+    "npc": "Good morning! Where are you going today?",
+    "zh": "早安！你今天要去哪裡？",
+    "cards": [
+     {
+      "en": "I'm going to the library.",
+      "ok": true
+     },
+     {
+      "en": "I'm going to be ten years old.",
+      "ok": false
+     },
+     {
+      "en": "I'm going to eat my shoes.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Take the bus. It stops at Library Stop.",
+    "zh": "搭公車吧，它會停在圖書館站。",
+    "cards": [
+     {
+      "en": "How long does it take?",
+      "ok": true
+     },
+     {
+      "en": "How old is the bus?",
+      "ok": false
+     },
+     {
+      "en": "How many legs do you have?",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "About ten minutes. Please hold on to the handle.",
+    "zh": "大約十分鐘。請抓好扶手。",
+    "cards": [
+     {
+      "en": "OK. Thank you, Driver Bob.",
+      "ok": true
+     },
+     {
+      "en": "OK. I will drive the bus.",
+      "ok": false
+     },
+     {
+      "en": "No. I will fly.",
+      "ok": false
+     }
+    ]
+   }
+  ],
+  "check": {
+   "q": "搭公車到圖書館要多久？",
+   "options": ["大約十分鐘", "大約一小時", "大約兩天"],
+   "answer": 0
+  }
+ },
+ "bus2": {
+  "place": "Bus Station",
+  "turns": [
+   {
+    "npc": "Oh, the bus is full today!",
+    "zh": "喔，今天公車客滿了！",
+    "cards": [
+     {
+      "en": "Then I will wait for the next bus.",
+      "ok": true
+     },
+     {
+      "en": "Then I will sit on the roof.",
+      "ok": false
+     },
+     {
+      "en": "Then I will eat the bus.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "The next bus comes in five minutes.",
+    "zh": "下一班公車五分鐘後來。",
+    "cards": [
+     {
+      "en": "Five minutes? No problem.",
+      "ok": true
+     },
+     {
+      "en": "Five apples? Yes, please.",
+      "ok": false
+     },
+     {
+      "en": "Five years? Good night.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "An old woman is coming. What can you do on the bus?",
+    "zh": "有一位老奶奶要上車。你在公車上可以怎麼做？",
+    "cards": [
+     {
+      "en": "I can give her my seat.",
+      "ok": true
+     },
+     {
+      "en": "I can take her bag home.",
+      "ok": false
+     },
+     {
+      "en": "I can lie down on two seats.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "That is very kind. Have a nice trip!",
+    "zh": "你真好心。祝你一路順風！",
+    "cards": [
+     {
+      "en": "Thanks! See you later.",
+      "ok": true
+     },
+     {
+      "en": "Thanks! I am a tree.",
+      "ok": false
+     },
+     {
+      "en": "No, I hate trips.",
+      "ok": false
+     }
+    ]
+   }
+  ],
+  "check": {
+   "q": "公車客滿的時候要怎麼辦？",
+   "options": ["等下一班", "坐在車頂", "用跑的追公車"],
+   "answer": 0
+  }
+ },
+ "bus3": {
+  "place": "Bus Station",
+  "turns": [
+   {
+    "npc": "Do you want to drive a bus someday?",
+    "zh": "你以後想開公車嗎？",
+    "cards": [
+     {
+      "en": "Yes! Driving a big bus looks fun.",
+      "ok": true
+     },
+     {
+      "en": "Yes! Eating a big bus looks fun.",
+      "ok": false
+     },
+     {
+      "en": "No, buses live in the sea.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "A bus driver must know every stop in town.",
+    "zh": "公車司機要知道鎮上每一個站。",
+    "cards": [
+     {
+      "en": "Can you teach me the stops?",
+      "ok": true
+     },
+     {
+      "en": "Can you teach me to swim?",
+      "ok": false
+     },
+     {
+      "en": "Can you give me a cookie?",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Sure! Take the bus driver test, and I will show you.",
+    "zh": "當然！來考公車司機執照，我就帶你認識。",
+    "cards": [
+     {
+      "en": "OK, let's start!",
+      "ok": true
+     },
+     {
+      "en": "OK, let's go to sleep!",
+      "ok": false
+     },
+     {
+      "en": "No, the test is a dog.",
+      "ok": false
+     }
+    ]
+   }
+  ],
+  "check": {
+   "q": "公車司機一定要知道什麼？",
+   "options": ["鎮上每一個站", "每一首歌", "每一種動物"],
+   "answer": 0
+  }
+ },
+ "library": {
+  "place": "Library",
+  "turns": [
+   {
+    "npc": "Welcome to the library. Please be quiet inside.",
+    "zh": "歡迎來到圖書館。裡面請保持安靜。",
+    "cards": [
+     {
+      "en": "OK, I will talk quietly.",
+      "ok": true
+     },
+     {
+      "en": "OK, I will shout loudly.",
+      "ok": false
+     },
+     {
+      "en": "OK, I will play soccer here.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "What kind of books do you like?",
+    "zh": "你喜歡哪一種書？",
+    "cards": [
+     {
+      "en": "I like books about animals.",
+      "ok": true
+     },
+     {
+      "en": "I like eating books.",
+      "ok": false
+     },
+     {
+      "en": "I like the color blue.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "The animal books are on that shelf.",
+    "zh": "動物的書在那個書架上。",
+    "cards": [
+     {
+      "en": "Can I borrow two books?",
+      "ok": true
+     },
+     {
+      "en": "Can I borrow your car?",
+      "ok": false
+     },
+     {
+      "en": "Can I sleep on the shelf?",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Sure. Please bring them back in two weeks.",
+    "zh": "可以。請在兩個星期內還回來。",
+    "cards": [
+     {
+      "en": "OK. I will bring them back on time.",
+      "ok": true
+     },
+     {
+      "en": "OK. I will keep them forever.",
+      "ok": false
+     },
+     {
+      "en": "OK. I will give them to my fish.",
+      "ok": false
+     }
+    ]
+   }
+  ],
+  "check": {
+   "q": "借的書要多久內還？",
+   "options": ["兩個星期", "兩天", "兩年"],
+   "answer": 0
+  }
+ },
+ "library2": {
+  "place": "Library",
+  "turns": [
+   {
+    "npc": "Hello! Are you looking for something?",
+    "zh": "你好！你在找東西嗎？",
+    "cards": [
+     {
+      "en": "Yes. I'm looking for a book about space.",
+      "ok": true
+     },
+     {
+      "en": "Yes. I am looking for my lunch.",
+      "ok": false
+     },
+     {
+      "en": "No. I am a bookshelf.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Space books are on the Space shelf, next to the window.",
+    "zh": "太空的書在窗戶旁邊的太空書架上。",
+    "cards": [
+     {
+      "en": "Thank you. I see it now.",
+      "ok": true
+     },
+     {
+      "en": "Thank you. I see a cow.",
+      "ok": false
+     },
+     {
+      "en": "Space is under the table.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "You can read here, or you can borrow it.",
+    "zh": "你可以在這裡看，也可以借回家。",
+    "cards": [
+     {
+      "en": "I'll read it here today.",
+      "ok": true
+     },
+     {
+      "en": "I'll cook it for dinner.",
+      "ok": false
+     },
+     {
+      "en": "I'll throw it away.",
+      "ok": false
+     }
+    ]
+   }
+  ],
+  "check": {
+   "q": "太空的書在哪裡？",
+   "options": ["窗戶旁邊的太空書架", "門口的箱子裡", "桌子底下"],
+   "answer": 0
+  }
+ },
+ "library3": {
+  "place": "Library",
+  "turns": [
+   {
+    "npc": "Oh, this book is three days late.",
+    "zh": "喔，這本書晚了三天才還。",
+    "cards": [
+     {
+      "en": "I'm sorry. I forgot.",
+      "ok": true
+     },
+     {
+      "en": "I'm hungry. I want rice.",
+      "ok": false
+     },
+     {
+      "en": "It's sunny. Let's swim.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "That's OK. Please return books on time next time.",
+    "zh": "沒關係。下次請準時還書。",
+    "cards": [
+     {
+      "en": "I will. Thank you, Ms. Rosa.",
+      "ok": true
+     },
+     {
+      "en": "I will eat the book.",
+      "ok": false
+     },
+     {
+      "en": "No. I will never read again.",
+      "ok": false
+     }
+    ]
+   },
+   {
+    "npc": "Did you like the book?",
+    "zh": "你喜歡這本書嗎？",
+    "cards": [
+     {
+      "en": "Yes! The story was very funny.",
+      "ok": true
+     },
+     {
+      "en": "Yes! The book was very spicy.",
+      "ok": false
+     },
+     {
+      "en": "No, it was a pencil.",
+      "ok": false
+     }
+    ]
+   }
+  ],
+  "check": {
+   "q": "這本書怎麼了？",
+   "options": ["晚了三天才還", "被弄破了", "被狗吃掉了"],
+   "answer": 0
+  }
  }
 }

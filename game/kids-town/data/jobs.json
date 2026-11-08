@@ -1,5 +1,5 @@
 {
-  "_doc": "小朋友鎮的職業。place＝考試／上班的地點（buildings 的 id），npc＝主考官（npcs 的 id）。exam＝執照考試 10 題：選擇題 {q, zh, opts, a}（a＝正確選項的位置）；打字題 {q, zh, type:'typed', a, alts}（q 裡的 ___ 要打的字）。答對 8 題以上拿執照，可以重考。uniform＝制服：top 上衣顏色、hat 帽子（chef／helmet／cap／nurse）、extra 配件（apron／bag／tie／stethoscope／badge）。task＝工作小任務：kind 'cases'（照資料出 3 題）、'judge'（老師改句子）、'change'（找錢，程式出題）、'order'（點餐，程式出題）、'go'（照英文走到目的地）。",
+  "_doc": "小朋友鎮的職業。place＝考試／上班的地點（buildings 的 id），npc＝主考官（npcs 的 id）。exam＝執照考試 10 題：選擇題 {q, zh, opts, a}（a＝正確選項的位置）；打字題 {q, zh, type:'typed', a, alts}（q 裡的 ___ 要打的字）。答對 8 題以上拿執照，可以重考。uniform＝制服：top 上衣顏色、hat 帽子（chef／helmet／cap／nurse）、extra 配件（apron／bag／tie／stethoscope／badge）。task＝工作小任務：kind 'cases'（照資料出 3 題）、'judge'（老師改句子）、'change'（找錢，程式出題）、'order'（點餐，程式出題）、'go'（照英文走到目的地）；P4 B 加的：'police'（看外觀描述在警察局前面 4 個人裡找到對的人，一回 3 個人）、'bus'（開公車，照乘客說的站名或理由開到對的站，一回 3 位乘客）、'library'（借書：照主題選書／還書、整理：照書名選書架，一回 3 題）。",
   "jobs": {
     "teacher": {
       "zh": "老師", "en": "Teacher", "place": "school", "npc": "teacher", "color": "#3F6E9A",
@@ -189,6 +189,801 @@
           { "says": "This little pet has round ears and loves seeds. Its eye is red.", "zh": "這隻小寵物有圓耳朵、愛吃種子，牠的眼睛紅紅的。", "a": "Give the hamster some eye drops.", "wrong": ["Give the cat some eye drops.", "Give the hamster more seeds."] },
           { "says": "This pet says \"meow.\" It has a thorn in its paw.", "zh": "這隻寵物會「喵」，牠的腳掌有一根刺。", "a": "Take the thorn out of the cat's paw.", "wrong": ["Take the thorn out of the rabbit's ear.", "Give the cat some cough syrup."] }
         ] }
+    },
+    "police": {
+      "zh": "警察",
+      "en": "Police Officer",
+      "place": "police",
+      "npc": "police",
+      "color": "#2B3F5C",
+      "uniform": {
+        "top": "#2B3F5C",
+        "hat": "cap",
+        "hatColor": "#2B3F5C",
+        "extra": "badge",
+        "extraColor": "#F2C46B"
+      },
+      "exam": [
+        {
+          "q": "A little boy is lost and crying. What do you say first?",
+          "zh": "有個小男生迷路在哭，你先說什麼？",
+          "opts": [
+            "Don't worry. I can help you.",
+            "Stop crying and go away.",
+            "I am very busy today."
+          ],
+          "a": 0
+        },
+        {
+          "q": "Someone asks, \"Where is the police station?\" What do you say?",
+          "zh": "有人問「警察局在哪裡？」你要怎麼回答？（警察局在消防隊旁邊）",
+          "opts": [
+            "It's next to the fire station.",
+            "It's in the swimming pool.",
+            "It's under my bed."
+          ],
+          "a": 0
+        },
+        {
+          "q": "The traffic light is red. What should people do?",
+          "zh": "紅燈了，大家要怎麼做？",
+          "opts": [
+            "Stop and wait.",
+            "Run across the street.",
+            "Close your eyes."
+          ],
+          "a": 0
+        },
+        {
+          "q": "Please ___ the street at the crosswalk.",
+          "zh": "請在斑馬線「過」馬路。",
+          "type": "typed",
+          "a": "cross"
+        },
+        {
+          "q": "A woman lost her bag. What do you ask her?",
+          "zh": "有位女士的包包不見了，你要問她什麼？",
+          "opts": [
+            "What color is your bag?",
+            "What time do you go to bed?",
+            "Do you like ice cream?"
+          ],
+          "a": 0
+        },
+        {
+          "q": "Which sentence tells us what a person looks like?",
+          "zh": "哪一句是在說一個人長什麼樣子？",
+          "opts": [
+            "He is tall and has short hair.",
+            "It is sunny and hot today.",
+            "The bus is at the stop."
+          ],
+          "a": 0
+        },
+        {
+          "q": "He is wearing a red ___ on his head.",
+          "zh": "他頭上戴著一頂紅色的「帽子」。",
+          "type": "typed",
+          "a": "hat",
+          "alts": [
+            "cap"
+          ]
+        },
+        {
+          "q": "A man is riding his bike too fast in the park. What do you say?",
+          "zh": "有人在公園騎腳踏車騎太快，你要說什麼？",
+          "opts": [
+            "Please slow down. Be careful!",
+            "Please go faster!",
+            "Please sing a song."
+          ],
+          "a": 0
+        },
+        {
+          "q": "Excuse me. Can you ___ me? I am lost.",
+          "zh": "不好意思，你可以「幫」我嗎？我迷路了。",
+          "type": "typed",
+          "a": "help"
+        },
+        {
+          "q": "What does a police officer do?",
+          "zh": "警察的工作是什麼？",
+          "opts": [
+            "A police officer keeps people safe.",
+            "A police officer bakes bread.",
+            "A police officer teaches math."
+          ],
+          "a": 0
+        }
+      ],
+      "task": {
+        "kind": "police",
+        "title": "幫忙找人",
+        "intro": "Officer Kim says: People need our help. Read or listen to the clue, then find the right person.",
+        "introZh": "金警官說：大家需要幫忙。看（或聽）線索，找到對的人。",
+        "spots": [
+          [
+            56.5,
+            -10.5
+          ],
+          [
+            58.5,
+            -10.5
+          ],
+          [
+            63.5,
+            -10.5
+          ],
+          [
+            65.5,
+            -10.5
+          ]
+        ],
+        "clues": [
+          {
+            "en": "This little dog is lost. Its owner is {d}",
+            "zh": "這隻小狗走失了。牠的主人是{dz}"
+          },
+          {
+            "en": "Someone found a brown wallet. It belongs to {d}",
+            "zh": "有人撿到一個咖啡色錢包，是{dz}的"
+          },
+          {
+            "en": "A mom is looking for her child. Her child is {d}",
+            "zh": "一位媽媽在找她的小孩。她的小孩是{dz}"
+          },
+          {
+            "en": "This kite flew away. It belongs to {d}",
+            "zh": "這個風箏飛走了，它是{dz}的"
+          },
+          {
+            "en": "Grandpa Joe wants to thank someone for helping him. It was {d}",
+            "zh": "喬爺爺想謝謝幫他忙的人，那個人是{dz}"
+          }
+        ],
+        "kinds": {
+          "girl": {
+            "en": "girl",
+            "zh": "女生",
+            "he": "She",
+            "hair": [
+              1,
+              2
+            ]
+          },
+          "boy": {
+            "en": "boy",
+            "zh": "男生",
+            "he": "He",
+            "hair": [
+              0,
+              3
+            ]
+          }
+        },
+        "hats": [
+          {
+            "i": 0,
+            "en": "no hat",
+            "zh": "沒戴帽子",
+            "none": true
+          },
+          {
+            "i": 1,
+            "en": "a red cap",
+            "zh": "紅色棒球帽"
+          },
+          {
+            "i": 2,
+            "en": "a blue hat",
+            "zh": "藍色毛帽"
+          },
+          {
+            "i": 3,
+            "en": "a pink bow",
+            "zh": "粉紅色蝴蝶結"
+          },
+          {
+            "i": 5,
+            "en": "a black top hat",
+            "zh": "黑色高帽子"
+          }
+        ],
+        "shirts": [
+          {
+            "i": 0,
+            "en": "green",
+            "zh": "綠色"
+          },
+          {
+            "i": 1,
+            "en": "blue",
+            "zh": "藍色"
+          },
+          {
+            "i": 2,
+            "en": "red",
+            "zh": "紅色"
+          },
+          {
+            "i": 3,
+            "en": "yellow",
+            "zh": "黃色"
+          },
+          {
+            "i": 4,
+            "en": "pink",
+            "zh": "粉紅色"
+          },
+          {
+            "i": 5,
+            "en": "white",
+            "zh": "白色"
+          }
+        ],
+        "right": "Yes! That's the right person. Thank you!",
+        "rightZh": "對！就是這個人。謝謝你！",
+        "wrong": "Hmm, that's not the right person. Read the clue again.",
+        "wrongZh": "嗯……不是這個人，再看一次線索。"
+      }
+    },
+    "busdriver": {
+      "zh": "公車司機",
+      "en": "Bus Driver",
+      "place": "bus",
+      "npc": "driver",
+      "color": "#2F6E5A",
+      "uniform": {
+        "top": "#2F6E5A",
+        "hat": "cap",
+        "hatColor": "#26302A",
+        "extra": "tie",
+        "extraColor": "#D9A63A"
+      },
+      "exam": [
+        {
+          "q": "A passenger gets on the bus. What do you say?",
+          "zh": "有乘客上車了，你要說什麼？",
+          "opts": [
+            "Good morning! Please hold on.",
+            "Good night! Go to sleep.",
+            "Get off my bus!"
+          ],
+          "a": 0
+        },
+        {
+          "q": "A passenger asks, \"Does this bus go to the park?\" It does. What do you say?",
+          "zh": "乘客問「這班車有到公園嗎？」有到，你要說什麼？",
+          "opts": [
+            "Yes, it does. Please get on.",
+            "No, I am a teacher.",
+            "Yes, it is a dog."
+          ],
+          "a": 0
+        },
+        {
+          "q": "Please get ___ the bus at the next stop.",
+          "zh": "請在下一站「下」車（get ___ the bus）。",
+          "type": "typed",
+          "a": "off"
+        },
+        {
+          "q": "The bus is full. What do you say to the people at the stop?",
+          "zh": "公車客滿了，你要跟站牌的人說什麼？",
+          "opts": [
+            "Sorry, please wait for the next bus.",
+            "Please sit on the roof.",
+            "Let's all run to school."
+          ],
+          "a": 0
+        },
+        {
+          "q": "A passenger asks, \"How long does it take to get to school?\"",
+          "zh": "乘客問「到學校要多久？」",
+          "opts": [
+            "About ten minutes.",
+            "About ten apples.",
+            "It's ten years old."
+          ],
+          "a": 0
+        },
+        {
+          "q": "Please ___ on to the handle.",
+          "zh": "請「抓」好扶手（___ on）。",
+          "type": "typed",
+          "a": "hold"
+        },
+        {
+          "q": "An old man gets on. A boy is sitting. What should the boy do?",
+          "zh": "一位老爺爺上車，有個男生坐著，他應該怎麼做？",
+          "opts": [
+            "Give his seat to the old man.",
+            "Lie down on two seats.",
+            "Eat a big lunch."
+          ],
+          "a": 0
+        },
+        {
+          "q": "The traffic light turns green. What does the bus driver do?",
+          "zh": "綠燈了，公車司機要怎麼做？",
+          "opts": [
+            "The driver goes.",
+            "The driver stops and sleeps.",
+            "The driver gets off the bus."
+          ],
+          "a": 0
+        },
+        {
+          "q": "This is the last ___. Everyone, please get off.",
+          "zh": "這是最後一「站」，大家請下車。",
+          "type": "typed",
+          "a": "stop"
+        },
+        {
+          "q": "What does a bus driver do?",
+          "zh": "公車司機的工作是什麼？",
+          "opts": [
+            "A bus driver takes people to places.",
+            "A bus driver cooks dinner.",
+            "A bus driver fixes teeth."
+          ],
+          "a": 0
+        }
+      ],
+      "task": {
+        "kind": "bus",
+        "title": "開公車載客",
+        "per": 3,
+        "pay": 2,
+        "near": 4,
+        "depot": [
+          -60.5,
+          0.5
+        ],
+        "intro": "Driver Bob says: Here is your bus! Listen to each passenger and drive to the right stop.",
+        "introZh": "司機包伯說：公車給你開！聽每位乘客說什麼，開到對的站。",
+        "passengers": [
+          "Ella",
+          "Leo",
+          "Grandma Rose",
+          "Kevin",
+          "Mia",
+          "Mr. Brown",
+          "Sophie",
+          "Uncle Dan"
+        ],
+        "direct": [
+          "Please take me to {stop}.",
+          "Hello! I want to go to {stop}, please.",
+          "{stop}, please. Thank you!"
+        ],
+        "thanks": "Thank you, driver! Have a nice day!",
+        "thanksZh": "謝謝司機！祝你有美好的一天！",
+        "stops": [
+          {
+            "id": "school",
+            "en": "School Stop",
+            "zh": "學校站",
+            "at": [
+              -30.5,
+              -0.5
+            ],
+            "sign": [
+              -30.5,
+              -5
+            ],
+            "why": [
+              [
+                "I have English class this morning.",
+                "我今天早上有英文課。"
+              ],
+              [
+                "I want to give this letter to my teacher, Ms. Lin.",
+                "我想把這封信交給我的老師，林老師。"
+              ]
+            ]
+          },
+          {
+            "id": "shop",
+            "en": "Shop Stop",
+            "zh": "商店站",
+            "at": [
+              -16.5,
+              0.5
+            ],
+            "sign": [
+              -16.5,
+              5
+            ],
+            "why": [
+              [
+                "I need to buy some milk and eggs.",
+                "我要買牛奶和蛋。"
+              ],
+              [
+                "I want to buy a new toy for my sister.",
+                "我想買一個新玩具給妹妹。"
+              ]
+            ]
+          },
+          {
+            "id": "hospital",
+            "en": "Hospital Stop",
+            "zh": "醫院站",
+            "at": [
+              18.5,
+              -0.5
+            ],
+            "sign": [
+              18.5,
+              -5
+            ],
+            "why": [
+              [
+                "I have a toothache. I need to see a doctor.",
+                "我牙齒痛，要去看醫生。"
+              ],
+              [
+                "My grandpa is sick. I want to visit him.",
+                "我爺爺生病了，我想去看他。"
+              ]
+            ]
+          },
+          {
+            "id": "police",
+            "en": "Police Station Stop",
+            "zh": "警察局站",
+            "at": [
+              60.5,
+              -0.5
+            ],
+            "sign": [
+              60.5,
+              -5
+            ],
+            "why": [
+              [
+                "I found a wallet on the street. I want to give it to a police officer.",
+                "我在路上撿到錢包，想交給警察。"
+              ],
+              [
+                "My bike is gone! I need to talk to the police.",
+                "我的腳踏車不見了！我要找警察。"
+              ]
+            ]
+          },
+          {
+            "id": "park",
+            "en": "Park Stop",
+            "zh": "公園站",
+            "at": [
+              0.5,
+              19.5
+            ],
+            "sign": [
+              5,
+              19.5
+            ],
+            "why": [
+              [
+                "I want to feed the ducks in the pond.",
+                "我想去餵池塘裡的鴨子。"
+              ],
+              [
+                "It's sunny. I want to fly a kite on the grass.",
+                "今天出太陽，我想去草地上放風箏。"
+              ]
+            ]
+          },
+          {
+            "id": "library",
+            "en": "Library Stop",
+            "zh": "圖書館站",
+            "at": [
+              -58.5,
+              37.5
+            ],
+            "sign": [
+              -56.5,
+              34
+            ],
+            "why": [
+              [
+                "I want to borrow some books about space.",
+                "我想借一些太空的書。"
+              ],
+              [
+                "I have to return three books today.",
+                "我今天要還三本書。"
+              ]
+            ]
+          },
+          {
+            "id": "home",
+            "en": "Rainbow Street Stop",
+            "zh": "彩虹街站",
+            "at": [
+              20.5,
+              37.5
+            ],
+            "sign": [
+              20.5,
+              34
+            ],
+            "why": [
+              [
+                "I'm going home. I live in the Light Blue House.",
+                "我要回家，我住在淺藍色的房子。"
+              ],
+              [
+                "I want to visit Lily. She lives in the Orange House.",
+                "我想去找莉莉，她住在橘色的房子。"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "librarian": {
+      "zh": "圖書館員",
+      "en": "Librarian",
+      "place": "library",
+      "npc": "librarian",
+      "color": "#6E3F8C",
+      "uniform": {
+        "top": "#6E3F8C",
+        "hat": "none",
+        "extra": "badge",
+        "extraColor": "#EFEBDD"
+      },
+      "exam": [
+        {
+          "q": "A boy is talking loudly in the library. What do you say?",
+          "zh": "有男生在圖書館大聲講話，你要說什麼？",
+          "opts": [
+            "Please be quiet in the library.",
+            "Please talk louder.",
+            "Please run and jump."
+          ],
+          "a": 0
+        },
+        {
+          "q": "A girl asks, \"Can I borrow this book?\" What do you say?",
+          "zh": "女生問「我可以借這本書嗎？」你要說什麼？",
+          "opts": [
+            "Sure. Please bring it back in two weeks.",
+            "Sure. You can eat it.",
+            "No. Books are for dogs."
+          ],
+          "a": 0
+        },
+        {
+          "q": "Please ___ the book back on Friday.",
+          "zh": "請在星期五把書「帶」回來。",
+          "type": "typed",
+          "a": "bring"
+        },
+        {
+          "q": "A boy wants a book about the moon and the stars. Which shelf?",
+          "zh": "男生想找月亮和星星的書，要去哪個書架？",
+          "opts": [
+            "The Space shelf.",
+            "The Cooking shelf.",
+            "The Sports shelf."
+          ],
+          "a": 0
+        },
+        {
+          "q": "Which book is about animals?",
+          "zh": "哪一本書是在講動物？",
+          "opts": [
+            "How Elephants Live",
+            "Fun with Numbers",
+            "My First Cookbook"
+          ],
+          "a": 0
+        },
+        {
+          "q": "I want to ___ a book about dinosaurs.",
+          "zh": "我想「借」一本恐龍的書。",
+          "type": "typed",
+          "a": "borrow"
+        },
+        {
+          "q": "A student returns a book. It is two days late. What do you say?",
+          "zh": "學生還書，晚了兩天。你要說什麼？",
+          "opts": [
+            "Please return books on time next time.",
+            "Great! Keep it forever.",
+            "You can never read again."
+          ],
+          "a": 0
+        },
+        {
+          "q": "Where does the book \"How Plants Grow\" go?",
+          "zh": "《How Plants Grow》要放在哪裡？",
+          "opts": [
+            "The Science shelf.",
+            "The Music shelf.",
+            "The Sports shelf."
+          ],
+          "a": 0
+        },
+        {
+          "q": "The library ___ at nine in the morning.",
+          "zh": "圖書館早上九點「開門」。",
+          "type": "typed",
+          "a": "opens"
+        },
+        {
+          "q": "What does a librarian do?",
+          "zh": "圖書館員的工作是什麼？",
+          "opts": [
+            "A librarian helps people find books.",
+            "A librarian drives a bus.",
+            "A librarian puts out fires."
+          ],
+          "a": 0
+        }
+      ],
+      "task": {
+        "kind": "library",
+        "title": "借書還書、整理書架",
+        "who": "Ms. Rosa",
+        "intro": "Ms. Rosa says: Please help our readers. Find books for them, and put books back on the right shelves.",
+        "introZh": "蘿莎館員說：請幫忙讀者：幫他們找書，也把書放回對的書架。",
+        "readers": [
+          "Ben",
+          "Amy",
+          "Leo",
+          "Mia",
+          "Kai",
+          "Zoe"
+        ],
+        "borrow": [
+          "Hello! Do you have a book about {topic}?",
+          "Hi! I'm looking for a book about {topic}.",
+          "Excuse me. I want to read about {topic}."
+        ],
+        "shelve": "Please put this book on the right shelf: {t}.",
+        "giveBack": "Hi! I'm returning this book: {t}. Thank you!",
+        "shelves": [
+          {
+            "id": "animals",
+            "en": "Animals",
+            "zh": "動物",
+            "topic": "animals"
+          },
+          {
+            "id": "science",
+            "en": "Science",
+            "zh": "科學",
+            "topic": "science"
+          },
+          {
+            "id": "space",
+            "en": "Space",
+            "zh": "太空",
+            "topic": "space and stars"
+          },
+          {
+            "id": "sports",
+            "en": "Sports",
+            "zh": "運動",
+            "topic": "sports"
+          },
+          {
+            "id": "cooking",
+            "en": "Cooking",
+            "zh": "做菜",
+            "topic": "cooking"
+          },
+          {
+            "id": "music",
+            "en": "Music",
+            "zh": "音樂",
+            "topic": "music"
+          }
+        ],
+        "books": [
+          {
+            "t": "All About Sharks",
+            "s": "animals"
+          },
+          {
+            "t": "Baby Animals on the Farm",
+            "s": "animals"
+          },
+          {
+            "t": "How Elephants Live",
+            "s": "animals"
+          },
+          {
+            "t": "Penguins in the Snow",
+            "s": "animals"
+          },
+          {
+            "t": "How Plants Grow",
+            "s": "science"
+          },
+          {
+            "t": "Fun with Magnets",
+            "s": "science"
+          },
+          {
+            "t": "Water, Ice, and Steam",
+            "s": "science"
+          },
+          {
+            "t": "Simple Machines",
+            "s": "science"
+          },
+          {
+            "t": "A Trip to the Moon",
+            "s": "space"
+          },
+          {
+            "t": "Our Solar System",
+            "s": "space"
+          },
+          {
+            "t": "Rockets and Astronauts",
+            "s": "space"
+          },
+          {
+            "t": "The Brightest Stars",
+            "s": "space"
+          },
+          {
+            "t": "Let's Play Basketball",
+            "s": "sports"
+          },
+          {
+            "t": "Soccer for Beginners",
+            "s": "sports"
+          },
+          {
+            "t": "Swimming Is Fun",
+            "s": "sports"
+          },
+          {
+            "t": "The Big Baseball Game",
+            "s": "sports"
+          },
+          {
+            "t": "Easy Pancakes for Kids",
+            "s": "cooking"
+          },
+          {
+            "t": "My First Cookbook",
+            "s": "cooking"
+          },
+          {
+            "t": "Yummy Fruit Snacks",
+            "s": "cooking"
+          },
+          {
+            "t": "Let's Make Noodles",
+            "s": "cooking"
+          },
+          {
+            "t": "Learn to Play the Piano",
+            "s": "music"
+          },
+          {
+            "t": "Songs for Every Day",
+            "s": "music"
+          },
+          {
+            "t": "Drums and Guitars",
+            "s": "music"
+          },
+          {
+            "t": "Sing with Me",
+            "s": "music"
+          }
+        ]
+      }
     }
   }
 }
