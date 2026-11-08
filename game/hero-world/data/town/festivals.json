@@ -1,0 +1,102 @@
+{
+ "_doc": "小朋友鎮的節慶活動（P4 D）。依台北日期（Asia/Taipei）自動換裝飾＋限定英文活動；不在 dates 範圍內就什麼都不顯示。dates＝[開始, 結束]（含兩端，YYYY-MM-DD）；day＝節日當天（農曆節日照行政院人事行政總處辦公日曆表／農民曆，2027 春節是 2/6，Chrome 內建的農曆算成 2/7 是錯的）。表只寫到 2028 年，2029 起要補。測試模式（?test=1）可以用 &fest=halloween|christmas|lunarnewyear|midautumn|none 預覽。qs：每題 opts 第一個是對的。每回 n 題，照生活任務規則：每題答對 1 金幣、全對再 +1、算每日英文。英文全部原創。",
+ "n": 4,
+ "stand": [-6.5, 30.5],
+ "host": { "en": "Festival Helper", "zh": "活動小幫手" },
+ "festivals": {
+  "halloween": {
+   "en": "Halloween", "zh": "萬聖節", "icon": "🎃", "color": "#C76A1E", "deco": ["pumpkin", "pumpkin"],
+   "banner": ["Happy Halloween!", "萬聖節快樂"],
+   "outfit": { "top": 3, "hat": 5, "acc": 4 },
+   "dates": [["2026-10-24", "2026-10-31"], ["2027-10-24", "2027-10-31"], ["2028-10-24", "2028-10-31"]],
+   "day": ["2026-10-31", "2027-10-31", "2028-10-31"],
+   "hello": "Happy Halloween! Answer my four Halloween questions, and you will get a treat!",
+   "helloZh": "萬聖節快樂！回答我的四個萬聖節問題，就有糖果可以拿！",
+   "thanks": "Great job! Here is your treat. Happy Halloween!",
+   "thanksZh": "做得好！這是給你的糖果。萬聖節快樂！",
+   "qs": [
+    { "q": "Kids knock on the door on Halloween night. What do they say?", "zh": "萬聖節晚上小朋友敲門，他們會說什麼？", "opts": ["Trick or treat!", "Merry Christmas!", "Happy birthday!"] },
+    { "q": "What do we use to make a jack-o'-lantern?", "zh": "南瓜燈是用什麼做的？", "opts": ["A pumpkin.", "A watermelon.", "A snowman."] },
+    { "q": "Mia is wearing a tall black hat and holding a broom. What is she?", "zh": "米亞戴著高高的黑帽子、拿著掃把，她扮成什麼？", "opts": ["She is a witch.", "She is a doctor.", "She is a bus driver."] },
+    { "q": "A neighbor gives you some candy. What do you say?", "zh": "鄰居給你糖果，你要說什麼？", "opts": ["Thank you! Happy Halloween!", "No candy. Go away!", "Good night, teacher."] },
+    { "q": "Which animal can fly at night?", "zh": "哪一種動物晚上會飛？", "opts": ["A bat.", "A fish.", "A pig."] },
+    { "q": "When is Halloween?", "zh": "萬聖節是哪一天？", "opts": ["It's on October thirty-first.", "It's on December twenty-fifth.", "It's on January first."] },
+    { "q": "Leo is wearing a white sheet with two holes for his eyes. What is he?", "zh": "里歐披著一塊白布，上面有兩個洞給眼睛看，他扮成什麼？", "opts": ["He is a ghost.", "He is a police officer.", "He is a pumpkin."] },
+    { "q": "The old house is dark and a little scary. What do you say to your friend?", "zh": "老房子黑黑的、有點可怕，你要跟朋友說什麼？", "opts": ["Let's go together. Don't be afraid.", "Let's eat the door.", "Let's take a bath here."] },
+    { "q": "Ben has three pieces of candy. Amy gives him two more. How many does he have now?", "zh": "小班有三顆糖，艾咪又給他兩顆，他現在有幾顆？", "opts": ["He has five pieces of candy.", "He has one piece of candy.", "He has ten pieces of candy."] },
+    { "q": "Which sentence is about a Halloween costume?", "zh": "哪一句在說萬聖節的裝扮？", "opts": ["I'm dressing up as a pirate tonight.", "I'm eating rice for dinner.", "I'm riding my bike to school."] }
+   ]
+  },
+  "christmas": {
+   "en": "Christmas", "zh": "聖誕節", "icon": "🎄", "color": "#2F6E3A", "deco": ["wreath", "gift"],
+   "banner": ["Merry Christmas!", "聖誕快樂"],
+   "outfit": { "top": 2, "hat": 2, "acc": 1 },
+   "dates": [["2026-12-18", "2026-12-25"], ["2027-12-18", "2027-12-25"], ["2028-12-18", "2028-12-25"]],
+   "day": ["2026-12-25", "2027-12-25", "2028-12-25"],
+   "tree": [12.5, 16.5],
+   "hello": "Merry Christmas! Can you answer my four Christmas questions?",
+   "helloZh": "聖誕快樂！你可以回答我的四個聖誕節問題嗎？",
+   "thanks": "Wonderful! You get a little present. Merry Christmas!",
+   "thanksZh": "太棒了！送你一個小禮物。聖誕快樂！",
+   "qs": [
+    { "q": "It's December twenty-fifth. What do people say?", "zh": "今天是十二月二十五日，大家會說什麼？", "opts": ["Merry Christmas!", "Trick or treat!", "Happy Halloween!"] },
+    { "q": "Who wears a red suit and brings presents?", "zh": "誰穿紅衣服、會送禮物？", "opts": ["Santa Claus.", "A ghost.", "A bus driver."] },
+    { "q": "What do we put on top of the Christmas tree?", "zh": "聖誕樹最上面要放什麼？", "opts": ["A big star.", "A big shoe.", "A big fish."] },
+    { "q": "Grandma gives you a present. What do you say?", "zh": "奶奶送你禮物，你要說什麼？", "opts": ["Thank you, Grandma! I love it.", "No, thank you. Go home.", "It's three o'clock."] },
+    { "q": "What is white and cold and falls from the sky in winter?", "zh": "冬天從天上掉下來、白白冷冷的是什麼？", "opts": ["Snow.", "Sand.", "Soup."] },
+    { "q": "What can you build with a lot of snow?", "zh": "很多雪可以堆什麼？", "opts": ["A snowman.", "A sandwich.", "A school bus."] },
+    { "q": "Which animals pull Santa's sleigh?", "zh": "誰幫聖誕老公公拉雪橇？", "opts": ["Reindeer.", "Fish.", "Chickens."] },
+    { "q": "What season is Christmas in?", "zh": "聖誕節在什麼季節？", "opts": ["It's in winter.", "It's in summer.", "It's in spring."] },
+    { "q": "You write a Christmas card to your friend. Which one is right?", "zh": "你寫聖誕卡給朋友，哪一句最合適？", "opts": ["Merry Christmas, Amy! You are a great friend.", "Trick or treat, Amy!", "Happy Halloween, teacher!"] },
+    { "q": "There is a box with a bow under the tree. What is it?", "zh": "聖誕樹下有一個綁著蝴蝶結的盒子，那是什麼？", "opts": ["It's a present for you!", "It's a toothache.", "It's a red light."] }
+   ]
+  },
+  "lunarnewyear": {
+   "en": "Lunar New Year", "zh": "農曆新年", "icon": "🧧", "color": "#B8322A", "deco": ["lantern", "fu"],
+   "banner": ["Happy Lunar New Year!", "新年快樂"],
+   "outfit": { "top": 2, "hat": 0, "acc": 2 },
+   "dates": [["2026-02-14", "2026-02-21"], ["2027-02-03", "2027-02-10"], ["2028-01-23", "2028-01-30"]],
+   "day": ["2026-02-17", "2027-02-06", "2028-01-26"],
+   "hello": "Happy Lunar New Year! Answer my four New Year questions and get a red envelope!",
+   "helloZh": "新年快樂！回答我的四個新年問題，就有紅包可以拿！",
+   "thanks": "Great job! Here is a red envelope for you. Happy New Year!",
+   "thanksZh": "做得好！這個紅包給你。新年快樂！",
+   "qs": [
+    { "q": "It's Lunar New Year. What do people say to each other?", "zh": "農曆新年到了，大家互相說什麼？", "opts": ["Happy New Year!", "Merry Christmas!", "Trick or treat!"] },
+    { "q": "What do kids get inside red envelopes?", "zh": "小朋友的紅包裡面有什麼？", "opts": ["Money.", "Homework.", "Snow."] },
+    { "q": "What do families do on Lunar New Year's Eve?", "zh": "除夕晚上一家人會做什麼？", "opts": ["They have a big dinner together.", "They go to school.", "They build a snowman."] },
+    { "q": "Grandpa gives you a red envelope. What do you say?", "zh": "爺爺給你紅包，你要說什麼？", "opts": ["Thank you, Grandpa! Happy New Year!", "No, I don't want it.", "Good night, Grandpa."] },
+    { "q": "Which color is a lucky color for the New Year?", "zh": "過年的時候哪個顏色代表好運？", "opts": ["Red.", "Black.", "Gray."] },
+    { "q": "What do people put on their front doors for the New Year?", "zh": "過年的時候大家會在門上貼什麼？", "opts": ["Red paper with good words.", "Wet socks.", "Old shoes."] },
+    { "q": "Boom! Boom! You see bright colors in the night sky. What are they?", "zh": "砰！砰！晚上的天空出現亮亮的顏色，那是什麼？", "opts": ["They are fireworks.", "They are fish.", "They are buses."] },
+    { "q": "Which animal is in the Chinese zodiac?", "zh": "哪一種動物是十二生肖之一？", "opts": ["The tiger.", "The penguin.", "The kangaroo."] },
+    { "q": "What do many families eat for Lunar New Year?", "zh": "很多家庭過年會吃什麼？", "opts": ["They eat dumplings and fish.", "They eat only ice cream.", "They eat candy apples."] },
+    { "q": "Before the New Year, what do families do at home?", "zh": "過年前，一家人會在家裡做什麼？", "opts": ["They clean the whole house.", "They break the windows.", "They sleep for a month."] }
+   ]
+  },
+  "midautumn": {
+   "en": "Moon Festival", "zh": "中秋節", "icon": "🥮", "color": "#C9902A", "deco": ["rabbit", "lantern"],
+   "banner": ["Happy Moon Festival!", "中秋節快樂"],
+   "outfit": { "top": 3, "hat": 3, "acc": 0 },
+   "dates": [["2026-09-22", "2026-09-26"], ["2027-09-12", "2027-09-16"], ["2028-09-30", "2028-10-04"]],
+   "day": ["2026-09-25", "2027-09-15", "2028-10-03"],
+   "moon": true,
+   "hello": "Happy Moon Festival! Look at the big moon. Can you answer my four questions?",
+   "helloZh": "中秋節快樂！看那個大月亮。你可以回答我的四個問題嗎？",
+   "thanks": "Wonderful! Here is a mooncake for you. Happy Moon Festival!",
+   "thanksZh": "太棒了！這個月餅給你。中秋節快樂！",
+   "qs": [
+    { "q": "What do people eat at the Moon Festival?", "zh": "中秋節大家會吃什麼？", "opts": ["They eat mooncakes.", "They eat Christmas cake.", "They eat candy corn."] },
+    { "q": "What is big and round in the sky tonight?", "zh": "今天晚上天上又大又圓的是什麼？", "opts": ["The full moon.", "The sun.", "A rainbow."] },
+    { "q": "What do many families in Taiwan do on Moon Festival night?", "zh": "很多台灣家庭中秋節晚上會做什麼？", "opts": ["They have a barbecue outside.", "They go swimming in the snow.", "They go trick-or-treating."] },
+    { "q": "Which fruit do people often eat at the Moon Festival?", "zh": "中秋節常吃哪一種水果？", "opts": ["Pomelos.", "Pumpkins.", "Coconuts."] },
+    { "q": "In the old story, who lives on the moon?", "zh": "在古老的故事裡，誰住在月亮上？", "opts": ["Chang'e and a little rabbit.", "Santa Claus.", "A big shark."] },
+    { "q": "Look at the moon! What do you say?", "zh": "看月亮！你會說什麼？", "opts": ["Wow, it's so bright and round!", "Wow, it's so cold and wet!", "Wow, it's so noisy!"] },
+    { "q": "When is the Moon Festival?", "zh": "中秋節是哪一天？", "opts": ["It's on the fifteenth day of the eighth lunar month.", "It's on December twenty-fifth.", "It's on October thirty-first."] },
+    { "q": "Grandma gives you a mooncake. What do you say?", "zh": "奶奶給你一個月餅，你要說什麼？", "opts": ["Thank you, Grandma. It looks delicious!", "Trick or treat, Grandma!", "Go away, Grandma."] },
+    { "q": "What do families do together at night?", "zh": "晚上一家人會一起做什麼？", "opts": ["They look at the moon together.", "They go to the dentist.", "They wash the car in the rain."] },
+    { "q": "There are two boxes. Each box has four mooncakes. How many mooncakes are there?", "zh": "有兩盒，每盒有四個月餅，總共有幾個月餅？", "opts": ["There are eight mooncakes.", "There are six mooncakes.", "There are two mooncakes."] }
+   ]
+  }
+ }
+}
