@@ -1,5 +1,5 @@
 {
- "_doc": "小朋友鎮的地圖（固定、手工設計）。座標：x 往東、z 往南，地面 y＝GY。roads：[x0,z0,x1,z1]（含兩端）；馬路兩側自動加 sidewalk 格人行道、路口自動畫斑馬線、沿路自動放路燈。buildings：公共建築（w×d×h，door＝門開在哪一邊，doorW＝門寬，props＝裡面的擺設 [方塊, dx, dy, dz]，dx/dz 從建築西北角算、dy 從地板上一格算）。homes：可以認領的家（門有真的門板）。park：公園範圍（草地、花、樹、池塘）。npcs：居民（route＝走路的點，dlg＝對話清單，輪流講）。furniture：家具模式能放的東西。wallColors／floorColors：家裡牆壁／地板能換的顏色。",
+ "_doc": "小朋友鎮的地圖（固定、手工設計）。座標：x 往東、z 往南，地面 y＝GY。roads：[x0,z0,x1,z1]（含兩端）；馬路兩側自動加 sidewalk 格人行道、路口自動畫斑馬線、沿路自動放路燈。buildings：公共建築（w×d×h，door＝門開在哪一邊，doorW＝門寬，props＝裡面的擺設 [方塊, dx, dy, dz]，dx/dz 從建築西北角算、dy 從地板上一格算）。homes：可以認領的家（門有真的門板）。park：公園範圍（草地、花、樹、池塘）。npcs：居民（route＝走路的點，dlg＝對話清單，輪流講）。furniture：家具模式能放的東西。secrets：秘密房間（P2 第 3 段）。wallColors／floorColors：家裡牆壁／地板能換的顏色。",
  "GY": 20,
  "bound": 70,
  "sidewalk": 2,
@@ -118,6 +118,68 @@
     "top": "#2F5A34"
    },
    "pattern": "leaves",
+   "hardness": -1,
+   "drops": null,
+   "hidden": true,
+   "buy": null
+  },
+  {
+   "n": 209,
+   "id": "kt_treasure",
+   "name_zh": "秘密寶箱",
+   "colors": {
+    "top": "#D9A63A",
+    "side": "#B88B55",
+    "bottom": "#8C6640"
+   },
+   "accent": "#C2443A",
+   "pattern": "chest",
+   "hardness": -1,
+   "drops": null,
+   "interact": "treasure",
+   "hidden": true,
+   "buy": null
+  },
+  {
+   "n": 210,
+   "id": "kt_gold_chest",
+   "name_zh": "金色寶箱",
+   "colors": {
+    "top": "#F2C46B",
+    "side": "#D9A63A",
+    "bottom": "#B88B55"
+   },
+   "accent": "#26302A",
+   "pattern": "chest",
+   "hardness": 1,
+   "drops": null,
+   "hidden": true,
+   "buy": null
+  },
+  {
+   "n": 211,
+   "id": "kt_magic_shelf",
+   "name_zh": "魔法書櫃",
+   "colors": {
+    "top": "#6E3F8C",
+    "side": "#4A2B5E",
+    "bottom": "#6E3F8C"
+   },
+   "pattern": "bookshelf",
+   "hardness": 1,
+   "drops": null,
+   "hidden": true,
+   "buy": null
+  },
+  {
+   "n": 212,
+   "id": "kt_board",
+   "name_zh": "公告欄",
+   "colors": {
+    "top": "#8C6640",
+    "side": "#B88B55"
+   },
+   "pattern": "planks",
    "hardness": -1,
    "drops": null,
    "hidden": true,
@@ -557,5 +619,113 @@
  ],
  "furniture": ["bed", "crafting_table", "bookshelf", "chest", "stairs_planks", "slab_planks", "lantern", "carpet_red", "flower_rose", "wool_blue", "glass", "barrel"],
  "wallColors": ["paper_pink", "paper_yellow", "paper_green", "paper_cyan", "paper_blue", "paper_purple", "paper_orange", "wool"],
- "floorColors": ["planks", "spruce_planks", "smooth_stone", "carpet_red", "carpet_blue", "carpet_green"]
+ "floorColors": ["planks", "spruce_planks", "smooth_stone", "carpet_red", "carpet_blue", "carpet_green"],
+ "secrets": {
+  "_doc": "秘密房間：ops 照順序蓋（box＝填滿、hollow＝外殼＋裡面清空、set＝一格），座標是絕對座標。notes＝紙條（第 0 張貼在公告欄，at＝紙條中心、face＝貼在哪一面），door＝謎題門（riddle_door，答對一題英文就打開），treasure＝寶箱位置，reward＝獎勵（furniture 家具方塊、pet 寵物）。",
+  "board": {
+   "ops": [
+    ["set", "log", 6, 21, 6],
+    ["set", "log", 9, 21, 6],
+    ["box", "kt_board", 6, 22, 6, 9, 23, 6]
+   ],
+   "sign": [7.95, 24.6, 6.5]
+  },
+  "rooms": [
+   {
+    "id": "attic",
+    "zh": "郵局閣樓",
+    "en": "Post Office Attic",
+    "reward": {
+     "kind": "furniture",
+     "id": "kt_gold_chest"
+    },
+    "door": [-40, 27, 16],
+    "treasure": [-40, 27, 11],
+    "notes": [
+     {
+      "at": [6.75, 22.9, 7.03],
+      "en": "Secret Room 1: The mail carrier has a secret room. Go behind the post office and look up!",
+      "zh": "祕密房間 1：郵差有一個祕密房間。走到郵局的後面，往上看！"
+     },
+     {
+      "at": [-38.5, 22.6, 20.03],
+      "en": "Climb the ladder to the roof. The secret door is up there. Answer the riddle, and the door will open!",
+      "zh": "爬梯子上屋頂，祕密的門就在上面。答對謎題，門就會打開！"
+     }
+    ],
+    "ops": [
+     ["hollow", "planks", -43, 26, 10, -37, 31, 16],
+     ["box", "riddle_door", -40, 27, 16, -40, 28, 16],
+     ["box", "ladder", -40, 21, 20, -40, 26, 20],
+     ["set", "lantern", -38, 27, 11],
+     ["set", "lantern", -42, 27, 15],
+     ["set", "kt_treasure", -40, 27, 11]
+    ]
+   },
+   {
+    "id": "rooftop",
+    "zh": "消防隊頂樓",
+    "en": "Fire Station Rooftop",
+    "reward": {
+     "kind": "pet",
+     "id": "dalmatian"
+    },
+    "door": [44, 28, -21],
+    "treasure": [39, 28, -21],
+    "notes": [
+     {
+      "at": [7.95, 22.9, 7.03],
+      "en": "Secret Room 2: Firefighters climb ladders every day. Find the ladder in the fire station and go to the top!",
+      "zh": "祕密房間 2：消防員每天都在爬梯子。找到消防隊裡的梯子，爬到最上面！"
+     },
+     {
+      "at": [46.5, 22.6, -24.97],
+      "en": "Up, up, up! Climb through the roof. Look for a purple door.",
+      "zh": "往上、往上、再往上！穿過屋頂，找一扇紫色的門。"
+     }
+    ],
+    "ops": [
+     ["box", "ladder", 48, 21, -25, 48, 27, -25],
+     ["hollow", "paper_red", 38, 27, -24, 44, 32, -18],
+     ["box", "riddle_door", 44, 28, -21, 44, 29, -21],
+     ["set", "lantern", 39, 28, -23],
+     ["set", "lantern", 43, 28, -19],
+     ["set", "kt_treasure", 39, 28, -21]
+    ]
+   },
+   {
+    "id": "basement",
+    "zh": "學校圖書館地下室",
+    "en": "School Library Basement",
+    "reward": {
+     "kind": "furniture",
+     "id": "kt_magic_shelf"
+    },
+    "door": [-45, 15, -28],
+    "treasure": [-45, 15, -25],
+    "notes": [
+     {
+      "at": [9.15, 22.9, 7.03],
+      "en": "Secret Room 3: Do you like books? Go into the school and look next to the bookshelves.",
+      "zh": "祕密房間 3：你喜歡書嗎？走進學校，看看書架旁邊。"
+     },
+     {
+      "at": [-43.5, 22.6, -30.97],
+      "en": "Go down the ladder. The door is at the bottom. Answer the riddle to open it.",
+      "zh": "順著梯子往下爬，門就在最下面。答對謎題就能打開。"
+     }
+    ],
+    "ops": [
+     ["hollow", "stone_bricks", -49, 14, -31, -41, 18, -23],
+     ["box", "stone_bricks", -48, 15, -28, -42, 17, -28],
+     ["box", "riddle_door", -45, 15, -28, -45, 16, -28],
+     ["box", "ladder", -45, 15, -31, -45, 20, -31],
+     ["set", "lantern", -43, 15, -30],
+     ["set", "lantern", -48, 15, -24],
+     ["set", "lantern", -42, 15, -24],
+     ["set", "kt_treasure", -45, 15, -25]
+    ]
+   }
+  ]
+ }
 }
