@@ -25,6 +25,9 @@ ok(C.lessons.length === 22 && C.lessons.every((l, i) => l.id === 'L' + String(i 
 ok(JSON.stringify(count(C.lessons, 'stage')) === JSON.stringify({ 1: 5, 2: 5, 3: 5, 4: 7 }), 'catalog: stages 5/5/5/7');
 ok(['譬喻', '擬人', '誇飾', '排比', '設問', '對話', '五感'].every(w => C.lessons.some(l => l.stage === 4 && l.title.includes(w))), 'catalog: stage 4 = 7 rhetoric lessons');
 ok(!W.BAN.test(JSON.stringify(C)), 'catalog: no personal / school info');
+// 個資檢查只擋真的個資樣式（11-08）：一般詞「打電話」「電話亭」要過，號碼、學校、班級座號要擋
+['打電話給爺爺', '路邊有一座電話亭', '手機沒電了', '他住在海邊'].forEach(s => ok(!W.BAN.test(s), 'BAN lets through: ' + s));
+['0912345678', '0912-345-678', '02-2345-6789', '電話號碼是', '手機號碼', '電話：0912', '光明國小', '三年五班', '3年5班', '座號 12 號', '我家地址', '身分證', 'a@b.tw'].forEach(s => ok(W.BAN.test(s), 'BAN blocks: ' + s));
 
 // ---- 每題、每課一支檔 ----
 const T = {}, L = {};
@@ -90,6 +93,23 @@ readyL.forEach(c => {
   l.quiz.forEach(q => ok(['mc', 'tf'].includes(q.type) && QK.validate(q).length === 0 && (q.type === 'tf' ? typeof q.a === 'boolean' : Number.isInteger(q.a) && new Set(q.opts).size === q.opts.length), c.id + ':' + q.id + ' auto-graded, exactly one right answer'));
   ok(l.cards.length >= 3 && l.cards.length <= 5 && l.compare.length >= 1, c.id + ' 3～5 cards + compare');
 });
+
+// ---- 選擇題防洩答：正解不要老是唯一最長（11-08）----
+// 統計課程 mc＋題目 scope（文體題 genreQ 選項等長，不列）；全部「正解唯一最長」≤ 25%，一課的 mc 不准全是、題目的 scope 不准是
+{
+  const rows = [], longest = q => { const L = W.len(q.opts[q.a]); return q.opts.every((o, i) => i === q.a || W.len(o) < L); };
+  readyL.forEach(c => { const l = sel(L[c.id], c.id); if (!l) return; const mc = l.quiz.filter(q => q.type === 'mc'); mc.forEach(q => rows.push(longest(q))); ok(!mc.length || !mc.every(longest), c.id + ': not every mc answer is the longest option'); });
+  readyT.forEach(c => { const t = sel(T[c.id], c.id); if (!t) return; rows.push(longest(t.scope)); ok(!longest(t.scope), c.id + ': scope answer is not the unique longest option'); });
+  if (!only) { const n = rows.filter(Boolean).length; ok(rows.length > 200 && n / rows.length <= 0.25, `mc answers uniquely longest ${n}/${rows.length} ≤ 25%`); }
+}
+// ---- 「我」算不算關鍵字（11-08 全站統一，CONTRACT §2 第 11 條）----
+// 我＝範圍本身（我這個人、小時候的我、我生病了、我的超能力、假如我是…）才是關鍵字；我的○○、我最○○的○○ 放 nk、圈到要出提示
+{
+  const WO_KEY = ['t04', 't34', 't35', 't40', 't47', 't59', 't66', 't84', 't112', 't113', 't114', 't121', 't128', 't129', 't132'];
+  readyT.forEach(c => { const t = sel(T[c.id], c.id); if (!t || !t.seg.includes('我')) return; const isKey = t.keys.some(k => k.w === '我');
+    ok(isKey === WO_KEY.includes(c.id) && (isKey || W.len((t.nk || {})['我']) > 3), c.id + ' 「我」' + (WO_KEY.includes(c.id) ? '是關鍵字' : '放 nk（有提示）'));
+    if (!isKey) { const all = t.seg.map((s, i) => i).filter(i => t.keys.some(k => k.w === t.seg[i])).concat(t.seg.indexOf('我')), r = W.checkKeys(t, all); ok(!r.ok && r.extra.join() === '我' && !r.miss.length, c.id + ' 多圈「我」→ 只回報「我」、可以改了再按'); } });
+}
 
 // ---- 本機紀錄大小：塞爆也很小（不同步，但也不能無限長）----
 {
