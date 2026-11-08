@@ -49,8 +49,10 @@ readyT.forEach(c => {
   const right = t.seg.map((s, i) => i).filter(i => t.keys.some(k => k.w === t.seg[i]));
   ok(W.checkKeys(t, right).ok, tag + 'checkKeys: right answer passes');
   ok(!W.checkKeys(t, []).ok && W.checkKeys(t, []).miss.length === t.keys.length, tag + 'checkKeys: nothing circled fails');
-  ok(!W.checkKeys(t, t.seg.map((s, i) => i)).ok && W.checkKeys(t, t.seg.map((s, i) => i)).extra.length > 0, tag + 'checkKeys: circling everything fails');
-  const gq = W.genreQ(t); ok(QK.validate(gq).length === 0 && gq.opts[gq.a] === W.GENRES[t.genre].n, tag + 'genre question valid, answer = ' + W.GENRES[t.genre].n);
+  const allK = W.checkKeys(t, t.seg.map((s, i) => i));
+  ok(t.keys.length === t.seg.length ? t.seg.length <= 2 && allK.ok : !allK.ok && allK.extra.length > 0, tag + 'checkKeys: circling everything fails (1～2 詞全是關鍵字的題目除外)');
+  ok(!['鏡|子', '早|晨', '大|掃除', '運動|會', '讀|書|心得', '新學期|新|希望'].includes(t.seg.join('|')), tag + 'seg: 不把一個詞拆成單字（11-08 修掉的切法不准回來）');
+  const gq = W.genreQ(t); ok(QK.validate(gq).length === 0 && gq.opts[gq.a] === W.GENRES[t.genre].s && gq.opts.every(o => W.len(o) === 2) && gq.why.includes(W.GENRES[t.genre].n), tag + 'genre question valid, 2-char options, answer = ' + W.GENRES[t.genre].s);
   // ② 發想 → ③ 選材
   const ideas = t.cards.flatMap((cd, ci) => cd.eg.slice(0, 2).map(e => ({ t: e, c: ci })));
   const keep = {}; W.pool(t, ideas).forEach(x => { keep[x.t] = x.c >= 0; });
