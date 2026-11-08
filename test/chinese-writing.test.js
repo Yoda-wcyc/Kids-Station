@@ -1,6 +1,6 @@
 // chinese-writing.test.js — 國語〈作文〉資料與規則檢查（2026-11-08）
 // 用法：node test/chinese-writing.test.js（smoke.js 也會跑）。只測一個檔：node test/chinese-writing.test.js t09（或 L16）
-// - 目錄（chinese/writing/data/catalog.js）：50 題（文體 8/12/6/6/6/6/6、難度 1～3）、22 課（階段 5/5/5/7）、id 與題名唯一
+// - 目錄（chinese/writing/data/catalog.js）：150 題（t01～t50 文體 8/12/6/6/6/6/6；t51～t150 再加 14/22/12/12/14/14/12；難度 1～3）、22 課（階段 5/5/5/7）、id 與題名唯一
 // - 每題一支 topics/tNN.js、每課一支 lessons/LNN.js：格式（writing-core validateTopic／validateLesson）、跟目錄一致、不放個資
 // - 做好的題目：審題正解在題目字串裡、圈對才過、四段都有範例主旨、選材干擾卡要「不寫」、心智圖畫得出來（四主枝＋細枝）
 // - 做好的課：小練習 5～8 題、只能 mc／tf、單選只有一個正解（QuizKit.validate）
@@ -11,14 +11,16 @@ const root = path.join(__dirname, '..'), dir = path.join(root, 'chinese', 'writi
 const W = require(path.join(dir, 'writing-core.js')), QK = require(path.join(root, 'quizkit.js')), C = require(path.join(dir, 'data', 'catalog.js'));
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.error('FAIL chinese-writing:', m); } };
-const only = process.argv[2] && /^(t\d\d|L\d\d)$/.test(process.argv[2]) ? process.argv[2] : '';
+const only = process.argv[2] && /^(t\d{2,3}|L\d\d)$/.test(process.argv[2]) ? process.argv[2] : '';
 
 // ---- 目錄 ----
 const count = (a, k) => a.reduce((o, x) => (o[x[k]] = (o[x[k]] || 0) + 1, o), {});
-ok(C.topics.length === 50 && C.topics.every((t, i) => t.id === 't' + String(i + 1).padStart(2, '0')), 'catalog: 50 topics t01～t50 in order');
-ok(JSON.stringify(count(C.topics, 'genre')) === JSON.stringify({ person: 8, event: 12, object: 6, scene: 6, imagine: 6, feel: 6, explain: 6 }), 'catalog: genre split 8/12/6/6/6/6/6');
+ok(C.topics.length === 150 && C.topics.every((t, i) => t.id === 't' + String(i + 1).padStart(2, '0')), 'catalog: 150 topics t01～t150 in order');
+ok(JSON.stringify(count(C.topics.slice(0, 50), 'genre')) === JSON.stringify({ person: 8, event: 12, object: 6, scene: 6, imagine: 6, feel: 6, explain: 6 }), 'catalog: t01～t50 genre split 8/12/6/6/6/6/6');
+ok(JSON.stringify(count(C.topics.slice(50), 'genre')) === JSON.stringify({ person: 14, event: 22, object: 12, scene: 12, imagine: 14, feel: 14, explain: 12 }), 'catalog: t51～t150 genre split 14/22/12/12/14/14/12');
+ok(W.ORDER.every(g => [1, 2, 3].every(d => C.topics.slice(50).some(t => t.genre === g && t.d === d))), 'catalog: t51～t150 every genre has d 1, 2 and 3');
 ok(C.topics.every(t => [1, 2, 3].includes(t.d) && W.GENRES[t.genre]) && W.ORDER.every(g => [1, 2, 3].filter(d => C.topics.some(t => t.genre === g && t.d === d)).length >= 2), 'catalog: d 1～3, every genre spans ≥ 2 levels');
-ok(new Set(C.topics.map(t => t.title)).size === 50, 'catalog: titles unique');
+ok(new Set(C.topics.map(t => t.title)).size === C.topics.length, 'catalog: titles unique');
 ok(C.lessons.length === 22 && C.lessons.every((l, i) => l.id === 'L' + String(i + 1).padStart(2, '0') && l.goal && W.len(l.goal) <= 50), 'catalog: 22 lessons L01～L22, each has a goal');
 ok(JSON.stringify(count(C.lessons, 'stage')) === JSON.stringify({ 1: 5, 2: 5, 3: 5, 4: 7 }), 'catalog: stages 5/5/5/7');
 ok(['譬喻', '擬人', '誇飾', '排比', '設問', '對話', '五感'].every(w => C.lessons.some(l => l.stage === 4 && l.title.includes(w))), 'catalog: stage 4 = 7 rhetoric lessons');
@@ -28,7 +30,7 @@ ok(!W.BAN.test(JSON.stringify(C)), 'catalog: no personal / school info');
 const T = {}, L = {};
 C.topics.forEach(t => { const f = path.join(dir, 'topics', t.id + '.js'); ok(fs.existsSync(f), 'topic file exists: ' + t.id); if (fs.existsSync(f)) T[t.id] = require(f); });
 C.lessons.forEach(l => { const f = path.join(dir, 'lessons', l.id + '.js'); ok(fs.existsSync(f), 'lesson file exists: ' + l.id); if (fs.existsSync(f)) L[l.id] = require(f); });
-ok(fs.readdirSync(path.join(dir, 'topics')).length === 50 && fs.readdirSync(path.join(dir, 'lessons')).length === 22, 'no extra files in topics/ lessons/');
+ok(fs.readdirSync(path.join(dir, 'topics')).length === C.topics.length && fs.readdirSync(path.join(dir, 'lessons')).length === 22, 'no extra files in topics/ lessons/');
 const sel = (o, id) => only ? (id === only ? o : null) : o;
 W.validateAll(C, T, L).filter(m => !only || m.startsWith(only)).forEach(m => ok(false, m));
 // 檔頭註解要寫題名（作者對檔不會對錯）
@@ -103,7 +105,7 @@ readyL.forEach(c => {
   const html = fs.readFileSync(path.join(dir, 'writing.html'), 'utf8').replace(/\?v=[0-9a-f]+"/g, '"'), js = fs.readFileSync(path.join(dir, 'writing.js'), 'utf8');
   const at = s => html.indexOf('<script src="' + s + '"></script>');
   ok(at('../../quizkit.js') >= 0 && at('../../quizkit.js') < at('writing-core.js') && at('writing-core.js') < at('data/catalog.js') && at('data/catalog.js') < at('topics/t01.js'), 'writing.html: quizkit → core → catalog → topics');
-  ok(C.topics.every(t => at('topics/' + t.id + '.js') > 0) && C.lessons.every(l => at('lessons/' + l.id + '.js') > at('topics/t50.js')) && at('writing.js') > at('lessons/L22.js'), 'writing.html loads all 50 topics + 22 lessons, then writing.js');
+  ok(C.topics.every(t => at('topics/' + t.id + '.js') > 0) && C.lessons.every(l => at('lessons/' + l.id + '.js') > at('topics/' + C.topics[C.topics.length - 1].id + '.js')) && at('writing.js') > at('lessons/L22.js'), 'writing.html loads all ' + C.topics.length + ' topics + 22 lessons, then writing.js');
   ok(html.includes('href="../../style.css"') && html.includes('href="../reading.css"') && html.includes('href="writing.css"'), 'writing.html stylesheets');
   ok(!/fetch\(|XMLHttpRequest|sendBeacon|KidsCoins|KidsMistakes|api\./i.test(js.replace(/\/\*[\s\S]*?\*\//g, '')), 'writing.js: no network, no AI, no coins/mistakes');
   ok(js.includes("K = 'kids_writing'") && !fs.readFileSync(path.join(root, 'sync.js'), 'utf8').includes('kids_writing'), 'kids_writing is local only (not in sync.js)');

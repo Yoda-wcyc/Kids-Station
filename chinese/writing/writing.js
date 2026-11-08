@@ -1,6 +1,6 @@
 /* chinese/writing/writing.js — 國語〈作文〉頁面（chinese/writing/writing.html）。規則 writing-core.js（window.ZhWriting），題目元件 ../../quizkit.js，樣式 ../reading.css＋writing.css。
    畫面（網址參數）：
-   - 題庫（無參數）：50 題依文體分組（可收合），做完 ①～⑤ 打 ✓；製作中的題目看得到題名、點不開。
+   - 題庫（無參數）：150 題依文體分組（可收合、記住收合狀態；每組顯示完成／可做／製作中題數），做完 ①～⑤ 打 ✓；製作中的題目看得到題名、點不開。
    - ?t=t01 一題：①審題 → ②發想 → ③選材 → ④架構 → ⑤心智圖（可列印，另附「段落提示＋自我檢查清單」一頁）。
    - ?lessons=1 課程清單（4 階段 22 課）；?l=L01 一課：重點卡 → 好壞對照 → 小練習（自動判分，答對 ≥ 70% 算完成）。
    整篇作文寫在紙上、大人批改：不接任何 AI、不做線上評分、不連外。
@@ -36,8 +36,9 @@
       '<p class="wr-flow" aria-label="作文八步">題目 → ①審題 → ②發想 → ③選材 → ④架構 → ⑤心智圖 → ⑥紙上寫 → ⑦修辭 → ⑧自我檢查</p>' +
       '<p><a class="btn primary big" href="writing.html?lessons=1">📚 作文課程（' + CAT.lessons.length + ' 課）</a></p>';
     W.ORDER.forEach(function (g) {
-      var rows = CAT.topics.filter(function (c) { return c.genre === g; }), done = rows.filter(function (c) { return tDone(c.id); }).length;
-      h += '<details class="wr-grp" open><summary><b>' + esc(W.GENRES[g].n) + '</b><small>完成 ' + done + ' / ' + rows.length + ' 題</small></summary><div class="zr-grid wr-grid">' + rows.map(function (c) {
+      var rows = CAT.topics.filter(function (c) { return c.genre === g; }), done = rows.filter(function (c) { return tDone(c.id); }).length, rd = rows.filter(function (c) { return ready(D.T[c.id]); }).length;
+      // 收合狀態記在 kids_writing.g（{文體: 0}＝收起來）；150 題時只打開想看的那組
+      h += '<details class="wr-grp" data-g="' + g + '"' + (S.g && S.g[g] === 0 ? '' : ' open') + '><summary><b>' + esc(W.GENRES[g].n) + '</b><small>完成 ' + done + ' / ' + rd + ' 題' + (rows.length > rd ? '・製作中 ' + (rows.length - rd) + ' 題' : '') + '</small></summary><div class="zr-grid wr-grid">' + rows.map(function (c) {
         var t = D.T[c.id], ok = ready(t), s = S.t[c.id], n = +c.id.slice(1);
         var st = !ok ? '✍️ 製作中' : s && s.done ? '✓ 已完成' : s && s.reach > 1 ? '🟡 做到 ' + NUM[s.reach - 1] + STEP[s.reach - 1] : '⚪ 還沒做';
         var inner = '<b>' + n + '．' + esc(c.title) + '</b><span class="zr-tags"><span class="zr-tag d" aria-label="難度 ' + c.d + '">難度 ' + stars(c.d) + '</span></span><span class="zr-st">' + st + '</span>';
@@ -233,6 +234,7 @@
   });
   document.addEventListener('input', function (e) { var t = e.target; if (t && t.getAttribute && t.getAttribute('data-z') === 'main' && S) { S.main[+t.getAttribute('data-v')] = W.cut(t.value, W.MAIN_MAX); saveT(); } });
   document.addEventListener('change', function (e) { var t = e.target; if (t && t.getAttribute && t.getAttribute('data-z') === 'mv' && S) { S.para[t.getAttribute('data-v')] = +t.value; saveT(); paint(); } });
+  document.addEventListener('toggle', function (e) { var d = e.target, g = d && d.getAttribute && d.getAttribute('data-g'); if (!g) return; var all = store(); all.g = all.g || {}; if (d.open) delete all.g[g]; else all.g[g] = 0; save(all); }, true);
   document.addEventListener('keydown', function (e) { var t = e.target; if (e.key === 'Enter' && t && t.matches && t.matches('.wr-add input')) { e.preventDefault(); addOwn(+t.getAttribute('data-ci')); } });
 
   window.WRPage = { state: function () { return S; }, topic: function () { return T; }, lesson: function () { return LR; }, ui: UI };

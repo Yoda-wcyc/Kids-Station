@@ -39,7 +39,7 @@
   function validateTopic(t, cat) {
     var E = [], add = function (m) { E.push((t && t.id ? t.id + '（' + (t.title || '?') + '）：' : '') + m); };
     if (!t || typeof t !== 'object') return ['不是物件'];
-    if (!/^t\d\d$/.test(t.id || '')) add('id 要像 t01');
+    if (!/^t\d{2,3}$/.test(t.id || '')) add('id 要像 t01（t100 以後三位數）');
     if (!GENRES[t.genre]) add('genre 只能用：' + ORDER.join('、'));
     if ([1, 2, 3].indexOf(t.d) < 0) add('d（難度）要是 1|2|3');
     if (cat) { ['title', 'genre', 'd'].forEach(function (k) { if (cat[k] !== t[k]) add(k + ' 跟目錄不一樣（目錄：' + cat[k] + '）'); }); }
@@ -126,7 +126,7 @@
     });
     return E;
   }
-  // 全部：目錄 50 題 22 課、id 唯一、每個目錄項都有檔、檔跟目錄一致
+  // 全部：目錄 150 題 22 課、id 唯一、每個目錄項都有檔、檔跟目錄一致
   function validateAll(cat, T, L) {
     var E = [];
     T = T || {}; L = L || {};
