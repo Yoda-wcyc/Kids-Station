@@ -365,6 +365,9 @@ t('full unlock chain forest -> volcano + ending', () => {
   let s = L.newSave(); s.mats = { wood: 99, stone: 99, iron: 99, gold: 99, pearl: 99, crystal: 99, diamond: 0 };
   const order = ['forest', 'cave', 'castle', 'harbor', 'volcano'];
   assert.deepStrictEqual(order.map(m => L.mapUnlocked(s, m)), [true, false, false, false, false]);
+  // 從方塊世界傳送門進來（via）：只有那張地圖直接開，其他照舊
+  assert.deepStrictEqual(order.map(m => L.mapUnlocked(s, m, 'volcano')), [true, false, false, false, true]);
+  assert(!L.mapUnlocked(s, 'nope', 'nope'));
   let r = L.craft(s, 'pick'); s = r.s; assert(L.mapUnlocked(s, 'cave'));
   assert(L.craftCheck(s, 'key').hidden); s.defeated.cboss = true; r = L.craft(s, 'key'); assert(r.ok); s = r.s; assert(L.mapUnlocked(s, 'castle'));
   assert(L.craftCheck(s, 'boat').hidden); s.defeated.kboss = true; r = L.craft(s, 'boat'); assert(r.ok); s = r.s; assert(L.mapUnlocked(s, 'harbor'));

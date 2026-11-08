@@ -272,7 +272,8 @@
     { id: 'harbor', name: '句型港口', scr: 'harbor', boss: 'hboss', need: 'boat' },
     { id: 'volcano', name: '片語火山', scr: 'volcano', boss: 'vboss', need: 'boots' }
   ];
-  L.mapUnlocked = (s, id) => { const r = L.ROUTE.find(x => x.id === id); return !!r && !r.soon && (!r.need || !!(s.items && s.items[r.need])); };
+  // via＝從方塊世界傳送門進來的那張地圖（?map=&from=world）：那張不看通行道具，直接開
+  L.mapUnlocked = (s, id, via) => { const r = L.ROUTE.find(x => x.id === id); return !!r && !r.soon && (via === id || !r.need || !!(s.items && s.items[r.need])); };
   L.swordOf = s => { const it = (s && s.items) || {}; return it.flame ? 'flame' : it.iron ? 'iron' : it.sword ? 'wood' : null; };
   L.canAfford = (w, cost) => Object.keys(cost).every(k => (w[k] || 0) >= cost[k]);
   L.craftCheck = function (s, id) {
@@ -631,7 +632,7 @@
     s.append(hud('CHOOSE YOUR CLASS', '選一個職業', S.cls ? 'hub' : 'title'),
       h('div', { class: 'cls-grid' }, Object.keys(L.CLASSES).map(k => {
         const c = L.CLASSES[k];
-        return h('button', { class: 'cls-card' + (S.cls === k ? ' on' : ''), onclick: () => { S.cls = k; saveS(); toast(`你現在是${c.name}！`); go('hub'); } },
+        return h('button', { class: 'cls-card' + (S.cls === k ? ' on' : ''), onclick: () => { S.cls = k; saveS(); toast(`你現在是${c.name}！`); const pr = PORTAL && L.ROUTE.find(x => x.id === PORTAL.map); go(pr ? pr.scr : 'hub'); } },
           h('div', { class: 'cls-art', html: A.hero(k) }), h('div', { class: 'eyebrow' }, c.en),
           h('div', { class: 'cls-name' }, c.name, h('span', { class: 'tag' }, '擅長' + c.skill)), h('p', {}, c.line));
       })));
@@ -685,7 +686,7 @@
   // 地圖路線：森林 ✓ → 洞窟 ✓ → 城堡 → 港口 → 火山
   function routeBar(curId) {
     return h('nav', { class: 'route', 'aria-label': '地圖路線' }, L.ROUTE.map((r, i) => {
-      const open = L.mapUnlocked(S, r.id), done = r.boss && S.defeated[r.boss];
+      const open = L.mapUnlocked(S, r.id, VIA), done = r.boss && S.defeated[r.boss];
       return [i ? h('span', { class: 'route-arrow', 'aria-hidden': 'true' }, '→') : null,
         h('button', { class: 'route-b' + (r.id === curId ? ' on' : '') + (open ? '' : ' locked') + (r.soon ? ' soon' : ''), disabled: !open || r.id === curId,
           title: r.soon ? '之後的地圖' : '', onclick: () => go(r.scr) }, r.soon ? h('span', { class: 'silhouette' }, '?') : null, r.name, done ? ' ✓' : '', !open ? h('span', { html: A.icon('lock') }) : null)];
@@ -696,17 +697,17 @@
     const M = MAPUI[mapId], list = L.MAPLISTS[mapId], s = $(M.scr); s.innerHTML = '';
     const nodes = list.map((n, i) => ({ id: n.id, x: n.x, y: Math.round(M.mid(n.x)) - 6, r: n.boss ? 44 : 34, boss: n.boss, kind: n.kind, label: n.name, tag: n.tag, shield: n.shield, trap: !!n.traps, num: i + 1, status: L.nodeStatus(S, i, list) }));
     const P = M.portal, nextRoute = P && L.ROUTE.find(r => r.id === P.to);
-    if (P && nextRoute && !nextRoute.soon) nodes.push({ id: 'go:' + P.to, x: P.x, y: P.y, r: 28, label: P.label, num: P.num, status: L.mapUnlocked(S, P.to) ? 'open' : 'locked' });
+    if (P && nextRoute && !nextRoute.soon) nodes.push({ id: 'go:' + P.to, x: P.x, y: P.y, r: 28, label: P.label, num: P.num, status: L.mapUnlocked(S, P.to, VIA) ? 'open' : 'locked' });
     const wrap = h('div', { class: 'map-wrap', html: M.art(nodes) });
     wrap.addEventListener('click', e => {
       const g = e.target.closest('[data-node]'); if (!g) return;
       const id = g.getAttribute('data-node');
-      if (id.slice(0, 3) === 'go:') { const to = id.slice(3), r = L.ROUTE.find(x => x.id === to); return L.mapUnlocked(S, to) ? go(r.scr) : toast(PORTAL_MSG[to]()); }
+      if (id.slice(0, 3) === 'go:') { const to = id.slice(3), r = L.ROUTE.find(x => x.id === to); return L.mapUnlocked(S, to, VIA) ? go(r.scr) : toast(PORTAL_MSG[to]()); }
       const i = list.findIndex(x => x.id === id);
       if (L.nodeStatus(S, i, list) === 'locked') return toast('先打倒前一隻怪物');
       startBattle(id);
     });
-    const nxt = P && nextRoute && !nextRoute.soon && !L.mapUnlocked(S, P.to) ? h('button', { class: 'linkish', onclick: () => demoUnlock(P.to) }, `試玩：直接解鎖${P.label}`) : null;
+    const nxt = P && nextRoute && !nextRoute.soon && !L.mapUnlocked(S, P.to, VIA) ? h('button', { class: 'linkish', onclick: () => demoUnlock(P.to) }, `試玩：直接解鎖${P.label}`) : null;
     s.append(hud(M.eyebrow, M.title, M.back), wrap, h('div', { class: 'map-note' }, MAP_NOTE[mapId](), nxt), routeBar(mapId));
   }
 
@@ -1439,6 +1440,7 @@
   // ---- 開機 ----
   document.getElementById('defs').innerHTML = A.defs();
   const PORTAL = (() => { try { const q = new URLSearchParams(location.search); return q.get('from') === 'world' ? { map: q.get('map') } : null; } catch (e) { return null; } })();
+  const VIA = PORTAL ? PORTAL.map : null; // 從方塊世界傳送門進來的地圖：不受地圖解鎖順序限制
   renderLock(); renderTitle(); renderSound(); show('title');
   // 方塊世界（hero-world）傳送門：?map=<id>&from=world → 直接進那張地圖、左下角有「回方塊世界」
   if (PORTAL) {
