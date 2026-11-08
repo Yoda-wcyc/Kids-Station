@@ -184,6 +184,27 @@
    "drops": null,
    "hidden": true,
    "buy": null
+  },
+  {
+   "n": 213,
+   "id": "kt_star_lamp",
+   "name_zh": "星星燈",
+   "colors": {
+    "top": "#6E3F8C",
+    "side": "#F2C46B",
+    "bottom": "#F2C46B"
+   },
+   "accent": "#C9709F",
+   "pattern": "lantern",
+   "shape": "small",
+   "solid": false,
+   "cutout": true,
+   "emissive": true,
+   "light": 15,
+   "hardness": 0.5,
+   "drops": null,
+   "hidden": true,
+   "buy": null
   }
  ],
  "roads": [
@@ -643,7 +664,7 @@
     "treasure": [-40, 27, 11],
     "notes": [
      {
-      "at": [6.75, 22.9, 7.03],
+      "at": [6.55, 22.9, 7.03],
       "en": "Secret Room 1: The mail carrier has a secret room. Go behind the post office and look up!",
       "zh": "祕密房間 1：郵差有一個祕密房間。走到郵局的後面，往上看！"
      },
@@ -674,7 +695,7 @@
     "treasure": [39, 28, -21],
     "notes": [
      {
-      "at": [7.95, 22.9, 7.03],
+      "at": [7.45, 22.9, 7.03],
       "en": "Secret Room 2: Firefighters climb ladders every day. Find the ladder in the fire station and go to the top!",
       "zh": "祕密房間 2：消防員每天都在爬梯子。找到消防隊裡的梯子，爬到最上面！"
      },
@@ -705,7 +726,7 @@
     "treasure": [-45, 15, -25],
     "notes": [
      {
-      "at": [9.15, 22.9, 7.03],
+      "at": [8.35, 22.9, 7.03],
       "en": "Secret Room 3: Do you like books? Go into the school and look next to the bookshelves.",
       "zh": "祕密房間 3：你喜歡書嗎？走進學校，看看書架旁邊。"
      },
@@ -724,6 +745,44 @@
      ["set", "lantern", -48, 15, -24],
      ["set", "lantern", -42, 15, -24],
      ["set", "kt_treasure", -45, 15, -25]
+    ]
+   },
+   {
+    "id": "treehouse",
+    "zh": "公園樹屋",
+    "en": "Park Tree House",
+    "reward": {
+     "kind": "furniture",
+     "id": "kt_star_lamp"
+    },
+    "door": [43, 27, 21],
+    "treasure": [43, 27, 16],
+    "notes": [
+     {
+      "at": [9.25, 22.9, 7.03],
+      "en": "Secret Room 4: Go to the park and look for a big tree with a ladder. Someone built a little house up in the tree!",
+      "zh": "祕密房間 4：到公園找一棵有梯子的大樹。有人在樹上蓋了一間小屋！"
+     },
+     {
+      "at": [46.5, 22.6, 22.03],
+      "en": "Climb up the ladder and walk to the door. Answer the riddle, and the tree house will open!",
+      "zh": "爬上梯子，走到門前。答對謎題，樹屋就會打開！"
+     }
+    ],
+    "ops": [
+     ["box", "log", 40, 21, 15, 40, 25, 15],
+     ["box", "log", 46, 21, 15, 46, 25, 15],
+     ["box", "log", 40, 21, 21, 40, 25, 21],
+     ["box", "log", 46, 21, 21, 46, 25, 21],
+     ["hollow", "planks", 40, 26, 15, 46, 31, 21],
+     ["box", "leaves", 39, 32, 14, 47, 33, 22],
+     ["box", "planks", 41, 26, 22, 45, 26, 23],
+     ["box", "log", 43, 21, 23, 43, 25, 23],
+     ["box", "ladder", 43, 21, 24, 43, 26, 24],
+     ["box", "riddle_door", 43, 27, 21, 43, 28, 21],
+     ["set", "lantern", 41, 27, 16],
+     ["set", "lantern", 45, 27, 20],
+     ["set", "kt_treasure", 43, 27, 16]
     ]
    }
   ]
