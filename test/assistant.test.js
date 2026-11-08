@@ -319,5 +319,22 @@ const MANY = snap({
   ok(big.tasks.length === 3 && ms < 400, 'performance: 6000 answers analyzed in ' + ms + ' ms');
 }
 
+// ---------- 12. 小朋友鎮（ke_log m:'town'）：今天／這 7 天、算每日的（執照、工作、生活任務）和聊天分開、職業和任務的名字 ----------
+{
+  const E = (dt, k, ok) => ({ t: NOW - dt, id: k + ':x', m: 'town', k, y: 'town-job', ok: ok ? 1 : 0, a: '' });
+  const log = [E(1000, 'town:license:doctor', 1), E(2000, 'town:license:doctor', 0), E(3000, 'town:job:chef', 1), E(4000, 'town:life:shop', 1), E(5000, 'town:life:class', 1), E(6000, 'town:hospital', 1),
+    E(2 * DAY, 'town:job:mail', 1), E(3 * DAY, 'town:life:lost', 0), E(9 * DAY, 'town:life:waiter', 1), { t: NOW - 500, id: 'w:apple:listen', m: 'words', k: 'words:fruit', y: 'x', ok: 1 }];
+  const r = KA.analyze(snap({ ctx: { log } })), T = r.town, by = s => Object.fromEntries(s.items.map(i => [i.label, i.n]));
+  ok(T.today.n === 6 && T.today.counted === 5 && T.today.chat === 1 && T.today.ok === 5 && T.today.pct === 83, 'town today ' + JSON.stringify(T.today));
+  ok(by(T.today)['醫生執照考試'] === 2 && by(T.today)['廚師工作'] === 1 && by(T.today)['超市購物'] === 1 && by(T.today)['英文課'] === 1 && by(T.today)['跟居民聊天'] === 1 && T.today.items[0].label === '醫生執照考試', 'town labels ' + JSON.stringify(T.today.items));
+  ok(T.week.n === 8 && T.week.counted === 7 && T.week.days === 3 && by(T.week)['郵差工作'] === 1 && by(T.week)['帶迷路的小孩回家'] === 1 && !by(T.week)['餐廳服務生'], 'town week (9 天前的不算) ' + JSON.stringify(T.week));
+  ok(KA.parentSummary(r).town === T, 'parent summary has town');
+  const empty = KA.analyze(snap()).town; ok(empty.today.n === 0 && empty.week.n === 0 && empty.today.pct === null && !empty.week.items.length, 'town empty');
+  // 小朋友鎮的 k 都在這裡有名字（遊戲那邊新增職業／任務時這裡要跟著加）
+  const jobsJson = path.join(root, 'game', 'hero-world', 'data', 'town', 'jobs.json'), lifeJson = path.join(root, 'game', 'hero-world', 'data', 'town', 'life.json');
+  if (fs.existsSync(jobsJson)) Object.keys(JSON.parse(fs.readFileSync(jobsJson, 'utf8')).jobs).forEach(j => ok(!/^[a-z]/.test(KA._.townLabel('town:job:' + j).label), 'town job label ' + j));
+  if (fs.existsSync(lifeJson)) ['grocery:shop', 'waiter:waiter', 'lost:lost', 'class:class'].forEach(x => { const [sec, k] = x.split(':'); ok(JSON.parse(fs.readFileSync(lifeJson, 'utf8'))[sec] && KA._.townLabel('town:life:' + k).label !== '生活任務', 'town life label ' + k); });
+}
+
 console.log(`assistant: ${pass} passed, ${fail} failed`);
 if (fail) process.exitCode = 1;

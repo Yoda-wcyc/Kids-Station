@@ -1,6 +1,6 @@
 /* assistant-core.js — 🦉 學習小助理（2026-11-01）。純函式：不碰 DOM／localStorage／網路；瀏覽器（window.KidsAssistant）與 Node 共用（node test/assistant.test.js）。
    畫面在 assistant-ui.js（首頁卡片、assistant.html、家長頁「本週學習摘要」）；這支只把「各科紀錄的快照」算成：
-     subjects 各科進度、tasks 今日任務（最多 3 項）、weak 比較弱的地方（最多 5 項）、next 還沒開始的下一步、progress 本週 vs 上週、cheer 鼓勵語。
+     subjects 各科進度、tasks 今日任務（最多 3 項）、weak 比較弱的地方（最多 5 項）、next 還沒開始的下一步、progress 本週 vs 上週、cheer 鼓勵語、town 小朋友鎮（今天／這 7 天在遊戲裡答了幾題、哪些職業和任務）。
    只讀不寫學習紀錄。單元完成的判定一律問 completion.js（KidsCompletion），這裡不另外訂規則。
 
    快照 snap（全部可省略；新帳號就是全部空的）：
@@ -212,6 +212,30 @@
   // 應用題循序漸進的難度（word-level.js 同一套：第一次就答對 3 題才加難度）
   function wlStar(c) { c = obj(c); const ge = d => { let n = 0; for (let k = d; k <= 3; k++) n += +c[k] || 0; return n; }; return ge(1) < 3 ? 1 : ge(2) < 3 ? 2 : 3; }
 
+  // ---------- 小朋友鎮（遊戲）：ke_log 裡 m:'town' 的紀錄（2026-11-08）----------
+  // k：'town:license:<職業>' 執照考試、'town:job:<職業>' 工作、'town:life:<任務>' 生活任務——這三種算每日英文題數；其他 'town:<地點>'＝跟居民聊天（不算）
+  const TOWN_JOB = { teacher: '老師', doctor: '醫生', shopkeeper: '店員', chef: '廚師', firefighter: '消防員', mail: '郵差', vet: '獸醫' };
+  const TOWN_LIFE = { shop: '超市購物', waiter: '餐廳服務生', lost: '帶迷路的小孩回家', class: '英文課' };
+  function townLabel(k) {
+    const m = /^town:(license|job|life):([a-z0-9-]+)/.exec(String(k || ''));
+    if (!m) return { label: '跟居民聊天', counted: false };
+    if (m[1] === 'life') return { label: TOWN_LIFE[m[2]] || '生活任務', counted: true };
+    return { label: (TOWN_JOB[m[2]] || m[2]) + (m[1] === 'license' ? '執照考試' : '工作'), counted: true };
+  }
+  function townSummary(log, now) {
+    const today = dayIdx(now), mk = () => ({ n: 0, ok: 0, counted: 0, chat: 0, by: {}, days: new Set() });
+    const T = { today: mk(), week: mk() };
+    (Array.isArray(log) ? log : []).forEach(e => {
+      if (!e || e.m !== 'town' || !isFinite(+e.t)) return;
+      const d = today - dayIdx(+e.t); if (d < 0 || d > 6) return;
+      const L = townLabel(e.k);
+      [d === 0 ? T.today : null, T.week].forEach(s => { if (!s) return; s.n++; if (+e.ok) s.ok++; if (L.counted) s.counted++; else s.chat++; s.by[L.label] = (s.by[L.label] || 0) + 1; s.days.add(dayIdx(+e.t)); });
+    });
+    const out = s => ({ n: s.n, ok: s.ok, pct: s.n ? Math.round(s.ok / s.n * 100) : null, counted: s.counted, chat: s.chat, days: s.days.size,
+      items: Object.keys(s.by).sort((a, b) => s.by[b] - s.by[a]).map(label => ({ label, n: s.by[label] })) });
+    return { today: out(T.today), week: out(T.week) };
+  }
+
   // ================= 主程式 =================
   function analyze(snap) {
     snap = snap || {};
@@ -365,7 +389,8 @@
 
     // 打招呼（台北時間）
     const h = new Date(now + TPE).getUTCHours(), hi = (snap.nick ? snap.nick + '，' : '') + (h >= 5 && h < 11 ? '早安！' : h >= 11 && h < 18 ? '午安！' : '晚上好！');
-    return { isNew, now, hi, cheer, daily, tasks, subjects, weak, next, progress, _: { groups, cand } };
+    const town = townSummary(ctx.log, now);
+    return { isNew, now, hi, cheer, daily, tasks, subjects, weak, next, progress, town, _: { groups, cand } };
   }
 
   // 同一情境隨機挑一句，跟上一次（prev）不一樣
@@ -382,11 +407,12 @@
       rows: r.progress.bySubj.map(x => ({ k: x.k, name: x.name, icon: x.icon, days: x.days, goals: x.goals, mistakes: x.mistakes, status: (r.subjects.find(s => s.k === x.k) || {}).statusText || '' })),
       days: r.progress.days, daysLast: r.progress.daysLast, streak: r.progress.streak, goals: r.progress.goals, goalsLast: r.progress.goalsLast, wrong: r.progress.wrong, wrongLast: r.progress.wrongLast,
       weak: r.weak.slice(0, 3).map(w => ({ title: w.title, text: w.text, step: w.steps[0] })),
-      advice: r.tasks.map(t => t.title + '（' + t.why + '）')
+      advice: r.tasks.map(t => t.title + '（' + t.why + '）'),
+      town: r.town
     };
   }
 
-  const KA = { RULES, PRI, MINUTES, SUBJ, STATUS, SOLUTIONS, MATH_KIND, CHEERS, CHEER_ORDER, analyze, pickCheer, parentSummary, _: { activity, units, mathKind, enKind, dayIdx, fill, wlStar } };
+  const KA = { RULES, PRI, MINUTES, SUBJ, STATUS, SOLUTIONS, MATH_KIND, CHEERS, CHEER_ORDER, analyze, pickCheer, parentSummary, townSummary, _: { activity, units, mathKind, enKind, dayIdx, fill, wlStar, townLabel } };
   if (typeof module !== 'undefined' && module.exports) module.exports = KA;
   root.KidsAssistant = KA;
 })(typeof window !== 'undefined' ? window : globalThis);

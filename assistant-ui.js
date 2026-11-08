@@ -162,6 +162,15 @@
       + `<div class="kas-stat"><span>🎓 錯題畢業</span><b>${p.grad} 題</b><small>社會、自然：隔 1、3、7 天各答對一次就畢業；其他科：同一題連續答對 3 次</small></div>`
       + `<div class="kas-stat"><span>✅ 已完成單元</span><b>${p.unitsDone} 個</b><small><a href="map.html">看課程地圖</a></small></div></div>`;
   }
+  // 小朋友鎮（遊戲）：今天／這 7 天答了幾題、做了哪些職業和任務（執照、工作、生活任務算每日英文；聊天不算）
+  const townItems = s => s.items.map(i => esc(i.label) + ' ' + i.n).join('、');
+  function townHtml(T) {
+    if (!T || !T.week.n) return '';
+    const d = T.today, w = T.week;
+    return '<section class="kas-sec card" id="kas-town"><h2>🏘️ 小朋友鎮（遊戲裡的英文）</h2>'
+      + (d.n ? '<p>今天答了 <b>' + d.n + '</b> 題（算進每日英文 ' + d.counted + ' 題，跟居民聊天 ' + d.chat + ' 句）・答對 ' + d.pct + '%</p><p class="muted">' + townItems(d) + '</p>' : '<p class="muted">今天還沒在小朋友鎮答題。</p>')
+      + '<p>這 7 天：' + w.days + ' 天、' + w.n + ' 題（算每日 ' + w.counted + ' 題）・' + townItems(w) + '</p></section>';
+  }
   function page(el) {
     if (!el) return;
     css();
@@ -175,7 +184,7 @@
       + `<section class="kas-sec card" id="kas-subjects"><h2>📚 各科進度</h2><div class="kas-grid">${r.subjects.map(subjCard).join('')}</div></section>`
       + `<section class="kas-sec card" id="kas-weak-sec"><h2>💡 比較弱的地方</h2>${r.weak.length ? `<ol class="kas-weak" id="kas-weak">${r.weak.map(weakLi).join('')}</ol>` : '<p class="muted">目前沒有特別弱的地方 👍 錯題多起來時，這裡會告訴你怎麼練。</p>'}</section>`
       + `<section class="kas-sec card" id="kas-next-sec"><h2>🧭 還沒開始的（下一步）</h2>${r.next.length ? `<ul class="kas-next" id="kas-next">${r.next.map(n => `<li data-k="${n.k}"><span>${n.icon} <b>${esc(n.subj)}</b>：${esc(n.title)}</span><a class="btn" href="${esc(link(n.href))}">${n.first ? '從這裡開始' : '下一個'} ▶</a></li>`).join('')}</ul>` : '<p class="muted">每一科都開始了，很棒！</p>'}</section>`
-      + `<section class="kas-sec card" id="kas-prog-sec"><h2>📈 我的進步（這 7 天和前 7 天比）</h2>${progHtml(r.progress)}</section>`;
+      + `<section class="kas-sec card" id="kas-prog-sec"><h2>📈 我的進步（這 7 天和前 7 天比）</h2>${progHtml(r.progress)}</section>` + townHtml(r.town);
     document.body.setAttribute('data-rendered', String(Date.now()));
   }
 
@@ -188,6 +197,7 @@
         + `<p>練習 <b>${P.days}</b> 天（前 7 天 ${P.daysLast} 天）・連續 <b>${P.streak}</b> 天・完成關卡 <b>${P.goals}</b> 個（前 7 天 ${P.goalsLast} 個）・答錯 <b>${P.wrong}</b> 題（前 7 天 ${P.wrongLast} 題）</p>`
         + `<div class="tblwrap"><table class="kas-tbl"><thead><tr><th>科目</th><th>練習天數</th><th>完成關卡</th><th>錯題庫</th><th>狀態</th></tr></thead><tbody>`
         + P.rows.map(x => `<tr data-k="${x.k}"><td>${x.icon} ${esc(x.name)}</td><td class="n">${x.days}</td><td class="n">${x.goals}</td><td class="n">${x.mistakes}</td><td>${esc(x.status)}</td></tr>`).join('') + '</tbody></table></div>'
+        + (P.town && P.town.week.n ? `<p id="kas-parent-town">🏘️ 小朋友鎮：這 7 天 <b>${P.town.week.n}</b> 題（算每日英文 ${P.town.week.counted} 題、聊天 ${P.town.week.chat} 句）・今天 ${P.town.today.n} 題${P.town.today.n ? '：' + townItems(P.town.today) : ''}</p>` : '')
         + `<h3>弱點前 3 名</h3>${P.weak.length ? `<ol>${P.weak.map(w => `<li>${esc(w.title)}（${esc(w.text)}）— 建議：${esc(w.step)}</li>`).join('')}</ol>` : '<p class="muted">目前沒有錯題特別多的地方。</p>'}`
         + `<h3>建議今天做</h3>${P.advice.length ? `<ol>${P.advice.map(a => `<li>${esc(a)}</li>`).join('')}</ol>` : '<p class="muted">今天的任務都完成了。</p>'}`
         + `<p class="muted"><a href="assistant.html">🦉 打開學習小助理完整頁</a>（各科進度、弱點解法、進步比較）</p></section>`;
