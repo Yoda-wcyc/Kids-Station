@@ -170,6 +170,17 @@ body:not(.is-touch) .h-touch { opacity: .6; }
 #objarrow { width: 16px; height: 16px; flex: 0 0 16px; background: #E0352B; clip-path: polygon(50% 0, 100% 100%, 50% 72%, 0 100%); }
 #tutorial { background: #26302A; color: #F2E6C4; padding: 10px 12px; border-radius: 6px; max-width: 320px; font-size: 15px; display: flex; flex-direction: column; gap: 4px; transform: rotate(-.6deg); box-shadow: 3px 3px 0 rgba(21,23,20,.25); pointer-events: auto; }
 #tutorial small { color: #D9D3C0; font-size: 13px; }
+#buildcard { background: #EFEBDD; color: #26302A; border: 3px solid #E0352B; padding: 8px 10px; border-radius: 6px; max-width: 330px; display: flex; flex-direction: column; gap: 4px; transform: rotate(.4deg); box-shadow: 3px 3px 0 rgba(21,23,20,.25); pointer-events: auto; }
+#buildcard[hidden] { display: none; }
+#buildcard > b { color: #E0352B; font-size: 13px; }
+#buildcard .en { font-size: 17px; font-weight: 700; line-height: 1.3; }
+#buildcard small { color: #5E6660; font-size: 14px; }
+#buildcard .bc-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+#buildcard .hb-btn { min-width: 48px; min-height: 44px; padding: 0 10px; font-size: 15px; }
+#buildcard .hb-btn.ok { background: #3E6B3A; color: #EFEBDD; }
+#bc-res { font-size: 13px; max-height: 120px; overflow: auto; }
+#bc-res .ok { color: #3E6B3A; } #bc-res .no { color: #B3261E; }
+#bc-res .en { font-size: 13px; font-weight: 600; }
 #tutorial .link { align-self: flex-end; background: none; border: 0; color: #F2C46B; text-decoration: underline; font-size: 13px; padding: 6px; cursor: pointer; }
 .quest-list { display: flex; flex-direction: column; gap: 6px; max-height: 46vh; overflow: auto; }
 .quest-item { padding: 6px 10px; border-radius: 4px; background: rgba(38,48,42,.06); opacity: .55; }
