@@ -1,5 +1,5 @@
 {
-  "_doc": "小朋友鎮的生活英文任務（2026-11-08 P3 A 段）。grocery＝超市購物清單（喬爺爺給清單，到商店找李老闆照清單拿東西結帳；每一行算 1 題）；waiter＝餐廳服務生（湯姆主廚，聽客人點餐、把對的餐點放上托盤，每位客人算 1 題）；lost＝迷路的小麥克（聽他講怎麼走、選他住哪一間，再帶他走回家，各算 1 題；路線由程式照地圖算）；class＝林老師的英文課（題目從學習站 data/textbook.js 的五上／五下課本句子出，載不到就用句型 patterns.js 有 tb 標記的例句）；daily＝每日鎮民委託（依台北日期每天 3 個，stat 是哪一種任務做了幾次）。pay：每題答對 perQ 金幣、整個任務全對再 +allRight。英文全部原創。",
+  "_doc": "小朋友鎮的生活英文任務（2026-11-08 P3 A 段）。grocery＝超市購物清單（喬爺爺給清單，到商店找李老闆照清單拿東西結帳；每一行算 1 題）；waiter＝餐廳服務生（湯姆主廚，聽客人點餐、把對的餐點放上托盤，每位客人算 1 題）；lost＝迷路的小麥克（聽他講怎麼走、選他住哪一間，再帶他走回家，各算 1 題；路線由程式照地圖算）；class＝林老師的英文課（題目從學習站 data/textbook.js 的五上／五下課本句子出，載不到就用句型 patterns.js 有 tb 標記的例句）；cook＝廚房做菜（P4 C：找湯姆主廚選一道菜，看英文食譜照順序做，每一步算 1 題；x＝錯卡片用的動詞，意思一定跟 v 不一樣）；daily＝每日鎮民委託（依台北日期每天 3 個，stat 是哪一種任務做了幾次）。pay：每題答對 perQ 金幣、整個任務全對再 +allRight。英文全部原創。",
   "pay": { "perQ": 1, "allRight": 1 },
   "grocery": {
     "npc": "neighbor1", "lines": 3, "maxQty": 3,
@@ -66,6 +66,469 @@
     "thanks": "Class is over. You did a great job today!",
     "thanksZh": "下課了，你今天表現得很好！"
   },
+  "cook": {
+    "npc": "chef",
+    "intro": "Welcome to my kitchen! Pick a dish. Read the recipe, then do each step in the right order. At home, always ask an adult to help with knives and the stove!",
+    "introZh": "歡迎來我的廚房！選一道菜，看食譜，照順序一步一步做。在家裡用刀子和爐子，一定要請大人幫忙喔！",
+    "ask": "{seq}, what do we do?",
+    "askZh": "{seq}要做什麼？",
+    "seq4": [
+      "First",
+      "Next",
+      "Then",
+      "Finally"
+    ],
+    "seq5": [
+      "First",
+      "Next",
+      "Then",
+      "After that",
+      "Finally"
+    ],
+    "seqZh4": [
+      "第一步",
+      "接著",
+      "然後",
+      "最後"
+    ],
+    "seqZh5": [
+      "第一步",
+      "接著",
+      "然後",
+      "再來",
+      "最後"
+    ],
+    "done": "{dish} is ready! It looks yummy. Great job, chef!",
+    "doneZh": "{dishZh}做好了！看起來好好吃。小廚師做得好！",
+    "dishes": [
+      {
+        "id": "fruitsalad",
+        "en": "Fruit Salad",
+        "zh": "水果沙拉",
+        "icon": "🥗",
+        "steps": [
+          {
+            "v": "wash",
+            "r": "the apples and the grapes",
+            "zh": "把蘋果和葡萄洗乾淨",
+            "x": "fry"
+          },
+          {
+            "v": "peel",
+            "r": "the bananas",
+            "zh": "把香蕉剝皮",
+            "x": "boil"
+          },
+          {
+            "v": "cut",
+            "r": "all the fruit into small pieces",
+            "zh": "把水果都切成小塊",
+            "x": "wash"
+          },
+          {
+            "v": "put",
+            "r": "the fruit in a big bowl",
+            "zh": "把水果放進大碗",
+            "x": "fry"
+          },
+          {
+            "v": "mix",
+            "r": "it with some yogurt",
+            "zh": "加一些優格拌一拌",
+            "x": "boil"
+          }
+        ]
+      },
+      {
+        "id": "eggs",
+        "en": "Scrambled Eggs",
+        "zh": "炒蛋",
+        "icon": "🍳",
+        "steps": [
+          {
+            "v": "break",
+            "r": "two eggs into a bowl",
+            "zh": "把兩顆蛋打進碗裡",
+            "x": "peel"
+          },
+          {
+            "v": "mix",
+            "r": "the eggs with a little salt",
+            "zh": "加一點鹽把蛋打散",
+            "x": "cut"
+          },
+          {
+            "v": "heat",
+            "r": "some oil in a pan",
+            "zh": "在鍋子裡把油燒熱",
+            "x": "wash"
+          },
+          {
+            "v": "fry",
+            "r": "the eggs and stir them slowly",
+            "zh": "把蛋下鍋慢慢翻炒",
+            "x": "peel"
+          }
+        ]
+      },
+      {
+        "id": "tomatosoup",
+        "en": "Tomato Egg Soup",
+        "zh": "番茄蛋花湯",
+        "icon": "🍅",
+        "steps": [
+          {
+            "v": "cut",
+            "r": "two tomatoes into pieces",
+            "zh": "把兩顆番茄切塊",
+            "x": "peel"
+          },
+          {
+            "v": "boil",
+            "r": "some water in a pot",
+            "zh": "在鍋子裡把水煮滾",
+            "x": "cut"
+          },
+          {
+            "v": "put",
+            "r": "the tomatoes in the hot water",
+            "zh": "把番茄放進熱水裡",
+            "x": "wash"
+          },
+          {
+            "v": "pour",
+            "r": "two mixed eggs into the soup slowly",
+            "zh": "把打散的兩顆蛋慢慢倒進湯裡",
+            "x": "peel"
+          },
+          {
+            "v": "add",
+            "r": "a little salt",
+            "zh": "加一點鹽",
+            "x": "wash"
+          }
+        ]
+      },
+      {
+        "id": "pancakes",
+        "en": "Pancakes",
+        "zh": "鬆餅",
+        "icon": "🥞",
+        "steps": [
+          {
+            "v": "mix",
+            "r": "flour, milk, and an egg in a bowl",
+            "zh": "把麵粉、牛奶和一顆蛋放進碗裡拌勻",
+            "x": "cut"
+          },
+          {
+            "v": "heat",
+            "r": "a little butter in a pan",
+            "zh": "在平底鍋裡把一點奶油加熱",
+            "x": "peel"
+          },
+          {
+            "v": "pour",
+            "r": "some of the batter into the pan",
+            "zh": "把一些麵糊倒進鍋子",
+            "x": "cut"
+          },
+          {
+            "v": "fry",
+            "r": "it until it is golden",
+            "zh": "煎到金黃色",
+            "x": "wash"
+          },
+          {
+            "v": "put",
+            "r": "some honey on top",
+            "zh": "在上面淋一些蜂蜜",
+            "x": "boil"
+          }
+        ]
+      },
+      {
+        "id": "friedrice",
+        "en": "Fried Rice",
+        "zh": "炒飯",
+        "icon": "🍚",
+        "steps": [
+          {
+            "v": "cut",
+            "r": "the carrots and the ham",
+            "zh": "把紅蘿蔔和火腿切好",
+            "x": "boil"
+          },
+          {
+            "v": "heat",
+            "r": "some oil in a pan",
+            "zh": "在鍋子裡把油燒熱",
+            "x": "wash"
+          },
+          {
+            "v": "fry",
+            "r": "the carrots and the ham",
+            "zh": "把紅蘿蔔和火腿下鍋炒",
+            "x": "peel"
+          },
+          {
+            "v": "add",
+            "r": "the rice and an egg",
+            "zh": "加進白飯和一顆蛋",
+            "x": "wash"
+          },
+          {
+            "v": "stir",
+            "r": "everything for three minutes",
+            "zh": "全部一起翻炒三分鐘",
+            "x": "cut"
+          }
+        ]
+      },
+      {
+        "id": "noodles",
+        "en": "Noodle Soup",
+        "zh": "湯麵",
+        "icon": "🍜",
+        "steps": [
+          {
+            "v": "boil",
+            "r": "some water in a pot",
+            "zh": "在鍋子裡把水煮滾",
+            "x": "cut"
+          },
+          {
+            "v": "put",
+            "r": "the noodles in the water",
+            "zh": "把麵放進水裡",
+            "x": "peel"
+          },
+          {
+            "v": "cook",
+            "r": "them for five minutes",
+            "zh": "煮五分鐘",
+            "x": "wash"
+          },
+          {
+            "v": "add",
+            "r": "some vegetables and an egg",
+            "zh": "加一些青菜和一顆蛋",
+            "x": "peel"
+          },
+          {
+            "v": "pour",
+            "r": "the soup into a big bowl",
+            "zh": "把湯麵倒進大碗",
+            "x": "fry"
+          }
+        ]
+      },
+      {
+        "id": "sandwich",
+        "en": "Egg Sandwich",
+        "zh": "蛋三明治",
+        "icon": "🥪",
+        "steps": [
+          {
+            "v": "boil",
+            "r": "two eggs for ten minutes",
+            "zh": "把兩顆蛋煮十分鐘",
+            "x": "fry"
+          },
+          {
+            "v": "peel",
+            "r": "the eggs",
+            "zh": "把蛋剝殼",
+            "x": "pour"
+          },
+          {
+            "v": "cut",
+            "r": "the eggs and mix them with mayo",
+            "zh": "把蛋切碎，跟美乃滋拌在一起",
+            "x": "boil"
+          },
+          {
+            "v": "put",
+            "r": "the egg mix between two pieces of bread",
+            "zh": "把蛋沙拉夾在兩片麵包中間",
+            "x": "fry"
+          }
+        ]
+      },
+      {
+        "id": "milkshake",
+        "en": "Banana Milkshake",
+        "zh": "香蕉奶昔",
+        "icon": "🥤",
+        "steps": [
+          {
+            "v": "peel",
+            "r": "two bananas",
+            "zh": "把兩根香蕉剝皮",
+            "x": "fry"
+          },
+          {
+            "v": "cut",
+            "r": "the bananas into pieces",
+            "zh": "把香蕉切成小段",
+            "x": "boil"
+          },
+          {
+            "v": "put",
+            "r": "the bananas and some milk in a blender",
+            "zh": "把香蕉和一些牛奶放進果汁機",
+            "x": "fry"
+          },
+          {
+            "v": "mix",
+            "r": "them for one minute",
+            "zh": "打一分鐘",
+            "x": "cut"
+          },
+          {
+            "v": "pour",
+            "r": "the milkshake into a glass",
+            "zh": "把奶昔倒進杯子",
+            "x": "peel"
+          }
+        ]
+      },
+      {
+        "id": "cornsoup",
+        "en": "Corn Soup",
+        "zh": "玉米濃湯",
+        "icon": "🌽",
+        "steps": [
+          {
+            "v": "boil",
+            "r": "some water in a pot",
+            "zh": "在鍋子裡把水煮滾",
+            "x": "cut"
+          },
+          {
+            "v": "add",
+            "r": "a can of corn",
+            "zh": "加一罐玉米",
+            "x": "peel"
+          },
+          {
+            "v": "stir",
+            "r": "the soup slowly",
+            "zh": "慢慢攪拌湯",
+            "x": "cut"
+          },
+          {
+            "v": "add",
+            "r": "some milk and a little salt",
+            "zh": "加一些牛奶和一點鹽",
+            "x": "wash"
+          }
+        ]
+      },
+      {
+        "id": "dumplings",
+        "en": "Dumplings",
+        "zh": "水餃",
+        "icon": "🥟",
+        "steps": [
+          {
+            "v": "boil",
+            "r": "water in a big pot",
+            "zh": "在大鍋子裡把水煮滾",
+            "x": "peel"
+          },
+          {
+            "v": "put",
+            "r": "the dumplings into the water",
+            "zh": "把水餃放進水裡",
+            "x": "cut"
+          },
+          {
+            "v": "cook",
+            "r": "them until they float",
+            "zh": "煮到水餃浮起來",
+            "x": "wash"
+          },
+          {
+            "v": "take",
+            "r": "them out and put them on a plate",
+            "zh": "撈起來放到盤子上",
+            "x": "boil"
+          }
+        ]
+      },
+      {
+        "id": "veggies",
+        "en": "Vegetable Stir-Fry",
+        "zh": "炒青菜",
+        "icon": "🥬",
+        "steps": [
+          {
+            "v": "wash",
+            "r": "the vegetables",
+            "zh": "把青菜洗乾淨",
+            "x": "fry"
+          },
+          {
+            "v": "cut",
+            "r": "them into pieces",
+            "zh": "把青菜切段",
+            "x": "boil"
+          },
+          {
+            "v": "heat",
+            "r": "some oil in a pan",
+            "zh": "在鍋子裡把油燒熱",
+            "x": "peel"
+          },
+          {
+            "v": "fry",
+            "r": "the vegetables quickly",
+            "zh": "把青菜快炒",
+            "x": "wash"
+          },
+          {
+            "v": "add",
+            "r": "a little salt",
+            "zh": "加一點鹽",
+            "x": "peel"
+          }
+        ]
+      },
+      {
+        "id": "toast",
+        "en": "Toast with Jam",
+        "zh": "果醬吐司",
+        "icon": "🍞",
+        "steps": [
+          {
+            "v": "put",
+            "r": "two slices of bread in the toaster",
+            "zh": "把兩片吐司放進烤麵包機",
+            "x": "boil"
+          },
+          {
+            "v": "wait",
+            "r": "for two minutes",
+            "zh": "等兩分鐘",
+            "x": "wash"
+          },
+          {
+            "v": "take",
+            "r": "out the toast",
+            "zh": "把吐司拿出來",
+            "x": "fry"
+          },
+          {
+            "v": "put",
+            "r": "some jam on it",
+            "zh": "在上面抹一些果醬",
+            "x": "boil"
+          }
+        ]
+      }
+    ]
+  },
   "daily": [
     { "id": "d_shop", "who": "neighbor1", "en": "Grandpa Joe: Please help me buy food today.", "zh": "喬爺爺：今天請幫我買一次東西。", "stat": "shop", "need": 1, "coins": 3 },
     { "id": "d_shop2", "who": "neighbor2", "en": "Lily: Grandpa Joe needs a lot of food. Shop for him two times.", "zh": "莉莉：喬爺爺要買很多東西，幫他買兩次。", "stat": "shop", "need": 2, "coins": 3 },
@@ -75,6 +538,7 @@
     { "id": "d_class", "who": "teacher", "en": "Ms. Lin: Come to my English class today.", "zh": "林老師：今天來上一堂英文課。", "stat": "class", "need": 1, "coins": 3 },
     { "id": "d_class2", "who": "teacher", "en": "Ms. Lin: Take two English lessons today.", "zh": "林老師：今天上兩堂英文課。", "stat": "class", "need": 2, "coins": 3 },
     { "id": "d_talk", "who": "parkkid", "en": "Ben: Talk with three people in town.", "zh": "小班：跟小鎮裡的三個人聊天。", "stat": "talk", "need": 3, "coins": 2 },
-    { "id": "d_work", "who": "neighbor1", "en": "Grandpa Joe: Do any job in town one time.", "zh": "喬爺爺：在小鎮做一次任何工作（有執照的職業）。", "stat": "work", "need": 1, "coins": 2 }
+    { "id": "d_work", "who": "neighbor1", "en": "Grandpa Joe: Do any job in town one time.", "zh": "喬爺爺：在小鎮做一次任何工作（有執照的職業）。", "stat": "work", "need": 1, "coins": 2 },
+    { "id": "d_cook", "who": "chef", "en": "Chef Tom: Cook one dish with me in the kitchen today.", "zh": "湯姆主廚：今天來廚房跟我做一道菜。", "stat": "cook", "need": 1, "coins": 3 }
   ]
 }
