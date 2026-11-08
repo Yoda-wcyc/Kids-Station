@@ -1,54 +1,187 @@
 {
-  "_doc": "英文小書（M8 第 2 段）：全部是這個遊戲自己寫的原創短篇（國小五年級程度、約 60–120 字）。en＝英文內文、zh＝中文翻譯、q＝讀完的理解題（options 第一個是正確答案，出題時會打亂）。每篇每天答對第一次給 coins 金幣。",
+  "_doc": "英文小書：全部是這個遊戲自己寫的原創短篇（國小四～六年級程度）。en＝英文內文、zh＝中文翻譯、q＝讀完的理解題（options 第一個是正確答案，出題時會打亂）。lv（M9 新增，選填，沒寫＝mid）：easy 約 50–70 字、mid 約 75–100 字、hard 約 110–150 字；easy 一開始就能讀，讀懂 3 篇不同的 easy 開 mid、3 篇 mid 開 hard（core/books.js）。每篇每天答對第一次給 coins 金幣，一天最多 dailyCap 篇有金幣（M9 新增）。",
   "coins": 1,
+  "dailyCap": 8,
   "books": [
     {
-      "id": "kite", "title": "The Lost Kite", "title_zh": "不見的風箏",
+      "id": "nightmarket", "lv": "easy", "title": "A Night at the Night Market", "title_zh": "夜市的晚上",
+      "en": "On Friday night, Kai and his mom went to the night market. It was busy and bright. Kai smelled fried chicken and sweet corn. First, they ate hot stinky tofu. Kai did not like the smell, but he liked the taste! Then he played a ring game and won a small toy turtle. He carried it home with a big smile.",
+      "zh": "星期五晚上，阿凱和媽媽去逛夜市。夜市好熱鬧、好亮。阿凱聞到炸雞和甜玉米的香味。他們先吃了熱熱的臭豆腐。阿凱不喜歡那個味道，可是很喜歡它吃起來的味道！接著他玩套圈圈，贏到一隻小玩具烏龜。他笑得好開心，把烏龜帶回家。",
+      "q": { "prompt": "What did Kai win at the ring game?", "zh": "阿凱玩套圈圈贏到什麼？", "options": ["A small toy turtle", "A bag of sweet corn", "Some fried chicken", "A red balloon"] }
+    },
+    {
+      "id": "coco", "lv": "easy", "title": "Bath Time for Coco", "title_zh": "可可洗澡囉",
+      "en": "Coco is a little brown puppy. She loves to play in the mud. One afternoon, she came home very dirty. \"Bath time!\" said Anna. Coco ran under the bed. Anna put a toy duck in the warm water. Coco looked at the duck and slowly walked to the tub. She jumped in and splashed water everywhere. Now Anna was wet too!",
+      "zh": "可可是一隻咖啡色的小狗，最喜歡在泥巴裡玩。有一天下午，牠髒兮兮地回到家。「洗澡時間到！」安娜說。可可跑到床底下躲起來。安娜在溫水裡放了一隻玩具鴨。可可看著那隻鴨子，慢慢走到澡盆旁邊，跳進去把水濺得到處都是。這下安娜也全身濕了！",
+      "q": { "prompt": "What made Coco walk to the tub?", "zh": "什麼東西讓可可走到澡盆旁邊？", "options": ["A toy duck in the water", "A piece of meat", "Some mud on the floor", "A new red ball"] }
+    },
+    {
+      "id": "puddle", "lv": "easy", "title": "Where Did the Puddle Go?", "title_zh": "水坑跑去哪裡了？",
+      "en": "After the rain, there was a big puddle in front of Jay's school. In the morning, Jay jumped over it. In the afternoon, the sun was hot, and the puddle was smaller. The next day, it was gone! \"Where did the water go?\" Jay asked. His teacher said, \"The sun turned it into water vapor. It went up into the air.\"",
+      "zh": "下過雨以後，阿傑的學校前面有一個大水坑。早上，阿傑從水坑上跳過去。到了下午，太陽很大，水坑變小了。第二天，水坑不見了！「水跑去哪裡了？」阿傑問。老師說：「太陽把它變成水蒸氣，飄到空氣裡去了。」",
+      "q": { "prompt": "Where did the water in the puddle go?", "zh": "水坑裡的水跑去哪裡了？", "options": ["Up into the air", "Under the school", "Into Jay's shoes", "Into the river"] }
+    },
+    {
+      "id": "shoe", "lv": "easy", "title": "One Shoe Missing", "title_zh": "少了一隻鞋",
+      "en": "It was time for school, but Rosa could find only one shoe. She looked under her bed. She looked behind the door. It was not there. Then she heard a noise in the kitchen. Her baby brother was sitting on the floor. He had her shoe on his head like a hat! Rosa laughed and gave him a hug.",
+      "zh": "要上學了，可是蘿莎只找到一隻鞋。她找了床底下，也找了門後面，都沒有。後來她聽到廚房有聲音。她的小弟弟坐在地板上，把她的鞋子戴在頭上，好像一頂帽子！蘿莎笑出來，抱了弟弟一下。",
+      "q": { "prompt": "Where was the missing shoe?", "zh": "不見的那隻鞋在哪裡？", "options": ["On her baby brother's head", "Under her bed", "Behind the door", "In her school bag"] }
+    },
+    {
+      "id": "frogs", "lv": "easy", "title": "The Frog Concert", "title_zh": "青蛙音樂會",
+      "en": "Last summer, Hao stayed at Grandma's farm. Every night, the frogs sang by the pond. \"Ribbit, ribbit!\" Hao could not sleep. \"Why are they so loud?\" he asked. \"The boy frogs are calling the girl frogs,\" Grandma said. \"It is their love song.\" Hao smiled. He closed his eyes and listened. Soon, the frog song helped him fall asleep.",
+      "zh": "去年夏天，小豪住在奶奶的農場。每天晚上，青蛙都在池塘邊唱歌：「呱呱、呱呱！」小豪睡不著。「牠們為什麼這麼吵？」他問。奶奶說：「公青蛙在呼喚母青蛙，那是牠們的情歌。」小豪笑了，閉上眼睛聽。沒多久，青蛙的歌聲就讓他睡著了。",
+      "q": { "prompt": "Why do the boy frogs sing, according to Grandma?", "zh": "奶奶說，公青蛙為什麼唱歌？", "options": ["To call the girl frogs", "To wake up the farm", "Because they are hungry", "Because it is raining"] }
+    },
+    {
+      "id": "redenvelope", "lv": "easy", "title": "New Year Money", "title_zh": "過年的紅包",
+      "en": "At Lunar New Year, Ivy got three red envelopes from her family. There was money inside each one. Her brother wanted to buy candy right away. Ivy had a different idea. She put her money in a pink piggy bank. \"I want to save it for a new bike,\" she said. Her dad gave her a high five.",
+      "zh": "過農曆新年的時候，艾薇從家人那裡拿到三個紅包，每個紅包裡都有錢。哥哥想馬上去買糖果，艾薇有不一樣的想法。她把錢放進粉紅色的小豬撲滿。「我要存起來買一台新腳踏車。」她說。爸爸跟她擊掌。",
+      "q": { "prompt": "What does Ivy want to buy with her money?", "zh": "艾薇想用她的錢買什麼？", "options": ["A new bike", "Some candy", "A pink piggy bank", "More red envelopes"] }
+    },
+    {
+      "id": "snails", "lv": "easy", "title": "The Slow Race", "title_zh": "慢吞吞的比賽",
+      "en": "Max and Ella found two snails in the garden after the rain. \"Let's have a race!\" said Max. They put the snails on a long leaf. Ella's snail went straight. Max's snail turned around and went the wrong way. After ten minutes, Ella's snail reached the end of the leaf. \"Snails are slow,\" Max said, \"but this was fun!\"",
+      "zh": "下過雨以後，麥克斯和艾拉在花園裡找到兩隻蝸牛。「我們來比賽！」麥克斯說。他們把蝸牛放在一片長長的葉子上。艾拉的蝸牛直直往前爬，麥克斯的蝸牛卻掉頭往反方向走。過了十分鐘，艾拉的蝸牛爬到葉子的另一頭。麥克斯說：「蝸牛好慢，可是好好玩！」",
+      "q": { "prompt": "Whose snail won the race?", "zh": "誰的蝸牛贏了？", "options": ["Ella's snail", "Max's snail", "Both snails at the same time", "A snail from the next garden"] }
+    },
+    {
+      "id": "moonfest", "lv": "easy", "title": "Moon Festival on the Roof", "title_zh": "屋頂上的中秋節",
+      "en": "On Moon Festival, many families in Taiwan have a barbecue. This year, Wei's family cooked corn and meat on the roof. Wei ate a moon cake and a big pomelo. Then he put the pomelo skin on his head. \"Look, I'm wearing a hat!\" he said. Everyone laughed. Above them, the full moon was round and bright.",
+      "zh": "中秋節的時候，台灣很多家庭會烤肉。今年，小偉家在屋頂上烤玉米和肉。小偉吃了一個月餅和一顆大柚子，然後把柚子皮戴在頭上。「你們看，我戴帽子了！」他說。大家都笑了。他們頭上的滿月又圓又亮。",
+      "q": { "prompt": "What did Wei wear on his head?", "zh": "小偉頭上戴了什麼？", "options": ["Pomelo skin", "A paper moon", "A moon cake box", "His dad's cap"] }
+    },
+    {
+      "id": "planes", "lv": "easy", "title": "The Paper Plane Test", "title_zh": "紙飛機實驗",
+      "en": "Lucy made two paper planes. One was big, and one was small. \"Which one will fly farther?\" she asked her friend Omar. Omar guessed the big one. They threw the planes at the same time. The small plane flew across the whole room! The big plane fell near their feet. \"Let's try again tomorrow with new planes,\" Lucy said.",
+      "zh": "露西做了兩架紙飛機，一架大、一架小。「你猜哪一架會飛得比較遠？」她問朋友奧馬。奧馬猜大的那架。他們同時把飛機丟出去。小飛機飛過了整個房間！大飛機卻掉在他們腳邊。露西說：「明天我們再做新的飛機來試一次。」",
+      "q": { "prompt": "Which plane flew farther?", "zh": "哪一架飛機飛得比較遠？", "options": ["The small plane", "The big plane", "They flew the same", "Omar's red plane"] }
+    },
+    {
+      "id": "busseat", "lv": "easy", "title": "A Seat on the Bus", "title_zh": "公車上的座位",
+      "en": "Every morning, Jun takes the bus to school with his dad. Today, the bus was full. Jun found the last empty seat and sat down. At the next stop, an old woman got on with a heavy bag. Jun stood up quickly. \"Please sit here,\" he said. The woman thanked him. Jun's dad was proud of him all day.",
+      "zh": "每天早上，阿俊都和爸爸一起搭公車上學。今天公車好擠，阿俊找到最後一個空位坐下。到了下一站，一位老奶奶提著很重的袋子上車。阿俊馬上站起來說：「請坐這裡。」老奶奶謝謝他。爸爸一整天都覺得他好棒。",
+      "q": { "prompt": "Why did Jun stand up?", "zh": "阿俊為什麼站起來？", "options": ["To give his seat to an old woman", "Because it was his stop", "To look out the window", "Because his bag was heavy"] }
+    },
+    {
+      "id": "kite", "lv": "mid", "title": "The Lost Kite", "title_zh": "不見的風箏",
       "en": "On Sunday, Mia and her brother Leo went to the park with a red kite. The wind was strong, and the kite flew high into the sky. Suddenly, the string broke! The kite fell into a tall tree. Mia was sad, but Leo had an idea. He found a long stick and stood on a big rock. Slowly, he pushed the kite out of the branches. \"Thank you, Leo!\" Mia said with a big smile. After that, they sat under the tree and shared some cookies. It was a happy day.",
       "zh": "星期天，米亞和哥哥里歐帶著一個紅色風箏去公園。風很大，風箏飛得好高好高。突然，線斷了！風箏掉進一棵高高的樹裡。米亞很難過，但是里歐想到一個辦法。他找到一根長長的棍子，站到一顆大石頭上，慢慢把風箏從樹枝裡推出來。「謝謝你，里歐！」米亞笑得好開心。之後，他們坐在樹下一起分餅乾吃。那是快樂的一天。",
       "q": { "prompt": "How did Leo get the kite back?", "zh": "里歐怎麼把風箏拿回來？", "options": ["He used a long stick.", "He climbed the tree.", "He called his dad.", "He bought a new kite."] }
     },
     {
-      "id": "beans", "title": "Tom's Bean Pot", "title_zh": "湯姆的豆子盆栽",
+      "id": "beans", "lv": "mid", "title": "Tom's Bean Pot", "title_zh": "湯姆的豆子盆栽",
       "en": "Tom wanted to grow something by himself. His mom gave him five bean seeds and a small pot. Tom put the seeds in the soil and gave them some water. Every morning before school, he checked the pot. For three days, nothing happened. Tom was worried. \"Be patient,\" his mom said. \"Plants need time.\" On the seventh day, Tom saw two tiny green leaves. He shouted, \"They are growing!\" Now Tom waters his beans every day, and he writes notes about them in his notebook.",
       "zh": "湯姆想要自己種東西。媽媽給他五顆豆子種子和一個小花盆。湯姆把種子放進土裡，澆了一點水。每天早上上學前，他都會去看看花盆。三天過去了，什麼都沒有發生。湯姆好擔心。「要有耐心，」媽媽說，「植物需要時間。」到了第七天，湯姆看到兩片小小的綠葉子。他大喊：「它們在長大了！」現在湯姆每天幫豆子澆水，還把觀察寫在筆記本裡。",
       "q": { "prompt": "What did Tom's mom tell him?", "zh": "湯姆的媽媽跟他說什麼？", "options": ["Be patient.", "Go to bed.", "Buy more seeds.", "Eat your beans."] }
     },
     {
-      "id": "library", "title": "A Rainy Day at the Library", "title_zh": "下雨天的圖書館",
+      "id": "library", "lv": "mid", "title": "A Rainy Day at the Library", "title_zh": "下雨天的圖書館",
       "en": "Ben loves soccer, but on Saturday it rained all day. He could not play outside. \"Let's go to the library,\" said his dad. At first, Ben did not want to go. At the library, he found a big book about space. It had pictures of the moon, Mars, and bright stars. Ben read for two hours! He learned that a day on Mars is a little longer than a day on Earth. On the way home, Ben asked, \"Can we come back next week? Maybe I will be an astronaut one day.\"",
       "zh": "班很愛踢足球，可是星期六下了一整天的雨，他不能出去玩。「我們去圖書館吧，」爸爸說。一開始，班不想去。到了圖書館，他找到一本講太空的大書，裡面有月亮、火星和亮晶晶星星的圖片。班一看就看了兩個小時！他學到：火星上的一天，比地球上的一天長一點點。回家的路上，班問：「我們下星期可以再來嗎？說不定有一天我會當太空人。」",
       "q": { "prompt": "Why did Ben go to the library?", "zh": "班為什麼去圖書館？", "options": ["Because it was raining.", "Because he lost his ball.", "Because he had homework.", "Because his friend was there."] }
     },
     {
-      "id": "newgirl", "title": "The New Girl", "title_zh": "新來的同學",
+      "id": "newgirl", "lv": "mid", "title": "The New Girl", "title_zh": "新來的同學",
       "en": "Lily was a new student in Class 5B. On her first day, she sat alone at lunch. She did not know anyone, so she felt shy. Then a boy named Ken came over. \"Hi, I'm Ken. Do you like drawing?\" he asked. Lily nodded. \"Our drawing club meets after school. Do you want to come?\" That afternoon, Lily drew a funny cat with big glasses. Everyone in the club laughed and clapped. Lily smiled. She was not alone anymore. Now she and Ken draw together every Wednesday.",
       "zh": "莉莉是五年 B 班的新同學。第一天午餐時，她一個人坐著。她誰都不認識，所以覺得很害羞。這時候，一個叫阿健的男生走過來。「嗨，我是阿健。你喜歡畫畫嗎？」他問。莉莉點點頭。「我們的畫畫社放學後有活動，你要不要來？」那天下午，莉莉畫了一隻戴著大眼鏡的好笑貓咪。社團裡的大家都笑了，還一起拍手。莉莉也笑了，她不再是一個人了。現在，她每個星期三都和阿健一起畫畫。",
       "q": { "prompt": "What did Lily draw?", "zh": "莉莉畫了什麼？", "options": ["A funny cat with big glasses", "A big dog in the rain", "A red car on the road", "A tall tree in the park"] }
     },
     {
-      "id": "bike", "title": "Grandpa's Old Bike", "title_zh": "爺爺的舊腳踏車",
+      "id": "bike", "lv": "mid", "title": "Grandpa's Old Bike", "title_zh": "爺爺的舊腳踏車",
       "en": "Sam's grandpa had an old blue bike in his garage. It was dusty, and one tire was flat. \"Let's fix it together,\" Grandpa said. They cleaned the bike, filled the tire with air, and oiled the chain. Then they went to the park. Sam got on the bike, but he fell down after a few meters. His knee hurt a little. \"Everyone falls when they are learning,\" Grandpa said. Sam tried again and again. By sunset, he could ride all the way around the lake.",
       "zh": "山姆的爺爺在車庫裡有一台舊的藍色腳踏車。車子上都是灰塵，還有一個輪胎沒氣了。「我們一起把它修好吧，」爺爺說。他們把腳踏車擦乾淨、幫輪胎打氣，還在鏈條上了油。然後他們去公園。山姆騎上車，可是才騎幾公尺就跌倒了，膝蓋有一點痛。「每個人學的時候都會跌倒，」爺爺說。山姆試了一次又一次。到了太陽下山，他已經可以繞著湖騎一整圈了。",
       "q": { "prompt": "What did Sam do after he fell down?", "zh": "山姆跌倒以後做了什麼？", "options": ["He tried again and again.", "He went home and slept.", "He gave the bike away.", "He asked for a new bike."] }
     },
     {
-      "id": "butter", "title": "The Bakery Cat", "title_zh": "麵包店的貓",
+      "id": "butter", "lv": "mid", "title": "The Bakery Cat", "title_zh": "麵包店的貓",
       "en": "Every morning, a small yellow cat sat in front of Amy's bakery. It looked at the warm bread through the window. Amy felt sorry for the cat. One day, she put some water and a little fish in a bowl by the door. The cat ate it all and purred. After that, it came back every day. Amy named it Butter because its fur was soft and yellow. Soon, many children came to the bakery to say hello to Butter. Now Amy's bakery is the busiest shop on the street.",
       "zh": "每天早上，都有一隻黃色小貓坐在艾美的麵包店門口，隔著窗戶看著熱騰騰的麵包。艾美覺得小貓好可憐。有一天，她在門邊放了一碗水和一點小魚。小貓全部吃光，還發出呼嚕呼嚕的聲音。從那天起，牠每天都回來。艾美幫牠取名叫「奶油」，因為牠的毛又軟又黃。很快的，很多小朋友都跑來麵包店跟奶油打招呼。現在，艾美的麵包店是整條街上最熱鬧的店。",
       "q": { "prompt": "Why did Amy name the cat Butter?", "zh": "艾美為什麼幫貓取名叫「奶油」？", "options": ["Its fur was soft and yellow.", "It ate butter every day.", "It was very big and fat.", "It came from a farm."] }
     },
     {
-      "id": "picnic", "title": "The Class Picnic", "title_zh": "班級野餐",
+      "id": "picnic", "lv": "mid", "title": "The Class Picnic", "title_zh": "班級野餐",
       "en": "On Friday, Ms. Chen's class had a picnic at the river park. Everyone brought lunch in a bag. When it was time to eat, Jake opened his bag and saw only a water bottle. He forgot his lunch at home! Jake's face turned red. His friend Nina gave him half of her sandwich. Max shared his apple, and Ivy gave him some crackers. \"Thank you, everyone,\" Jake said. \"This is the best lunch ever!\" After lunch, the class played games and watched the ducks on the river.",
       "zh": "星期五，陳老師的班級到河濱公園野餐，每個人都帶了一袋午餐。要吃飯的時候，傑克打開袋子，裡面只有一瓶水——他把午餐忘在家裡了！傑克的臉都紅了。他的朋友妮娜分給他半個三明治，麥克斯分給他蘋果，艾薇給他一些餅乾。「謝謝大家，」傑克說，「這是我吃過最棒的午餐！」吃完午餐，全班一起玩遊戲，還看了河上的鴨子。",
       "q": { "prompt": "What did Nina give Jake?", "zh": "妮娜給了傑克什麼？", "options": ["Half of her sandwich", "Her red apple", "Some crackers", "A water bottle"] }
     },
     {
-      "id": "stars", "title": "Camping Under the Stars", "title_zh": "星空下露營",
+      "id": "stars", "lv": "mid", "title": "Camping Under the Stars", "title_zh": "星空下露營",
       "en": "Emma's family went camping in the mountains. They set up a green tent next to a quiet lake. At night, there were no city lights, so the sky was very dark. Emma looked up and saw hundreds of stars. Her mom showed her the Big Dipper. Suddenly, a shooting star went across the sky. \"Make a wish!\" said her dad. Emma closed her eyes and made a wish. She did not tell anyone what it was. It was her secret, and she kept it in her heart.",
       "zh": "艾瑪一家人去山上露營。他們在安靜的湖邊搭起一頂綠色帳篷。晚上，那裡沒有城市的燈光，所以天空非常暗。艾瑪抬起頭，看到好幾百顆星星。媽媽指給她看北斗七星。突然，一顆流星劃過天空。「快許願！」爸爸說。艾瑪閉上眼睛許了一個願望。她沒有告訴任何人那是什麼願望——那是她的祕密，她把它好好放在心裡。",
       "q": { "prompt": "Why was the sky very dark?", "zh": "為什麼天空非常暗？", "options": ["There were no city lights.", "It was raining hard.", "The moon was very big.", "They were inside the tent."] }
+    },
+    {
+      "id": "typhoon", "lv": "mid", "title": "A Typhoon Day Off", "title_zh": "颱風假",
+      "en": "Last night, the TV news said a big typhoon was coming. In the morning, Nora's school was closed. Outside, the wind was very strong, and the rain hit the windows hard. Nora's family stayed inside. They put tape on the windows and filled bottles with water. Then the power went out! Nora's mom lit a candle, and they played cards and told funny stories. When the lights came back, Nora felt a little sad. She liked their candle night.",
+      "zh": "昨天晚上，電視新聞說有一個大颱風要來。早上，諾拉的學校停課了。外面風好大，雨用力打在窗戶上。諾拉一家人待在家裡，在窗戶上貼膠帶，又把瓶子裝滿水。接著停電了！媽媽點了一根蠟燭，大家一起玩撲克牌、講好笑的故事。電來了以後，諾拉反而有一點難過，因為她很喜歡這個點蠟燭的晚上。",
+      "q": { "prompt": "Why did Nora feel a little sad at the end?", "zh": "最後諾拉為什麼有一點難過？", "options": ["She liked the candle night.", "Her school was closed.", "The typhoon broke a window.", "She lost the card game."] }
+    },
+    {
+      "id": "bees", "lv": "mid", "title": "The Dancing Bees", "title_zh": "會跳舞的蜜蜂",
+      "en": "In science class, Mr. Lin showed a video about honeybees. \"Bees cannot talk,\" he said, \"but they can dance.\" When a bee finds many flowers, it flies back to the hive. Then it dances in a special way. The dance shows the other bees which way to fly and how far to go. Soon, many bees leave the hive and find the flowers too. After class, Rita and her friends tried to do the bee dance in the hallway. They looked very silly, but they remembered the lesson.",
+      "zh": "自然課的時候，林老師播了一段蜜蜂的影片。「蜜蜂不會說話，」他說，「可是牠們會跳舞。」一隻蜜蜂找到很多花的時候，會飛回蜂巢，用一種特別的方式跳舞。這支舞會告訴其他蜜蜂要往哪個方向飛、要飛多遠。很快地，很多蜜蜂飛出蜂巢，也找到了那些花。下課後，麗塔和朋友們在走廊上學蜜蜂跳舞，看起來好好笑，可是她們都記住這一課了。",
+      "q": { "prompt": "What does a bee's dance tell the other bees?", "zh": "蜜蜂的舞告訴其他蜜蜂什麼？", "options": ["Where the flowers are", "When it will rain", "Who the queen is", "How old the bee is"] }
+    },
+    {
+      "id": "jademountain", "lv": "hard", "title": "Sunrise on Jade Mountain", "title_zh": "玉山上的日出",
+      "en": "Jade Mountain is the highest mountain in Taiwan. Last winter, Alex climbed it with his uncle. They started walking at two o'clock in the morning, when the sky was still black. Alex wore a hat, gloves, and a warm jacket, but his nose was very cold. The path was narrow and rocky, so they used flashlights and walked slowly. Alex wanted to stop many times. \"Just a little more,\" his uncle said each time. At last, they reached the top. Soon, the sky turned orange and pink, and the sun rose above a sea of clouds. Alex forgot about his cold nose. \"This is the best thing I have ever seen,\" he whispered.",
+      "zh": "玉山是台灣最高的山。去年冬天，艾力克斯和叔叔一起去爬玉山。他們凌晨兩點就出發，天空還是一片黑。艾力克斯戴了帽子和手套，穿了保暖的外套，可是鼻子還是好冰。山路又窄又多石頭，所以他們拿著手電筒慢慢走。艾力克斯好幾次都想停下來，叔叔每次都說：「再一下下就到了。」最後，他們終於登上山頂。沒多久，天空變成橘色和粉紅色，太陽從一片雲海上升起來。艾力克斯忘了鼻子有多冰，小聲地說：「這是我看過最美的東西。」",
+      "q": { "prompt": "Why did Alex and his uncle use flashlights?", "zh": "艾力克斯和叔叔為什麼要用手電筒？", "options": ["It was dark, and the path was rocky.", "They wanted to find animals.", "The sun was too bright.", "They lost their map."] }
+    },
+    {
+      "id": "musictruck", "lv": "hard", "title": "Ming and the Music Truck", "title_zh": "阿明和會唱歌的垃圾車",
+      "en": "Every Tuesday and Friday, the garbage truck comes to Ming's street. It plays music, so everyone knows it is coming. One evening, Ming saw his neighbor throw plastic bottles into the trash bag. \"Wait!\" Ming said politely. \"Plastic bottles can be recycled. They can become new things, like T-shirts or chairs.\" The neighbor was surprised. \"Really? I didn't know that,\" she said. Ming showed her the blue recycling bin. After that, his neighbor always washed her bottles and put them in the right place. At school, Ming told his class the story. His teacher gave him a sticker that said \"Earth Helper.\" Ming put it on his water bottle, which he uses every day.",
+      "zh": "每個星期二和星期五，垃圾車都會開到阿明家那條街。垃圾車會放音樂，所以大家都知道它來了。有一天傍晚，阿明看到鄰居把塑膠瓶丟進垃圾袋。「等一下！」阿明有禮貌地說，「塑膠瓶可以回收，還能變成新的東西，像是T恤或椅子。」鄰居很驚訝：「真的嗎？我都不知道。」阿明帶她看藍色的回收桶。從那以後，鄰居都會把瓶子洗乾淨，放到對的地方。在學校，阿明把這件事告訴全班。老師送他一張寫著「地球小幫手」的貼紙。阿明把貼紙貼在他每天都在用的水壺上。",
+      "q": { "prompt": "How does everyone know the garbage truck is coming?", "zh": "大家怎麼知道垃圾車來了？", "options": ["It plays music.", "It is painted blue.", "Ming shouts loudly.", "It comes every morning."] }
+    },
+    {
+      "id": "lighthouse", "lv": "hard", "title": "Kim and the Lighthouse", "title_zh": "小金和燈塔",
+      "en": "Kim's grandfather lived in a small white lighthouse by the sea. Every night, he turned on the big lamp at the top so ships could see the rocks. One stormy evening, Grandpa hurt his leg and could not climb the stairs. \"The fishing boats are coming home soon,\" he said worriedly. Kim was only eleven, but she knew what to do. She took a flashlight and climbed all ninety-nine steps. The wind was howling, and the windows shook. At the top, she pushed the big switch, and the lamp began to turn. Far away, she saw the small lights of the boats moving safely toward the harbor. The next morning, the fishermen brought Kim a basket of fresh fish to say thank you.",
+      "zh": "小金的爺爺住在海邊一座白色的小燈塔裡。每天晚上，他都會打開塔頂的大燈，讓船看得到礁石。有一天晚上颳著暴風雨，爺爺的腳受傷了，沒辦法爬樓梯。「漁船快要回來了。」他擔心地說。小金才十一歲，可是她知道該怎麼做。她拿著手電筒，一口氣爬完九十九級階梯。外面風呼呼地吹，窗戶都在搖。到了塔頂，她按下大開關，大燈開始轉動。她看到遠方漁船的小燈，平安地往港口開回來。第二天早上，漁夫們送給小金一籃新鮮的魚，謝謝她。",
+      "q": { "prompt": "Why did Kim climb the stairs that night?", "zh": "小金那天晚上為什麼要爬樓梯？", "options": ["To turn on the lamp for the boats", "To look for her grandfather", "To close the windows", "To catch some fish"] }
+    },
+    {
+      "id": "volcano", "lv": "hard", "title": "The Kitchen Volcano", "title_zh": "廚房火山",
+      "en": "For the school science fair, Hana and her brother made a volcano. First, they shaped a mountain out of clay around a small plastic bottle. They painted it brown and green. Next, they put baking soda and a little red food color into the bottle. \"Are you ready?\" Hana asked. Her brother poured in some vinegar. Suddenly, red foam rushed out of the top and ran down the sides like lava! Their classmates cheered. Then the judge asked, \"Why does it bubble?\" Hana explained that baking soda and vinegar make a gas when they mix. The gas pushes the foam up and out. They did not win first prize, but the judge said Hana gave the clearest answer of the day.",
+      "zh": "為了學校的科展，花子和弟弟做了一座火山。他們先用黏土圍著一個小塑膠瓶捏出一座山，再塗上咖啡色和綠色。接著，他們把小蘇打和一點紅色食用色素放進瓶子裡。「準備好了嗎？」花子問。弟弟倒進一些醋。突然，紅色的泡泡從山頂衝出來，像岩漿一樣沿著山流下來！同學們都在歡呼。評審問：「為什麼會冒泡泡？」花子說明：小蘇打和醋混在一起會產生氣體，氣體把泡泡往上推出來。他們沒有得到第一名，可是評審說花子的回答是今天最清楚的。",
+      "q": { "prompt": "What pushes the foam out of the volcano?", "zh": "是什麼把泡泡推出火山？", "options": ["A gas from baking soda and vinegar", "Hot water in the bottle", "Her brother's hands", "The red food color"] }
+    },
+    {
+      "id": "turtle", "lv": "hard", "title": "The Turtle Under the Waves", "title_zh": "海浪下的海龜",
+      "en": "On a summer trip to Xiaoliuqiu, a small island near Taiwan, Ray went snorkeling for the first time. He floated on the water and looked down through his mask. Colorful fish swam between the rocks. Then something big moved under him. It was a green sea turtle! It was eating sea grass slowly and did not seem afraid. Ray wanted to touch its shell, but his guide shook her head. \"We must stay at least three meters away,\" she said later. \"Turtles are wild animals, and people can make them sick or scared.\" Ray understood. He watched the turtle quietly until it swam away. That night, he drew a picture of the turtle in his travel diary.",
+      "zh": "暑假去小琉球玩的時候，阿睿第一次浮潛。小琉球是台灣旁邊的一座小島。他浮在水面上，透過面鏡往下看，彩色的魚在石頭之間游來游去。突然，有個大大的東西在他下面移動，是一隻綠蠵龜！牠慢慢地吃著海草，一點也不怕人。阿睿很想摸摸牠的殼，可是導遊對他搖搖頭。導遊後來說：「我們至少要離牠三公尺。海龜是野生動物，人可能會讓牠們生病或受到驚嚇。」阿睿懂了。他安安靜靜地看著海龜，直到牠游走。那天晚上，他在旅行日記裡畫了這隻海龜。",
+      "q": { "prompt": "Why didn't Ray touch the turtle?", "zh": "阿睿為什麼沒有摸海龜？", "options": ["His guide said to stay away from it.", "The turtle swam away too fast.", "He was afraid of the turtle.", "The water was too deep."] }
+    },
+    {
+      "id": "oldmap", "lv": "hard", "title": "The Map in the Closet", "title_zh": "衣櫃裡的地圖",
+      "en": "While cleaning Grandma's old wooden closet, Tina and her cousin Paul found a folded piece of paper. It was a hand-drawn map of Grandma's village. There was a big red X next to a banyan tree. \"Treasure!\" Paul shouted. They ran outside with a small shovel. The banyan tree was still there, with long roots hanging down like a beard. They dug carefully next to the roots and found a rusty tin box. Inside were old photos, a few marbles, and a letter. The letter said, \"To whoever finds this: I was ten years old when I buried this box. Please keep my marbles and share them with a friend.\" It was signed by Grandma! That evening, Grandma laughed so hard that she cried.",
+      "zh": "緹娜和表哥保羅在整理奶奶的舊木頭衣櫃時，找到一張摺起來的紙。那是一張手畫的奶奶村子地圖，在一棵榕樹旁邊畫了一個大大的紅色叉叉。「是寶藏！」保羅大叫。他們拿著小鏟子跑出去。那棵榕樹還在，長長的氣根垂下來，好像鬍子一樣。他們在樹根旁邊小心地挖，挖到一個生鏽的鐵盒子。裡面有舊照片、幾顆彈珠，還有一封信。信上寫著：「給找到這個盒子的人：我十歲的時候埋了這個盒子。請收下我的彈珠，跟朋友一起分享。」署名竟然是奶奶！那天晚上，奶奶笑到流眼淚。",
+      "q": { "prompt": "Who buried the tin box?", "zh": "鐵盒子是誰埋的？", "options": ["Grandma, when she was ten", "Paul's father", "A pirate long ago", "Tina's teacher"] }
+    },
+    {
+      "id": "robot", "lv": "hard", "title": "The Careful Robot", "title_zh": "小心翼翼的機器人",
+      "en": "Owen's class was building small robots for a contest. Each robot had to carry a cup of water across a table without spilling it. Owen's team built a robot with four wheels and a flat top. On the first test, the robot moved too fast, and the water splashed everywhere. \"Our robot needs to be slower and gentler,\" said Mei, his teammate. They changed the program so the robot started slowly and stopped slowly. They also added a paper ring to hold the cup. On contest day, many robots dropped their cups. Owen's robot rolled carefully to the end of the table. Not a single drop fell out. The team learned that the fastest way is not always the best way.",
+      "zh": "歐文的班上在做參加比賽的小機器人。每個機器人都要把一杯水送過桌子，而且不能灑出來。歐文那一組做了一台有四個輪子、上面平平的機器人。第一次測試的時候，機器人跑太快，水灑得到處都是。隊友小美說：「我們的機器人要慢一點、輕一點。」他們修改程式，讓機器人慢慢出發、慢慢停下來，還加了一個紙圈把杯子固定住。比賽那天，很多機器人的杯子都掉了。歐文的機器人小心地開到桌子另一頭，一滴水都沒有灑出來。這一組學到：最快的方法不一定是最好的方法。",
+      "q": { "prompt": "Why did the water splash on the first test?", "zh": "第一次測試的時候，水為什麼灑出來？", "options": ["The robot moved too fast.", "The robot had only two wheels.", "The cup was too big.", "Mei bumped the table."] }
+    },
+    {
+      "id": "owl", "lv": "hard", "title": "The Ninja Bird", "title_zh": "忍者鳥",
+      "en": "Sophie's family went camping near a forest in Nantou. Late at night, Sophie heard a soft sound: \"Hoo, hoo.\" She opened the tent and saw two yellow eyes in a tree. It was an owl! Her dad turned off his flashlight so they would not scare it. He whispered that owls hunt at night. Their big eyes help them see in the dark, and their ears are so good that they can hear a mouse moving under the leaves. Also, their feathers are very soft, so they can fly without making a sound. Suddenly, the owl dropped from the branch and flew away. Sophie did not hear its wings at all. \"It's like a ninja bird,\" she said. Her dad laughed and agreed.",
+      "zh": "蘇菲一家人到南投的森林旁邊露營。半夜，蘇菲聽到一個輕輕的聲音：「呼、呼。」她打開帳篷，看到樹上有兩隻黃色的眼睛，是一隻貓頭鷹！爸爸把手電筒關掉，免得嚇到牠。爸爸小聲地說，貓頭鷹在晚上打獵。牠們的大眼睛在黑暗中看得見；耳朵也很厲害，連老鼠在落葉下面走動都聽得到。而且牠們的羽毛很軟，飛的時候一點聲音也沒有。突然，貓頭鷹從樹枝上往下一衝，飛走了，蘇菲完全沒有聽到翅膀的聲音。「牠好像忍者鳥喔！」她說。爸爸笑著說對。",
+      "q": { "prompt": "Why can owls fly without making a sound?", "zh": "貓頭鷹為什麼飛的時候沒有聲音？", "options": ["Their feathers are very soft.", "Their eyes are very big.", "They fly only at night.", "They are very small birds."] }
+    },
+    {
+      "id": "dragonboat", "lv": "hard", "title": "The Yellow Dragon Boat", "title_zh": "黃色的龍舟",
+      "en": "On Dragon Boat Festival, Tommy went to the river with his whole family. The banks were crowded with people holding umbrellas against the hot sun. Long boats with dragon heads waited in the water. Each boat had about twenty paddlers, a drummer at the front, and a flag catcher. Tommy's aunt was a paddler on the yellow boat. When the race began, the drummers beat their drums, and the paddlers moved together like one big machine. The yellow boat was behind at first, but it caught up near the end. At the finish line, the flag catcher on the yellow boat reached out and grabbed the flag first! Tommy jumped and shouted. Later, his aunt shared rice dumplings with everyone and said, \"The secret is to paddle together.\"",
+      "zh": "端午節那天，湯米和全家人一起到河邊。河岸上擠滿了撐傘擋太陽的人。水上停著一艘艘有龍頭的長船，每艘船上大約有二十個划手，船頭有一個打鼓的人，還有一個奪標手。湯米的阿姨是黃色龍舟的划手。比賽一開始，鼓手用力打鼓，划手們一起划，好像一台大機器。黃色龍舟一開始落後，可是快到終點的時候追上來了。在終點，黃色龍舟的奪標手伸出手，第一個搶到旗子！湯米跳起來大叫。後來，阿姨請大家吃粽子，還說：「祕訣就是大家一起划。」",
+      "q": { "prompt": "How did the yellow boat win the race?", "zh": "黃色龍舟是怎麼贏的？", "options": ["Its flag catcher grabbed the flag first.", "It started before the other boats.", "It had the most paddlers.", "The other boats stopped to eat."] }
+    },
+    {
+      "id": "southpole", "lv": "hard", "title": "A Letter from the South Pole", "title_zh": "從南極寄來的信",
+      "en": "Dear Lily, I am writing to you from a research station in Antarctica. It is summer here, but it is still very cold, about minus five degrees. In summer, the sun does not set at all. It goes around the sky all day and all night, so I wear an eye mask to sleep. Every day, my team studies the ice. We drill deep holes and take out long tubes of ice. Tiny bubbles of old air are trapped inside, so the ice tells us what the air was like thousands of years ago. Yesterday, a group of penguins walked past our station. They looked at us like we were the strange ones! Please study hard. Maybe one day you can come here too. Love, Aunt Grace",
+      "zh": "親愛的莉莉：我在南極的研究站寫信給你。這裡現在是夏天，可是還是很冷，大約零下五度。夏天的時候，太陽完全不會下山，整天整夜都在天上繞圈圈，所以我睡覺要戴眼罩。我們這一隊每天都在研究冰。我們會鑽很深的洞，拿出長長的冰柱。冰裡面困著很久以前的小氣泡，所以冰可以告訴我們幾千年前的空氣是什麼樣子。昨天，一群企鵝從研究站旁邊走過去，牠們看著我們，好像我們才是奇怪的動物！要好好讀書喔，說不定有一天你也能來這裡。愛你的葛蕾絲阿姨",
+      "q": { "prompt": "Why does Aunt Grace wear an eye mask to sleep?", "zh": "葛蕾絲阿姨為什麼睡覺要戴眼罩？", "options": ["The sun does not set in summer.", "The penguins are too noisy.", "Her room is very cold.", "She works only at night."] }
     }
   ]
 }
