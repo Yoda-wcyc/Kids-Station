@@ -1,5 +1,5 @@
 /* 世界史漫畫 第 1 冊 古文明・第 5 話（只有資料；這一話自己的圖形用 ComicArt.extend 註冊，名字前綴 v1e5_）。
-   課綱對應：108 課綱社會領域歷史 歷 Na-Ⅳ-1「非洲與西亞的早期文化」。格式：comics/CONTRACT.md */
+   國中社會會再學到：西亞的早期文化（腓尼基人與字母）。格式：comics/CONTRACT.md */
 (function (root) {
   'use strict';
   const K = root.ComicArt && root.ComicArt.k;
@@ -7,9 +7,9 @@
     const C = K.C, PUR = C.purple, PUR2 = '#8E4A7E';
     // 折線筆畫（用填色膠囊串，維持無描邊）
     const strokes = (pts, w, f) => { let s = ''; for (let i = 0; i < pts.length - 1; i++) s += K.cap(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], w, f); return s; };
-    // 腓尼基字形（40×40 單位格，左上原點）：aleph＝橫躺的牛頭（尖端朝右、兩角朝左，加一豎）；beth＝左上三角形的頭＋一豎。簡化畫法。
+    // 腓尼基字形（40×40 單位格，左上原點）：aleph＝橫躺的牛頭（尖端〔牛鼻子〕朝左、兩角朝右開口，加一豎；像側躺的 K）；beth＝左上三角形的頭＋一豎。簡化畫法。
     const GLYPH = {
-      aleph: (w, f) => strokes([[6, 6], [34, 20], [6, 34]], w, f) + strokes([[17, 2], [13, 38]], w, f),
+      aleph: (w, f) => strokes([[34, 6], [6, 20], [34, 34]], w, f) + strokes([[23, 2], [27, 38]], w, f),
       beth: (w, f) => strokes([[28, 4], [8, 15], [28, 24]], w, f) + strokes([[28, 4], [28, 38]], w, f)
     };
     const glyph = (n, x, y, u, f, w) => `<g transform="translate(${K.r1(x)} ${K.r1(y)}) scale(${u})">${GLYPH[n](w || 5, f || C.ink)}</g>`;
@@ -47,14 +47,6 @@
       },
       scenes: {
         v1e5_harbor: harbor,
-        // 投幣特寫（數字盤停在西元前 1000）
-        v1e5_coin(w, h) {
-          let s = K.rect(0, 0, w, h, C.g7) + K.zoom(w * .5, h * .42, 60, h * .8, 30, 'rgba(247,243,230,.16)', 3);
-          s += K.both(K.rect(w * .16, 40, w * .68, 130, C.ink, 10)) + K.rect(w * .5 - 34, 78, 68, 10, '#000', 5) + K.rect(w * .22, 118, w * .56, 34, C.paper) + K.txt(w * .5, 143, '10元', 24, C.ink);
-          s += K.circ(w * .5, h * .46, w * .42, C.cream) + K.circ(w * .5, h * .46, w * .35, C.ink);
-          s += K.txt(w * .5, h * .46 - 30, '2026', 20, 'rgba(247,243,230,.35)') + K.txt(w * .5, h * .46 - 6, '西元前', 20, C.g3) + K.txt(w * .5, h * .46 + 34, '1000', 42, C.cream);
-          return { bg: s + K.circ(w * .5, h * .46, w * .47, 'url(#cm-glow)', 'opacity=".5"') };
-        },
         // 染坊：磚牆、曬布繩上的紫布、石頭染缸、一堆骨螺殼（想像圖）
         v1e5_dye(w, h, o) {
           o = o || {}; const fy = h * (o.hz || .72);
@@ -114,7 +106,7 @@
     series: { zh: '時光搖搖車', en: 'THE TEN-DOLLAR TIME RIDE' },
     perfect: '全對！瑪拉說要送你一塊紫布（但阿凱的手到現在還是紫的）。',
     note: '阿凱、小禾、瑪拉和港口的商人、水手都是虛構的角色。推羅港、島上的城、染坊、阿希拉姆石棺的樣子是想像圖；船是依學者重建的樣子簡化畫的；腓尼基字母的字形也是簡化畫法。字母 aleph 像牛頭、beth 像房子，是學者常見的解釋；迦太基在西元前 814 年建城是傳統說法；阿希拉姆石棺上的字大約是西元前 1000 年，也有學者認為更晚一些。',
-    curriculum: '歷 Na-Ⅳ-1 非洲與西亞的早期文化',
+    curriculum: '國中社會會再學到：西亞的早期文化（腓尼基人與字母）',
     cover: {
       scene: 'cover', sceneOpt: { plain: 1, ground: 'brick3', near: 'g5' },
       back: [
@@ -151,7 +143,7 @@
             { t: '陳以凱！！\n還我筆記本！', x: 296, y: 290, w: 210, kind: 'shout', tail: [428, 398], fs: 25 }
           ],
           sfx: [{ t: '噠噠！', x: 330, y: 590, fs: 54, rot: -8 }] },
-        { scene: 'v1e5_coin', shot: '小格特寫：硬幣投進去，數字盤倒轉到西元前 1000',
+        { scene: 'coin', sceneOpt: { year: '1000' }, shot: '小格特寫：硬幣投進去，數字盤倒轉到西元前 1000',
           props: [{ k: 'coin', x: 121, y: 34, r: 26, rot: 12 }],
           actors: [{ c: 'he', x: 118, y: 860, s: 1.9, pose: 'scared', expr: 'shock', noShadow: true }],
           bubbles: [{ t: '哥！\n倒轉到 1000！', x: 18, y: 432, w: 206, fs: 25, tail: [100, 540] }],
@@ -343,8 +335,7 @@
       '大英百科〈Phoenician alphabet〉〈Phoenicia〉〈Tyre〉〈Carthage〉（大約 22 個字母、只寫子音、從右往左寫；希臘人加上母音；推羅是島上的城；迦太基傳統說法西元前 814 年由推羅人建立）',
       '大都會藝術博物館 Heilbrunn 藝術史年表〈The Phoenicians (1500–300 B.C.)〉（海上貿易、雪松木、玻璃、紫色染料、往西建殖民城市）',
       '黎巴嫩貝魯特國家博物館館藏：阿希拉姆石棺（1923 年在比布魯斯王陵出土；蓋子邊上的銘文大約西元前 1000 年，是很早的長篇腓尼基字母文字，也有學者認為較晚）',
-      '大英博物館館藏與說明（骨螺紫染料、腓尼基人的貿易）',
-      '108 課綱社會領域 歷 Na-Ⅳ-1'
+      '大英博物館館藏與說明（骨螺紫染料、腓尼基人的貿易）'
     ],
     quiz: [
       { id: 'q1', d: 1, type: 'mc', q: '腓尼基字母大約有幾個字母？', opts: ['22 個', '26 個', '幾百個', '幾千個'], a: 0, why: '腓尼基字母大約只有 22 個，一個符號代表一個聲音，比幾百個楔形符號好學。' },

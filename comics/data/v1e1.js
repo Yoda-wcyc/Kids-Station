@@ -1,5 +1,5 @@
-/* 世界史漫畫 第 1 冊 古文明・第 1 話（只有資料，畫面在 art.js／comic.js；格式檢查在 test/comic.test.js）。
-   課綱對應：108 課綱社會領域歷史 歷 Na-Ⅳ-1「非洲與西亞的早期文化」。
+/* 世界史漫畫 第 1 冊 古文明・第 1 話（只有資料，畫面在 art.js／comic.js；格式檢查在 test/comics.test.js）。
+   國中社會會再學到：西亞的早期文明（兩河流域、漢摩拉比法典）。
    格式：pages[{layout, panels[{scene, shot, actors[], props[], back[], bubbles[{t,x,y,w,tail,kind}], caption[], sfx[], cards[], tag}]}]；座標單位＝面板 px（版面見 art.js LAYOUTS）。 */
 (function (root) {
   'use strict';
@@ -8,7 +8,7 @@
     series: { zh: '時光搖搖車', en: 'THE TEN-DOLLAR TIME RIDE' },
     perfect: '全對！阿凱說要請你吃布丁（但他沒寫下來）。',
     note: '阿凱、小禾、伊丁是虛構的角色；漢摩拉比的話是改編自法典內容，不是他的原話。巴比倫城和高塔是想像圖：漢摩拉比的時代有沒有這座塔，學者還不確定。',
-    curriculum: '歷 Na-Ⅳ-1 非洲與西亞的早期文化',
+    curriculum: '國中社會會再學到：西亞的早期文明（兩河流域、漢摩拉比法典）',
     cover: {
       scene: 'cover',
       actors: [
@@ -184,8 +184,7 @@
     sources: [
       '羅浮宮〈The Code of Hammurabi〉與館藏紀錄（黑色玄武岩、高 2.25 公尺、約西元前 1750 年、282 條判決、1901～1902 年在蘇薩出土、被埃蘭國王當戰利品帶走）',
       '大英博物館〈The first writing: counting beer for the workers〉、大都會藝術博物館早期泥板紀錄（最早的文字主要用於記帳）',
-      '大英百科〈Cuneiform〉〈Clay tablet〉〈Code of Hammurabi〉（蘆葦筆、濕泥、以牙還牙、身分不同罰法不同）',
-      '108 課綱社會領域 歷 Na-Ⅳ-1'
+      '大英百科〈Cuneiform〉〈Clay tablet〉〈Code of Hammurabi〉（蘆葦筆、濕泥、以牙還牙、身分不同罰法不同）'
     ],
     quiz: [
       { id: 'q1', d: 1, type: 'mc', q: '楔形文字是用什麼壓在濕泥板上寫出來的？', opts: ['蘆葦筆', '毛筆', '鉛筆', '羽毛筆'], a: 0, why: '蘇美人把蘆葦削成筆，壓在濕泥上，就會留下楔子形的記號。' },

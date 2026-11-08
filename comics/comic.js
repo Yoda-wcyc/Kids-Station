@@ -8,12 +8,14 @@
   const A = window.ComicArt, QK = window.QuizKit, ZR = window.ZhReading, esc = QK.esc;
   const el = id => document.getElementById(id);
 
+  // opts：onDone(ep, 成績, 題目) 測驗做完；short:1 短漫畫（外部頁面借用：只有封面〔沒寫 cover 就沒有〕＋格子，沒有重點／地圖／測驗）；
+  //       onStep(step, 第幾步) 每翻一步（step.p 是這一格的資料，可以讀自訂欄位例如 places）；onEnd(ep) 短漫畫最後一格按「看完了」。見 CONTRACT.md §13
   function mount(ep, opts) {
     opts = opts || {};
     // 全部步驟攤平：cover → 每一格 → recap → where → quiz
-    const steps = [{ kind: 'cover', page: -1 }];
+    const steps = opts.short && !ep.cover ? [] : [{ kind: 'cover', page: -1 }];
     ep.pages.forEach((pg, pi) => pg.panels.forEach((p, i) => steps.push({ kind: 'panel', page: pi, i, p, slot: A.LAYOUTS[pg.layout][i] })));
-    steps.push({ kind: 'recap' }, { kind: 'where' }, { kind: 'quiz' });
+    if (!opts.short) steps.push({ kind: 'recap' }, { kind: 'where' }, { kind: 'quiz' });
     const nPanels = steps.filter(s => s.kind === 'panel').length;
     let cur = 0, builtPage = null;
     const quiz = { items: [], i: 0 };
@@ -102,7 +104,7 @@
         const wrong = quiz.items.filter(s => !s.right).map(s => `<li>${esc(s.q.q)}<br><small>✓ ${esc(QK.answerText(s.q))}</small></li>`).join('');
         // 下一話：catalog.js 標 ready 的才給連結（目錄是唯一的上架開關）
         const all = window.COMIC_CATALOG ? COMIC_CATALOG.vols.flatMap(v => v.eps) : [], ni = all.findIndex(e => e.id === ep.id), nx = ni >= 0 ? all[ni + 1] : null;
-        const nextHTML = nx && nx.ready ? `<p class="cm-next"><a class="btn primary big" href="${esc(nx.id)}.html">下一話：${esc(nx.t)} ▶</a></p>` : `<p class="cm-next">下一話〈${esc(ep.next)}〉還在製作中。</p>`;
+        const nextHTML = nx && nx.ready ? `<p class="cm-next"><a class="btn primary big" href="${esc(nx.id)}.html">下一話：${esc(nx.t)} ▶</a></p>` : nx ? `<p class="cm-next">下一話〈${esc(ep.next)}〉還在製作中。</p>` : ni >= 0 ? `<p class="cm-next">🎉 ${esc(ep.next)}</p>` : '';
         return `<div class="cm-sh"><p class="cm-eyebrow">RESULT</p><h2>答對 ${g.ok} / ${g.n} 題 ${g.ok === g.n ? '🎉' : g.pct >= ZR.PASS ? '👍' : '💪'}</h2>${wrong ? `<p>再看一次這幾題：</p><ul class="cm-wrong">${wrong}</ul>` : `<p>${esc(ep.perfect || '全對！阿凱和小禾幫你拍拍手！')}</p>`}
           <div class="qk-row"><button type="button" class="btn primary big" data-c="retry">↻ 再測一次</button><button type="button" class="btn big" data-c="again">📖 從頭再看一次</button></div>
           ${nextHTML}<p class="cm-next"><a href="index.html">📚 回漫畫目錄</a></p></div>`;
@@ -145,10 +147,12 @@
       if (st.kind === 'recap') el('cm-next').textContent = '地圖 ▶';
       if (st.kind === 'where') el('cm-next').textContent = '小測驗 ▶';
       el('cm-tts').hidden = st.kind === 'quiz' || st.kind === 'where' || st.kind === 'cover';
+      if (opts.short && cur === steps.length - 1) { el('cm-next').hidden = false; el('cm-next').textContent = '看完了 ✓'; }
       if (sayOn && !el('cm-tts').hidden) sayNow();
+      if (opts.onStep) opts.onStep(st, cur);
     }
     el('cm-prev').addEventListener('click', () => go(cur - 1));
-    el('cm-next').addEventListener('click', () => go(cur + 1));
+    el('cm-next').addEventListener('click', () => { if (opts.short && cur === steps.length - 1) { if (opts.onEnd) opts.onEnd(ep); return; } go(cur + 1); });
     window.addEventListener('keydown', e => { if (e.key === 'ArrowRight') go(cur + 1); if (e.key === 'ArrowLeft') go(cur - 1); });
     window.addEventListener('resize', fit);
     if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
@@ -188,7 +192,7 @@
     window.addEventListener('pagehide', () => sayStop());
 
     document.body.insertAdjacentHTML('afterbegin', A.defs());
-    el('cm-ep').textContent = `第 ${ep.ep} 話　${ep.title}`;
+    el('cm-ep').textContent = (ep.ep ? `第 ${ep.ep} 話　` : '') + ep.title;
     // 測試用：直接跳到第幾步（?p=）
     const q = /[?&]p=(\d+)/.exec(location.search);
     if (window.__comicTest) window.__comic = { go, steps, get cur() { return cur; }, quiz, nPanels };

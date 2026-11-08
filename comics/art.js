@@ -1,7 +1,7 @@
 /* comics/art.js — 世界史漫畫《時光搖搖車》的美術元件（inline SVG 字串產生器，不用圖檔）。
    風格沿用勇者島 game/hero-island/STYLE.md：大色塊、無描邊、同色系噴槍陰影、奶油紙底、深綠、少量紅；印刷顆粒在 comic.css。
    這支沒有劇情：角色 A.CAST、姿勢 POSES、表情 EXPR、場景 A.SCENES、版面 A.LAYOUTS、地圖與時間軸都是元件，每一話的 data/*.js 只寫名字和座標。
-   純字串、不碰 DOM，Node 也能載入（test/comic.test.js 拿它對資料）。 */
+   純字串、不碰 DOM，Node 也能載入（test/comics.test.js 拿它對資料）。 */
 (function (root) {
   'use strict';
   const C = {
@@ -357,14 +357,23 @@
     },
     // 投幣孔＋數字盤（大特寫）
     // sceneOpt：year 年份數字（預設 1750）、era 前綴（預設「西元前」；西元後寫「西元」）
+    // 依格子比例排：寬格（寬＞高×1.2，例如 wide2、stack3、strip）投幣孔在左、數字盤在右；直的格子（trio 細格、quad、tall2）上下排，數字盤半徑跟著格子縮
     coin(w, h, o) {
       o = o || {};
-      let s = rect(0, 0, w, h, C.g7);
-      s += zoom(w * .5, h * .42, 60, h * .8, 30, 'rgba(247,243,230,.16)', 3);
-      s += both(rect(w * .16, 40, w * .68, 130, C.ink, 10)) + rect(w * .5 - 34, 78, 68, 10, '#000', 5) + rect(w * .22, 118, w * .56, 34, C.paper) + txt(w * .5, 143, '10元', 24, C.ink);
-      s += circ(w * .5, h * .46, w * .42, C.cream) + circ(w * .5, h * .46, w * .35, C.ink);
-      s += txt(w * .5, h * .46 - 30, '2026', 20, 'rgba(247,243,230,.35)') + txt(w * .5, h * .46 - 6, o.era || '西元前', 20, C.g3) + txt(w * .5, h * .46 + 34, String(o.year || '1750'), String(o.year || '1750').length > 4 ? 32 : 42, C.cream);
-      s += circ(w * .5, h * .46, w * .47, 'url(#cm-glow)', 'opacity=".5"');
+      const year = String(o.year || '1750'), ys = year.length > 4 ? 32 : 42, wide = w > h * 1.2;
+      let s = rect(0, 0, w, h, C.g7), cx, cy, R;
+      if (wide) {
+        cx = w * .64; cy = h * .5; R = Math.min(h * .44, w * .28);
+        s += zoom(cx, cy, 40, w, 30, 'rgba(247,243,230,.16)', 3);
+        s += both(rect(w * .06, h * .2, w * .28, h * .6, C.ink, 10)) + rect(w * .2 - 30, h * .34, 60, 10, '#000', 5) + rect(w * .09, h * .56, w * .22, 34, C.paper) + txt(w * .2, h * .56 + 25, '10元', 24, C.ink);
+      } else {
+        R = Math.min(w * .42, h * .22); cx = w * .5; cy = Math.max(h * .46, 194 + R);   // 194＝投幣孔底 170＋間隔，數字盤不蓋投幣孔
+        s += zoom(w * .5, h * .42, 60, h * .8, 30, 'rgba(247,243,230,.16)', 3);
+        s += both(rect(w * .16, 40, w * .68, 130, C.ink, 10)) + rect(w * .5 - 34, 78, 68, 10, '#000', 5) + rect(w * .22, 118, w * .56, 34, C.paper) + txt(w * .5, 143, '10元', 24, C.ink);
+      }
+      s += circ(cx, cy, R, C.cream) + circ(cx, cy, R * .833, C.ink);
+      s += txt(cx, cy - 30, '2026', 20, 'rgba(247,243,230,.35)') + txt(cx, cy - 6, o.era || '西元前', 20, C.g3) + txt(cx, cy + 34, year, ys, C.cream);
+      s += circ(cx, cy, R * 1.12, 'url(#cm-glow)', 'opacity=".5"');
       return { bg: s };
     },
     // 大跨頁：巴比倫城與幼發拉底河
@@ -520,11 +529,13 @@
   A.SCENES = SCENES;
 
   // 面板：回傳整張 <svg>。p＝{scene, sceneOpt, actors:[…], props:[…]}；actors 依陣列順序疊
+  // 疊的順序：場景 → actors 裡標 behind:1 的（站在牆、鐵絲網後面的人）→ back[] → 其他 actors → props[] → 場景前景
   A.panelSvg = function (p, w, h) {
-    const sc = (SCENES[p.scene] || SCENES.lawsBg)(w, h, p.sceneOpt || {});
+    const sc = (SCENES[p.scene] || SCENES.lawsBg)(w, h, p.sceneOpt || {}), as = p.actors || [];
     let s = sc.bg || '';
+    as.forEach(a => { if (a.behind) s += actor(a); });
     (p.back || []).forEach(x => { s += prop(x); });
-    (p.actors || []).forEach(a => { s += actor(a); });
+    as.forEach(a => { if (!a.behind) s += actor(a); });
     (p.props || []).forEach(x => { s += prop(x); });
     s += sc.fg || '';
     return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">${s}</svg>`;
@@ -651,7 +662,7 @@
     earring: () => circ(-21, 9, 2.6, C.gold) + circ(21, 9, 2.6, C.gold),
     nemes: () => path('M-24 -6 Q-26 -30 0 -30 Q26 -30 24 -6 L30 30 L18 30 L16 -4 Q0 -12 -16 -4 L-18 30 L-30 30Z', C.gold) + rect(-21, -24, 42, 3, C.g9) + rect(-24, -17, 48, 3, C.g9) + [6, 15, 24].map(y => rect(-29, y, 11, 3, C.g9) + rect(18, y, 11, 3, C.g9)).join(''),   // 法老頭巾
     crownP: () => path('M-20 -10 L-21 -40 L-13 -32 L-7 -42 L0 -33 L7 -42 L13 -32 L21 -40 L20 -10Z', C.gold) + rect(-21, -15, 42, 6, '#B08D3A'),   // 城垛形王冠（波斯）
-    softCap: sp => path('M-21 -4 Q-25 -30 -6 -42 Q16 -50 24 -28 Q24 -14 21 -4Z', hat(sp, C.clay3)) + rect(-22, -8, 44, 5, C.wood, 2),
+    softCap: sp => path('M-21 -11 Q-25 -36 -6 -47 Q16 -55 24 -34 Q24 -20 21 -11Z', hat(sp, C.clay3)) + rect(-22, -15, 44, 5, C.wood, 2),   // 帽緣在 -10 以上，不蓋眼睛（眼睛最高到 -6）
     cone: sp => path('M-21 -4 Q-22 -26 -4 -40 Q10 -50 28 -46 Q16 -40 19 -26 Q22 -14 21 -4Z', hat(sp, C.red)),
     band: sp => rect(-23, -14, 46, 6, hat(sp, C.red), 3),
     turban: sp => ell(0, -16, 25, 12, hat(sp, C.cream)) + ell(0, -26, 21, 11, hat(sp, C.cream)) + rect(-18, -22, 36, 2.4, 'rgba(21,23,20,.12)') + circ(0, -19, 3.4, C.gold),
@@ -831,7 +842,8 @@
     barrel: x => place(x, groundShadow(0, 2, 34, 5) + both(path('M-26 0 Q-36 -40 -26 -80 L26 -80 Q36 -40 26 0Z', col(x.f) || C.wood), 'cm-warm') + rect(-32, -66, 64, 5, C.ink) + rect(-32, -18, 64, 5, C.ink)),
     bricks: x => { const n = x.n || 4, m = x.m || 3; let s = ''; for (let j = 0; j < n; j++) for (let i = 0; i < m; i++) s += rect(-m * 26 + i * 52 + (j % 2) * 12, -(j + 1) * 22, 48, 20, col(x.f) || C.clay, 2) + rect(-m * 26 + i * 52 + (j % 2) * 12, -(j + 1) * 22, 48, 5, C.clay3, 1); return place(x, s); },
     crowd: x => { const n = x.n || 6, W = x.W || 300, rnd = seeded(x.seed || 12), cs = [C.g5, C.g7, C.clay2, C.brick2, C.g3, C.wood]; let s = ''; for (let i = 0; i < n; i++) { const cx = -W / 2 + (i + .5) * W / n + (rnd() - .5) * 14, hh = 70 + rnd() * 24, c = cs[Math.floor(rnd() * cs.length)]; s += path(`M${r1(cx - 20)} 0 Q${r1(cx - 22)} ${r1(-hh * .7)} ${r1(cx)} ${r1(-hh * .72)} Q${r1(cx + 22)} ${r1(-hh * .7)} ${r1(cx + 20)} 0Z`, c) + circ(cx, -hh * .84, 13, col(x.skin) || C.skinB); } return place(x, s); },   // 背景人群（剪影，不畫臉）
-    road: x => { const W = x.W || 300, w2 = x.w2 || 60, L = x.L || 300, f = col(x.f) || C.paper3; let s = poly(`${-W / 2},0 ${W / 2},0 ${w2 / 2},${-L} ${-w2 / 2},${-L}`, f); for (let i = 0; i < 6; i++) { const t0 = i / 6 + .02, t1 = t0 + .08, wd = t => 7 * (1 - t) + 1.5; s += poly(`${r1(-wd(t0))},${r1(-L * t0)} ${r1(wd(t0))},${r1(-L * t0)} ${r1(wd(t1))},${r1(-L * t1)} ${r1(-wd(t1))},${r1(-L * t1)}`, col(x.dash) || C.cream, 'opacity=".7"'); } return place(x, s); },
+    // 透視的路：W 近端寬、w2 遠端寬、L 長、f 顏色、dash 分隔線顏色；old:1＝古代的路（土路、石板路），不畫白色分隔線
+    road: x => { const W = x.W || 300, w2 = x.w2 || 60, L = x.L || 300, f = col(x.f) || C.paper3; let s = poly(`${-W / 2},0 ${W / 2},0 ${w2 / 2},${-L} ${-w2 / 2},${-L}`, f); for (let i = 0; i < (x.old ? 0 : 6); i++) { const t0 = i / 6 + .02, t1 = t0 + .08, wd = t => 7 * (1 - t) + 1.5; s += poly(`${r1(-wd(t0))},${r1(-L * t0)} ${r1(wd(t0))},${r1(-L * t0)} ${r1(wd(t1))},${r1(-L * t1)} ${r1(-wd(t1))},${r1(-L * t1)}`, col(x.dash) || C.cream, 'opacity=".7"'); } return place(x, s); },
     spark: x => { const R = x.r || 18; return place(x, poly(`0,${-R} ${R * .22},${-R * .22} ${R},0 ${R * .22},${R * .22} 0,${R} ${-R * .22},${R * .22} ${-R},0 ${-R * .22},${-R * .22}`, col(x.f) || C.gold)); },
     arrow: x => { const L = x.L || 80; return place(x, poly(`0,-6 ${L - 18},-6 ${L - 18},-16 ${L},0 ${L - 18},16 ${L - 18},6 0,6`, col(x.f) || C.red)); },
     table: x => { const W = x.W || 200; return place(x, groundShadow(0, 2, W * .55, 6) + rect(-W / 2, -76, W, 12, col(x.f) || C.wood, 3) + rect(-W / 2 + 10, -66, 10, 66, col(x.f) || C.wood) + rect(W / 2 - 20, -66, 10, 66, col(x.f) || C.wood)); },
@@ -899,6 +911,78 @@
     s += path(`M0 ${h * .8} Q${w * .5} ${h * .74} ${w} ${h * .78} L${w} ${h} L0 ${h}Z`, col(o.ground) || C.brick2) + path(`M0 ${h * .9} Q${w * .4} ${h * .84} ${w} ${h * .93} L${w} ${h} L0 ${h}Z`, col(o.near) || C.g5);
     return { bg: s, fg: car(w * .55, h * .56, 1.7, { rot: -12, noShadow: true, lights: true }) };
   };
+
+  // ---------- 現代開場（2026-11-08 從第 2～7 冊各話合併：兩話以上都畫了的才搬來） ----------
+  Object.assign(SCENES, {
+    // 捷運車廂：o：seat 座椅上緣比例（.6）、poles 扶手桿位置比例（[.3,.7]）、sign 車門上的跑馬燈字、win 窗外顏色
+    mrt(w, h, o) {
+      o = o || {}; const sy = h * (o.seat || .6), fy = sy + h * .16;
+      let s = rect(0, 0, w, h, C.paper) + rect(0, h * .06, w, h * .06, C.cream) + rect(w * .08, h * .085, w * .84, 6, C.red, 3);
+      for (let i = 0; i < 6; i++) s += circ(w * (.12 + i * .152), h * .085 + 3, 6, i === 3 ? C.gold : C.red);
+      for (let x = w * .04, n = Math.max(2, Math.round(w / 260)), ww = w * .92 / n; x < w * .95; x += ww) s += rect(x + 10, h * .17, ww - 20, sy - h * .25, col(o.win) || C.g9, 10) + rect(x + 26, h * .22, (ww - 20) * .35, 5, C.cream, 2, 'opacity=".25"');
+      s += rect(0, sy, w, h * .1, C.g5, 6) + rect(0, sy + h * .1, w, h * .06, C.g7) + rect(0, fy, w, h - fy, C.paper3) + rect(0, fy, w, 5, 'rgba(21,23,20,.12)');
+      (o.poles || [.3, .7]).forEach(t => { s += rect(w * t - 5, 0, 10, fy, '#C9CCC8') + rect(w * t - 5, 0, 3, fy, 'rgba(255,255,255,.35)'); });
+      if (o.sign) s += rect(w * .5 - 110, h * .13, 220, 24, C.ink, 4) + txt(w * .5, h * .13 + 18, o.sign, 15, '#F2C14E');
+      return { bg: s };
+    },
+    // 教室：o：hz 牆腳比例（.74）、floor、board 黑板上的字、fs 字級、desks:false 不畫前排課桌
+    classroom(w, h, o) {
+      o = o || {}; const hz = h * (o.hz || .74), bx = w * .3, by = h * .08, bw = w * .4, bh = hz * .58;
+      let s = rect(0, 0, w, hz, C.paper2) + rect(0, hz, w, h - hz, col(o.floor) || C.clay3) + rect(0, hz, w, 6, 'rgba(21,23,20,.12)');
+      s += rect(bx - 9, by - 9, bw + 18, bh + 18, C.wood, 4) + rect(bx, by, bw, bh, C.g9) + rect(bx, by + bh + 4, bw, 8, C.wood);
+      if (o.board) s += txt(w * .5, by + bh * .55, o.board, o.fs || 32, C.cream);
+      s += rect(w * .84 - 6, h * .08 - 6, w * .13 + 12, hz * .56 + 12, C.cream) + rect(w * .84, h * .08, w * .13, hz * .56, C.g2) + rect(w * .905 - 2, h * .08, 4, hz * .56, C.cream);
+      s += rect(w * .03, h * .1, w * .17, hz * .44, C.wood, 3) + rect(w * .03 + 8, h * .1 + 8, w * .17 - 16, hz * .44 - 16, C.g3);   // 公布欄
+      if (o.desks !== false) for (let i = 0; i < 3; i++) { const dx = w * (.08 + i * .3); s += rect(dx, hz - 4, 120, 14, C.wood, 3) + rect(dx + 10, hz + 10, 8, 40, C.wood) + rect(dx + 102, hz + 10, 8, 40, C.wood); }
+      return { bg: s };
+    },
+    // 籃球場：o：hz 場地上緣（.56）、floor 場地色（紅土色）、back:'fence'|'trees'|'school' 後面是鐵絲網／樹／學校、hoop 籃框位置比例（不寫就不畫；要自己擺用 hoop 道具）、sun
+    ballCourt(w, h, o) {
+      o = o || {}; const hz = h * (o.hz || .56), bk = o.back || 'fence';
+      let s = rect(0, 0, w, h, C.sky);
+      if (o.sun) s += circ(w * o.sun[0], h * o.sun[1], 120, 'url(#cm-sun)');
+      if (bk === 'fence') { s += rect(0, h * .3, w, hz - h * .3, C.g5, 0, 'opacity=".5"'); for (let x = 0; x < w; x += 24) s += rect(x, h * .3, 3, hz - h * .3, C.g9, 0, 'opacity=".35"'); }
+      if (bk === 'trees') [[.06, 150], [.18, 120], [.92, 170]].forEach(([x, H]) => { s += prop({ k: 'tree', x: w * x, y: hz + 6, H }); });
+      if (bk === 'school') { s += both(rect(w * .04, h * .08, w * .7, hz - h * .08, C.cream)) + rect(w * .04, h * .08, w * .7, 10, C.red); for (let y = h * .14; y < hz - 40; y += 56) for (let x = w * .07; x < w * .7; x += 64) s += rect(x, y, 40, 32, C.g3, 2) + rect(x, y + 32, 40, 4, C.paper3); }
+      s += rect(0, hz, w, h - hz, col(o.floor) || '#C77B4E') + rect(0, hz + (h - hz) * .14, w, 4, C.cream) + path(`M${r1(w * .32)} ${h} Q${r1(w * .5)} ${r1(hz + (h - hz) * .32)} ${r1(w * .68)} ${h}`, 'none', `stroke="${C.cream}" stroke-width="4"`);
+      if (o.hoop != null) s += PROPS.hoop({ x: w * o.hoop, y: hz + 6, s: Math.min(1, hz / 380) });
+      return { bg: s };
+    },
+    // 校門口：o：name 校名（時光國小）、shop:false 不畫左邊的文具店、hz 地面比例（.54）、ground 地面色（預設馬路）
+    schoolGate(w, h, o) {
+      o = o || {}; const hz = h * (o.hz || .54), shop = o.shop !== false, L = shop ? .38 : 0;
+      let s = rect(0, 0, w, h, C.sky) + circ(w * .82, h * .1, 150, 'url(#cm-sun)');
+      s += both(rect(w * L, h * .1, w * (1.04 - L), hz - h * .1, C.cream)) + rect(w * L, h * .1, w * (1.04 - L), 18, C.g7);
+      for (let r = 0; r < 3; r++) for (let x = w * (L + .06); x < w * .98; x += w * .14) s += rect(x, h * .16 + r * h * .11, w * .09, h * .07, C.g3, 2);
+      if (shop) { s += rect(0, h * .2, w * .4, hz - h * .2, C.g7) + rect(0, h * .2, w * .4, h * .07, C.g9) + txt(w * .2, h * .257, '文具店', 34, C.cream); s += rect(w * .03, h * .3, w * .34, h * .2, C.cream) + [0, 1, 2, 3].map(i => rect(w * .06 + i * w * .075, h * .33, w * .05, h * .1, [C.red, C.gold, C.g5, C.blue][i], 2)).join(''); }
+      s += rect(w * L, hz - h * .1, w * (1 - L), h * .1, C.brick2) + rect(w * .62, hz - h * .14, w * .22, h * .14, C.ink) + rect(w * .6, hz - h * .18, w * .26, h * .05, C.g9, 4) + txt(w * .73, hz - h * .146, o.name || '時光國小', 24, C.cream);
+      s += rect(0, hz, w, h - hz, col(o.ground) || C.road) + rect(0, hz, w, h * .05, C.paper3);
+      if (!o.ground) for (let i = 0; i < 5; i++) s += rect(w * .1 + i * w * .2, hz + (h - hz) * .57, w * .1, 10, C.cream, 3, 'opacity=".6"');
+      return { bg: s };
+    }
+  });
+  Object.assign(PROPS, {
+    hoop: x => place(x, rect(-6, -300, 12, 300, C.ink) + rect(-4, -300, 70, 8, C.ink) + both(rect(40, -360, 110, 76, C.cream, 4)) + rect(70, -330, 50, 36, 'none', 0, `stroke="${C.red}" stroke-width="4"`) + rect(72, -292, 46, 6, C.red, 3)),   // 籃框（朝右）
+    ball: x => place(x, circ(0, -18, 18, '#D9772F') + rect(-18, -19, 36, 2, C.ink) + rect(-1, -36, 2, 36, C.ink)),   // 籃球
+    candle: x => place(x, circ(0, -70, x.glow || 46, 'url(#cm-sun)') + rect(-10, -56, 20, 56, C.cream, 3) + path('M0 -86 Q10 -70 6 -60 L-6 -60 Q-10 -70 0 -86Z', C.gold) + rect(-1.5, -62, 3, 6, C.ink)),   // 蠟燭＋光暈（glow 光暈半徑）
+    // 現代大樓：W H f 牆色、g 窗色、win:'grid'（一格一格，預設）|'band'（橫條窗）、door:1 一樓的門
+    building: x => {
+      const W = x.W || 300, H = x.H || 200, f = col(x.f) || C.paper3, g = col(x.g) || (x.win === 'band' ? C.g6 : C.g7), low = x.door ? -44 : -22;
+      let s = groundShadow(0, 3, W * .55, 8) + both(rect(-W / 2, -H, W, H, f));
+      if (x.win === 'band') for (let y = -H + 16; y < -24; y += 34) s += rect(-W / 2 + 12, y, W - 24, 18, g, 2, 'opacity=".85"');
+      else for (let y = -H + 18; y < low; y += 42) for (let xx = -W / 2 + 15; xx < W / 2 - 30; xx += 46) s += rect(xx, y, 30, 22, g, 2) + rect(xx, y + 22, 30, 4, C.cream, 0, 'opacity=".7"');
+      if (x.door) s += rect(-W * .08, -42, W * .16, 42, C.g9, 3);
+      return place(x, s);
+    },
+    // 早期的蒸汽火車頭（朝右，煙囪在前；smoke:1 冒煙）、客車廂（f 顏色）、鐵軌（W 長度）
+    loco: x => place(x, groundShadow(0, 3, 150, 10) + rect(-170, -4, 340, 6, C.basalt2) +
+      both(rect(-120, -150, 190, 70, C.gold, 30)) + rect(40, -340, 26, 200, C.cream) + rect(34, -350, 38, 14, C.ink) +
+      rect(-140, -110, 50, 80, C.wood, 4) + circ(40, -60, 56, C.ink) + circ(40, -60, 46, C.red) + circ(40, -60, 10, C.ink) + circ(-100, -34, 32, C.ink) + circ(-100, -34, 24, C.red) +
+      cap(-20, -110, 40, -60, 8, C.basalt2) + rect(-200, -90, 60, 60, C.wood, 4) + rect(-196, -86, 52, 20, C.ink) + circ(-186, -24, 22, C.ink) + circ(-154, -24, 22, C.ink) +
+      (x.smoke ? puff(54, -380, 30, '#E4DFCC') + puff(90, -420, 40, '#E4DFCC') + puff(140, -450, 48, '#E4DFCC') : '')),
+    coach: x => place(x, groundShadow(0, 3, 110, 8) + rect(-130, -4, 260, 6, C.basalt2) + both(rect(-110, -150, 220, 110, col(x.f) || C.g7, 8)) + rect(-96, -132, 56, 44, C.cream, 4) + rect(-28, -132, 56, 44, C.cream, 4) + rect(40, -132, 56, 44, C.cream, 4) + rect(-118, -40, 236, 10, C.ink) + circ(-70, -22, 22, C.ink) + circ(70, -22, 22, C.ink)),
+    rail: x => { const W = x.W || 600; return place(x, rect(-W / 2, -8, W, 8, C.basalt2) + Array.from({ length: Math.floor(W / 40) }, (_, i) => rect(-W / 2 + i * 40 + 6, -2, 24, 8, C.wood)).join('')); }
+  });
 
   // ---------- 新版面（畫布 800×1060） ----------
   Object.assign(A.LAYOUTS, {
@@ -1015,6 +1099,11 @@
   // 名字重複會丟錯（不准蓋掉共用的或別話的）。cast 的顏色可寫 C 的名字（g7、skinB…）或 #色碼。
   const COLOR_KEYS = ['skin', 'top', 'skirt', 'bottom', 'robe', 'trim', 'leg', 'sleeve', 'shoe', 'stripe'];
   function castOf(o) { const sp = Object.assign({ r: 22, k: 1, shoe: C.ink }, o); COLOR_KEYS.forEach(k => { if (sp[k]) sp[k] = col(sp[k]); }); if (!sp.skin) sp.skin = C.skin; if (!sp.robe && !sp.leg) sp.leg = sp.skin; return sp; }
+  // 戴太空頭盔的阿凱、小禾（第 7 冊登月、結局都用）
+  Object.assign(CAST, {
+    kaiSpace: castOf({ name: '阿凱（戴太空頭盔）', skin: 'skin', top: 'g7', bottom: 'g9', leg: 'skin', stripe: 'cream', hair: 'kai', hat: 'space', r: 22 }),
+    heSpace: castOf({ name: '小禾（戴太空頭盔）', skin: 'skin', top: 'g3', skirt: 'g9', leg: 'skin', shoe: 'red', hairBack: 'heBack', hair: 'he', acc: ['glasses'], hat: 'space', r: 22, k: .9 })
+  });
   A.extend = function (o) {
     const REG = { scenes: SCENES, cast: CAST, props: PROPS, icons: ICONS, poses: POSES, expr: EXPR, parts: PARTS, holds: HOLDS, layouts: A.LAYOUTS, rivers: GEO.rivers };
     Object.keys(o || {}).forEach(k => {

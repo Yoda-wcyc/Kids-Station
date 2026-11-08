@@ -34,6 +34,16 @@ ALL.forEach(e => {
   ok(sj.includes("href: 'comics/index.html'"), '首頁歷史分頁：一張卡進目錄頁');
 }
 
+// ---------- 地圖海岸：區域圖是「陸地底色＋海的多邊形＋島」，海的多邊形不能自己交叉，幾個容易畫錯的海要是海、陸地要是陸地 ----------
+{
+  const G = A.GEO, wn = (poly, lat, lon) => { let w = 0; for (let i = 0; i < poly.length; i++) { const [ay, ax] = poly[i], [by, bx] = poly[(i + 1) % poly.length], l = (bx - ax) * (lat - ay) - (lon - ax) * (by - ay); if (ay <= lat) { if (by > lat && l > 0) w++; } else if (by <= lat && l < 0) w--; } return w; };
+  const sea = (lat, lon) => Object.values(G.seas).some(p => wn(p, lat, lon)) && !Object.values(G.isles).some(p => wn(p, lat, lon));
+  const cross = (p1, p2, p3, p4) => { const d = (a, b, c) => (c[1] - a[1]) * (b[0] - a[0]) - (b[1] - a[1]) * (c[0] - a[0]); return d(p3, p4, p1) * d(p3, p4, p2) < 0 && d(p1, p2, p3) * d(p1, p2, p4) < 0; };
+  Object.entries(G.seas).forEach(([k, P]) => { let x = 0; for (let i = 0; i < P.length; i++) for (let j = i + 2; j < P.length; j++) if (!(i === 0 && j === P.length - 1) && cross(P[i], P[i + 1], P[j], P[(j + 1) % P.length])) x++; ok(!x, `地圖：海 ${k} 的邊自己交叉 ${x} 處（會把海畫成陸地）`); });
+  [['愛爾蘭海', 53.8, -5], ['比斯開灣', 46, -3], ['英吉利海峽', 50.2, -2], ['北海', 56, 3], ['凱爾特海', 50.5, -7], ['波羅的海', 56, 18], ['地中海', 38, 5], ['黃海', 36, 123]].forEach(([n, a, b]) => ok(sea(a, b), '地圖：' + n + '要是海'));
+  [['英格蘭', 52.5, -1.5], ['愛爾蘭', 53, -8], ['法國', 47, 2], ['伊比利半島', 40, -4], ['義大利', 42.5, 12.5], ['日德蘭半島', 56, 9.2]].forEach(([n, a, b]) => ok(!sea(a, b), '地圖：' + n + '要是陸地'));
+}
+
 // ---------- 每一話 ----------
 const IDS = ALL.filter(e => (e.ready || has(e.id)) && (!ONLY.length || ONLY.includes(e.id))).map(e => e.id);
 ok(IDS.length > 0, '至少有一話可以檢查' + (ONLY.length ? '：' + ONLY.join(',') : ''));
@@ -47,6 +57,8 @@ IDS.forEach(id => {
   if (!ok(ep && ep.id === id, W('COMIC_DATA.' + id + ' 不存在'))) return;
   // 基本欄位、跟目錄對得上
   ['title', 'vol', 'next', 'note', 'curriculum'].forEach(k => ok(str(ep[k]), W('沒有 ' + k)));
+  // 課綱：不寫條目代碼（各話抓的是學校教案的國中代碼，不是國教院原文），只寫「國中社會會再學到：○○」
+  ok(/^國中社會會再學到：/.test(ep.curriculum) && !/[A-Za-z]{1,2}-[ⅣⅤ]/.test(ep.curriculum + (ep.sources || []).join('')), W('curriculum 要寫「國中社會會再學到：○○」，不寫課綱代碼（sources 也不列代碼）'));
   ok(ep.title === meta.t, W(`title「${ep.title}」跟目錄「${meta.t}」不一樣`));
   ok(ep.volNo === meta.vol && ep.ep === meta.ep && ep.vol === `第 ${meta.vol} 冊 ${meta.volT}`, W(`volNo／ep／vol 要是 ${meta.vol}／${meta.ep}／「第 ${meta.vol} 冊 ${meta.volT}」`));
   const nx = ALL[idx + 1]; ok(nx ? ep.next === nx.t : str(ep.next), W(`next 要是下一話的標題「${nx ? nx.t : ''}」`));
@@ -218,11 +230,23 @@ const LAYOUT_CHECK = `const out = [], A = ComicArt, ep = window.__ep, st = __com
       bok(errors.length === e0, `${id} JS 錯誤 ${errors.length - e0}：${errors.slice(e0).join(' | ')}`);
       console.log(`  ${id}：${n} 步翻完、測驗做完、橫向／375 寬看過`);
     }
+    // 外部頁面借用引擎播短漫畫（CONTRACT.md §13）：只有格子、每翻一步呼叫 onStep、最後一格按「看完了」呼叫 onEnd
+    if (!ONLY.length || ONLY.includes('v1e1')) {
+      await size(820, 1180); await go('/comics/v1e1.html');
+      const sc = await ev(`const src = COMIC_DATA.v1e1, ep = { title: '短漫畫測試', series: src.series, pages: src.pages.slice(0, 2) }, log = { step: [], end: 0 };
+        document.body.innerHTML = '<header class="cm-top"><span id="cm-ep"></span><span id="cm-count"></span><div class="cm-track"><div id="cm-bar"></div></div></header><main id="cm-stage"><div id="cm-book"></div></main><main id="cm-sheet" hidden></main><footer class="cm-bot" id="cm-chrome"><button id="cm-prev">◀</button><button id="cm-tts">🔊</button><button id="cm-next">▶</button></footer>';
+        const m = KidsComic.mount(ep, { short: 1, onStep: (st, i) => log.step.push(st.kind + (st.p && st.p.places ? ':' + st.p.places : '')), onEnd: () => { log.end++; } });
+        const n = ep.pages.reduce((a, p) => a + p.panels.length, 0);
+        for (let i = 0; i < n + 2; i++) document.getElementById('cm-next').click();
+        return { n, steps: m.steps.length, kinds: [...new Set(m.steps.map(s => s.kind))], step: log.step.length, end: log.end, btn: document.getElementById('cm-next').textContent, ep: document.getElementById('cm-ep').textContent };`);
+      bok(sc.steps === sc.n && sc.kinds.join() === 'panel' && sc.step >= sc.n && sc.end >= 1 && sc.btn === '看完了 ✓' && sc.ep === '短漫畫測試', '短漫畫模式：' + JSON.stringify(sc));
+    }
     // 目錄頁
     for (const [w, h] of [[820, 1180], [375, 812]]) {
       await size(w, h); await go('/comics/index.html');
-      const c = await ev(`return { vols: document.querySelectorAll('details.cm-vol-box').length, links: [...document.querySelectorAll('a.cm-ep-card')].map(a => a.getAttribute('href')), wip: document.querySelectorAll('.cm-ep-card.wip').length }`);
+      const c = await ev(`return { vols: document.querySelectorAll('details.cm-vol-box').length, links: [...document.querySelectorAll('a.cm-ep-card')].map(a => a.getAttribute('href')), wip: document.querySelectorAll('.cm-ep-card.wip').length, wipText: document.body.innerText.includes('製作中') }`);
       const ready = ALL.filter(e => e.ready).length;
+      if (ready === 42) bok(!c.wipText, `目錄頁 ${w} 寬：42 話全上架，畫面不能再有「製作中」`);
       bok(c.vols === 7 && c.links.length === ready && c.links.length + c.wip === 42, `目錄頁 ${w} 寬：7 冊、${ready} 個連結＋${42 - ready} 個製作中（${JSON.stringify({ v: c.vols, l: c.links.length, w: c.wip })}）`);
       for (const u of c.links) bok((await fetch(ORIGIN + '/comics/' + u)).status === 200, '目錄頁連結壞了：' + u);
       bok(await ev(noH), `目錄頁 ${w} 寬左右捲動`); await shot(`catalog-${w}.png`);

@@ -1,5 +1,5 @@
 /* 世界史漫畫 第 1 冊 古文明・第 6 話（只有資料＋這一話自己的圖形）。
-   課綱對應：108 課綱社會領域歷史 歷 Na-Ⅳ-1「非洲與西亞的早期文化」（延伸：波斯帝國）。格式：comics/CONTRACT.md */
+   國中社會會再學到：西亞的早期文化（波斯帝國）。格式：comics/CONTRACT.md */
 (function (root) {
   'use strict';
   const K = root.ComicArt && root.ComicArt.k;
@@ -7,14 +7,6 @@
     const { C, rect, poly, circ, path, txt, cap, both, zoom } = K;
     root.ComicArt.extend({
       scenes: {
-        // 投幣孔＋數字盤（停在西元前 500）
-        v1e6_coin(w, h) {
-          let s = rect(0, 0, w, h, C.g7) + zoom(w * .5, h * .42, 60, h * .8, 30, 'rgba(247,243,230,.16)', 3);
-          s += both(rect(w * .16, 40, w * .68, 130, C.ink, 10)) + rect(w * .5 - 34, 78, 68, 10, '#000', 5) + rect(w * .22, 118, w * .56, 34, C.paper) + txt(w * .5, 143, '10元', 24, C.ink);
-          s += circ(w * .5, h * .46, w * .42, C.cream) + circ(w * .5, h * .46, w * .35, C.ink);
-          s += txt(w * .5, h * .46 - 30, '2026', 20, 'rgba(247,243,230,.35)') + txt(w * .5, h * .46 - 6, '西元前', 20, C.g3) + txt(w * .5, h * .46 + 34, '500', 42, C.cream);
-          return { bg: s + circ(w * .5, h * .46, w * .47, 'url(#cm-glow)', 'opacity=".5"') };
-        },
         // 蘇薩宮殿：高台、彩色釉磚帶（只畫花紋）、階梯；柱子用 back[] 擺 column style:'persia'
         v1e6_susa(w, h) {
           let s = rect(0, 0, w, h, C.sky) + circ(w * .84, h * .08, 200, 'url(#cm-sun)') + circ(w * .84, h * .08, 46, '#FFF8DC');
@@ -62,7 +54,7 @@
     series: { zh: '時光搖搖車', en: 'THE TEN-DOLLAR TIME RIDE' },
     perfect: '全對！阿凱說包裹到了要分你一半（這次他一次都沒催）。',
     note: '阿凱、小禾、阿塔、信差和各地使者是虛構的角色；大流士一世的話改編自貝希斯敦銘文，不是他的原話。大流士的樣子、蘇薩宮殿、驛站和使者隊伍都是想像圖（使者帶禮物的樣子參考波斯波利斯的階梯浮雕）。國王大道有多長、有幾個驛站、信差要騎幾天，各家說法不完全一樣，這裡寫的是大約的數字。',
-    curriculum: '歷 Na-Ⅳ-1 非洲與西亞的早期文化（延伸：波斯帝國的行省、道路與錢幣）',
+    curriculum: '國中社會會再學到：西亞的早期文化（波斯帝國）',
     cover: {
       scene: 'cover', sceneOpt: { plain: 1, ground: 'brick2', near: 'sand' },
       back: [
@@ -99,7 +91,7 @@
             { t: '陳以凱！！', x: 318, y: 316, w: 176, kind: 'shout', tail: [420, 400], fs: 25 }
           ],
           sfx: [{ t: '咻！', x: 24, y: 470, fs: 66, rot: -10 }] },
-        { scene: 'v1e6_coin', shot: '小格特寫：硬幣掉進投幣孔，數字盤停在西元前 500',
+        { scene: 'coin', sceneOpt: { year: '500' }, shot: '小格特寫：硬幣掉進投幣孔，數字盤停在西元前 500',
           props: [{ k: 'coin', x: 121, y: 34, r: 26, rot: 12 }],
           actors: [{ c: 'he', x: 118, y: 860, s: 1.9, pose: 'scared', expr: 'shock', noShadow: true }],
           bubbles: [{ t: '哥！又倒轉了！\n西元前 500！', x: 18, y: 436, w: 206, fs: 24, tail: [108, 530] }],
@@ -110,7 +102,7 @@
           back: [
             { k: 'mountain', x: 170, y: 437, W: 380, H: 150, f: 'g5', f2: 'g7' },
             { k: 'mountain', x: 640, y: 437, W: 320, H: 120, f: 'g3', f2: 'g5' },
-            { k: 'road', x: 390, y: 1040, W: 600, w2: 26, L: 603, f: 'paper3' },
+            { k: 'road', old: 1, x: 390, y: 1040, W: 600, w2: 26, L: 603, f: 'paper3' },
             { k: 'tree', kind: 'cypress', x: 740, y: 575, H: 170 },
             { k: 'mudHouse', x: 620, y: 568, W: 210, H: 110, door: true },
             { k: 'horse', x: 712, y: 610, s: .55, flip: 1, f: 'clay2' },
@@ -305,8 +297,7 @@
       '希羅多德《歷史》5.52–53、8.98（Livius.org 英譯）：薩第斯到蘇薩 111 個驛站、走路約 90 天、信差騎馬一站接一站；信差約 7～9 天是現代學者的估計',
       'Encyclopaedia Iranica〈Daric〉〈Bisotun〉、大英博物館錢幣與居魯士圓柱說明（呂底亞最早的錢幣、大流克金幣；貝希斯敦銘文用三種文字、列出 23 個地方；居魯士讓被擄的人回鄉）',
       'UNESCO 世界遺產〈Persepolis〉（1979 年列入；階梯浮雕上各地使者帶禮物）',
-      '羅浮宮〈The Code of Hammurabi〉（石碑 1901～1902 年在蘇薩出土）',
-      '108 課綱社會領域 歷 Na-Ⅳ-1'
+      '羅浮宮〈The Code of Hammurabi〉（石碑 1901～1902 年在蘇薩出土）'
     ],
     quiz: [
       { id: 'q1', d: 1, type: 'mc', q: '國王的信差為什麼能把信送得那麼快？', opts: ['在驛站換人換馬接力', '同一個人騎到底不休息', '把信綁在鴿子腳上', '沿著大河坐船去送'], a: 0, why: '國王大道上一站一站都有驛站，信差跑完一段就把信交給下一個人、換一匹休息過的馬，信就不用停下來。' },

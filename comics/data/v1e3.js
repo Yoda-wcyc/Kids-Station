@@ -1,4 +1,4 @@
-/* 世界史漫畫 第 1 冊 古文明・第 3 話（只有資料＋這一話自己的圖形）。課綱：延伸 歷 Na-Ⅳ-1（早期文化：印度河流域）。格式：comics/CONTRACT.md */
+/* 世界史漫畫 第 1 冊 古文明・第 3 話（只有資料＋這一話自己的圖形）。國中社會會再學到：古代文明的發展（印度河流域文明是延伸）。格式：comics/CONTRACT.md */
 (function (root) {
   'use strict';
   const CA = root.ComicArt, K = CA && CA.k;
@@ -143,7 +143,6 @@
     CA.extend({
       scenes: {
         v1e3_rain: rain, v1e3_lane: lane, v1e3_city: city, v1e3_cut: cut, v1e3_bath: bath,
-        v1e3_coin(w, h, o) { const r = CA.SCENES.coin(w, h, o); return { bg: r.bg.replace('>1750<', '>2500<') }; }
       },
       cast: {
         v1e3_daro: { name: '達若（虛構）', skin: 'skinB', top: 'cream', skirt: 'clay2', sleeve: 'skinB', leg: 'skinB', shoe: 'wood', hair: 'short', hat: 'band', hatC: 'red', k: .94 },
@@ -185,7 +184,7 @@
     series: { zh: '時光搖搖車', en: 'THE TEN-DOLLAR TIME RIDE' },
     perfect: '全對！社區的水溝小隊長就是你了（記得排輪值表）。',
     note: '阿凱、小禾、達若、達若的爸爸和商人都是虛構的角色。「達若」這個名字是編的：印度河流域的文字到今天還沒有人讀懂，我們不知道當時的人叫什麼名字。摩亨佐達羅的街景、房子、大浴池、做磚的工坊都是想像圖。大浴池拿來做什麼、城市為什麼沒落，學者還在討論。',
-    curriculum: '延伸：108 課綱社會領域歷史 歷 Na-Ⅳ-1「非洲與西亞的早期文化」（同時期的印度河流域文明）',
+    curriculum: '國中社會會再學到：古代文明的發展（印度河流域文明是延伸）',
     cover: {
       scene: 'cover', sceneOpt: { plain: 1, ground: 'brick2', near: 'g5' },
       back: [
@@ -221,7 +220,7 @@
             { t: '搖搖車\n漂過來了！', x: 290, y: 280, w: 210, kind: 'shout', tail: [404, 420] }
           ],
           sfx: [{ t: '嘩啦！', x: 20, y: 470, fs: 58, rot: -8 }] },
-        { scene: 'v1e3_coin', shot: '小格特寫：躲進搖搖車，數字盤倒轉到西元前 2500',
+        { scene: 'coin', sceneOpt: { year: '2500' }, shot: '小格特寫：躲進搖搖車，數字盤倒轉到西元前 2500',
           props: [{ k: 'coin', x: 121, y: 34, r: 26, rot: 12 }],
           actors: [{ c: 'kai', x: 120, y: 990, s: 1.9, pose: 'scared', expr: 'shock', noShadow: true }],
           bubbles: [{ t: '上車躲雨！\n咦？在倒轉！', x: 18, y: 432, w: 206, fs: 24, tail: [108, 560] }],
@@ -382,8 +381,7 @@
       'UNESCO 世界遺產〈Archaeological Ruins at Moenjodaro〉（在信德省、印度河邊；燒磚建築、城市規劃、排水系統；1980 年列入世界遺產）',
       'Harappa.com（J. M. Kenoyer）摩亨佐達羅圖說：有蓋的排水溝、可掀開的溝蓋與清理、房子的浴室、獨角獸印章、還沒解讀的文字',
       '大英百科〈Mohenjo-daro〉〈Indus civilization〉（約西元前 2500～1900 年；1922 年發現、1920 年代起大規模發掘；磚的比例、標準砝碼、大浴池約 12×7 公尺與瀝青防水；美路哈；衰落原因有不同說法）',
-      '大都會藝術博物館〈Art of the Harappan Civilization〉與印章館藏（印章的獨角獸圖案、在兩河流域出土的印度河印章與貿易）',
-      '108 課綱社會領域 歷 Na-Ⅳ-1（延伸）'
+      '大都會藝術博物館〈Art of the Harappan Civilization〉與印章館藏（印章的獨角獸圖案、在兩河流域出土的印度河印章與貿易）'
     ],
     quiz: [
       { id: 'q1', d: 1, type: 'mc', q: '這一話的摩亨佐達羅，大約在今天的哪個國家？', opts: ['巴基斯坦', '埃及', '伊拉克', '沙烏地阿拉伯'], a: 0, why: '摩亨佐達羅在印度河邊，大約是今天巴基斯坦的信德省。' },

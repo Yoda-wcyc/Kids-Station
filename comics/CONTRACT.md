@@ -3,6 +3,7 @@
 > 沒看過任何對話也要能照這份做出**跟第 1 話風格一致**的一話。先完整看過 `data/v1e1.js`（範本）、在瀏覽器開 `v1e1.html` 翻一遍，再開工。
 > 系列大綱（這一話要講什麼、怎麼接前後）：`OUTLINE.md`。目錄與上架開關：`catalog.js`。
 > 2026-11-08 第一版。共用檔（art.js／comic.js／comic.css／catalog.js／index.html）由整合的人維護。
+> 2026-11-08 第 2～7 冊整合：42 話全上架；現代開場（捷運、教室、籃球場、校門）、蠟燭、大樓、火車、太空頭盔的兄妹併進圖庫（§6）；投幣格依格子比例縮放；角色可以站在 back[] 後面（`behind:1`）；課綱不寫代碼（§3）；外部頁面借用引擎播短漫畫（§13）。
 
 ---
 
@@ -77,7 +78,7 @@ v{冊}e{話}.html ── 載入 ─┬─ ../syncmerge.js ../kids-daily.js ../qu
     series: { zh: '時光搖搖車', en: 'THE TEN-DOLLAR TIME RIDE' },
     perfect: '全對！…（全對時的一句話，跟這一話的開場梗有關）',
     note: '阿凱、小禾、巴特是虛構的角色；…的話是改編，不是原話。…是想像圖。',
-    curriculum: '108 課綱社會領域歷史 …（對不到就寫「延伸：…」）',
+    curriculum: '國中社會會再學到：蒙古帝國與元朝的國際互動',
     cover: { scene: 'cover', sceneOpt: { plain: 1, ground: 'g3' }, back: [ /* 這一話的代表建築 */ ], actors: [ /* 阿凱、小禾 bust:1 */ ] },
     pages: [ { layout: 'trio', panels: [ {…}, {…}, {…} ] }, … ],
     recap: [ { h: '小標', t: '一兩句說明' }, … ],          // 3～5 點，標題是「小禾的筆記」
@@ -98,7 +99,7 @@ v{冊}e{話}.html ── 載入 ─┬─ ../syncmerge.js ../kids-daily.js ../qu
 | `series` | ✓ | 固定 `{ zh: '時光搖搖車', en: 'THE TEN-DOLLAR TIME RIDE' }` |
 | `perfect` |  | 測驗全對時的一句話（沒寫就用預設） |
 | `note` | ✓ | 虛構與改編聲明：哪些角色虛構、哪些台詞改編、哪些畫面是想像圖、哪裡學者還有爭議 |
-| `curriculum` | ✓ | 108 課綱條目（對不到寫「延伸」） |
+| `curriculum` | ✓ | 固定寫「國中社會會再學到：○○」（主題的白話名稱；國中課本沒有的寫「○○是延伸」）。**不寫課綱條目代碼**（Na-Ⅳ-1 這類），`sources` 也不列——學校教案抄來的代碼對不到國教院原文，測試會擋 |
 | `cover` | ✓ | 封面那一格（780×1040）：`scene:'cover'`＋`sceneOpt:{plain:1, ground, near}`，用 `back[]` 擺代表建築（不擺就是第 1 話的巴比倫古城，不要用） |
 | `pages[]` | ✓ | 每頁 `{ layout, panels[] }`，格數＝該版面的格數 |
 | `recap` `map` `timeline` `sources` `quiz` | ✓ | 見 §7、§8 |
@@ -109,8 +110,8 @@ v{冊}e{話}.html ── 載入 ─┬─ ../syncmerge.js ../kids-daily.js ../qu
 |---|---|
 | `scene` | 場景名（§6），`sceneOpt` 給參數 |
 | `shot` | ✓ 分鏡說明一句（「中景：…」「特寫：…」「大格遠景：…」），只給人看，不顯示 |
-| `actors[]` | `{ c, x, y, s, pose, expr, look, flip, hold, sweat, blush, noShadow, bust }`；**x,y＝腳底**（面板 px），`s≈1` 時人高約 200px×角色的 k；`flip:1` 面向左；`look` 眼睛方向 -1～1；`bust:1` 不畫下半身（被畫框切掉時用）；`hold` 手上的東西（字串或陣列） |
-| `back[]` `props[]` | 道具 `{ k, x, y, s, flip, rot, op, …各道具參數 }`；`back` 畫在人後面、`props` 畫在人前面 |
+| `actors[]` | `{ c, x, y, s, pose, expr, look, flip, hold, sweat, blush, noShadow, bust, behind }`；**x,y＝腳底**（面板 px），`s≈1` 時人高約 200px×角色的 k；`flip:1` 面向左；`look` 眼睛方向 -1～1；`bust:1` 不畫下半身（被畫框切掉時用）；`hold` 手上的東西（字串或陣列）；`behind:1` 畫在 `back[]` 後面（站在鐵絲網、牆、櫃檯後面的人） |
+| `back[]` `props[]` | 道具 `{ k, x, y, s, flip, rot, op, …各道具參數 }`；`back` 畫在人後面、`props` 畫在人前面。疊的順序：場景 → `behind:1` 的角色 → `back[]` → 其他角色 → `props[]` |
 | `bubbles[]` | `{ t, x, y, w, tail:[x,y], kind, fs }`：左上角 x,y、寬 w（≥100）、尾巴尖端指到說話的人嘴邊；`kind`：`say`（預設）／`shout`（黑底大喊）／`think`（想）／`car`（搖搖車說話，綠底）；`fs` 字級 22～29（預設 26）；`\n` 換行 |
 | `caption[]` | 旁白 `{ t, x, y, w, en, say, dark:false }`：深綠底（`dark:false` 奶油底）；`en` 小字英文標；`say` 給朗讀的版本（例：注音字要念的樣子） |
 | `cards[]` | 字卡 `{ icon, y, x, w, t }`（第 1 話法條那種），icon 見 §6 |
@@ -164,19 +165,24 @@ v{冊}e{話}.html ── 載入 ─┬─ ../syncmerge.js ../kids-daily.js ../qu
 | `night` | 夜空：`sky` `moon:[x,y]` `ground` |
 | `vortex` | 時光隧道（出發格）：`year:'前1200'` `car:false` `carS` |
 | `cover` | 封面：`plain:1` `ground` `near` |
-| `coin` | 投幣孔＋倒轉的數字盤（出發那一格）：`year:'2560'`、`era:'西元前'|'西元'`（第 1 冊第 2～6 話各自複製了一份 `v1eN_coin`，新的一話直接用這個） |
+| `coin` | 投幣孔＋倒轉的數字盤（出發那一格）：`year:'2560'`、`era:'西元前'|'西元'`。任何格子都能用：寬格（寬＞高×1.2）投幣孔在左、數字盤在右；直的格子上下排、數字盤跟著縮，不會蓋到投幣孔 |
+| `mrt` | 捷運車廂：`seat` 座椅上緣比例（.6，坐著的人腳底放在 seat＋.16 附近）、`poles:[.3,.7]` 扶手桿、`sign` 車門上的跑馬燈字、`win` 窗外顏色 |
+| `classroom` | 教室：`board` 黑板上的字、`fs` 字級、`hz` 牆腳（.74）、`floor`、`desks:false` 不畫前排課桌 |
+| `ballCourt` | 籃球場（第 1 話的 `court` 是國王的宮廷，不一樣）：`back:'fence'`（鐵絲網，預設）`'trees'` `'school'`、`floor` 場地色、`hoop` 籃框位置比例（不寫就自己用 `hoop` 道具擺）、`sun:[x,y]`、`hz` |
+| `schoolGate` | 校門口：`name` 校名（時光國小）、`shop:false` 不畫左邊文具店、`hz` 地面（.54）、`ground` 地面色（預設馬路） |
 | 第 1 話專用 | `kitchen`（家裡廚房）`street`（台灣街道）`babylon` `yard` `print` `stylus` `granary` `steleHall` `lawsBg` `court` `dusk` —— 現代開場可以重用 `kitchen`、`street`、`coin` |
+| 現代開場還沒有共用的 | 圖書館用 `room`＋`shelf`＋`table`（v2e3、v5e5 的寫法）；夜市、便利商店、超市各只有一話畫過（`v3e6_night` `v6e5_shop` `v7e6_market`），第二話要用時再搬進來 |
 
 **道具 `k`**（原點＝底部中央貼地；共通 `s` `flip` `rot` `op`）
 
 | 類別 | 名字（參數） |
 |---|---|
-| 建築 | `pyramid`（W H f f2 cap wip:0～1 沒蓋完＋坡道） `obelisk`（H） `mudHouse`（W H dome door:false win:false） `house`（W H roof:gable/tile/thatch/flat roofC f） `wall`（W H gate crenel:false） `tower`（W H roof:'cone'） `column`（H style:greek/egypt/persia） `temple`（W H n 根柱） `hall`（中國殿堂 W H roof:'thatch'/'tile'） `dome`（W H domeC，不畫宗教符號） `castle`（W H roofC） `zig`（金字形神塔 W H） `stele`（石碑 H W） |
+| 建築 | `pyramid`（W H f f2 cap wip:0～1 沒蓋完＋坡道） `obelisk`（H） `mudHouse`（W H dome door:false win:false） `house`（W H roof:gable/tile/thatch/flat roofC f） `wall`（W H gate crenel:false） `tower`（W H roof:'cone'） `column`（H style:greek/egypt/persia） `temple`（W H n 根柱） `hall`（中國殿堂 W H roof:'thatch'/'tile'） `dome`（W H domeC，不畫宗教符號） `castle`（W H roofC） `zig`（金字形神塔 W H） `stele`（石碑 H W） `building`（現代大樓 W H f 牆色 g 窗色 win:'grid'|'band' door:1） |
 | 自然 | `tree`（H kind:round/pine/cedar/cypress） `palm`（H） `reeds`（n） `papyrus`（H n） `mountain`（W H snow） `hills`（W H） `cloud`（r） `waves`（W n） |
-| 交通 | `ship`（kind:galley 古代划槳帆船／reed 蘆葦船／junk 中國帆船／tall 大航海帆船／steam 蒸汽船；sail stripes trim flag） `horse`（f mane saddle） `camel`（load） `cart` `car`（搖搖車 s lights rot） `scooter` |
-| 器物 | `scroll`（W H） `slips`（竹簡） `book` `tablet`（泥板） `amphora` `ding`（青銅鼎） `bone`（卜骨） `shell`（骨螺） `fire` `brazier` `well` `flag`（f） `sign`（t fs 招牌） `crate` `barrel` `bricks`（n m） `sack` `coin`（t 面額） `crowd`（n W 背景人群剪影） `road`（W w2 L 透視的路） `spark` `arrow`（L rot） `table` `shelf` `lamp` `puff` `zoom` |
+| 交通 | `ship`（kind:galley 古代划槳帆船／reed 蘆葦船／junk 中國帆船／tall 大航海帆船／steam 蒸汽船；sail stripes trim flag） `horse`（f mane saddle） `camel`（load） `cart` `car`（搖搖車 s lights rot） `scooter` `loco`（早期蒸汽火車頭，朝右 smoke:1） `coach`（客車廂 f） `rail`（鐵軌 W） |
+| 器物 | `scroll`（W H） `slips`（竹簡） `book` `tablet`（泥板） `amphora` `ding`（青銅鼎） `bone`（卜骨） `shell`（骨螺） `fire` `brazier` `well` `flag`（f） `sign`（t fs 招牌） `crate` `barrel` `bricks`（n m） `sack` `coin`（t 面額） `crowd`（n W 背景人群剪影） `road`（W w2 L 透視的路；old:1 古代的路，不畫白色分隔線） `spark` `arrow`（L rot） `table` `shelf` `lamp` `puff` `zoom` `candle`（蠟燭＋光暈 glow） `hoop`（籃框，朝右） `ball`（籃球） |
 
-**角色**：`kai` `he`（主角）＋第 1 話的 `iddin` `king` `guard` `farmer` `farmer2` `scribe`。新角色用 extend 的 `cast`：
+**角色**：`kai` `he`（主角）、`kaiSpace` `heSpace`（戴太空頭盔的兄妹）＋第 1 話的 `iddin` `king` `guard` `farmer` `farmer2` `scribe`。新角色用 extend 的 `cast`：
 
 ```js
 cast: { v2e1_nikos: { name: '尼可斯（虛構）', skin: 'skin'|'skinB'|'skinC', top: 'g5', skirt: 'gold',   // 短衣＋裙
@@ -259,3 +265,36 @@ node test\comics.test.js --browser v3e5 --out "<你的暫存夾>"   # 無頭 Chr
 - 封面一定要 `sceneOpt:{plain:1}`，不然會畫出第 1 話的巴比倫。
 - `next` 要跟 catalog 下一話標題一樣；最後一格要有旁白「下一話：…」。
 - 不要改共用檔「順手修一下」——寫在回報裡。
+
+## 13. 外部頁面借用漫畫引擎播一段短漫畫（地理世界篇開場等；需求見 `geo/CONTRACT.md` §8）
+
+借用、不複製：外部頁面直接載 `comics/` 的引擎，`comics/` 底下的檔一個都不用改、也不准改。
+
+```
+geo/unit.html（或任何外部頁面）
+  ├─ ../comics/comic.css               版面樣式（在頁面自己的 css 之後載，class 都是 cm- 開頭）
+  ├─ 頁面裡放漫畫的骨架（id 固定，見下面）
+  ├─ ../quizkit.js ../chinese/reading-core.js ../comics/art.js ../comics/comic.js   （照這個順序；短漫畫不用 catalog.js）
+  ├─ geo/comics/w1.js                  短漫畫資料：照 §3 的「一話」格式放進 COMIC_DATA.w1
+  └─ KidsComic.mount(COMIC_DATA.w1, { short: 1, onStep, onEnd })
+```
+
+骨架（id 一個都不能少；放在一個有高度的容器裡，例如分頁內容 `height: 70vh`）：
+
+```html
+<header class="cm-top"><span id="cm-ep"></span><span id="cm-count"></span><div class="cm-track"><div id="cm-bar"></div></div></header>
+<main id="cm-stage" aria-label="漫畫"><div id="cm-book"></div></main>
+<main id="cm-sheet" hidden></main>
+<footer class="cm-bot" id="cm-chrome"><button type="button" class="btn" id="cm-prev">◀ 上一格</button><button type="button" class="btn" id="cm-tts">🔊 朗讀</button><button type="button" class="btn" id="cm-next">下一格 ▶</button></footer>
+```
+
+| `mount` 的選項 | 說明 |
+|---|---|
+| `short: 1` | 短漫畫：只有封面（資料沒寫 `cover` 就沒有封面，直接從第 1 格開始）＋格子，沒有重點、地圖、測驗；最後一格的按鈕變「看完了 ✓」 |
+| `onStep(step, i)` | 每翻一步都呼叫。`step.kind` 是 `'cover'`／`'panel'`；`step.p` 是這一格的資料，**格子可以自己加欄位**，例如 `places: ['nile', 'cairo']`（`geo/places.js` 的 id），外部頁面在這裡讓旁邊的地圖亮起來 |
+| `onEnd(ep)` | 最後一格按「看完了 ✓」時呼叫（例如切回地理的練習分頁） |
+
+- 短漫畫的資料：`id` `title` `series` `pages` 必填；`cover` 選填；`recap` `map` `timeline` `quiz` `sources` 都不用。格子的寫法、版面、角色、圖庫完全照 §3～§6；這一段自己的新圖形用 `ComicArt.extend`，名字前綴用自己的 id（例如 `w1_`）。
+- 測試：`test/comics.test.js --browser` 有一項「短漫畫模式」檢查（只有格子、每翻一步呼叫 onStep、最後呼叫 onEnd）。地理那邊的資料格式、地點 id 由 `test/geo.test.js` 檢查（地理的人加）。
+- 限制：同一頁只能 mount 一次（引擎抓固定 id、在 window 上掛鍵盤左右鍵翻格）。要換一段漫畫就重新整理頁面，或改用 `<iframe>` 包一個只放骨架的頁面。
+- 學習紀錄：短漫畫沒有測驗，不會呼叫 `KidsDaily.rec`。
