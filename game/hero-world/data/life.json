@@ -1,5 +1,5 @@
 {
-  "_doc": "生活系統資料。fishing.loot：釣魚抽獎表（w＝權重；id＋n＝物品，coins＝金幣；treasure＝算寶物）。achievements：成就（stat 計數器到 need 就達成；coins＝獎勵金幣，創造模式不給）。stat 名稱：mine:<方塊 id>（木頭統一叫 mine:wood）、craft:<成品 id>、place:<方塊 id>、placed、house、smelted、bed、harvested、bred、ride:<boat|minecart|horse>、fish、treasure、traded、quiz_wins、stele_answers、quests、boss:<傳送門 map>、shadow、dragon。 appleChance：打掉樹葉掉蘋果的機率。",
+  "_doc": "生活系統資料。fishing.loot：釣魚抽獎表（w＝權重；id＋n＝物品，coins＝金幣；treasure＝算寶物）。achievements：成就（stat 計數器到 need 就達成；coins＝獎勵金幣，創造模式不給）。stat 名稱：mine:<方塊 id>（木頭統一叫 mine:wood）、craft:<成品 id>、place:<方塊 id>、placed、house、smelted、bed、harvested、bred、ride:<boat|minecart|horse>、fish、treasure、traded、quiz_wins、stele_answers、quests、boss:<傳送門 map>、shadow、dragon；M9：shot（射箭）、shot_full（拉滿）、arrow_hit（射中）、books（讀懂小書，每次都算）、books_read（讀懂過幾篇不同的）、tamed、pet_named、place:scaffold。 appleChance：打掉樹葉掉蘋果的機率。",
   "fishing": {
     "loot": [
       {
@@ -288,6 +288,70 @@
       "stat": "library",
       "need": 1,
       "coins": 5
+    },
+    {
+      "id": "archer",
+      "name_zh": "小弓箭手",
+      "desc_zh": "用弓射出第一支箭",
+      "stat": "shot",
+      "need": 1,
+      "coins": 1
+    },
+    {
+      "id": "full_draw",
+      "name_zh": "拉滿弓",
+      "desc_zh": "按住蓄力，射出一支拉滿的紅箭",
+      "stat": "shot_full",
+      "need": 1,
+      "coins": 1
+    },
+    {
+      "id": "sharpshooter",
+      "name_zh": "神射手",
+      "desc_zh": "用箭射中 20 次",
+      "stat": "arrow_hit",
+      "need": 20,
+      "coins": 3
+    },
+    {
+      "id": "first_book",
+      "name_zh": "愛讀書的孩子",
+      "desc_zh": "讀懂一本英文小書（答對理解題）",
+      "stat": "books",
+      "need": 1,
+      "coins": 1
+    },
+    {
+      "id": "bookworm",
+      "name_zh": "小書蟲",
+      "desc_zh": "讀懂 10 篇不同的英文小書",
+      "stat": "books_read",
+      "need": 10,
+      "coins": 3
+    },
+    {
+      "id": "pet_friend",
+      "name_zh": "寵物好朋友",
+      "desc_zh": "馴服一隻小狗或小貓",
+      "stat": "tamed",
+      "need": 1,
+      "coins": 2
+    },
+    {
+      "id": "pet_name",
+      "name_zh": "牠叫什麼名字",
+      "desc_zh": "幫寵物取名字",
+      "stat": "pet_named",
+      "need": 1,
+      "coins": 1
+    },
+    {
+      "id": "scaffolder",
+      "name_zh": "鷹架工人",
+      "desc_zh": "放 10 個竹鷹架",
+      "stat": "place:scaffold",
+      "need": 10,
+      "coins": 1
     }
   ],
   "appleChance": 0.1

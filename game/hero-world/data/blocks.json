@@ -172,7 +172,8 @@
     {"n":168,"id":"powered_rail_asc_w","name_zh":"動力鐵軌（坡）","colors":{"top":"#D9A63A"},"pattern":"rail","tileOf":"powered_rail_ew","shape":"ramp","facing":3,"solid":false,"cutout":true,"hardness":0.4,"tool":"pickaxe","tier":0,"drops":"powered_rail","rail":"asc_w","powered":true,"hidden":true,"buy":null},
     {"n":169,"id":"loot_chest","name_zh":"寶箱","colors":{"top":"#B88B55","side":"#A97E4E","bottom":"#8C6640"},"accent":"#D9A63A","pattern":"chest","hardness":1.2,"tool":"axe","tier":0,"drops":"chest","interact":"chest","hidden":true,"buy":null},
     {"n":170,"id":"riddle_door","name_zh":"英文圖書館的門","colors":{"top":"#3A1F4A","side":"#3A1F4A"},"accent":"#F2C46B","pattern":"door","hardness":-1,"drops":null,"interact":"riddle","hidden":true,"buy":null},
-    {"n":171,"id":"bamboo","name_zh":"竹子","colors":{"top":"#9DBE6E","side":"#6E9A4E"},"pattern":"bamboo","shape":"pole","solid":true,"cutout":true,"hardness":0.3,"tool":"axe","tier":0,"drops":"self","buy":null}
+    {"n":171,"id":"bamboo","name_zh":"竹子","colors":{"top":"#9DBE6E","side":"#6E9A4E"},"pattern":"bamboo","shape":"pole","solid":true,"cutout":true,"hardness":0.3,"tool":"axe","tier":0,"drops":"self","buy":null},
+    {"n":172,"id":"scaffold","name_zh":"竹鷹架","colors":{"top":"#C9B26A"},"pattern":"scaffold","solid":false,"cutout":true,"climbable":2,"hardness":0.2,"tool":"axe","tier":0,"drops":"self","buy":null}
   ],
   "items": [
     {"id":"stick","name_zh":"木棍","icon":"stick","color":"#8C6640","maxStack":64,"buy":null},

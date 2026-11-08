@@ -36,7 +36,11 @@ button { font: inherit; color: inherit; touch-action: manipulation; }
 .tb { width: 76px; height: 64px; border: 0; border-radius: 16px; background: rgba(239, 235, 221, .88); box-shadow: 3px 3px 0 var(--shadow); font-size: 20px; font-weight: 700; touch-action: none; }
 .tb.big { grid-column: span 2; width: auto; height: 76px; font-size: 24px; background: var(--leaf); color: var(--paper); }
 #b-down { visibility: hidden; }
-.flying #b-down { visibility: visible; }
+.flying #b-down, .climbing #b-down { visibility: visible; }
+#charge { position: absolute; left: 50%; top: calc(50% + 22px); width: 64px; height: 8px; margin-left: -32px; background: rgba(38, 48, 42, .45); border: 2px solid #26302A; border-radius: 4px; overflow: hidden; pointer-events: none; }
+#charge[hidden] { display: none; }
+#charge i { display: block; height: 100%; width: 0; background: #F2C46B; }
+#charge.full i { background: #E0352B; }
 .flying #b-fly { background: var(--green); color: var(--paper); }
 .touch #hotbar { left: 50%; }
 #toasts { position: absolute; left: 50%; top: 76px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; }
