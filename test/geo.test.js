@@ -117,5 +117,54 @@ ok(at('../syncmerge.js') >= 0 && at('../syncmerge.js') < at('../kids-daily.js') 
 ok(/repeat\(9,/.test(read('subjects.css')) && (sj.match(/\{ k: '[a-z]+', n: /g) || []).length === 9, '9 subject tabs');
 if (core.validEvent) ok(core.validEvent({ event_id: 'e-1', type: 'practice_round', item: 'geo:practice', correct: 8, total: 10 }) && !core.validEvent({ event_id: 'e-1', type: 'practice_round', item: 'geo:zzz', correct: 8, total: 10 }), 'coin event geo:practice valid, geo:zzz not');
 
+// ---- 2026-11-08 歷史漫畫 × 地圖：42 話都對到 places.js 的地點（geo/history.js），世界篇重點頁的「這一洲的歷史故事」每話都落在某一洲 ----
+const CAT = require(path.join(root, 'comics/catalog.js')), GH = require(path.join(root, 'geo/history.js'));
+const EPIDS = CAT.vols.flatMap(v => v.eps.map(e => e.id));
+ok(EPIDS.length === 42 && JSON.stringify(Object.keys(GH.EP).sort()) === JSON.stringify(EPIDS.slice().sort()), 'history.js: exactly the 42 catalog episodes');
+EPIDS.forEach(id => ok(P[GH.EP[id]], 'history.js: ' + id + ' → place ' + GH.EP[id] + ' exists in places.js'));
+{ const cos = ['as', 'eu', 'af', 'na', 'sa', 'oc', 'an'], n = {}; cos.forEach(co => GH.byCo(co, P, CAT).forEach(e => { n[e.id] = (n[e.id] || 0) + 1; }));
+  ok(EPIDS.every(id => n[id] === 1 + (GH.ALSO[id] || []).length), 'history.js: every episode lands in exactly one continent (+ALSO): ' + EPIDS.filter(id => n[id] !== 1 + (GH.ALSO[id] || []).length).join(' '));
+  ok(GH.byCo('af', P, CAT).some(e => e.id === 'v6e3') && GH.byCo('eu', P, CAT).some(e => e.id === 'v6e3'), 'history.js: v6e3 (柏林與非洲) listed under Europe and Africa'); }
+ok(/href="\.\.\/geo\/history\.html\?ep=\$\{esc\(ep\.id\)\}"/.test(read('comics/comic.js')) && /🌍 在地圖上看這一站/.test(read('comics/comic.js')), 'comic.js: where page links to ../geo/history.html?ep=<id>');
+{ const h = read('geo/history.html'); ['places.js', 'maps/world.js', 'geo.js', '../comics/catalog.js', 'history.js'].forEach(f => ok(h.includes('src="' + f), 'history.html loads ' + f)); }
+
+// ---- 世界篇開場短漫畫 geo/comics/w1～w7.js（comics/CONTRACT.md §3、§13）：結構、元件、地點、畫得出來 ----
+{
+  const vm = require('vm'), A = require(path.join(root, 'comics/art.js')), ctx = { ComicArt: A }; vm.createContext(ctx);
+  const len = s => String(s).replace(/\s/g, '').length;
+  ['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7'].forEach(u => {
+    const f = 'geo/comics/' + u + '.js', W = m => f + '：' + m;
+    if (!ok(fs.existsSync(path.join(root, f)), W('不存在'))) return;
+    try { vm.runInContext(read(f), ctx, { filename: f }); } catch (e) { ok(false, W('跑不起來：' + e.message)); return; }
+    const ep = ctx.COMIC_DATA && ctx.COMIC_DATA[u];
+    if (!ok(ep && ep.id === u && ep.title && ep.series && ep.series.zh === '時光搖搖車' && Array.isArray(ep.pages), W('COMIC_DATA.' + u + ' 要有 id、title、series、pages'))) return;
+    ok(ep.geoFig && !/NaN/.test(JSON.stringify(Geo.view(ep.geoFig))), W('geoFig（地圖範圍）'));
+    const panels = ep.pages.flatMap(pg => pg.panels);
+    ok(panels.length >= 4 && panels.length <= 6, W('4～6 格，現在 ' + panels.length));
+    ep.pages.forEach((pg, pi) => {
+      const L = A.LAYOUTS[pg.layout]; if (!ok(L && L.length === pg.panels.length, W(`第 ${pi + 1} 頁版面 ${pg.layout} 格數不對`))) return;
+      pg.panels.forEach((p, i) => {
+        const w = W(`第 ${pi + 1} 頁第 ${i + 1} 格 `), s = L[i];
+        ok(A.SCENES[p.scene] && p.shot, w + '場景／分鏡說明');
+        ok(Array.isArray(p.places) && p.places.length && p.places.every(id => P[id]), w + 'places 要有、而且都是 places.js 的 id：' + JSON.stringify(p.places));
+        (p.actors || []).forEach(a => ok(A.CAST[a.c] && (!a.pose || A.POSES[a.pose]) && (!a.expr || A.EXPR[a.expr]) && [].concat(a.hold || []).every(h => ['notebook', 'tablet', 'tabletBlank', 'cup', 'spoon', 'sack', 'reed'].includes(h) || A.HOLDS[h]), w + '角色／姿勢／表情／手上的東西：' + a.c));
+        (p.back || []).concat(p.props || []).forEach(x => ok(A.PROPS[x.k], w + '道具不存在 ' + x.k));
+        (p.cards || []).forEach(c => ok(A.ICONS[c.icon], w + '字卡圖示不存在 ' + c.icon));
+        (p.bubbles || []).forEach(b => ok(b.t && len(b.t) <= 36 && b.x >= 0 && b.w >= 100 && b.x + b.w <= s.w && (!b.kind || ['say', 'shout', 'think', 'car'].includes(b.kind)) && !/血|屍|砍頭|斬首|殺死/.test(b.t), w + '泡泡：' + b.t));
+        ok((p.bubbles || []).length + (p.caption || []).length + (p.cards || []).length > 0, w + '這格沒有字');
+        let svg = ''; try { svg = A.panelSvg(p, s.w, s.h); } catch (e) { ok(false, w + '畫不出來：' + e.message); }
+        ok(svg && !/NaN|undefined/.test(svg), w + '畫出來有 NaN／undefined');
+      });
+    });
+  });
+  const uh = read('geo/unit.html'), ih = read('geo/intro.html');
+  ok(/id="tab-intro"/.test(uh) && uh.indexOf('id="tab-intro"') < uh.indexOf('id="tab-learn"') && /intro\.html\?u=/.test(uh) && /KidsDone\.record\('geo', key, 100\)/.test(uh) && !/KidsCoins/.test(uh), 'unit.html: 🎬 開場 tab first, plays intro.html, records geo <u>o (no coins)');
+  ok(['../quizkit.js', '../chinese/reading-core.js', '../comics/art.js', '../comics/comic.js'].every(f => ih.includes('src="' + f)) && /short: 1/.test(ih) && /onStep/.test(ih) && /onEnd/.test(ih), 'intro.html borrows the comic engine (short:1, onStep, onEnd)');
+}
+// 看過開場：kids_done.geo.w1o～w7o（已經會同步的 done.geo，不新增同步 key）
+{ const d = SM.normDone({ geo: { w1o: 100, w7o: 100, m1o: 100, w8o: 100, t1p1: 90 } }).geo, k = Object.keys(d).sort().join();
+  ok(k === 't1p1,w1o,w7o', 'done.geo keeps w1o～w7o (intro seen), drops m1o/w8o: ' + k);
+  ok(KC.record({}, 'geo', 'w3o', 100, 1).geo.w3o === 100 && KC.evaluate('geo:w3', {}, { done: { geo: { w3o: 100 } } }).status === 'todo', 'intro seen is recorded but does not count toward completion'); }
+
 console.log(`geo: ${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

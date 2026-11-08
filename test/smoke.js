@@ -1036,7 +1036,8 @@ const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 // 2026-11-06：🎬 動畫教學 1 張卡（math/anim.html）＋anim-a～g hidden 入口（樣板字串，1 處 hidden: true）→ 17 個 src、hidden 7 個
 // 2026-11-06：再 1 個 hidden 入口（期中第 15、17 題類題 5 題 ?set=1517）→ 18 個 src、hidden 8 個
 // 2026-11-08：國語第 3 張卡（作文 chinese/writing/writing.html）→ 19 個 src
-ok(srcs.length === 19 &&(sj.match(/hidden: true/g) || []).length === 8 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
+// 2026-11-08：地理「世界篇」🗺️ 歷史地圖 1 張卡（geo/history.html）→ 20 個 src
+ok(srcs.length === 20 &&(sj.match(/hidden: true/g) || []).length === 8 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----

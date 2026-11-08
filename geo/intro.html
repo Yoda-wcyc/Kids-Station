@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E4DFCC">
+<title>開場漫畫</title>
+<link rel="stylesheet" href="../style.css?v=494b1daab7">
+<link rel="stylesheet" href="../comics/comic.css?v=beea9d7dcb">
+</head>
+<body>
+<!-- 🎬 世界篇開場短漫畫（2026-11-08）：geo/unit.html 的「🎬 開場」分頁用 iframe 開這一頁（?u=w1～w7）。
+     借用漫畫引擎（comics/CONTRACT.md §13）：comic.css 會把整頁變成全螢幕閱讀器，所以放在自己的 iframe 裡，不污染地理單元頁。
+     每翻一格把這一格的 places（geo/places.js 的 id）和地圖範圍 geoFig 用 postMessage 告訴上一層（unit.html 讓旁邊的地圖亮起來）；看完了也告訴上一層。 -->
+<header class="cm-top"><span id="cm-ep"></span><span id="cm-count"></span><div class="cm-track"><div id="cm-bar"></div></div></header>
+<main id="cm-stage" aria-label="漫畫"><div id="cm-book"></div></main>
+<main id="cm-sheet" hidden></main>
+<footer class="cm-bot" id="cm-chrome"><button type="button" class="btn" id="cm-prev">◀ 上一格</button><button type="button" class="btn" id="cm-tts">🔊 朗讀</button><button type="button" class="btn" id="cm-next">下一格 ▶</button></footer>
+<script src="../quizkit.js?v=a6ae14fac8"></script>
+<script src="../chinese/reading-core.js?v=80ae912d04"></script>
+<script src="../comics/art.js?v=a26fd61e36"></script>
+<script src="../comics/comic.js?v=405892a297"></script>
+<script>
+var GEO_U = (/[?&]u=(w[1-7])\b/.exec(location.search) || [])[1] || '';
+if (GEO_U) document.write('<script src="comics/' + GEO_U + '.js"><\/script>');
+</script>
+<script>
+(function () {
+  var ep = GEO_U && window.COMIC_DATA && COMIC_DATA[GEO_U];
+  if (!ep) { document.getElementById('cm-ep').textContent = '這一段開場漫畫準備中'; return; }
+  var n = ep.pages.reduce(function (a, p) { return a + p.panels.length; }, 0) + (ep.cover ? 1 : 0);
+  function tell(m) { try { if (window.parent !== window) window.parent.postMessage(Object.assign({ geoIntro: GEO_U, n: n }, m), location.origin); } catch (e) { } }
+  KidsComic.mount(ep, {
+    short: 1,
+    onStep: function (st, i) { tell({ k: 'step', i: i, places: (st.p && st.p.places) || [], fig: ep.geoFig }); },
+    onEnd: function () { tell({ k: 'end' }); }
+  });
+})();
+</script>
+</body>
+</html>

@@ -204,6 +204,8 @@ const LAYOUT_CHECK = `const out = [], A = ComicArt, ep = window.__ep, st = __com
         if (st.kind === 'panel') { (await ev(LAYOUT_CHECK)).forEach(x => bok(false, id + ' ' + x)); if (st.last) await shot(`${id}-p${String(st.page + 1).padStart(2, '0')}.png`); lastPage = st.page; }
         if (st.kind === 'cover') await shot(`${id}-p00-cover.png`);
         if (st.kind === 'recap' || st.kind === 'where') { bok(await ev(`return document.querySelector('#cm-sheet h2') && !document.getElementById('cm-sheet').hidden`), id + ' ' + st.kind + ' 頁'); await shot(`${id}-${st.kind}.png`); }
+        // 2026-11-08 地圖頁的「🌍 在地圖上看這一站」→ 地理的歷史地圖（geo/history.html，亮起這一話）
+        if (st.kind === 'where') { const hr = await ev(`const a = document.getElementById('cm-geo'); return a && a.getAttribute('href')`); bok(hr === `../geo/history.html?ep=${id}` && (await fetch(ORIGIN + '/geo/history.html')).status === 200, `${id} 地圖頁的「在地圖上看這一站」連結：${hr}`); }
       }
       // 測驗：第 1 題故意答錯（要出現解析），其他照正解用點的作答，最後看結果頁
       for (let q = 0; q < 5; q++) {

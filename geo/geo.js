@@ -551,7 +551,7 @@
     }
     $('prac').addEventListener('click', onClick); $('exam').addEventListener('click', onClick); $('learn').addEventListener('click', onClick);
     function setTab(k) {
-      ['learn', 'prac', 'exam'].forEach(function (x) { $('tab-' + x).setAttribute('aria-selected', String(x === k)); $(x).hidden = x !== k; });
+      ['intro', 'learn', 'prac', 'exam'].forEach(function (x) { if (!$('tab-' + x) || !$(x)) return; $('tab-' + x).setAttribute('aria-selected', String(x === k)); $(x).hidden = x !== k; });   // intro＝🎬 開場（世界篇；unit.html 有放才有）
       if (k === 'prac' && !(run && run.mode === 'prac')) pHome();
       if (k === 'exam' && !(run && run.mode === 'test')) eHome();
       window.scrollTo(0, 0);

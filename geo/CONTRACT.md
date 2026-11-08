@@ -178,15 +178,23 @@ test/geo-browser.js  無頭 Chrome 實測（必跑）
 - 南極圖（`proj: 'polar'`）：南極洲是一整塊（2026-11-08 修掉橫切南極的錯誤直線和換日線的接縫線），拼圖 `{ c: 'an' }` 的位置就在南極點附近。
 - t5（縣市與區域）需要縣市界，目前沒有 → 先只出用地點（縣市政府所在地）和區域（北、中、南、東）的題，縣市界等擴充後再補。
 
-## 8. 世界篇的開場漫畫（之後做，這一輪不做）
+## 8. 世界篇的開場漫畫、歷史地圖（2026-11-08 上線）
 
-每洲開場用一段短漫畫，主角是世界史漫畫的阿凱和小禾。**不准改 `comics/` 底下任何檔**；漫畫引擎的格式以 `comics/CONTRACT.md` 為準（另一位負責人在寫）。接法（預定）：
+```
+geo/unit.html?u=w1 ──「🎬 開場」分頁（第一個；還沒看過就先開這頁）
+   ├─ <iframe src="intro.html?u=w1">  ← geo/intro.html：借用 comics/comic.js（short:1），播 geo/comics/w1.js
+   │      （comic.css 會把整頁變成全螢幕閱讀器，所以一定要隔在 iframe 裡）
+   │      每翻一格 postMessage {places, fig} → 上一層
+   └─ 旁邊（窄螢幕在下面）的地圖：Geo.figSVG 畫 geoFig 範圍、places 亮起來；地點不在這一洲（例 在臺灣的家）就換成世界地圖
+   看完（翻到最後一格／按「看完了 ✓」）→ kids_done.geo.<單元>o＝100（syncmerge GEO_RE 收；不算題目、不給學習幣、不算單元完成）
+geo/unit.html 重點頁最後一張卡「📚 這一洲的歷史故事」← geo/history.js 的 byCo（v6e3 用 ALSO 也算進非洲）
+geo/history.html「🗺️ 歷史地圖」← comics/catalog.js（標題、年代）× geo/history.js（話 → 地點，唯一一份）× places.js（經緯度）
+   ?ep=v3e2 一路放大到那一點並打開卡片；comics/comic.js 地圖頁的「🌍 在地圖上看這一站」連過來；首頁地理「世界篇」有一張卡
+```
 
-1. 漫畫資料放在 `geo/comics/<w1～w7>.js`，格式照 `comics/CONTRACT.md` 的「一話」資料。
-2. `geo/unit.html` 加一個「🎬 開場」分頁，用 `<iframe>` 或照 `comics/CONTRACT.md` 說的方式載入 `comics/comic.js` 來播（借用引擎、不複製一份）。
-3. 漫畫裡提到的地點用 `places.js` 的 id，播放時可以在旁邊的地圖亮起來。
-
-這一段由負責引擎的人做；寫 w 單元的人只要先把開場想講的 3～5 個畫面寫成文字草稿放在檔頭註解。
+- 短漫畫資料：`geo/comics/<w1～w7>.js`，格式照 `comics/CONTRACT.md` §3（短漫畫不用 recap、map、quiz），4～6 格；每一格**一定要有** `places`（places.js 的 id），檔案要有 `geoFig`（地圖範圍，同單元資料的洲圖）。新圖形用 `ComicArt.extend`、名字前綴 `w1_`。
+- 新增 42 話以外的漫畫地點：在 places.js「歷史漫畫」分區加，再改 `geo/history.js`（只能有這一份對照表）。
+- 測試：`test/geo.test.js`（資料、地點、42 話對照）、`test/geo-browser.js`（世界篇單元會多跑開場；全部跑或加 `--history` 會跑歷史地圖）。
 
 ## 9. 寫完要跑的檢查（全部綠才算完成）
 

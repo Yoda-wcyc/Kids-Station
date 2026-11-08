@@ -2,7 +2,8 @@
    流程：封面 → 一格一格（滑動／按鈕／點螢幕）→ 重點整理 → 時間軸＋地圖 → 小測驗（quizkit.js 元件、reading-core.js 判分）。
    直向：整頁看、翻一格多顯示一格；橫向：一次放大看一格（一頁放不下的字才不會太小）。
    還沒接學習幣、完成標示、錯題庫（Yoda 看過第 1 話才做）：作答結果只留在這一頁；要接的時候接在 onDone。
-   地圖走 A.map（有 bounds 的通用地圖；第 1 話沒有 bounds → 兩河流域專用圖）；測驗結果頁的「下一話」看 catalog.js 的 ready。規格：CONTRACT.md。 */
+   地圖走 A.map（有 bounds 的通用地圖；第 1 話沒有 bounds → 兩河流域專用圖）；測驗結果頁的「下一話」看 catalog.js 的 ready。規格：CONTRACT.md。
+   地圖頁的「🌍 在地圖上看這一站」連到 ../geo/history.html?ep=<這一話>（2026-11-08，地點對照表 geo/history.js）。 */
 (function () {
   'use strict';
   const A = window.ComicArt, QK = window.QuizKit, ZR = window.ZhReading, esc = QK.esc;
@@ -92,6 +93,7 @@
     function whereHTML() {
       return `<div class="cm-sh"><p class="cm-eyebrow">WHERE &amp; WHEN</p><h2>在哪裡？什麼時候？</h2>
         <figure class="cm-fig">${A.map(ep.map)}<figcaption>${esc(ep.map.cap)}</figcaption></figure>
+        ${/^v\d+e\d+$/.test(ep.id) ? `<p class="cm-next"><a class="btn" id="cm-geo" href="../geo/history.html?ep=${esc(ep.id)}">🌍 在地圖上看這一站</a></p>` : ''}
         <figure class="cm-fig">${A.timeline(ep.timeline.items)}<figcaption>${esc(ep.timeline.cap)}</figcaption></figure>
         <p class="cm-src"><b>資料查證：</b>${ep.sources.map(esc).join('；')}</p></div>`;
     }

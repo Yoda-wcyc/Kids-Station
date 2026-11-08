@@ -298,3 +298,5 @@ geo/unit.html（或任何外部頁面）
 - 測試：`test/comics.test.js --browser` 有一項「短漫畫模式」檢查（只有格子、每翻一步呼叫 onStep、最後呼叫 onEnd）。地理那邊的資料格式、地點 id 由 `test/geo.test.js` 檢查（地理的人加）。
 - 限制：同一頁只能 mount 一次（引擎抓固定 id、在 window 上掛鍵盤左右鍵翻格）。要換一段漫畫就重新整理頁面，或改用 `<iframe>` 包一個只放骨架的頁面。
 - 學習紀錄：短漫畫沒有測驗，不會呼叫 `KidsDaily.rec`。
+- 2026-11-08 實際接法（地理世界篇開場）：comic.css 會改 `html,body`（全螢幕、不能捲、`:root` 顏色），直接載進別人的頁面會把那一頁弄壞，所以地理用 `geo/intro.html`（只放骨架）包在 iframe 裡，onStep／onEnd 用 postMessage 告訴上一層。見 `geo/CONTRACT.md` §8。
+- 2026-11-08 comic.js 只加了一行：地圖頁（WHERE & WHEN）在地圖下面多一個「🌍 在地圖上看這一站」（`#cm-geo`，連到 `../geo/history.html?ep=<這一話>`）；地點對照表在 `geo/history.js`。

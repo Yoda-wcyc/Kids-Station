@@ -83,6 +83,8 @@
     return p.length || t != null ? `練習 ${[1, 2, 3].filter(k => g[id + 'p' + k] >= 80).length}/3 組過關｜測驗 ${t == null ? '還沒考' : t + ' 分'}` : '重點 → 練習 3 組 → 測驗';
   };
   ACTS.geo = GEO_UNITS.map(([id, t, g]) => ({ id, title: `${GEO_UNITS.filter(x => x[2] === g).findIndex(x => x[0] === id) + 1}. ${t}`, grp: g, icon: g === '地圖技能' ? '🧭' : g === '臺灣篇' ? '🏝️' : '🌐', desc: () => geoDesc(id), src: `geo/unit.html?u=${id}`, dk: `geo:${id}` }));
+  // 🗺️ 歷史地圖（2026-11-08，geo/history.html）：世界史漫畫 42 話標在世界地圖上，點了開漫畫；不算單元完成（沒有 dk）
+  ACTS.geo.push({ id: 'history', title: '🗺️ 歷史地圖', grp: '世界篇', icon: '🗺️', desc: '時光搖搖車 42 話發生在哪裡？點地圖上的點，打開那一話的漫畫', src: 'geo/history.html' });
   ANIM_SEGS.forEach(([c, t]) => ACTS.math.push({ id: 'anim-' + c.toLowerCase(), title: `🎬 ${c} ${t}`, icon: '🎬', src: `math/anim.html?id=${c}`, hidden: true }));
   // 數學五下起（2026-11-06，康軒）：每個單元一張卡 → iframe 開 math/grade.html?u=<單元>，每冊最後一張「總複習」（?r=<冊>）。
   // 要跟 math/grade.js 的 BOOKS、completion.js 的 MG_BOOKS 一致（只列已上線的冊；test/math-grade.test.js 會對）。五上是上面寫死的卡片（grp '五上'）。

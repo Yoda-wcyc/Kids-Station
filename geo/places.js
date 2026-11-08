@@ -261,6 +261,37 @@
     dadu: { n: '大肚臺地', lon: 120.61, lat: 24.16, co: 'as', cn: 'TW', k: 'land', area: 1, note: '臺中市，臺中盆地西邊；標字位置' },
     // ---- t3 氣候（2026-11-08；基隆、宜蘭用 t5 的 keelung、yilan；氣候數字見 geo/data/t3.js 檔頭查核）----
     hengchun: { n: '恆春', lon: 120.74, lat: 22.00, co: 'as', cn: 'TW', k: 'city', note: '屏東縣恆春鎮' },
+    // ---- 歷史漫畫《時光搖搖車》42 話的發生地點（2026-11-08；對照表在 geo/history.js）。座標＝各話 comics/data/v*e*.js 地圖上的主要城市（main），
+    //      那些座標是各話作者查英文維基百科條目來的；已經有的地方（雅典、羅馬、倫敦、巴黎、柏林、東京、臺北、華盛頓、新竹科學園區、臺灣本島）直接用上面的 id ----
+    babylon: { n: '巴比倫', lon: 44.42, lat: 32.54, co: 'as', cn: 'IQ', k: 'land', note: '古城遺跡，在今伊拉克巴格達南方' },
+    giza: { n: '吉薩金字塔', lon: 31.13, lat: 29.98, co: 'af', cn: 'EG', k: 'land', note: '遺跡，在今埃及開羅西南邊' },
+    mohenjoDaro: { n: '摩亨佐達羅', lon: 68.14, lat: 27.33, co: 'as', cn: 'PK', k: 'land', note: '古城遺跡，在今巴基斯坦印度河邊' },
+    yinxu: { n: '殷墟', lon: 114.35, lat: 36.10, co: 'as', cn: 'CN', k: 'land', note: '商朝後期都城遺跡，在今中國河南安陽' },
+    tyre: { n: '推羅', lon: 35.20, lat: 33.27, co: 'as', cn: 'LB', k: 'city', note: '腓尼基古城，今黎巴嫩的泰爾' },
+    susa: { n: '蘇薩', lon: 48.25, lat: 32.19, co: 'as', cn: 'IR', k: 'city', note: '波斯帝國的都城之一，在今伊朗西南部' },
+    pataliputra: { n: '華氏城', lon: 85.14, lat: 25.61, co: 'as', cn: 'IN', k: 'city', note: '孔雀王朝的都城，今印度巴特那' },
+    alexandria: { n: '亞歷山卓', lon: 29.92, lat: 31.20, co: 'af', cn: 'EG', k: 'city', note: '埃及北部地中海邊的港口城市' },
+    xianyang: { n: '咸陽', lon: 108.71, lat: 34.33, co: 'as', cn: 'CN', k: 'city', note: '秦朝都城，在今中國陝西西安西北邊' },
+    changan: { n: '長安', lon: 108.95, lat: 34.27, co: 'as', cn: 'CN', k: 'city', note: '漢朝、唐朝的都城，今中國陝西西安' },
+    baghdad: { n: '巴格達', lon: 44.36, lat: 33.31, co: 'as', cn: 'IQ', k: 'city', note: '今伊拉克首都' },
+    kaifeng: { n: '開封', lon: 114.30, lat: 34.80, co: 'as', cn: 'CN', k: 'city', note: '北宋都城，在今中國河南' },
+    karakorum: { n: '哈拉和林', lon: 102.80, lat: 47.20, co: 'as', cn: 'MN', k: 'land', note: '蒙古帝國早期都城遺跡，在今蒙古中部' },
+    timbuktu: { n: '廷巴克圖', lon: -3.00, lat: 16.77, co: 'af', cn: 'ML', k: 'city', note: '在今西非馬利，馬利帝國時代的貿易與學術城市' },
+    nanjing: { n: '南京', lon: 118.78, lat: 32.06, co: 'as', cn: 'CN', k: 'city', note: '在今中國江蘇，明朝初年的都城' },
+    mainz: { n: '美因茲', lon: 8.27, lat: 50.00, co: 'eu', cn: 'DE', k: 'city', note: '在今德國，古騰堡的家鄉' },
+    cusco: { n: '庫斯科', lon: -71.97, lat: -13.53, co: 'sa', cn: 'PE', k: 'city', note: '印加帝國的都城，在今秘魯' },
+    guanahani: { n: '瓜納哈尼島', lon: -74.50, lat: 24.05, co: 'na', cn: 'BS', k: 'island', note: '哥倫布 1492 年第一個登陸的島，今巴哈馬；是今天哪一個島學者有不同說法，這裡用最常見的聖薩爾瓦多島' },
+    florence: { n: '佛羅倫斯', lon: 11.25, lat: 43.77, co: 'eu', cn: 'IT', k: 'city', note: '在今義大利中部' },
+    anping: { n: '大員（安平）', lon: 120.16, lat: 23.00, co: 'as', cn: 'TW', k: 'city', note: '今臺南市安平區' },
+    padua: { n: '帕多瓦', lon: 11.88, lat: 45.41, co: 'eu', cn: 'IT', k: 'city', note: '在今義大利北部，威尼斯西邊' },
+    philadelphia: { n: '費城', lon: -75.17, lat: 39.95, co: 'na', cn: 'US', k: 'city', note: '在今美國賓夕法尼亞州' },
+    gonaives: { n: '戈納伊夫', lon: -72.69, lat: 19.45, co: 'na', cn: 'HT', k: 'city', note: '在今海地北部，1804 年在這裡宣布獨立' },
+    manchester: { n: '曼徹斯特', lon: -2.24, lat: 53.48, co: 'eu', cn: 'GB', k: 'city', note: '在今英國英格蘭西北部' },
+    guangzhou: { n: '廣州', lon: 113.26, lat: 23.13, co: 'as', cn: 'CN', k: 'city', note: '在今中國廣東' },
+    ypres: { n: '伊普爾', lon: 2.88, lat: 50.85, co: 'eu', cn: 'BE', k: 'city', note: '在今比利時西部，靠近法國邊界' },
+    dandi: { n: '丹迪', lon: 72.80, lat: 20.89, co: 'as', cn: 'IN', k: 'city', note: '在今印度古吉拉特邦海邊的小村' },
+    kennedySC: { n: '甘迺迪太空中心', lon: -80.65, lat: 28.57, co: 'na', cn: 'US', k: 'station', note: '在今美國佛羅里達州，1969 年阿波羅 11 號從這裡出發' },
+    geneva: { n: '日內瓦', lon: 6.14, lat: 46.20, co: 'eu', cn: 'CH', k: 'city', note: '在今瑞士西南部' },
   };
   if (typeof module === 'object' && module.exports) module.exports = P;
   root.GeoPlaces = P;

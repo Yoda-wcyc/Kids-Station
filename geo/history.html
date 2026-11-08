@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>歷史地圖</title>
+<link rel="stylesheet" href="../style.css?v=494b1daab7">
+<style>
+body{background:var(--bg)}
+[hidden]{display:none!important}
+.gh{max-width:1100px;margin:0 auto;padding:12px 16px calc(40px + env(safe-area-inset-bottom))}
+.gh h1{font-size:clamp(1.3rem,1rem + 1.4vw,1.8rem);margin:4px 0 2px}
+.gh-lede{margin:0 0 10px;line-height:1.7}
+.gh-nav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.gh-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 10px;font-size:.92rem;font-weight:700}
+.gh-legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.gh-legend i{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2)}
+.gh-wrap{display:grid;gap:12px}
+@media(min-width:1000px) and (min-aspect-ratio:1/1){.gh-wrap{grid-template-columns:minmax(0,1fr) 320px;align-items:start}}
+.gh-mapc{padding:8px;margin:0}
+.gh-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:48px;margin:0 0 6px}
+.gh-bar b{font-size:1.05rem}
+#gh-map svg{display:block;margin:0 auto;width:100%;height:auto;max-height:72vh;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+#gh-map [data-ep],#gh-map [data-cl]{cursor:pointer}
+#gh-map [data-ep]:focus,#gh-map [data-cl]:focus{outline:none}
+#gh-map [data-ep]:focus-visible circle.gh-c,#gh-map [data-cl]:focus-visible circle{stroke:#ff8a3d}
+.gh-card .card{margin:0;border-width:3px}
+.gh-vol{display:flex;align-items:center;gap:8px;margin:0;font-weight:800;font-size:.98rem}
+.gh-b{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:30px;padding:0 8px;border-radius:999px;color:#fff;font-weight:900}
+.gh-card h2{margin:8px 0 4px;font-size:1.35rem;line-height:1.4}
+.gh-card p{line-height:1.7}
+.gh-more{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+<main class="gh">
+  <h1>🗺️ 歷史地圖</h1>
+  <p class="gh-lede">世界史漫畫《時光搖搖車》42 話，各發生在世界的哪裡？<b>點地圖上的圓點</b>看是哪一話；寫著「幾話」的深色大圓圈，表示那裡擠了好幾話，點一下會放大。</p>
+  <p class="gh-nav"><a class="btn" target="_top" href="../index.html#s/geo">← 回地理</a><a class="btn" href="../comics/index.html">📚 漫畫目錄</a></p>
+  <div class="gh-legend" id="gh-legend" aria-label="顏色代表第幾冊"></div>
+  <div class="gh-wrap">
+    <div class="card gh-mapc">
+      <div class="gh-bar"><button type="button" class="btn" id="gh-back" hidden>◀ 上一層</button><button type="button" class="btn" id="gh-home" hidden>🌍 全世界</button><b id="gh-where">全世界</b></div>
+      <div id="gh-map"></div>
+    </div>
+    <div class="gh-card" id="gh-card" aria-live="polite"></div>
+  </div>
+</main>
+<script src="places.js?v=0393f5fbbd"></script>
+<script src="maps/tw.js?v=343cf4c0c4"></script>
+<script src="maps/world.js?v=28f70987d8"></script>
+<script src="geo.js?v=be68cba9d1"></script>
+<script src="../comics/catalog.js?v=8418e7f2d1"></script>
+<script src="history.js?v=3c22632db2"></script>
+<script>
+/* 🗺️ 歷史地圖（2026-11-08）：comics/catalog.js 的 42 話 × geo/history.js 的地點 × geo/places.js 的經緯度，畫在 geo.js 的世界地圖上。
+   ?ep=v3e2 → 一路放大到那一點、亮起來、打開那一話的卡片（漫畫地圖頁的「🌍 在地圖上看這一站」連過來）。
+   擠的地方：① 同一個地方（相距 < 0.5 度，例 巴黎 2 話、柏林 2 話、長安＋咸陽 3 話）一律在原點旁邊排成一圈、拉細線指回原點；
+            ② 不同地方但在畫面上會疊到（圓點直徑約 44px）→ 合成深色「N 話」大圓圈，點了放大到那幾話的範圍；放大到最小範圍（iPad 經度 8 度、手機 3 度）還疊就照畫，不再合併。 */
+(function () {
+  'use strict';
+  var P = window.GeoPlaces, CAT = window.COMIC_CATALOG, H = window.GeoHistory, $ = function (id) { return document.getElementById(id); };
+  var COL = [null, '#a0522d', '#2e7d32', '#b7791f', '#1f5fa8', '#c62828', '#6a3d9a', '#00796b'];
+  var CO = { as: '亞洲', eu: '歐洲', af: '非洲', na: '北美洲', sa: '南美洲', oc: '大洋洲', an: '南極洲' };
+  var WORLD = [-105, -30, 155, 65], DOT = 22;   // 圓點半徑（螢幕 px）＝手指點得到的 44px
+  var EPS = [];
+  CAT.vols.forEach(function (v) { v.eps.forEach(function (e, i) { var p = P[H.EP[e.id]]; if (p) EPS.push({ id: e.id, vol: v.no, volT: v.t, ep: i + 1, t: e.t, when: e.when, where: e.where, ready: e.ready, place: H.EP[e.id], lon: p.lon, lat: p.lat, co: p.co }); }); });
+  var byId = {}; EPS.forEach(function (e) { byId[e.id] = e; });
+  // ① 同一個地方：相距 < 0.5 度的併成一組（原子）
+  var ATOMS = [];
+  EPS.forEach(function (e) {
+    var a = ATOMS.filter(function (g) { return Math.abs(g.lon - e.lon) < .5 && Math.abs(g.lat - e.lat) < .5; })[0];
+    if (a) { a.eps.push(e); a.lon = (a.lon * (a.eps.length - 1) + e.lon) / a.eps.length; a.lat = (a.lat * (a.eps.length - 1) + e.lat) / a.eps.length; }
+    else ATOMS.push({ eps: [e], lon: e.lon, lat: e.lat });
+  });
+  var esc = Geo.esc, stack = [], box = WORLD, sel = null, cur = null;
+
+  $('gh-legend').innerHTML = CAT.vols.map(function (v) { return '<span><i style="background:' + COL[v.no] + '"></i>第 ' + v.no + ' 冊 ' + esc(v.t) + '</span>'; }).join('') + '<span class="muted">圓點上的數字＝第幾冊－第幾話</span>';
+
+  // 一群話的放大範圍：外接框＋留邊；經度至少 MIN_SPAN 度；不要太扁、不要太高；不超出 WORLD
+  function boxFor(list) {
+    var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    list.forEach(function (e) { x0 = Math.min(x0, e.lon); x1 = Math.max(x1, e.lon); y0 = Math.min(y0, e.lat); y1 = Math.max(y1, e.lat); });
+    var px = Math.max(1.2, (x1 - x0) * .22), py = Math.max(1, (y1 - y0) * .22);
+    x0 -= px; x1 += px; y0 -= py; y1 += py;
+    var k = Math.cos((y0 + y1) / 2 * Math.PI / 180), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    var w = Math.max(minSpan(), x1 - x0), h = y1 - y0;
+    if (w * k < h * 1.3) w = h * 1.3 / k;   // 不要太高（iPad 直放也放得下）
+    if (h < w * k / 2.2) h = w * k / 2.2;   // 不要太扁
+    var b = [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2];
+    if (b[0] < WORLD[0]) { b[2] += WORLD[0] - b[0]; b[0] = WORLD[0]; } if (b[2] > WORLD[2]) { b[0] -= b[2] - WORLD[2]; b[2] = WORLD[2]; }
+    if (b[1] < WORLD[1]) { b[3] += WORLD[1] - b[1]; b[1] = WORLD[1]; } if (b[3] > WORLD[3]) { b[1] -= b[3] - WORLD[3]; b[3] = WORLD[3]; }
+    return b.map(function (v) { return Math.round(v * 100) / 100; });
+  }
+  // 最小放大範圍：iPad 寬（約 760px）經度 8 度，周圍的國界、海岸看得到；手機窄，放到 3 度才分得開
+  function minSpan() { var cw = $('gh-map').clientWidth || 760; return Math.max(3, Math.min(8, 8 * cw / 760)); }
+  function regionName(list) { var s = {}; list.forEach(function (e) { s[CO[e.co]] = 1; }); return Object.keys(s).join('、'); }
+
+  // 算這個範圍要怎麼畫：哪些是單點、哪些同地排一圈、哪些合成「N 話」
+  function layout(V, scale) {
+    var r = DOT / scale, gap = 6 / scale;
+    var atoms = ATOMS.map(function (a) { var xy = V.P(a.lon, a.lat), n = a.eps.length; return { a: a, x: xy[0], y: xy[1], R: n === 1 ? r : (r + 2 / scale) / Math.sin(Math.PI / n) + r }; })
+      .filter(function (t) { return t.x >= -2 && t.y >= -2 && t.x <= V.w + 2 && t.y <= V.h + 2; });
+    // ② 疊到的一對一對併成一群（最近的先併），但併完的範圍要比現在的畫面小（點了才放大得進去）；放大不了的就不併、照原位畫
+    var spanNow = box[2] - box[0], out = { atoms: [], clusters: [] }, cr = r * 1.3;
+    var gs = atoms.map(function (t) { return { ts: [t], x: t.x, y: t.y, R: t.R }; }), no = {};
+    for (;;) {
+      var best = null, bd = 1e9;
+      for (var i = 0; i < gs.length; i++) for (var j = i + 1; j < gs.length; j++) {
+        var d = Math.hypot(gs[i].x - gs[j].x, gs[i].y - gs[j].y);
+        if (d < gs[i].R + gs[j].R + gap && d < bd && !no[i + ',' + j]) { bd = d; best = [i, j]; }
+      }
+      if (!best) break;
+      var A = gs[best[0]], B = gs[best[1]], ts = A.ts.concat(B.ts), eps = [].concat.apply([], ts.map(function (t) { return t.a.eps; })), nb = boxFor(eps);
+      if (nb[2] - nb[0] >= spanNow * .85) { no[best[0] + ',' + best[1]] = 1; continue; }
+      var M = { ts: ts, eps: eps, box: nb, x: ts.reduce(function (s, t) { return s + t.x; }, 0) / ts.length, y: ts.reduce(function (s, t) { return s + t.y; }, 0) / ts.length, R: cr };
+      gs.splice(best[1], 1); gs.splice(best[0], 1, M); no = {};
+    }
+    gs.forEach(function (g) { if (g.ts.length > 1) out.clusters.push(g); else out.atoms.push(g.ts[0]); });
+    return out;
+  }
+  function dotSVG(e, x, y, r, scale) {
+    return '<g data-ep="' + e.id + '" role="button" tabindex="0" aria-label="第 ' + e.vol + ' 冊第 ' + e.ep + ' 話 ' + esc(e.t) + '" transform="translate(' + x + ' ' + y + ')">' +
+      (sel === e.id ? '<circle r="' + (r + 6 / scale) + '" fill="none" stroke="#ff8a3d" stroke-width="' + (5 / scale) + '"><animate attributeName="r" values="' + (r + 4 / scale) + ';' + (r + 14 / scale) + ';' + (r + 4 / scale) + '" dur="1.4s" repeatCount="indefinite"/></circle>' : '') +
+      '<circle class="gh-c" r="' + r + '" fill="' + COL[e.vol] + '" stroke="#fff" stroke-width="' + (3 / scale) + '"/>' +
+      '<text y="' + (5 / scale) + '" text-anchor="middle" font-size="' + (15 / scale) + '" font-weight="900" fill="#fff">' + e.vol + '-' + e.ep + '</text></g>';
+  }
+  function overlay(L, scale) {
+    var r = DOT / scale, o = [];
+    // 放大以後在點下面寫地名（全世界那一層太擠不寫）；同一個地方寫一次
+    if (box !== WORLD) L.atoms.forEach(function (t) { o.push('<text x="' + t.x + '" y="' + Math.round((t.y + t.R + (t.a.eps.some(function (e) { return e.id === sel; }) ? 30 : 17) / scale) * 10) / 10 + '" text-anchor="middle" font-size="' + (15 / scale) + '" font-weight="800" fill="#263445" stroke="#fff" stroke-width="' + (4 / scale) + '" paint-order="stroke">' + esc(t.a.eps.map(function (e) { return P[e.place].n; }).filter(function (n, i, a) { return a.indexOf(n) === i; }).join('、')) + '</text>'); });
+    L.atoms.forEach(function (t) {
+      var n = t.a.eps.length;
+      if (n === 1) { o.push(dotSVG(t.a.eps[0], t.x, t.y, r, scale)); return; }
+      var R = t.R - r;   // 同一個地方：圍著原點排一圈，細線指回原點
+      o.push('<circle cx="' + t.x + '" cy="' + t.y + '" r="' + (4 / scale) + '" fill="#263445"/>');
+      t.a.eps.forEach(function (e, i) { var a = -Math.PI / 2 + i * 2 * Math.PI / n, x = Math.round((t.x + R * Math.cos(a)) * 10) / 10, y = Math.round((t.y + R * Math.sin(a)) * 10) / 10; o.push('<line x1="' + t.x + '" y1="' + t.y + '" x2="' + x + '" y2="' + y + '" stroke="#263445" stroke-width="' + (2 / scale) + '"/>'); });
+      t.a.eps.forEach(function (e, i) { var a = -Math.PI / 2 + i * 2 * Math.PI / n; o.push(dotSVG(e, Math.round((t.x + R * Math.cos(a)) * 10) / 10, Math.round((t.y + R * Math.sin(a)) * 10) / 10, r, scale)); });
+    });
+    L.clusters.forEach(function (c, i) {
+      var cr = r * 1.3, vols = {}; c.eps.forEach(function (e) { vols[e.vol] = 1; });
+      var dots = Object.keys(vols).map(function (v, k, a) { var ang = -Math.PI / 2 + k * 2 * Math.PI / a.length; return '<circle cx="' + Math.round(Math.cos(ang) * cr * 10) / 10 + '" cy="' + Math.round(Math.sin(ang) * cr * 10) / 10 + '" r="' + (5 / scale) + '" fill="' + COL[v] + '" stroke="#fff" stroke-width="' + (1.5 / scale) + '"/>'; }).join('');
+      o.push('<g data-cl="' + i + '" role="button" tabindex="0" aria-label="這裡有 ' + c.eps.length + ' 話，點了放大" transform="translate(' + Math.round(c.x * 10) / 10 + ' ' + Math.round(c.y * 10) / 10 + ')"><circle r="' + cr + '" fill="#263445" stroke="#fff" stroke-width="' + (3 / scale) + '" opacity=".92"/>' +
+        '<text y="' + (2 / scale) + '" text-anchor="middle" font-size="' + (17 / scale) + '" font-weight="900" fill="#fff">' + c.eps.length + '</text><text y="' + (16 / scale) + '" text-anchor="middle" font-size="' + (10 / scale) + '" font-weight="800" fill="#fff">話</text>' + dots + '</g>');
+    });
+    return o.join('');
+  }
+  function render() {
+    var fig = { map: 'world', box: box, compass: false, alt: '世界地圖，標出世界史漫畫 42 話發生的地方' }, V = Geo.view(fig), host = $('gh-map');
+    host.innerHTML = Geo.figSVG({ type: 'mc', fig: fig }, {}, false);
+    var svg = host.querySelector('svg'), rc = svg.getBoundingClientRect(), scale = rc.width ? Math.min(rc.width / V.w, rc.height / V.h) : 1;   // max-height 把圖縮小時，實際比例看比較小的那一邊
+    cur = layout(V, scale);
+    svg.insertAdjacentHTML('beforeend', overlay(cur, scale));
+    $('gh-back').hidden = $('gh-home').hidden = !stack.length;
+    window.__gh = { box: box, L: cur, scale: scale, V: V };   // 測試用
+  }
+  function zoomTo(b, label) { stack.push({ box: box, label: $('gh-where').textContent }); box = b; $('gh-where').textContent = '放大：' + label; render(); }
+  function zoomCluster(i) { var c = cur.clusters[i]; if (c) zoomTo(c.box, regionName(c.eps)); }
+  function card() {
+    var e = byId[sel], host = $('gh-card');
+    if (!e) { host.innerHTML = '<div class="card"><p style="margin:0">👆 點一個圓點，看那一話的名字和年代，再打開漫畫。</p></div>'; return; }
+    var same = ATOMS.filter(function (a) { return a.eps.indexOf(e) >= 0; })[0].eps.filter(function (x) { return x !== e; });
+    host.innerHTML = '<div class="card" style="border-color:' + COL[e.vol] + '"><p class="gh-vol"><span class="gh-b" style="background:' + COL[e.vol] + '">' + e.vol + '-' + e.ep + '</span>第 ' + e.vol + ' 冊 ' + esc(e.volT) + '・第 ' + e.ep + ' 話</p>' +
+      '<h2 id="gh-title">' + esc(e.t) + '</h2><p>🕰️ ' + esc(e.when) + '<br>📍 ' + esc(e.where) + '</p>' +
+      (e.ready ? '<p><a class="btn primary big" id="gh-open" href="../comics/' + e.id + '.html">📖 看這一話的漫畫</a></p>' : '<p class="muted">這一話還在製作中。</p>') +
+      (same.length ? '<div class="gh-more"><span class="muted">同一個地方還有：</span>' + same.map(function (x) { return '<button type="button" class="btn" data-sel="' + x.id + '">' + x.vol + '-' + x.ep + ' ' + esc(x.t) + '</button>'; }).join('') + '</div>' : '') + '</div>';
+  }
+  function select(id) { sel = id; render(); card(); }
+  // 從世界一路放大，直到這一話不在「N 話」大圓圈裡
+  function reveal(id) {
+    for (var k = 0; k < 8; k++) {
+      var i = -1; cur.clusters.forEach(function (c, j) { if (c.eps.some(function (e) { return e.id === id; })) i = j; });
+      if (i < 0) break; zoomCluster(i);
+    }
+    select(id);
+  }
+  function act(t) {
+    var g = t.closest('[data-ep],[data-cl],[data-sel]'); if (!g) return;
+    if (g.hasAttribute('data-cl')) zoomCluster(+g.getAttribute('data-cl'));
+    else select(g.getAttribute('data-ep') || g.getAttribute('data-sel'));
+  }
+  $('gh-map').addEventListener('click', function (e) { act(e.target); });
+  $('gh-card').addEventListener('click', function (e) { act(e.target); });
+  $('gh-map').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(e.target); } });
+  $('gh-back').onclick = function () { var s = stack.pop(); if (s) { box = s.box; $('gh-where').textContent = s.label; render(); } };
+  $('gh-home').onclick = function () { stack = []; box = WORLD; $('gh-where').textContent = '全世界'; render(); };
+  var rt = 0; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(render, 150); });
+  render(); card();
+  var q = /[?&]ep=(v\d+e\d+)/.exec(location.search);
+  if (q && byId[q[1]]) reveal(q[1]);
+  window.GeoHistoryPage = { select: select, reveal: reveal, zoomCluster: zoomCluster, home: function () { $('gh-home').onclick(); }, eps: EPS };
+})();
+</script>
+</body>
+</html>
