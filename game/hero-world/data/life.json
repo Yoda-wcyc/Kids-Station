@@ -1,5 +1,5 @@
 {
-  "_doc": "生活系統資料。fishing.loot：釣魚抽獎表（w＝權重；id＋n＝物品，coins＝金幣；treasure＝算寶物）。achievements：成就（stat 計數器到 need 就達成；coins＝獎勵金幣，創造模式不給）。stat 名稱：mine:<方塊 id>（木頭統一叫 mine:wood）、craft:<成品 id>、place:<方塊 id>、placed、house、smelted、bed、harvested、bred、ride:<boat|minecart|horse>、fish、treasure、traded、quiz_wins、stele_answers、quests、boss:<傳送門 map>、shadow、dragon；M9：shot（射箭）、shot_full（拉滿）、arrow_hit（射中）、books（讀懂小書，每次都算）、books_read（讀懂過幾篇不同的）、tamed、pet_named、place:scaffold。 appleChance：打掉樹葉掉蘋果的機率。",
+  "_doc": "生活系統資料。fishing.loot：釣魚抽獎表（w＝權重；id＋n＝物品，coins＝金幣；treasure＝算寶物）。achievements：成就（stat 計數器到 need 就達成；coins＝獎勵金幣，創造模式不給）。stat 名稱：mine:<方塊 id>（木頭統一叫 mine:wood）、craft:<成品 id>、place:<方塊 id>、placed、house、smelted、bed、harvested、bred、ride:<boat|minecart|horse>、fish、treasure、traded、quiz_wins、stele_answers、quests、boss:<傳送門 map>、shadow、dragon；M9：shot（射箭）、shot_full（拉滿）、arrow_hit（射中）、books（讀懂小書，每次都算）、books_read（讀懂過幾篇不同的）、tamed、pet_named、place:scaffold、builds（建築委託）、snowfield（到過雪原）、fed:<動物>（餵過）。 appleChance：打掉樹葉掉蘋果的機率。",
   "fishing": {
     "loot": [
       {
@@ -352,6 +352,38 @@
       "stat": "place:scaffold",
       "need": 10,
       "coins": 1
+    },
+    {
+      "id": "snowfield",
+      "name_zh": "雪原探險家",
+      "desc_zh": "走到遠方的雪原",
+      "stat": "snowfield",
+      "need": 1,
+      "coins": 3
+    },
+    {
+      "id": "penguin_friend",
+      "name_zh": "企鵝的好朋友",
+      "desc_zh": "拿生魚餵企鵝",
+      "stat": "fed:penguin",
+      "need": 1,
+      "coins": 2
+    },
+    {
+      "id": "builder_en",
+      "name_zh": "看英文蓋房子",
+      "desc_zh": "完成第一個建築英文委託",
+      "stat": "builds",
+      "need": 1,
+      "coins": 1
+    },
+    {
+      "id": "builder_en10",
+      "name_zh": "英文建築師",
+      "desc_zh": "完成 10 個建築英文委託",
+      "stat": "builds",
+      "need": 10,
+      "coins": 5
     }
   ],
   "appleChance": 0.1

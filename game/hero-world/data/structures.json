@@ -1,5 +1,5 @@
 {
-  "_doc": "村莊的建築範本。layers：由下往上一層一層，每層是 z 方向的字串陣列、每個字元是一格（x 方向）。字元對應 palette；'.'＝清成空氣，' '＝不動。door＝門口在範本裡的 [x, z]（門朝 +z）。沙漠村會套用 desert 替換表。 ruins：野外遺跡（每 192×192 最多一個，依生態域挑；layers 一樣由下往上、' '＝不動、'.'＝清空；foundation＝底下補地基）。loot：遺跡寶箱內容（p＝出現機率，min–max 個）。",
+  "_doc": "村莊的建築範本。layers：由下往上一層一層，每層是 z 方向的字串陣列、每個字元是一格（x 方向）。字元對應 palette；'.'＝清成空氣，' '＝不動。door＝門口在範本裡的 [x, z]（門朝 +z）。沙漠村會套用 desert 替換表。 ruins：野外遺跡（每 192×192 最多一個，依生態域挑；layers 一樣由下往上、' '＝不動、'.'＝清空；foundation＝底下補地基）。loot：遺跡寶箱內容（p＝出現機率，min–max 個）。 M9：雪原＝雪屋（igloo，雪塊＋冰窗，謎題門＋寶箱）。",
   "palette": {
     "C": "cobblestone",
     "P": "planks",
@@ -239,7 +239,8 @@
       "plains": [
         "library"
       ],
-      "ocean": "shipwreck"
+      "ocean": "shipwreck",
+      "snowfield": "igloo"
     },
     "palette": {
       "s": "smooth_sandstone",
@@ -259,7 +260,9 @@
       "R": "riddle_door",
       "N": "lantern",
       "F": "crafting_table",
-      "C": "cobblestone"
+      "C": "cobblestone",
+      "O": "snow_block",
+      "I": "ice"
     },
     "templates": {
       "desert_temple": {
@@ -494,6 +497,66 @@
             "       "
           ]
         ]
+      },
+      "igloo": {
+        "foundation": "snow_block",
+        "layers": [
+          [
+            " OOOOO ",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            " OOOOO ",
+            "  OOO  ",
+            "  OOO  "
+          ],
+          [
+            " OOOOO ",
+            "O.....O",
+            "O..X..O",
+            "O.....O",
+            "O..N..O",
+            "O.....O",
+            " OOROO ",
+            "  ...  ",
+            "  ...  "
+          ],
+          [
+            " OOOOO ",
+            "O.....O",
+            "O.....O",
+            "I.....I",
+            "O.....O",
+            "O.....O",
+            " OOROO ",
+            "  ...  ",
+            "  ...  "
+          ],
+          [
+            "       ",
+            " OOOOO ",
+            " O...O ",
+            " O...O ",
+            " O...O ",
+            " OOOOO ",
+            "       ",
+            "  ...  ",
+            "       "
+          ],
+          [
+            "       ",
+            "       ",
+            "  OOO  ",
+            "  OOO  ",
+            "  OOO  ",
+            "       ",
+            "       ",
+            "       ",
+            "       "
+          ]
+        ]
       }
     }
   },
@@ -624,6 +687,44 @@
         "min": 1,
         "max": 1,
         "p": 0.1
+      }
+    ],
+    "igloo": [
+      {
+        "id": "raw_fish",
+        "min": 2,
+        "max": 4,
+        "p": 0.9
+      },
+      {
+        "id": "iron_ingot",
+        "min": 1,
+        "max": 2,
+        "p": 0.6
+      },
+      {
+        "id": "wool",
+        "min": 2,
+        "max": 4,
+        "p": 0.6
+      },
+      {
+        "id": "book",
+        "min": 1,
+        "max": 1,
+        "p": 0.35
+      },
+      {
+        "id": "lantern",
+        "min": 1,
+        "max": 1,
+        "p": 0.35
+      },
+      {
+        "id": "diamond",
+        "min": 1,
+        "max": 1,
+        "p": 0.25
       }
     ]
   }
