@@ -187,12 +187,16 @@ body.lefty #tbtns { right: auto; left: max(18px, env(safe-area-inset-left)); }
 #restcard b { font-size: 20px; color: #3E6B3A; }
 .set select { font: inherit; padding: 4px 8px; border-radius: 6px; }
 
+/* M8 英文小書 */
+.panel.book .book-text { font-size: 20px; line-height: 1.65; margin: 8px 0; }
+.panel.book .book-text.zh { font-size: 17px; color: #4A4F48; background: rgba(38,48,42,.06); border-radius: 10px; padding: 10px 12px; }
+
 /* 小朋友鎮（接在方塊世界的樣式後面） */
 #hotbar[hidden] { display: none; }
 #hotbar .slot .fname { font-size: 11px; line-height: 1.1; padding: 2px; text-align: center; color: #26302A; }
 #hotbar .slot.rot { font-size: 13px; background: #D9A63A; color: #26302A; }
-.panel.talk .npc-line { display: flex; gap: 10px; align-items: center; font-size: 24px; margin: 8px 0; }
-.panel.talk .npc-line .say { font-size: 22px; background: #EFEBDD; border: 2px solid #26302A; border-radius: 50%; width: 46px; height: 46px; flex: 0 0 46px; cursor: pointer; }
+.panel .npc-line { display: flex; gap: 10px; align-items: center; font-size: 24px; margin: 8px 0; }
+.panel .npc-line .say { font-size: 22px; background: #EFEBDD; border: 2px solid #26302A; border-radius: 50%; width: 46px; height: 46px; flex: 0 0 46px; cursor: pointer; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
 .card { font: inherit; font-size: 19px; padding: 14px 12px; min-height: 56px; border-radius: 8px; border: 3px solid #26302A; background: #EFEBDD; box-shadow: 3px 3px 0 rgba(21,23,20,.2); cursor: pointer; transform: rotate(-.4deg); }
 .card:nth-child(2n) { transform: rotate(.5deg); }
@@ -208,3 +212,15 @@ body.lefty #tbtns { right: auto; left: max(18px, env(safe-area-inset-left)); }
 .task-pill[hidden] { display: none; }
 .say-zh { font-size: 20px; background: #F2C46B; border-radius: 8px; padding: 8px 12px; display: inline-block; transform: rotate(-.4deg); }
 @media (max-width: 900px) { #toasts { top: 136px; } }
+/* 生活任務：超市籃子、餐廳托盤、委託清單 */
+.cards.items { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.card.item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; font-size: 16px; }
+.card.item .ico { font-size: 30px; line-height: 1.1; }
+.tray { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 0; padding: 8px 10px; min-height: 60px; border: 3px dashed rgba(38,48,42,.4); border-radius: 10px; }
+.tray .chip { min-height: 44px; padding: 0 12px; border: 2px solid #26302A; border-radius: 22px; background: #F2C46B; font: inherit; font-size: 16px; cursor: pointer; }
+.glist .npc-line { font-size: 20px; margin: 4px 0; }
+.glist.listen b.en, .glist.listen small { visibility: hidden; }
+.quests { margin-bottom: 8px; }
+.quest { display: flex; flex-direction: column; padding: 8px 12px; margin: 6px 0; border-radius: 10px; background: rgba(242,196,107,.35); }
+.quest.done { background: rgba(191,216,176,.6); }
+.quest small.en { font-style: italic; }

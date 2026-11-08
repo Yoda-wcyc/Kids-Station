@@ -1,0 +1,80 @@
+{
+  "_doc": "小朋友鎮的生活英文任務（2026-11-08 P3 A 段）。grocery＝超市購物清單（喬爺爺給清單，到商店找李老闆照清單拿東西結帳；每一行算 1 題）；waiter＝餐廳服務生（湯姆主廚，聽客人點餐、把對的餐點放上托盤，每位客人算 1 題）；lost＝迷路的小麥克（聽他講怎麼走、選他住哪一間，再帶他走回家，各算 1 題；路線由程式照地圖算）；class＝林老師的英文課（題目從學習站 data/textbook.js 的五上／五下課本句子出，載不到就用句型 patterns.js 有 tb 標記的例句）；daily＝每日鎮民委託（依台北日期每天 3 個，stat 是哪一種任務做了幾次）。pay：每題答對 perQ 金幣、整個任務全對再 +allRight。英文全部原創。",
+  "pay": { "perQ": 1, "allRight": 1 },
+  "grocery": {
+    "npc": "neighbor1", "lines": 3, "maxQty": 3,
+    "intro": "Hello! My legs are tired today. Can you go to the shop for me? Here is my shopping list.",
+    "introZh": "你好！我今天腳很累。可以幫我去商店買東西嗎？這是我的購物清單。",
+    "please": "Please buy",
+    "thanks": "Wonderful! You got everything on my list. Thank you so much!",
+    "thanksZh": "太棒了！清單上的東西你都買到了，非常謝謝你！",
+    "items": [
+      { "id": "apple", "icon": "🍎", "label": "apple", "sg": "an apple", "pl": "apples", "zh": "蘋果" },
+      { "id": "banana", "icon": "🍌", "label": "banana", "sg": "a banana", "pl": "bananas", "zh": "香蕉" },
+      { "id": "egg", "icon": "🥚", "label": "egg", "sg": "an egg", "pl": "eggs", "zh": "蛋" },
+      { "id": "carrot", "icon": "🥕", "label": "carrot", "sg": "a carrot", "pl": "carrots", "zh": "紅蘿蔔" },
+      { "id": "tomato", "icon": "🍅", "label": "tomato", "sg": "a tomato", "pl": "tomatoes", "zh": "番茄" },
+      { "id": "milk", "icon": "🥛", "label": "milk", "sg": "a carton of milk", "pl": "cartons of milk", "zh": "牛奶" },
+      { "id": "bread", "icon": "🍞", "label": "bread", "sg": "a loaf of bread", "pl": "loaves of bread", "zh": "麵包" },
+      { "id": "water", "icon": "💧", "label": "water", "sg": "a bottle of water", "pl": "bottles of water", "zh": "水" },
+      { "id": "cookie", "icon": "🍪", "label": "cookies", "sg": "a box of cookies", "pl": "boxes of cookies", "zh": "餅乾" },
+      { "id": "rice", "icon": "🌾", "label": "rice", "sg": "a bag of rice", "pl": "bags of rice", "zh": "米" }
+    ]
+  },
+  "waiter": {
+    "npc": "chef", "per": 3,
+    "intro": "We are very busy today! Can you be my waiter? Listen to each customer and bring the right food.",
+    "introZh": "今天超級忙！你可以當我的服務生嗎？聽每位客人點什麼，把對的餐點送過去。",
+    "thanks": "Great job! The customers are happy, and so am I.",
+    "thanksZh": "做得好！客人很開心，我也很開心。",
+    "customers": ["Mia", "Leo", "Grandma Rose", "Kevin", "Ella", "Mr. Brown", "Sophie", "Uncle Dan"],
+    "say": ["I'd like {a} and {b}, please.", "Can I have {a} and {b}, please?", "I'm so hungry! I want {a} and {b}, please.", "Hello! {A} and {b}, please. Thank you!"],
+    "menu": [
+      { "id": "noodles", "icon": "🍜", "label": "beef noodles", "sg": "a bowl of beef noodles", "pl": "bowls of beef noodles", "zh": "牛肉麵" },
+      { "id": "curry", "icon": "🍛", "label": "curry rice", "sg": "a plate of curry rice", "pl": "plates of curry rice", "zh": "咖哩飯" },
+      { "id": "burger", "icon": "🍔", "label": "hamburger", "sg": "a hamburger", "pl": "hamburgers", "zh": "漢堡" },
+      { "id": "hotdog", "icon": "🌭", "label": "hot dog", "sg": "a hot dog", "pl": "hot dogs", "zh": "熱狗" },
+      { "id": "pizza", "icon": "🍕", "label": "pizza", "sg": "a slice of pizza", "pl": "slices of pizza", "zh": "披薩" },
+      { "id": "salad", "icon": "🥗", "label": "salad", "sg": "a salad", "pl": "salads", "zh": "沙拉" },
+      { "id": "soup", "icon": "🥣", "label": "soup", "sg": "a bowl of soup", "pl": "bowls of soup", "zh": "湯" },
+      { "id": "dumpling", "icon": "🥟", "label": "dumplings", "sg": "a plate of dumplings", "pl": "plates of dumplings", "zh": "水餃" },
+      { "id": "juice", "icon": "🧃", "label": "orange juice", "sg": "a glass of orange juice", "pl": "glasses of orange juice", "zh": "柳橙汁" },
+      { "id": "tea", "icon": "🧋", "label": "milk tea", "sg": "a cup of milk tea", "pl": "cups of milk tea", "zh": "奶茶" }
+    ]
+  },
+  "lost": {
+    "kid": { "en": "Max", "zh": "小麥克", "at": [5.5, 11.5] },
+    "hello": "Excuse me... I'm lost. Can you help me go home?",
+    "helloZh": "不好意思……我迷路了。你可以帶我回家嗎？",
+    "how": "Walk straight down this road to the big road. Turn {turn}. My house is the {nth} house on your {side}. It's next to the {next}.",
+    "howZh": "沿著這條路一直走到大馬路，{turnZh}轉。我家是你{sideZh}手邊的第{nthZh}間，在{nextZh}旁邊。",
+    "ask": "Where does Max live?",
+    "askZh": "小麥克住在哪一間？",
+    "walk": "Max will follow you. Take him to his front door!",
+    "walkZh": "小麥克會跟著你走。帶他走到他家門口！",
+    "wrong": "Hmm... this is not my house.",
+    "wrongZh": "嗯……這不是我家。",
+    "home": "This is my house! Thank you for walking me home. Bye-bye!",
+    "homeZh": "這是我家！謝謝你帶我回家，掰掰！"
+  },
+  "class": {
+    "npc": "teacher", "n": 4,
+    "intro": "Welcome to English class! Today's lesson is from your textbook: {unit}. Let's begin!",
+    "introZh": "歡迎來上英文課！今天的課是你課本裡的：{unit}。我們開始吧！",
+    "zh2en": "How do we say this in English?",
+    "blank": "Fill in the blank.",
+    "thanks": "Class is over. You did a great job today!",
+    "thanksZh": "下課了，你今天表現得很好！"
+  },
+  "daily": [
+    { "id": "d_shop", "who": "neighbor1", "en": "Grandpa Joe: Please help me buy food today.", "zh": "喬爺爺：今天請幫我買一次東西。", "stat": "shop", "need": 1, "coins": 3 },
+    { "id": "d_shop2", "who": "neighbor2", "en": "Lily: Grandpa Joe needs a lot of food. Shop for him two times.", "zh": "莉莉：喬爺爺要買很多東西，幫他買兩次。", "stat": "shop", "need": 2, "coins": 3 },
+    { "id": "d_waiter", "who": "chef", "en": "Chef Tom: The restaurant is busy. Please work one shift as a waiter.", "zh": "湯姆主廚：餐廳好忙，請當一次服務生。", "stat": "waiter", "need": 1, "coins": 3 },
+    { "id": "d_served", "who": "chef", "en": "Chef Tom: Bring the right food to five customers.", "zh": "湯姆主廚：把對的餐點送給 5 位客人。", "stat": "served", "need": 5, "coins": 3 },
+    { "id": "d_lost", "who": "neighbor2", "en": "Lily: Little Max is lost again. Please take him home.", "zh": "莉莉：小麥克又迷路了，請帶他回家。", "stat": "lost", "need": 1, "coins": 3 },
+    { "id": "d_class", "who": "teacher", "en": "Ms. Lin: Come to my English class today.", "zh": "林老師：今天來上一堂英文課。", "stat": "class", "need": 1, "coins": 3 },
+    { "id": "d_class2", "who": "teacher", "en": "Ms. Lin: Take two English lessons today.", "zh": "林老師：今天上兩堂英文課。", "stat": "class", "need": 2, "coins": 3 },
+    { "id": "d_talk", "who": "parkkid", "en": "Ben: Talk with three people in town.", "zh": "小班：跟小鎮裡的三個人聊天。", "stat": "talk", "need": 3, "coins": 2 },
+    { "id": "d_work", "who": "neighbor1", "en": "Grandpa Joe: Do any job in town one time.", "zh": "喬爺爺：在小鎮做一次任何工作（有執照的職業）。", "stat": "work", "need": 1, "coins": 2 }
+  ]
+}
