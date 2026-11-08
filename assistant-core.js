@@ -214,8 +214,8 @@
 
   // ---------- 小朋友鎮（遊戲）：ke_log 裡 m:'town' 的紀錄（2026-11-08）----------
   // k：'town:license:<職業>' 執照考試、'town:job:<職業>' 工作、'town:life:<任務>' 生活任務——這三種算每日英文題數；其他 'town:<地點>'＝跟居民聊天（不算）
-  const TOWN_JOB = { teacher: '老師', doctor: '醫生', shopkeeper: '店員', chef: '廚師', firefighter: '消防員', mail: '郵差', vet: '獸醫' };
-  const TOWN_LIFE = { shop: '超市購物', waiter: '餐廳服務生', lost: '帶迷路的小孩回家', class: '英文課' };
+  const TOWN_JOB = { teacher: '老師', doctor: '醫生', shopkeeper: '店員', chef: '廚師', firefighter: '消防員', mail: '郵差', vet: '獸醫', police: '警察', busdriver: '公車司機', librarian: '圖書館員' };
+  const TOWN_LIFE = { shop: '超市購物', waiter: '餐廳服務生', lost: '帶迷路的小孩回家', class: '英文課', cook: '廚房做菜', fest: '節慶活動' };
   function townLabel(k) {
     const m = /^town:(license|job|life):([a-z0-9-]+)/.exec(String(k || ''));
     if (!m) return { label: '跟居民聊天', counted: false };
