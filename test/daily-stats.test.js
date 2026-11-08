@@ -271,7 +271,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       ['AI 錯題回合', 'kids-mistakes.js', "KidsDaily.rec('ai', right)"],
       // 歷史
       ['歷史漫畫測驗', 'comics/comic.js', "KidsDaily.rec('history', r.result)"],
-      // 遊戲（算英文）：勇者島戰鬥／夜襲／競技場都走 askQ.finish；方塊世界石碑／錯題怪／任務都走 recordAnswer；小朋友鎮對話／小測驗
+      // 遊戲（算英文）：勇者島戰鬥／夜襲／競技場都走 askQ.finish；方塊世界石碑／錯題怪／任務都走 recordAnswer；小朋友鎮只有執照考試／工作任務（閒聊不算）
       ['勇者島', 'game/hero-island/game.js', "root.KidsDaily.rec('english', ok)"],
       ['方塊世界（打包檔）', 'game/hero-world/assets/hw.js', /KidsDaily\.rec\("english",/],
       ['小朋友鎮（打包檔）', 'game/kids-town/assets/kt.js', /KidsDaily\.rec\("english",/],
@@ -279,7 +279,11 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     ENTRIES.forEach(([name, f, needle]) => { const s = read(f); ok(needle instanceof RegExp ? needle.test(s) : s.includes(needle), 'entry records: ' + name + ' (' + f + ')'); });
     if (fs.existsSync(path.join(root, 'game/hero-world/src'))) {   // 原始碼只在正本
       ok(read('game/hero-world/src/ui/quiz.js').includes("rec('english', ok)"), 'hero-world source records');
-      ok((read('game/hero-world/src/town/main.js').match(/KidsDaily\.rec\('english', r\.ok\)/g) || []).length === 2, 'kids-town source records both dialogue and check');
+      // 小朋友鎮（2026-11-08 Yoda 定）：只有執照考試、工作任務算進每日英文題數，跟居民閒聊（對話、小測驗）不算
+      const tm = read('game/hero-world/src/town/main.js'), body = (from, to) => tm.slice(tm.indexOf(from), tm.indexOf(to, tm.indexOf(from) + 1));
+      ok((tm.match(/KidsDaily\.rec\('english'/g) || []).length === 1 && tm.includes("function countEnglish(ok) { if (window.KidsDaily) window.KidsDaily.rec('english', ok); }"), 'kids-town records through countEnglish only');
+      ok(['function renderExam', 'function renderTask', 'function goTick'].every(fn => body(fn, '\n  function ').includes('countEnglish(')), 'kids-town license exam and job tasks record');
+      ok(!/countEnglish|KidsDaily/.test(body('function answer(', 'function checkAns(') + body('function checkAns(', '\n  // ')), 'kids-town chat does not record');
     }
     // 閃卡不算：flashcard 的 fcAns 不經 quizDone、也不呼叫 dailyRec；quizDone 裡的閃卡（type:card）被擋掉
     const mm = read('mindmap/mindmap.js');

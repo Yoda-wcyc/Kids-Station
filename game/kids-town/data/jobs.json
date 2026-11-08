@@ -1,0 +1,194 @@
+{
+  "_doc": "小朋友鎮的職業。place＝考試／上班的地點（buildings 的 id），npc＝主考官（npcs 的 id）。exam＝執照考試 10 題：選擇題 {q, zh, opts, a}（a＝正確選項的位置）；打字題 {q, zh, type:'typed', a, alts}（q 裡的 ___ 要打的字）。答對 8 題以上拿執照，可以重考。uniform＝制服：top 上衣顏色、hat 帽子（chef／helmet／cap／nurse）、extra 配件（apron／bag／tie／stethoscope／badge）。task＝工作小任務：kind 'cases'（照資料出 3 題）、'judge'（老師改句子）、'change'（找錢，程式出題）、'order'（點餐，程式出題）、'go'（照英文走到目的地）。",
+  "jobs": {
+    "teacher": {
+      "zh": "老師", "en": "Teacher", "place": "school", "npc": "teacher", "color": "#3F6E9A",
+      "uniform": { "top": "#3F6E9A", "hat": "none", "extra": "tie", "extraColor": "#C2443A" },
+      "exam": [
+        { "q": "Class starts. What does the teacher say?", "zh": "上課了，老師會說什麼？", "opts": ["Good morning, class!", "Good night, class!", "Happy birthday, class!"], "a": 0 },
+        { "q": "A student raises a hand. What do you say?", "zh": "有學生舉手，你要說什麼？", "opts": ["Yes, Ben? Do you have a question?", "No, thank you.", "It's sunny today."], "a": 0 },
+        { "q": "You want the students to open their books.", "zh": "你要請學生打開課本。", "opts": ["Please open your books.", "Please close the door.", "Please go to bed."], "a": 0 },
+        { "q": "Please ___ your name on the paper.", "zh": "請把名字「寫」在紙上。", "type": "typed", "a": "write" },
+        { "q": "A student gets the answer right.", "zh": "學生答對了，你要說什麼？", "opts": ["Good job! That's right.", "Be quiet, please.", "See you tomorrow."], "a": 0 },
+        { "q": "The classroom is too noisy.", "zh": "教室太吵了，你要說什麼？", "opts": ["Please be quiet.", "Please talk louder.", "Let's run around."], "a": 0 },
+        { "q": "Let's ___ the song together.", "zh": "我們一起「唱」這首歌。", "type": "typed", "a": "sing" },
+        { "q": "A student looks sad. What do you ask?", "zh": "有學生看起來很難過，你要問什麼？", "opts": ["What's the matter?", "What time is it?", "How much is it?"], "a": 0 },
+        { "q": "Class is over. See you ___!", "zh": "下課了，「明天」見！", "type": "typed", "a": "tomorrow" },
+        { "q": "What does a teacher do?", "zh": "老師的工作是什麼？", "opts": ["A teacher helps students learn.", "A teacher fixes cars.", "A teacher sells fish."], "a": 0 }
+      ],
+      "task": { "kind": "judge", "title": "幫學生改句子", "intro": "Ms. Lin says: Please check the students' sentences.", "introZh": "林老師說：請幫忙看看學生說的句子對不對。",
+        "students": ["Ben", "Amy", "Leo", "Mia", "Kai", "Zoe"],
+        "items": [
+          { "says": "I has a red bag.", "fix": "I have a red bag.", "wrong": ["I haves a red bag."] },
+          { "says": "She likes cats.", "ok": true, "wrong": ["She like cats.", "She liking cats."] },
+          { "says": "He go to school every day.", "fix": "He goes to school every day.", "wrong": ["He going to school every day."] },
+          { "says": "There are three apples.", "ok": true, "wrong": ["There is three apples.", "There are three apple."] },
+          { "says": "I am ten years old.", "ok": true, "wrong": ["I is ten years old.", "I am ten year old."] },
+          { "says": "They is my friends.", "fix": "They are my friends.", "wrong": ["They am my friends."] },
+          { "says": "I can swims.", "fix": "I can swim.", "wrong": ["I can swimming."] },
+          { "says": "Yesterday I went to the park.", "ok": true, "wrong": ["Yesterday I go to the park.", "Yesterday I goed to the park."] },
+          { "says": "This is an apple.", "ok": true, "wrong": ["This is a apple.", "This are an apple."] },
+          { "says": "Do she like milk?", "fix": "Does she like milk?", "wrong": ["Is she like milk?"] },
+          { "says": "I have two dog.", "fix": "I have two dogs.", "wrong": ["I has two dogs."] },
+          { "says": "We are good friends.", "ok": true, "wrong": ["We is good friends.", "We am good friends."] }
+        ] }
+    },
+    "doctor": {
+      "zh": "醫生", "en": "Doctor", "place": "hospital", "npc": "doctor", "color": "#5E8FA0",
+      "uniform": { "top": "#F4F1E8", "hat": "nurse", "hatColor": "#F4F1E8", "extra": "stethoscope", "extraColor": "#26302A" },
+      "exam": [
+        { "q": "A patient comes in. What do you ask first?", "zh": "病人進來了，你先問什麼？", "opts": ["What's wrong?", "What's your favorite color?", "Where is the park?"], "a": 0 },
+        { "q": "A boy says, \"My head hurts.\" What does he have?", "zh": "男孩說「我的頭好痛」，他怎麼了？", "opts": ["He has a headache.", "He has a toothache.", "He has a stomachache."], "a": 0 },
+        { "q": "Open your ___ and say \"Ah.\"", "zh": "張開「嘴巴」說「啊」。", "type": "typed", "a": "mouth" },
+        { "q": "A girl has a fever. What do you say?", "zh": "女孩發燒了，你要說什麼？", "opts": ["Drink some water and rest.", "Go swimming right now.", "Eat lots of ice cream."], "a": 0 },
+        { "q": "You want to know how the patient feels.", "zh": "你想知道病人覺得怎麼樣。", "opts": ["How do you feel today?", "How old is your dog?", "How many books do you have?"], "a": 0 },
+        { "q": "Take this medicine three ___ a day.", "zh": "這個藥一天吃三「次」。", "type": "typed", "a": "times" },
+        { "q": "A boy has a bad cough. What should he do?", "zh": "男孩咳得很厲害，他應該怎麼做？", "opts": ["He should see a doctor.", "He should eat more candy.", "He should play in the rain."], "a": 0 },
+        { "q": "I have a ___. My tooth hurts.", "zh": "我「牙痛」，我的牙齒好痛。", "type": "typed", "a": "toothache" },
+        { "q": "The patient feels better now. What do you say?", "zh": "病人好多了，你要說什麼？", "opts": ["Great! Take care.", "Oh no, that's bad.", "Let's go shopping."], "a": 0 },
+        { "q": "Where does a doctor work?", "zh": "醫生在哪裡工作？", "opts": ["In a hospital.", "In a fire station.", "In a post office."], "a": 0 }
+      ],
+      "task": { "kind": "cases", "title": "幫病人選藥", "intro": "Dr. Chen says: Please help the patients. Listen and choose the right medicine.", "introZh": "陳醫生說：請幫忙看病人，聽他們說哪裡不舒服，選對的藥。",
+        "who": "Patient", "whoZh": "病人",
+        "cases": [
+          { "says": "My head hurts and I feel very hot.", "zh": "我的頭好痛，身體好熱。", "a": "Here is some fever medicine. Please rest in bed.", "wrong": ["Here is a bandage for your knee.", "Here are some eye drops."] },
+          { "says": "I can't stop coughing.", "zh": "我一直咳嗽停不下來。", "a": "Here is some cough syrup. Drink warm water, too.", "wrong": ["Here is some stomach medicine.", "Put this ice pack on your arm."] },
+          { "says": "I fell down and cut my knee.", "zh": "我跌倒了，膝蓋破皮。", "a": "Let me clean it and put on a bandage.", "wrong": ["Here is some cough syrup.", "Here is some fever medicine."] },
+          { "says": "My stomach hurts. I ate too much.", "zh": "我肚子痛，我吃太多了。", "a": "Here is some stomach medicine. Eat slowly next time.", "wrong": ["Here are some eye drops.", "Let me put on a bandage."] },
+          { "says": "My eyes are red and itchy.", "zh": "我的眼睛又紅又癢。", "a": "Here are some eye drops. Don't rub your eyes.", "wrong": ["Here is some cough syrup.", "Here is some stomach medicine."] },
+          { "says": "I hit my arm on the door. It hurts a lot.", "zh": "我的手臂撞到門，好痛。", "a": "Put this ice pack on your arm.", "wrong": ["Here are some eye drops.", "Here is some cough syrup."] },
+          { "says": "I have a runny nose and I keep sneezing.", "zh": "我一直流鼻水、打噴嚏。", "a": "You have a cold. Here is some cold medicine.", "wrong": ["Let me put on a bandage.", "Put this ice pack on your head."] }
+        ] }
+    },
+    "shopkeeper": {
+      "zh": "店員", "en": "Shop Clerk", "place": "shop", "npc": "shopkeeper", "color": "#3E6B3A",
+      "uniform": { "top": "#EFEBDD", "hat": "cap", "hatColor": "#3E6B3A", "extra": "apron", "extraColor": "#3E6B3A" },
+      "exam": [
+        { "q": "A customer comes in. What do you say?", "zh": "客人進來了，你要說什麼？", "opts": ["May I help you?", "Go away, please.", "Good night!"], "a": 0 },
+        { "q": "The customer asks, \"How much is this pencil?\"", "zh": "客人問：「這枝鉛筆多少錢？」", "opts": ["It's twenty dollars.", "It's blue.", "It's on the desk."], "a": 0 },
+        { "q": "This bag is fifty ___.", "zh": "這個包包五十「元」。", "type": "typed", "a": "dollars" },
+        { "q": "The customer wants a red cup, but you only have blue ones.", "zh": "客人要紅色的杯子，可是只有藍色的。", "opts": ["Sorry, we only have blue ones.", "Yes, it's red.", "I like red, too."], "a": 0 },
+        { "q": "A toy is eighty dollars. The customer gives you one hundred dollars.", "zh": "玩具八十元，客人給你一百元，要找多少？", "opts": ["Here's your change. It's twenty dollars.", "Here's your change. It's eighty dollars.", "Here's your change. It's ten dollars."], "a": 0 },
+        { "q": "Thank you. Please come ___!", "zh": "謝謝，歡迎「再」來！", "type": "typed", "a": "again" },
+        { "q": "The customer is looking for milk.", "zh": "客人在找牛奶。", "opts": ["The milk is next to the eggs.", "The milk is very cute.", "I don't like milk."], "a": 0 },
+        { "q": "How ___ are these apples?", "zh": "這些蘋果「多少」錢？", "type": "typed", "a": "much" },
+        { "q": "Which number is \"sixty-five\"?", "zh": "sixty-five 是哪個數字？", "opts": ["65", "56", "16"], "a": 0 },
+        { "q": "The customer says, \"I'll take it.\" What does it mean?", "zh": "客人說 I'll take it. 是什麼意思？", "opts": ["我要買這個。", "我不要了。", "我想退貨。"], "a": 0 }
+      ],
+      "task": { "kind": "change", "title": "幫客人找錢", "intro": "Mr. Lee says: Please help at the counter. Give the right change.", "introZh": "李老闆說：請幫忙顧櫃台，算對要找多少錢。",
+        "items": [
+          { "en": "pencil", "zh": "鉛筆", "price": 15 }, { "en": "eraser", "zh": "橡皮擦", "price": 10 }, { "en": "notebook", "zh": "筆記本", "price": 35 },
+          { "en": "ruler", "zh": "尺", "price": 20 }, { "en": "ball", "zh": "球", "price": 45 }, { "en": "toy car", "zh": "玩具車", "price": 60 },
+          { "en": "comic book", "zh": "漫畫書", "price": 75 }, { "en": "bottle of juice", "zh": "瓶果汁", "price": 25, "an": false }, { "en": "umbrella", "zh": "雨傘", "price": 85, "an": true }
+        ] }
+    },
+    "chef": {
+      "zh": "廚師", "en": "Chef", "place": "restaurant", "npc": "chef", "color": "#D9A63A",
+      "uniform": { "top": "#F4F1E8", "hat": "chef", "hatColor": "#F4F1E8", "extra": "apron", "extraColor": "#F4F1E8" },
+      "exam": [
+        { "q": "A customer sits down. What do you ask?", "zh": "客人坐下來了，你要問什麼？", "opts": ["What would you like to eat?", "Do you like to swim?", "Where is your school?"], "a": 0 },
+        { "q": "\"I'd like a bowl of noodles.\" What does the customer want?", "zh": "客人想要什麼？", "opts": ["一碗麵", "一杯茶", "一片蛋糕"], "a": 0 },
+        { "q": "Would you like ___ tea? Yes, please.", "zh": "你要「一些」茶嗎？好，麻煩你。", "type": "typed", "a": "some" },
+        { "q": "The soup is very hot.", "zh": "湯很燙，你要提醒客人。", "opts": ["Be careful. It's hot.", "It's cold. Drink it fast.", "It's a cat."], "a": 0 },
+        { "q": "Which food is sweet?", "zh": "哪一個是甜的？", "opts": ["Cake.", "Salt.", "Lemon."], "a": 0 },
+        { "q": "I'm ___. Can I have some food, please?", "zh": "我「餓了」，可以給我一點吃的嗎？", "type": "typed", "a": "hungry" },
+        { "q": "The customer doesn't want any more food.", "zh": "客人吃飽了，他會說什麼？", "opts": ["I'm full. Thank you.", "I'm hungry. More, please.", "I'm sleepy. Good night."], "a": 0 },
+        { "q": "\"Three eggs, please.\" How many eggs?", "zh": "要幾顆蛋？", "opts": ["3", "13", "30"], "a": 0 },
+        { "q": "Here is your food. Enjoy your ___!", "zh": "這是你的餐點，請慢用（享用你的「餐點」）！", "type": "typed", "a": "meal" },
+        { "q": "What should you do before you cook?", "zh": "煮東西之前要先做什麼？", "opts": ["Wash my hands.", "Watch TV.", "Go to bed."], "a": 0 }
+      ],
+      "task": { "kind": "order", "title": "照點菜送餐", "intro": "Chef Tom says: Listen to the order and choose the right tray.", "introZh": "湯姆主廚說：聽客人點什麼，選對的餐盤送過去。",
+        "foods": [
+          { "sg": "hamburger", "pl": "hamburgers", "icon": "🍔", "zh": "漢堡" },
+          { "sg": "bowl of noodles", "pl": "bowls of noodles", "icon": "🍜", "zh": "碗麵" },
+          { "sg": "cup of tea", "pl": "cups of tea", "icon": "🍵", "zh": "杯茶" },
+          { "sg": "glass of milk", "pl": "glasses of milk", "icon": "🥛", "zh": "杯牛奶" },
+          { "sg": "piece of cake", "pl": "pieces of cake", "icon": "🍰", "zh": "塊蛋糕" },
+          { "sg": "hot dog", "pl": "hot dogs", "icon": "🌭", "zh": "個熱狗" },
+          { "sg": "apple", "pl": "apples", "icon": "🍎", "zh": "顆蘋果", "an": true },
+          { "sg": "egg", "pl": "eggs", "icon": "🥚", "zh": "顆蛋", "an": true },
+          { "sg": "slice of pizza", "pl": "slices of pizza", "icon": "🍕", "zh": "片披薩" }
+        ] }
+    },
+    "firefighter": {
+      "zh": "消防員", "en": "Firefighter", "place": "fire", "npc": "firefighter", "color": "#C2443A",
+      "uniform": { "top": "#C2443A", "hat": "helmet", "hatColor": "#F2C46B", "extra": "badge", "extraColor": "#F2C46B" },
+      "exam": [
+        { "q": "There's a fire! Which number do you call in Taiwan?", "zh": "台灣的火警電話是幾號？", "opts": ["119", "110", "123"], "a": 0 },
+        { "q": "What does a firefighter say to people in a fire?", "zh": "火災時消防員會對大家說什麼？", "opts": ["Stay calm and follow me.", "Let's have a party.", "Please sit down and eat."], "a": 0 },
+        { "q": "Don't ___ in the building. Walk outside.", "zh": "不要在大樓裡「跑」，走出去。", "type": "typed", "a": "run" },
+        { "q": "There is a lot of smoke. What should you do?", "zh": "到處都是煙，該怎麼做？", "opts": ["Stay low and cover your nose.", "Stand up and sing a song.", "Open the oven."], "a": 0 },
+        { "q": "Please ___ the stairs. Don't take the elevator.", "zh": "請「使用」樓梯，不要搭電梯。", "type": "typed", "a": "use", "alts": ["take"] },
+        { "q": "What does \"Turn left\" mean?", "zh": "Turn left 是什麼意思？", "opts": ["左轉", "右轉", "直走"], "a": 0 },
+        { "q": "What does \"Go straight and turn right\" mean?", "zh": "這句是什麼意思？", "opts": ["直走，再右轉", "右轉，再直走", "左轉，再右轉"], "a": 0 },
+        { "q": "The fire station is ___ to the hospital.", "zh": "消防隊在醫院「旁邊」。", "type": "typed", "a": "next" },
+        { "q": "A cat is stuck in a tree. What do you say?", "zh": "有一隻貓卡在樹上，你要說什麼？", "opts": ["Don't worry. I can help.", "Bad cat! Go away.", "Sorry, I'm too busy."], "a": 0 },
+        { "q": "\"The fire is behind the school.\" Where is the fire?", "zh": "火在哪裡？", "opts": ["學校後面", "學校前面", "學校裡面"], "a": 0 }
+      ],
+      "task": { "kind": "go", "title": "照指示去救火", "pay": 5, "intro": "Sam says: Fire! Read the directions and run to the fire.", "introZh": "消防員山姆說：失火了！看懂英文指示，跑去滅火。", "arrive": "You found the fire! Spray the water!", "arriveZh": "找到火了！快噴水！", "button": "💦 噴水滅火",
+        "calls": [
+          { "to": "school", "en": "Fire at the school! Go out of the fire station and turn right. Go straight. Pass the hospital and the restaurant. The school is on your right.", "zh": "學校失火了！走出消防隊右轉，一直走，經過醫院和餐廳，學校在你的右邊。" },
+          { "to": "post", "en": "Fire at the post office! Go out and turn right. Go straight for a long time and cross the big road. The post office is on your left, next to the shop.", "zh": "郵局失火了！出去右轉，一直走，過大馬路，郵局在你的左邊，在商店旁邊。" },
+          { "to": "vet", "en": "Fire at the animal hospital! Go out and turn left. The animal hospital is across the road, on your right.", "zh": "動物醫院失火了！出去左轉，動物醫院在馬路對面、你的右邊。" },
+          { "to": "h5", "en": "Fire at the orange house! Go out and cross the road. Walk past the park. At the next road, turn right. The orange house is on your left.", "zh": "橘色房子失火了！出去過馬路，經過公園，到下一條路右轉，橘色房子在你的左邊。" },
+          { "to": "h4", "en": "Fire at the light blue house! Go out and turn right. At the big road, turn left. Go straight and cross the next road. The light blue house is on your left.", "zh": "淺藍色房子失火了！出去右轉，到大馬路左轉，一直走過下一條路，淺藍色房子在你的左邊。" },
+          { "to": "restaurant", "en": "Fire at the restaurant! Go out and turn right. Pass the hospital and cross the big road. The restaurant is on your right.", "zh": "餐廳失火了！出去右轉，經過醫院、過大馬路，餐廳在你的右邊。" }
+        ] }
+    },
+    "mail": {
+      "zh": "郵差", "en": "Mail Carrier", "place": "post", "npc": "mail", "color": "#3F6E9A",
+      "uniform": { "top": "#3F6E9A", "hat": "cap", "hatColor": "#3F6E9A", "extra": "bag", "extraColor": "#8C6640" },
+      "exam": [
+        { "q": "What does a mail carrier bring?", "zh": "郵差送什麼？", "opts": ["Letters and packages.", "Hamburgers and fries.", "Pencils for school."], "a": 0 },
+        { "q": "\"The house is between the bank and the park.\" Where is the house?", "zh": "房子在哪裡？", "opts": ["在銀行和公園中間", "在銀行和公園後面", "在銀行裡面"], "a": 0 },
+        { "q": "The letter is ___ the box.", "zh": "信在盒子「裡面」。", "type": "typed", "a": "in", "alts": ["inside"] },
+        { "q": "Where do you put a stamp?", "zh": "郵票要貼在哪裡？", "opts": ["On the envelope.", "In the soup.", "Under the bed."], "a": 0 },
+        { "q": "The cat is ___ the table.", "zh": "貓在桌子「下面」。", "type": "typed", "a": "under" },
+        { "q": "\"It's across from the school.\" Where is it?", "zh": "它在哪裡？", "opts": ["在學校對面", "在學校旁邊", "在學校裡面"], "a": 0 },
+        { "q": "Someone opens the door. What do you say?", "zh": "有人來開門了，你要說什麼？", "opts": ["Hello! Here's a letter for you.", "Goodbye! I'm hungry.", "Sorry, I'm a doctor."], "a": 0 },
+        { "q": "The dog is in ___ of the house.", "zh": "狗在房子的「前面」。", "type": "typed", "a": "front" },
+        { "q": "What is an \"address\"?", "zh": "address 是什麼？", "opts": ["地址", "郵票", "信封"], "a": 0 },
+        { "q": "\"The post office is next to the shop.\" What does it mean?", "zh": "這句話是什麼意思？", "opts": ["郵局在商店旁邊", "郵局在商店對面", "郵局在商店裡面"], "a": 0 }
+      ],
+      "task": { "kind": "go", "title": "送信", "pay": 5, "intro": "Molly says: Please read the letter and take it to the right place.", "introZh": "郵差茉莉說：請看信上的英文，送到對的地方。", "arrive": "Knock, knock! Here's your letter!", "arriveZh": "叩叩！你的信來了！", "button": "✉️ 把信交給他",
+        "calls": [
+          { "to": "h2", "en": "This letter is for Grandpa Joe. He lives in the yellow house. It is between the pink house and the green house.", "zh": "這封信要給喬爺爺。他住在黃色房子，在粉紅色和綠色房子中間。" },
+          { "to": "h5", "en": "This package is for Lily. She lives in the orange house. It is between the light blue house and the purple house.", "zh": "這個包裹要給莉莉。她住在橘色房子，在淺藍色和紫色房子中間。" },
+          { "to": "hospital", "en": "This letter is for Dr. Chen. She works at the hospital. The hospital is next to the fire station.", "zh": "這封信要給陳醫生。她在醫院工作，醫院在消防隊旁邊。" },
+          { "to": "vet", "en": "This box is for Dr. Amy. She works at the animal hospital. It is next to the park.", "zh": "這個箱子要給艾咪獸醫。她在動物醫院工作，就在公園旁邊。" },
+          { "to": "school", "en": "This letter is for Ms. Lin. She works at the school. The school is next to the restaurant.", "zh": "這封信要給林老師。她在學校工作，學校在餐廳旁邊。" },
+          { "to": "restaurant", "en": "This letter is for Chef Tom. The restaurant is between the school and the hospital.", "zh": "這封信要給湯姆主廚。餐廳在學校和醫院中間。" },
+          { "to": "h6", "en": "This package is for the purple house. The purple house is next to the orange house.", "zh": "這個包裹要送到紫色房子，紫色房子在橘色房子旁邊。" },
+          { "to": "h1", "en": "This letter is for the pink house. The pink house is next to the yellow house. It is not the green house!", "zh": "這封信要送到粉紅色房子。粉紅色房子在黃色房子旁邊，不是綠色那間喔！" },
+          { "to": "shop", "en": "This box is for Mr. Lee. His shop is next to the post office.", "zh": "這個箱子要給李老闆。他的商店在郵局旁邊。" }
+        ] }
+    },
+    "vet": {
+      "zh": "獸醫", "en": "Vet", "place": "vet", "npc": "vet", "color": "#2F9C95",
+      "uniform": { "top": "#2F9C95", "hat": "cap", "hatColor": "#F4F1E8", "extra": "stethoscope", "extraColor": "#26302A" },
+      "exam": [
+        { "q": "A girl brings her dog in. What do you ask?", "zh": "女孩帶狗來了，你要問什麼？", "opts": ["What's wrong with your dog?", "What's your dog's favorite song?", "Is your dog a teacher?"], "a": 0 },
+        { "q": "\"My cat doesn't want to eat.\" What's wrong?", "zh": "貓怎麼了？", "opts": ["貓不想吃東西", "貓想吃很多東西", "貓想出去玩"], "a": 0 },
+        { "q": "Rabbits like to eat ___.", "zh": "兔子喜歡吃「紅蘿蔔」。", "type": "typed", "a": "carrots", "alts": ["carrot"] },
+        { "q": "The dog's leg hurts. What do you say?", "zh": "狗的腳受傷了，你要說什麼？", "opts": ["Let me look at its leg.", "Let's go running.", "Give it a hat."], "a": 0 },
+        { "q": "Which animal has long ears?", "zh": "哪一種動物有長耳朵？", "opts": ["A rabbit.", "A fish.", "A bird."], "a": 0 },
+        { "q": "Be ___ with the little kitten.", "zh": "照顧小貓要「小心」。", "type": "typed", "a": "careful" },
+        { "q": "How do you say 「牠很健康」 in English?", "zh": "選出對的英文。", "opts": ["It is healthy.", "It is hungry.", "It is heavy."], "a": 0 },
+        { "q": "\"The bird can't fly. Its wing hurts.\" What hurts?", "zh": "哪裡受傷了？", "opts": ["翅膀", "腳", "嘴巴"], "a": 0 },
+        { "q": "Give the dog some ___ to drink.", "zh": "給狗一些「水」喝。", "type": "typed", "a": "water" },
+        { "q": "The pet feels better. What does the owner say?", "zh": "寵物好了，主人會說什麼？", "opts": ["Thank you so much, doctor!", "I'm sorry, doctor.", "Goodbye, cat food!"], "a": 0 }
+      ],
+      "task": { "kind": "cases", "title": "照顧生病的寵物", "intro": "Dr. Amy says: Read about each pet. Then choose the right care.", "introZh": "艾咪獸醫說：讀一讀每隻寵物的情況，選出對的照顧方法。",
+        "who": "Pet", "whoZh": "寵物",
+        "cases": [
+          { "says": "This pet has long ears and a short tail. It loves carrots. It hurt its foot.", "zh": "這隻寵物有長耳朵、短尾巴，愛吃紅蘿蔔。牠的腳受傷了。", "a": "Put a bandage on the rabbit's foot.", "wrong": ["Put a bandage on the cat's foot.", "Give the rabbit some eye drops."] },
+          { "says": "This pet says \"meow.\" It has a cold and it sneezes a lot.", "zh": "這隻寵物會「喵」。牠感冒了，一直打噴嚏。", "a": "Give the cat some cold medicine.", "wrong": ["Give the dog some cold medicine.", "Cut the cat's hair."] },
+          { "says": "This pet says \"woof.\" It ate too much and its stomach hurts.", "zh": "這隻寵物會「汪」。牠吃太多，肚子痛。", "a": "Give the dog some stomach medicine.", "wrong": ["Give the bird some stomach medicine.", "Give the dog more food."] },
+          { "says": "This pet can fly and sing. One of its wings hurts.", "zh": "這隻寵物會飛、會唱歌。牠有一邊翅膀受傷了。", "a": "Wrap the bird's wing gently.", "wrong": ["Wrap the dog's tail gently.", "Give the bird a bath."] },
+          { "says": "This pet lives in water. It isn't swimming well. Its water is dirty.", "zh": "這隻寵物住在水裡，游不太動，牠的水髒了。", "a": "Clean the fish's water.", "wrong": ["Clean the dog's bed.", "Give the fish a carrot."] },
+          { "says": "This little pet has round ears and loves seeds. Its eye is red.", "zh": "這隻小寵物有圓耳朵、愛吃種子，牠的眼睛紅紅的。", "a": "Give the hamster some eye drops.", "wrong": ["Give the cat some eye drops.", "Give the hamster more seeds."] },
+          { "says": "This pet says \"meow.\" It has a thorn in its paw.", "zh": "這隻寵物會「喵」，牠的腳掌有一根刺。", "a": "Take the thorn out of the cat's paw.", "wrong": ["Take the thorn out of the rabbit's ear.", "Give the cat some cough syrup."] }
+        ] }
+    }
+  }
+}
