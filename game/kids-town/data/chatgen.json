@@ -1,0 +1,12 @@
+{
+  "_doc": "聊天卡片自動出題：每段對話（照對話 id 去掉後面的數字，例如 school2 → school）在手寫的情境句後面，多一句「用英文說說看」，句子從學習站的句型（patterns，id 見 data/patterns*.js）和片語（phrases，id 見 data/phrases*.js）挑，錯題本裡的優先、再來是還沒學會的。這裡只列每個地點適合的句型和片語。",
+  "school": { "patterns": ["what-day", "do-you-have-class", "what-time", "whats-your-favorite", "good-at", "can-you", "what-are-you-doing"], "phrases": ["good-morning", "good-job", "be-quiet", "it-s-your-turn", "excuse-me", "see-you-tomorrow"] },
+  "hospital": { "patterns": ["whats-wrong", "whats-wrong-hurts", "do-you-have-a-fever", "does-she-have-a-cold", "how-do-you-feel", "should"], "phrases": ["get-well-soon", "take-care", "what-s-wrong", "what-s-the-matter", "bless-you", "don-t-worry"] },
+  "shop": { "patterns": ["how-much", "looking-for", "do-you-have", "what-color", "which-like", "whose-is-this"], "phrases": ["may-i-help-you", "i-ll-take-it", "here-you-are", "thank-you-very-much", "you-re-welcome", "how-much"] },
+  "restaurant": { "patterns": ["would-you-like", "what-would-you-like-for", "would-you-like-some", "id-like", "i-want", "do-you-like"], "phrases": ["enjoy-your-meal", "i-m-full", "help-yourself", "here-you-are", "no-problem", "my-pleasure"] },
+  "fire": { "patterns": ["dont", "have-to", "should", "go-straight", "can-you", "i-cant"], "phrases": ["be-careful", "watch-your-step", "hold-on", "don-t-worry", "come-with-me", "wait-a-minute"] },
+  "post": { "patterns": ["where-is-the", "next-to-between", "in-front-of", "go-straight", "where-are-you-going", "how-go"], "phrases": ["see-you-later", "have-a-nice-day", "excuse-me", "you-re-welcome", "take-your-time", "thank-you-very-much"] },
+  "vet": { "patterns": ["he-she-is", "what-is-this", "can-he", "is-it", "you-look", "i-have"], "phrases": ["don-t-worry", "take-care", "good-job", "be-careful", "get-well-soon", "what-happened"] },
+  "park": { "patterns": ["lets", "whats-the-weather", "do-you-want-to", "what-are-you-doing", "can-i", "how-about"], "phrases": ["good-idea", "sounds-good", "let-s-go", "me-too", "come-on", "that-s-a-good-idea"] },
+  "neighbor": { "patterns": ["how-are-you", "where-from", "what-did-you-do", "i-usually", "every-day", "going-to"], "phrases": ["long-time-no-see", "nice-to-meet-you", "welcome-back", "have-a-good-weekend", "see-you-later", "good-evening"] }
+}
