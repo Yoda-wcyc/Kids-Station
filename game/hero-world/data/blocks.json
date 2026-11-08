@@ -235,9 +235,9 @@
     {"id":"shadow_flint","name_zh":"暗影火種","icon":"gem","color":"#E0352B","maxStack":16,"buy":{"price":90,"qty":1}},
     {"id":"apple","name_zh":"蘋果","icon":"apple","color":"#C2443A","maxStack":64,"buy":null,"food":4},
     {"id":"paper","name_zh":"紙","icon":"paper","color":"#F4EFE2","maxStack":64,"buy":null},
-    {"id":"book","name_zh":"英文小書","icon":"book","color":"#8C5A3A","maxStack":16,"buy":null},
+    {"id":"book","name_zh":"英文小書","icon":"book","color":"#8C5A3A","maxStack":16,"buy":{"price":6,"qty":1}},
     {"id":"bow","name_zh":"弓","icon":"bow","color":"#A97E4E","maxStack":1,"buy":null,"tool":{"type":"bow","tier":0,"durability":96}},
-    {"id":"arrow","name_zh":"箭","icon":"arrow","color":"#8C8A84","maxStack":64,"buy":null},
+    {"id":"arrow","name_zh":"箭","icon":"arrow","color":"#8C8A84","maxStack":64,"buy":{"price":4,"qty":8}},
     {"id":"raw_meat","name_zh":"生肉","icon":"meat","color":"#D9776A","maxStack":64,"buy":null,"food":1},
     {"id":"cooked_meat","name_zh":"烤肉","icon":"meat","color":"#A8643F","maxStack":64,"buy":null,"food":7}
   ],
