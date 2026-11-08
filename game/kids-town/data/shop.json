@@ -1,0 +1,26 @@
+{
+  "_doc": "小朋友鎮商店（在商店找李老闆）。金幣是方塊世界同一個錢包（hw_coins），花費走 core/coinbank.js。價格照方塊世界的經濟：一天約 20 題≈34 金幣 → 小東西 30–60（1–2 天）、大東西 240–450（1–2 週）。cat：ride 交通工具（speed 走路速度、shift 跑的速度、lift 人坐多高；boat 只能在公園池塘）、pet 寵物（會跟著走、可以取名字）、wear 衣服配件（slot＝外觀的哪一格、value＝那一格的選項）、house 房子（floor2 加蓋二樓、theme 房子樣式）。",
+  "cats": [["ride", "交通工具"], ["pet", "寵物"], ["wear", "衣服・帽子・配件"], ["house", "房子"]],
+  "items": [
+    { "id": "scooter", "cat": "ride", "zh": "滑板車", "en": "Scooter", "price": 40, "speed": 7, "run": 9, "lift": 0.12 },
+    { "id": "boat", "cat": "ride", "zh": "小船（公園池塘）", "en": "Boat", "price": 120, "speed": 4.5, "run": 6, "lift": 0.1, "water": true },
+    { "id": "car", "cat": "ride", "zh": "汽車", "en": "Car", "price": 260, "speed": 12, "run": 14, "lift": 0.25, "big": true },
+    { "id": "bus", "cat": "ride", "zh": "公車（站在車頂兜風）", "en": "Bus", "price": 320, "speed": 9, "run": 11, "lift": 1.7, "big": true },
+    { "id": "rabbit", "cat": "pet", "zh": "兔子", "en": "Rabbit", "price": 60 },
+    { "id": "cat", "cat": "pet", "zh": "小貓", "en": "Cat", "price": 70 },
+    { "id": "dog", "cat": "pet", "zh": "小狗", "en": "Dog", "price": 80 },
+    { "id": "hat_flower", "cat": "wear", "slot": "hat", "value": "flower", "zh": "花圈", "en": "Flower Crown", "price": 30 },
+    { "id": "top_stripe", "cat": "wear", "slot": "top", "value": "stripe", "zh": "條紋上衣", "en": "Striped Shirt", "price": 30 },
+    { "id": "acc_scarf", "cat": "wear", "slot": "acc", "value": "scarf", "zh": "圍巾", "en": "Scarf", "price": 30 },
+    { "id": "hat_top", "cat": "wear", "slot": "hat", "value": "tophat", "zh": "紳士帽", "en": "Top Hat", "price": 35 },
+    { "id": "acc_badge", "cat": "wear", "slot": "acc", "value": "goldbadge", "zh": "金色徽章（配制服好看）", "en": "Gold Badge", "price": 35 },
+    { "id": "top_star", "cat": "wear", "slot": "top", "value": "star", "zh": "星星上衣", "en": "Star Shirt", "price": 40 },
+    { "id": "acc_backpack", "cat": "wear", "slot": "acc", "value": "backpack", "zh": "背包", "en": "Backpack", "price": 40 },
+    { "id": "hat_crown", "cat": "wear", "slot": "hat", "value": "crown", "zh": "皇冠", "en": "Crown", "price": 45 },
+    { "id": "acc_cape", "cat": "wear", "slot": "acc", "value": "cape", "zh": "披風", "en": "Cape", "price": 60 },
+    { "id": "floor2", "cat": "house", "zh": "加蓋二樓（屋裡有梯子）", "en": "Second Floor", "price": 240, "needHome": true },
+    { "id": "theme_tree", "cat": "house", "theme": "tree", "zh": "樹屋樣式", "en": "Tree House", "price": 300, "needHome": true },
+    { "id": "theme_lighthouse", "cat": "house", "theme": "lighthouse", "zh": "燈塔樣式", "en": "Lighthouse", "price": 380, "needHome": true },
+    { "id": "theme_castle", "cat": "house", "theme": "castle", "zh": "城堡樣式", "en": "Castle", "price": 450, "needHome": true }
+  ]
+}
