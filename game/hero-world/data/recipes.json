@@ -1495,7 +1495,11 @@
         "count": 4
       },
       "needs": null
-    }
+    },
+    { "id": "paper", "name_zh": "紙", "in": { "planks": 2 }, "out": { "id": "paper", "count": 3 }, "needs": null },
+    { "id": "book", "name_zh": "英文小書", "in": { "leather": 1, "paper": 3 }, "out": { "id": "book", "count": 1 }, "needs": null },
+    { "id": "arrow", "name_zh": "箭", "in": { "feather": 1, "stick": 1, "cobblestone": 1 }, "out": { "id": "arrow", "count": 4 }, "needs": null },
+    { "id": "bow", "name_zh": "弓", "in": { "stick": 3, "wool": 2 }, "out": { "id": "bow", "count": 1 }, "needs": "crafting_table" }
   ],
   "smelt": [
     {
@@ -1547,6 +1551,7 @@
       "in": "raw_fish",
       "out": "cooked_fish",
       "time": 4
-    }
+    },
+    { "in": "raw_meat", "out": "cooked_meat", "time": 4 }
   ]
 }

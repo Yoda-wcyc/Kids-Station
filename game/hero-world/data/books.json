@@ -1,0 +1,54 @@
+{
+  "_doc": "英文小書（M8 第 2 段）：全部是這個遊戲自己寫的原創短篇（國小五年級程度、約 60–120 字）。en＝英文內文、zh＝中文翻譯、q＝讀完的理解題（options 第一個是正確答案，出題時會打亂）。每篇每天答對第一次給 coins 金幣。",
+  "coins": 1,
+  "books": [
+    {
+      "id": "kite", "title": "The Lost Kite", "title_zh": "不見的風箏",
+      "en": "On Sunday, Mia and her brother Leo went to the park with a red kite. The wind was strong, and the kite flew high into the sky. Suddenly, the string broke! The kite fell into a tall tree. Mia was sad, but Leo had an idea. He found a long stick and stood on a big rock. Slowly, he pushed the kite out of the branches. \"Thank you, Leo!\" Mia said with a big smile. After that, they sat under the tree and shared some cookies. It was a happy day.",
+      "zh": "星期天，米亞和哥哥里歐帶著一個紅色風箏去公園。風很大，風箏飛得好高好高。突然，線斷了！風箏掉進一棵高高的樹裡。米亞很難過，但是里歐想到一個辦法。他找到一根長長的棍子，站到一顆大石頭上，慢慢把風箏從樹枝裡推出來。「謝謝你，里歐！」米亞笑得好開心。之後，他們坐在樹下一起分餅乾吃。那是快樂的一天。",
+      "q": { "prompt": "How did Leo get the kite back?", "zh": "里歐怎麼把風箏拿回來？", "options": ["He used a long stick.", "He climbed the tree.", "He called his dad.", "He bought a new kite."] }
+    },
+    {
+      "id": "beans", "title": "Tom's Bean Pot", "title_zh": "湯姆的豆子盆栽",
+      "en": "Tom wanted to grow something by himself. His mom gave him five bean seeds and a small pot. Tom put the seeds in the soil and gave them some water. Every morning before school, he checked the pot. For three days, nothing happened. Tom was worried. \"Be patient,\" his mom said. \"Plants need time.\" On the seventh day, Tom saw two tiny green leaves. He shouted, \"They are growing!\" Now Tom waters his beans every day, and he writes notes about them in his notebook.",
+      "zh": "湯姆想要自己種東西。媽媽給他五顆豆子種子和一個小花盆。湯姆把種子放進土裡，澆了一點水。每天早上上學前，他都會去看看花盆。三天過去了，什麼都沒有發生。湯姆好擔心。「要有耐心，」媽媽說，「植物需要時間。」到了第七天，湯姆看到兩片小小的綠葉子。他大喊：「它們在長大了！」現在湯姆每天幫豆子澆水，還把觀察寫在筆記本裡。",
+      "q": { "prompt": "What did Tom's mom tell him?", "zh": "湯姆的媽媽跟他說什麼？", "options": ["Be patient.", "Go to bed.", "Buy more seeds.", "Eat your beans."] }
+    },
+    {
+      "id": "library", "title": "A Rainy Day at the Library", "title_zh": "下雨天的圖書館",
+      "en": "Ben loves soccer, but on Saturday it rained all day. He could not play outside. \"Let's go to the library,\" said his dad. At first, Ben did not want to go. At the library, he found a big book about space. It had pictures of the moon, Mars, and bright stars. Ben read for two hours! He learned that a day on Mars is a little longer than a day on Earth. On the way home, Ben asked, \"Can we come back next week? Maybe I will be an astronaut one day.\"",
+      "zh": "班很愛踢足球，可是星期六下了一整天的雨，他不能出去玩。「我們去圖書館吧，」爸爸說。一開始，班不想去。到了圖書館，他找到一本講太空的大書，裡面有月亮、火星和亮晶晶星星的圖片。班一看就看了兩個小時！他學到：火星上的一天，比地球上的一天長一點點。回家的路上，班問：「我們下星期可以再來嗎？說不定有一天我會當太空人。」",
+      "q": { "prompt": "Why did Ben go to the library?", "zh": "班為什麼去圖書館？", "options": ["Because it was raining.", "Because he lost his ball.", "Because he had homework.", "Because his friend was there."] }
+    },
+    {
+      "id": "newgirl", "title": "The New Girl", "title_zh": "新來的同學",
+      "en": "Lily was a new student in Class 5B. On her first day, she sat alone at lunch. She did not know anyone, so she felt shy. Then a boy named Ken came over. \"Hi, I'm Ken. Do you like drawing?\" he asked. Lily nodded. \"Our drawing club meets after school. Do you want to come?\" That afternoon, Lily drew a funny cat with big glasses. Everyone in the club laughed and clapped. Lily smiled. She was not alone anymore. Now she and Ken draw together every Wednesday.",
+      "zh": "莉莉是五年 B 班的新同學。第一天午餐時，她一個人坐著。她誰都不認識，所以覺得很害羞。這時候，一個叫阿健的男生走過來。「嗨，我是阿健。你喜歡畫畫嗎？」他問。莉莉點點頭。「我們的畫畫社放學後有活動，你要不要來？」那天下午，莉莉畫了一隻戴著大眼鏡的好笑貓咪。社團裡的大家都笑了，還一起拍手。莉莉也笑了，她不再是一個人了。現在，她每個星期三都和阿健一起畫畫。",
+      "q": { "prompt": "What did Lily draw?", "zh": "莉莉畫了什麼？", "options": ["A funny cat with big glasses", "A big dog in the rain", "A red car on the road", "A tall tree in the park"] }
+    },
+    {
+      "id": "bike", "title": "Grandpa's Old Bike", "title_zh": "爺爺的舊腳踏車",
+      "en": "Sam's grandpa had an old blue bike in his garage. It was dusty, and one tire was flat. \"Let's fix it together,\" Grandpa said. They cleaned the bike, filled the tire with air, and oiled the chain. Then they went to the park. Sam got on the bike, but he fell down after a few meters. His knee hurt a little. \"Everyone falls when they are learning,\" Grandpa said. Sam tried again and again. By sunset, he could ride all the way around the lake.",
+      "zh": "山姆的爺爺在車庫裡有一台舊的藍色腳踏車。車子上都是灰塵，還有一個輪胎沒氣了。「我們一起把它修好吧，」爺爺說。他們把腳踏車擦乾淨、幫輪胎打氣，還在鏈條上了油。然後他們去公園。山姆騎上車，可是才騎幾公尺就跌倒了，膝蓋有一點痛。「每個人學的時候都會跌倒，」爺爺說。山姆試了一次又一次。到了太陽下山，他已經可以繞著湖騎一整圈了。",
+      "q": { "prompt": "What did Sam do after he fell down?", "zh": "山姆跌倒以後做了什麼？", "options": ["He tried again and again.", "He went home and slept.", "He gave the bike away.", "He asked for a new bike."] }
+    },
+    {
+      "id": "butter", "title": "The Bakery Cat", "title_zh": "麵包店的貓",
+      "en": "Every morning, a small yellow cat sat in front of Amy's bakery. It looked at the warm bread through the window. Amy felt sorry for the cat. One day, she put some water and a little fish in a bowl by the door. The cat ate it all and purred. After that, it came back every day. Amy named it Butter because its fur was soft and yellow. Soon, many children came to the bakery to say hello to Butter. Now Amy's bakery is the busiest shop on the street.",
+      "zh": "每天早上，都有一隻黃色小貓坐在艾美的麵包店門口，隔著窗戶看著熱騰騰的麵包。艾美覺得小貓好可憐。有一天，她在門邊放了一碗水和一點小魚。小貓全部吃光，還發出呼嚕呼嚕的聲音。從那天起，牠每天都回來。艾美幫牠取名叫「奶油」，因為牠的毛又軟又黃。很快的，很多小朋友都跑來麵包店跟奶油打招呼。現在，艾美的麵包店是整條街上最熱鬧的店。",
+      "q": { "prompt": "Why did Amy name the cat Butter?", "zh": "艾美為什麼幫貓取名叫「奶油」？", "options": ["Its fur was soft and yellow.", "It ate butter every day.", "It was very big and fat.", "It came from a farm."] }
+    },
+    {
+      "id": "picnic", "title": "The Class Picnic", "title_zh": "班級野餐",
+      "en": "On Friday, Ms. Chen's class had a picnic at the river park. Everyone brought lunch in a bag. When it was time to eat, Jake opened his bag and saw only a water bottle. He forgot his lunch at home! Jake's face turned red. His friend Nina gave him half of her sandwich. Max shared his apple, and Ivy gave him some crackers. \"Thank you, everyone,\" Jake said. \"This is the best lunch ever!\" After lunch, the class played games and watched the ducks on the river.",
+      "zh": "星期五，陳老師的班級到河濱公園野餐，每個人都帶了一袋午餐。要吃飯的時候，傑克打開袋子，裡面只有一瓶水——他把午餐忘在家裡了！傑克的臉都紅了。他的朋友妮娜分給他半個三明治，麥克斯分給他蘋果，艾薇給他一些餅乾。「謝謝大家，」傑克說，「這是我吃過最棒的午餐！」吃完午餐，全班一起玩遊戲，還看了河上的鴨子。",
+      "q": { "prompt": "What did Nina give Jake?", "zh": "妮娜給了傑克什麼？", "options": ["Half of her sandwich", "Her red apple", "Some crackers", "A water bottle"] }
+    },
+    {
+      "id": "stars", "title": "Camping Under the Stars", "title_zh": "星空下露營",
+      "en": "Emma's family went camping in the mountains. They set up a green tent next to a quiet lake. At night, there were no city lights, so the sky was very dark. Emma looked up and saw hundreds of stars. Her mom showed her the Big Dipper. Suddenly, a shooting star went across the sky. \"Make a wish!\" said her dad. Emma closed her eyes and made a wish. She did not tell anyone what it was. It was her secret, and she kept it in her heart.",
+      "zh": "艾瑪一家人去山上露營。他們在安靜的湖邊搭起一頂綠色帳篷。晚上，那裡沒有城市的燈光，所以天空非常暗。艾瑪抬起頭，看到好幾百顆星星。媽媽指給她看北斗七星。突然，一顆流星劃過天空。「快許願！」爸爸說。艾瑪閉上眼睛許了一個願望。她沒有告訴任何人那是什麼願望——那是她的祕密，她把它好好放在心裡。",
+      "q": { "prompt": "Why was the sky very dark?", "zh": "為什麼天空非常暗？", "options": ["There were no city lights.", "It was raining hard.", "The moon was very big.", "They were inside the tent."] }
+    }
+  ]
+}

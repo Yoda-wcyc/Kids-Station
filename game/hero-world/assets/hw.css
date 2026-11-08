@@ -186,3 +186,7 @@ body.lefty #tbtns { right: auto; left: max(18px, env(safe-area-inset-left)); }
 #restcard[hidden] { display: none; }
 #restcard b { font-size: 20px; color: #3E6B3A; }
 .set select { font: inherit; padding: 4px 8px; border-radius: 6px; }
+
+/* M8 英文小書 */
+.panel.book .book-text { font-size: 20px; line-height: 1.65; margin: 8px 0; }
+.panel.book .book-text.zh { font-size: 17px; color: #4A4F48; background: rgba(38,48,42,.06); border-radius: 10px; padding: 10px 12px; }
