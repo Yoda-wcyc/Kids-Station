@@ -28,8 +28,9 @@
       { id: 'paper-1517', title: '第15、17題類題 5 題', icon: '📋', src: 'math/paper.html?set=1517', hidden: true },
       // 2026-11-06：🎬 動畫教學 7 段（math/anim.html；看完＝練習答對，記在本機 kids_anim、不同步）；anim-a～anim-g＝錯題庫「🎬 看動畫」直接開某一段
       { id: 'anim', title: '🎬 動畫教學', desc: () => animDesc(), icon: '🎬', src: 'math/anim.html', grp: '五上' }],
-    // 2026-11-02：世界史漫畫（comics/；整頁開，閱讀不用登入；學習幣、完成標示、錯題庫、課程地圖、小助理等第 1 話看過再接）
-    history: [{ id: 'comic-v1e1', title: '世界史漫畫 第 1 冊 古文明・第 1 話：寫下來，才算數！', desc: '試做｜阿凱和小禾搭時光搖搖車到 3800 年前的巴比倫：楔形文字、《漢摩拉比法典》，看完有重點、地圖和 5 題小測驗', icon: '📖', href: 'comics/v1e1.html' }],
+    // 2026-11-02：世界史漫畫（comics/；整頁開，閱讀不用登入；學習幣、完成標示、錯題庫、課程地圖、小助理等還沒接）
+    // 2026-11-08：擴成 7 冊 42 話 → 一張卡進目錄頁 comics/index.html（7 冊可收合；上架開關在 comics/catalog.js，這裡不用跟著改）
+    history: [{ id: 'comics', title: '世界史漫畫《時光搖搖車》', desc: '阿凱和小禾搭時光搖搖車，從古文明一路坐到今天：7 冊 42 話照時代順序，每話看完有重點、地圖和 5 題小測驗（陸續上架）', icon: '📖', href: 'comics/index.html' }],
     ai: [
       { id: 'hallucinate', title: 'AI 會唬爛', desc: 'AI 有時會很有自信地說錯。學會三招不被騙：自己查、問大人、多找一個地方對答案。', icon: '🤥', src: 'ai/hallucinate.html', dk: 'ai:hallucinate' },
       { id: 'ask-well', title: '怎麼問得好', desc: '同一件事，問法不同答案就差很多。練習講清楚、給背景、說形式，讓 AI 真的幫得上忙。', icon: '💬', src: 'ai/ask-well.html', dk: 'ai:ask-well' },

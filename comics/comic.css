@@ -99,4 +99,28 @@ svg text{font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans T
   .cm-bot{grid-column:2;grid-row:2;flex-direction:column;justify-content:center;gap:16px;padding:8px}
   .cm-bot .btn{width:100%;min-width:0!important;padding:8px 6px;font-size:1.02rem}
 }
+/* 目錄頁（index.html）：一般捲動頁 */
+body.cm-cat{display:block;height:auto;min-height:100%;overflow:auto;-webkit-user-select:text;user-select:text}
+html:has(body.cm-cat){overflow:auto;height:auto}
+.cm-cat .cm-top{position:sticky;top:0}
+.cm-cat #cm-ep{text-align:left}
+.cm-lead{font-size:1.1rem;margin:0 0 16px}
+.cm-vol-box{background:var(--cream);margin:0 0 12px;box-shadow:0 3px 8px rgba(31,61,43,.16)}
+.cm-vol-box summary{cursor:pointer;padding:14px 16px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;list-style:none}
+.cm-vol-box summary::-webkit-details-marker{display:none}
+.cm-vol-box summary::before{content:"▶";font-size:.8rem;color:var(--g5);transition:transform .2s}
+.cm-vol-box[open] summary::before{transform:rotate(90deg)}
+.cm-vol-box summary b{font-size:1.3rem;font-weight:900}
+.cm-vol-box summary small{font-size:.95rem;color:var(--g7);font-weight:700}
+.cm-eps{list-style:none;margin:0;padding:0 12px 12px}
+.cm-eps li{margin:0 0 8px}
+.cm-ep-card{display:flex;align-items:center;gap:12px;padding:10px 12px;background:#fff;color:var(--inkc);text-decoration:none;border-radius:12px;box-shadow:0 3px 0 var(--paper3);min-height:58px}
+.cm-ep-card .cm-no{flex:0 0 34px;height:34px;border-radius:50%;background:var(--g7);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center}
+.cm-ep-card .cm-et{flex:1 1 auto;min-width:0}
+.cm-ep-card .cm-et b{display:block;font-size:1.12rem;font-weight:900;line-height:1.3}
+.cm-ep-card .cm-et small{display:block;font-size:.92rem;color:#5b6256;font-weight:700}
+.cm-ep-card i{font-style:normal;font-weight:900;color:var(--g7);white-space:nowrap}
+.cm-ep-card.wip{background:var(--paper2);box-shadow:none;color:#6b7065}
+.cm-ep-card.wip .cm-no{background:var(--paper3);color:#6b7065}
+.cm-ep-card.wip i{color:#8a8f84;font-size:.9rem}
 @media (prefers-reduced-motion:reduce){#cm-book,.cm-panel,#cm-bar{transition:none!important}}

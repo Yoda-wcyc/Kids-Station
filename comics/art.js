@@ -138,7 +138,7 @@
     kai: { name: '阿凱', skin: C.skin, top: C.g7, bottom: C.g9, leg: C.skin, shoe: C.ink, r: 22, hair: hairKai, back: bottle, stripe: C.cream },
     he: { name: '小禾', skin: C.skin, top: C.g3, skirt: C.g9, leg: C.skin, shoe: C.red, r: 22, hairBack: hairHeBack, hair: hairHe, over: glasses, k: .9 },
     iddin: { name: '伊丁', skin: C.skinB, top: '#8C5A3C', skirt: C.gold, leg: C.skinB, sleeve: C.skinB, shoe: C.wood, r: 22, hair: hairIddin, k: .96 },
-    king: { name: '漢摩拉比', skin: C.skinB, robe: C.g9, trim: C.gold, shoe: C.ink, r: 19, hat: hatKing, beard: 2, k: 1.26 },
+    king: { name: '漢摩拉比', real: 1, skin: C.skinB, robe: C.g9, trim: C.gold, shoe: C.ink, r: 19, hat: hatKing, beard: 2, k: 1.26 },
     guard: { name: '隨從', skin: C.skinC, robe: C.paper3, trim: C.g7, shoe: C.ink, r: 18, hair: hairMan, beard: 1, k: 1.18 },
     farmer: { name: '農夫', skin: C.skinC, top: C.brick, skirt: C.g5, leg: C.skinC, sleeve: C.skinC, shoe: C.wood, r: 19, hair: hairMan, beard: 1, k: 1.14 },
     farmer2: { name: '農夫', skin: C.skinB, top: C.g2, skirt: C.clay2, leg: C.skinB, sleeve: C.skinB, shoe: C.wood, r: 19, hair: hairMan, k: 1.1 },
@@ -148,7 +148,10 @@
   // 一個角色（腳底在 x,y）。o：s 大小、flip 面向左、expr 表情、look 眼睛方向 -1～1、sweat、blush、hold 手上道具
   function actor(o) {
     const sp = CAST[o.c]; if (!sp) return '';
-    const P = POSES[o.pose || 'stand'] || POSES.stand, s = (o.s || 1) * (sp.k || 1), look = o.look || 0, hair = sp.hair, [hx, hy] = P.h, [nx, ny] = P.n, [tx, ty] = P.t, r = sp.r;
+    const P = POSES[o.pose || 'stand'] || POSES.stand, s = (o.s || 1) * (sp.k || 1), look = o.look || 0, [hx, hy] = P.h, [nx, ny] = P.n, [tx, ty] = P.t, r = sp.r;
+    // hair／hairBack／hat／acc 可以是函式（第 1 話的寫法）或 PARTS 裡的名字（data 檔新角色用）
+    const part = (f, extra) => !f ? '' : typeof f === 'function' ? f(tx, ty, r, look) : [].concat(f).map(n => PARTS[n] ? at(tx, ty, r / 22, PARTS[n](sp, look)) : '').join('') + (extra || '');
+    const hair = sp.hair ? () => part(sp.hair) : null;
     let g = o.noShadow ? '' : groundShadow(0, 2, 62, 8);
     if (sp.back) g += `<g transform="translate(${nx - 2} ${ny + 150})">${sp.back()}</g>`;
     const limb = (a, b, c, w, f1, f2) => cap(a[0], a[1], b[0], b[1], w, f1) + cap(b[0], b[1], c[0], c[1], w, f2 || f1);
@@ -183,14 +186,15 @@
     // 頭
     const tilt = P.tilt ? ` rotate(${P.tilt} ${tx} ${ty})` : '';
     g += `<g transform="translate(0 0)${tilt}">`;
-    if (sp.hairBack) g += sp.hairBack(tx, ty, r);
+    if (sp.hairBack) g += part(sp.hairBack);
     g += both(circ(tx, ty, r, sp.skin), 'cm-warm');
     if (sp.beard) g += beard(tx, ty + r * .35, r, sp.beard === 2);
     g += face(tx, ty, r, o.expr || 'calm', look);
     if (o.blush) g += blush(tx, ty, r);
-    if (hair) g += hair(tx, ty, r, look);
-    if (sp.hat) g += sp.hat(tx, ty, r);
+    if (hair) g += hair();
+    if (sp.hat) g += part(sp.hat);
     if (sp.over) g += sp.over(tx, ty, r, look);
+    if (sp.acc) g += part(sp.acc);
     if (o.sweat) g += sweat(tx + r + 4, ty - r * .7, 1) + (o.sweat > 1 ? sweat(tx + r + 14, ty - r * .1, .7) : '');
     g += `</g>`;
     // 手上的東西（在前手下面）
@@ -202,6 +206,7 @@
     if (has('spoon')) g += cap(P.aF[1][0], P.aF[1][1], P.aF[1][0] - 8, P.aF[1][1] + 18, 3, C.paper3) + ell(P.aF[1][0] - 1, P.aF[1][1] - 3, 4, 3, C.paper3);
     if (has('sack')) g += both(path(`M${P.aF[1][0] - 52} ${P.aF[1][1] - 34} Q${P.aF[1][0] - 40} ${P.aF[1][1] - 54} ${P.aF[1][0] - 8} ${P.aF[1][1] - 46} L${P.aF[1][0] + 14} ${P.aF[1][1] - 18} Q${P.aF[1][0] + 2} ${P.aF[1][1] + 4} ${P.aF[1][0] - 30} ${P.aF[1][1] - 2}Z`, C.clay3), 'cm-warm');
     if (has('reed')) g += cap(P.aF[1][0] - 2, P.aF[1][1] + 2, P.aF[1][0] + 18, P.aF[1][1] - 24, 3, C.gold);
+    holds.forEach(k => { if (HOLDS[k]) g += at(P.aF[1][0], P.aF[1][1], 1, HOLDS[k](sp)); });
     // 前手
     g += limb(shoulderF, P.aF[0], P.aF[1], 12, sp.robe || sp.top === sp.skin ? arm : (sp.sleeve || arm)); g += circ(P.aF[1][0], P.aF[1][1], 7.5, hand);
     return `<g transform="translate(${o.x} ${o.y}) scale(${o.flip ? -r1(s * 100) / 100 : r1(s * 100) / 100} ${r1(s * 100) / 100})${o.rot ? ` rotate(${o.rot})` : ''}">${g}</g>`;
@@ -351,12 +356,14 @@
       return { bg: s };
     },
     // 投幣孔＋數字盤（大特寫）
-    coin(w, h) {
+    // sceneOpt：year 年份數字（預設 1750）、era 前綴（預設「西元前」；西元後寫「西元」）
+    coin(w, h, o) {
+      o = o || {};
       let s = rect(0, 0, w, h, C.g7);
       s += zoom(w * .5, h * .42, 60, h * .8, 30, 'rgba(247,243,230,.16)', 3);
       s += both(rect(w * .16, 40, w * .68, 130, C.ink, 10)) + rect(w * .5 - 34, 78, 68, 10, '#000', 5) + rect(w * .22, 118, w * .56, 34, C.paper) + txt(w * .5, 143, '10元', 24, C.ink);
       s += circ(w * .5, h * .46, w * .42, C.cream) + circ(w * .5, h * .46, w * .35, C.ink);
-      s += txt(w * .5, h * .46 - 30, '2026', 20, 'rgba(247,243,230,.35)') + txt(w * .5, h * .46 - 6, '西元前', 20, C.g3) + txt(w * .5, h * .46 + 34, '1750', 42, C.cream);
+      s += txt(w * .5, h * .46 - 30, '2026', 20, 'rgba(247,243,230,.35)') + txt(w * .5, h * .46 - 6, o.era || '西元前', 20, C.g3) + txt(w * .5, h * .46 + 34, String(o.year || '1750'), String(o.year || '1750').length > 4 ? 32 : 42, C.cream);
       s += circ(w * .5, h * .46, w * .47, 'url(#cm-glow)', 'opacity=".5"');
       return { bg: s };
     },
@@ -522,20 +529,20 @@
     s += sc.fg || '';
     return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">${s}</svg>`;
   };
-  // 小道具（面板內用座標擺）
-  function prop(x) {
-    if (x.k === 'tablet') return tablet(x.x, x.y, x.w || 60, x.h || 76, { seed: x.seed || 3, rot: x.rot || 0, blank: x.blank, f: x.f, ws: x.ws });
-    if (x.k === 'sack') return sack(x.x, x.y, x.s || 1);
-    if (x.k === 'car') return car(x.x, x.y, x.s || 1, x);
-    if (x.k === 'stele') return stele(x.x, x.y, x.H, x.W);
-    if (x.k === 'puff') return puff(x.x, x.y, x.r || 20, x.f);
-    if (x.k === 'zoom') return zoom(x.x, x.y, x.r0, x.r1, x.n || 24, x.f || 'rgba(247,243,230,.3)', x.seed);
-    if (x.k === 'coin') return `<g transform="translate(${x.x} ${x.y}) rotate(${x.rot || 0})">` + circ(0, 0, x.r || 26, C.gold) + circ(0, 0, (x.r || 26) * .74, '#DDBB5F') + txt(0, (x.r || 26) * .36, '10', (x.r || 26) * .95, C.wood) + `</g>`;
-    if (x.k === 'arrowDown') return poly(`${x.x - 6},${x.y} ${x.x + 6},${x.y} ${x.x + 6},${x.y + 30} ${x.x + 14},${x.y + 30} ${x.x},${x.y + 46} ${x.x - 14},${x.y + 30} ${x.x - 6},${x.y + 30}`, x.f || C.cream);
-    if (x.k === 'printTablet') return `<g transform="translate(${x.x} ${x.y}) rotate(${x.rot || 0})">` + both(rect(-46, -32, 92, 64, C.clay3, 9), 'cm-warm') + ell(-17, 2, 18, 20, C.clay2) + ell(17, 2, 18, 20, C.clay2) + ell(-15, 4, 14, 16, C.clay) + ell(15, 4, 14, 16, C.clay) + `</g>`;
-    if (x.k === 'ruleTablet') return `<g transform="translate(${x.x} ${x.y}) rotate(${x.rot || 0})">` + both(rect(-74, -46, 148, 92, C.clay3, 11), 'cm-warm') + txt(0, -14, '家規第一條', 19, C.wood) + txt(0, 14, '布丁不准', 19, C.ink) + txt(0, 36, '偷吃', 19, C.red) + `</g>`;
-    return '';
-  }
+  // 小道具（面板內用座標擺）：PROPS[k](x)；第 1 話的道具在這裡，各時代共用的道具庫在下面 PROPS 區
+  const PROPS = {
+    tablet: x => tablet(x.x, x.y, x.w || 60, x.h || 76, { seed: x.seed || 3, rot: x.rot || 0, blank: x.blank, f: x.f, ws: x.ws }),
+    sack: x => sack(x.x, x.y, x.s || 1),
+    car: x => car(x.x, x.y, x.s || 1, x),
+    stele: x => stele(x.x, x.y, x.H, x.W),
+    puff: x => puff(x.x, x.y, x.r || 20, x.f),
+    zoom: x => zoom(x.x, x.y, x.r0, x.r1, x.n || 24, x.f || 'rgba(247,243,230,.3)', x.seed),
+    coin: x => `<g transform="translate(${x.x} ${x.y}) rotate(${x.rot || 0})">` + circ(0, 0, x.r || 26, C.gold) + circ(0, 0, (x.r || 26) * .74, '#DDBB5F') + txt(0, (x.r || 26) * .36, x.t || '10', (x.r || 26) * (x.t && x.t.length > 2 ? .6 : .95), C.wood) + `</g>`,
+    arrowDown: x => poly(`${x.x - 6},${x.y} ${x.x + 6},${x.y} ${x.x + 6},${x.y + 30} ${x.x + 14},${x.y + 30} ${x.x},${x.y + 46} ${x.x - 14},${x.y + 30} ${x.x - 6},${x.y + 30}`, x.f || C.cream),
+    printTablet: x => `<g transform="translate(${x.x} ${x.y}) rotate(${x.rot || 0})">` + both(rect(-46, -32, 92, 64, C.clay3, 9), 'cm-warm') + ell(-17, 2, 18, 20, C.clay2) + ell(17, 2, 18, 20, C.clay2) + ell(-15, 4, 14, 16, C.clay) + ell(15, 4, 14, 16, C.clay) + `</g>`,
+    ruleTablet: x => `<g transform="translate(${x.x} ${x.y}) rotate(${x.rot || 0})">` + both(rect(-74, -46, 148, 92, C.clay3, 11), 'cm-warm') + txt(0, -14, '家規第一條', 19, C.wood) + txt(0, 14, '布丁不准', 19, C.ink) + txt(0, 36, '偷吃', 19, C.red) + `</g>`
+  };
+  const prop = x => (PROPS[x.k] ? PROPS[x.k](x) : '');
 
   // 法條卡的小圖示（SVG 字串，viewBox 0 0 120 90）。⛔ 不畫暴力：只畫眼睛、牙齒、天平、堤防
   const ICONS = {
@@ -615,6 +622,409 @@
     });
     return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${items.map(i => i.when + i.t.replace(/\n/g, '')).join('，')}" style="display:block;width:100%;height:auto">${s}</svg>`;
   };
+
+  // =====================================================================================================
+  // 各時代共用圖庫（2026-11-08 起；第 2 話以後用）。全部只畫色塊、不描邊、同色系陰影，跟第 1 話同一套。
+  //   PARTS 髮型／帽子／配件（頭心 0,0、半徑 22 的單位座標）、HOLDS 手上的小東西、PROPS 建築／自然／交通／器物、
+  //   SCENES 通用場景 land／sea／room／flat／night／vortex、LAYOUTS 新版面、A.map 通用地圖（GEO 海岸／河流庫）。
+  //   每一話要新東西：在自己的 data 檔呼叫 ComicArt.extend({...})，名字前面加這一話編號（例如 v2e3_temple），見 CONTRACT.md。
+  // =====================================================================================================
+  C.purple = '#6E2F5F'; C.blue = '#3E6E8E'; C.sky = '#CBDAC2'; C.night = '#18261E';
+  const col = v => (v && C[v]) || v;
+  const at = (x, y, k, inner) => `<g transform="translate(${r1(x)} ${r1(y)}) scale(${r1(k * 100) / 100})">${inner}</g>`;
+  const place = (x, inner) => { const s = x.s || 1; return `<g transform="translate(${r1(x.x)} ${r1(x.y)}) scale(${x.flip ? -s : s} ${s})${x.rot ? ` rotate(${x.rot})` : ''}"${x.op ? ` opacity="${x.op}"` : ''}>${inner}</g>`; };
+  const hc = sp => col(sp && sp.hairC) || C.ink, hat = (sp, d) => col(sp && sp.hatC) || d;
+
+  // ---------- 髮型、帽子、配件（CAST 的 hair／hairBack／hat／acc 寫名字） ----------
+  const PARTS = {
+    kai: (sp, l) => hairKai(0, 0, 22, l), he: (sp, l) => hairHe(0, 0, 22, l), heBack: () => hairHeBack(0, 0, 22), iddin: () => hairIddin(0, 0, 22), man: () => hairMan(0, 0, 22), king: () => hatKing(0, 0, 22), glasses: (sp, l) => glasses(0, 0, 22, l),
+    bald: () => '',
+    short: sp => path('M-22 0 Q-24 -26 0 -26 Q24 -26 22 0 Q12 -11 0 -11 Q-12 -11 -22 0Z', hc(sp)),
+    curly: sp => [[-17, -6, 8], [-20, -15, 8], [-11, -21, 9], [0, -24, 9], [11, -21, 9], [20, -15, 8], [17, -6, 8]].map(c => circ(c[0], c[1], c[2], hc(sp))).join(''),
+    wig: sp => path('M-26 16 Q-30 -28 0 -28 Q30 -28 26 16 L17 16 L18 -6 Q0 -14 -18 -6 L-17 16Z', hc(sp)),   // 埃及式齊肩假髮
+    bun: sp => PARTS.short(sp) + circ(0, -30, 10, hc(sp)) + rect(-13, -33, 26, 3, C.gold, 1),
+    topknot: sp => PARTS.short(sp) + circ(0, -29, 8, hc(sp)) + rect(-6, -31, 12, 4, hat(sp, C.g9), 1),   // 束髮（古代中國男子）
+    long: sp => rect(-27, -6, 11, 44, hc(sp), 5) + rect(16, -6, 11, 44, hc(sp), 5) + PARTS.short(sp),
+    ponytailBack: sp => path('M12 -16 Q42 -8 34 30 Q26 6 8 -4Z', hc(sp)),
+    twinBack: () => hairHeBack(0, 0, 22),
+    mustache: sp => path('M-10 6 Q0 1 10 6 Q4 9 0 7 Q-4 9 -10 6Z', hc(sp)),
+    earring: () => circ(-21, 9, 2.6, C.gold) + circ(21, 9, 2.6, C.gold),
+    nemes: () => path('M-24 -6 Q-26 -30 0 -30 Q26 -30 24 -6 L30 30 L18 30 L16 -4 Q0 -12 -16 -4 L-18 30 L-30 30Z', C.gold) + rect(-21, -24, 42, 3, C.g9) + rect(-24, -17, 48, 3, C.g9) + [6, 15, 24].map(y => rect(-29, y, 11, 3, C.g9) + rect(18, y, 11, 3, C.g9)).join(''),   // 法老頭巾
+    crownP: () => path('M-20 -10 L-21 -40 L-13 -32 L-7 -42 L0 -33 L7 -42 L13 -32 L21 -40 L20 -10Z', C.gold) + rect(-21, -15, 42, 6, '#B08D3A'),   // 城垛形王冠（波斯）
+    softCap: sp => path('M-21 -4 Q-25 -30 -6 -42 Q16 -50 24 -28 Q24 -14 21 -4Z', hat(sp, C.clay3)) + rect(-22, -8, 44, 5, C.wood, 2),
+    cone: sp => path('M-21 -4 Q-22 -26 -4 -40 Q10 -50 28 -46 Q16 -40 19 -26 Q22 -14 21 -4Z', hat(sp, C.red)),
+    band: sp => rect(-23, -14, 46, 6, hat(sp, C.red), 3),
+    turban: sp => ell(0, -16, 25, 12, hat(sp, C.cream)) + ell(0, -26, 21, 11, hat(sp, C.cream)) + rect(-18, -22, 36, 2.4, 'rgba(21,23,20,.12)') + circ(0, -19, 3.4, C.gold),
+    wreath: () => [200, 220, 240, 260, 280, 300, 320, 340].map(a => { const t = a * Math.PI / 180; return ell(r1(Math.cos(t) * 22), r1(Math.sin(t) * 18 - 4), 6, 3, a % 40 ? C.g5 : C.g7, `transform="rotate(${a + 90} ${r1(Math.cos(t) * 22)} ${r1(Math.sin(t) * 18 - 4)})"`); }).join(''),
+    helmet: sp => path('M-24 0 Q-26 -36 0 -36 Q26 -36 24 0 L19 0 L19 -12 Q0 -17 -19 -12 L-19 0Z', hat(sp, C.gold)) + path('M-16 -34 Q2 -64 26 -40 Q8 -46 -16 -34Z', C.red),
+    crown: () => path('M-18 -14 L-20 -40 L-10 -29 L0 -44 L10 -29 L20 -40 L18 -14Z', C.gold) + circ(0, -21, 3, C.red),
+    tophat: sp => rect(-15, -60, 30, 42, hat(sp, C.ink), 3) + rect(-26, -21, 52, 6, hat(sp, C.ink), 3) + rect(-15, -27, 30, 5, C.red),
+    tricorn: sp => path('M-32 -12 Q-22 -20 -10 -38 Q0 -44 10 -38 Q22 -20 32 -12 Q0 -26 -32 -12Z', hat(sp, C.ink)),
+    capCN: () => path('M-21 -8 Q-23 -32 0 -34 Q23 -32 21 -8Z', C.ink) + circ(0, -34, 9, C.ink) + rect(-46, -16, 26, 4, C.ink, 2) + rect(20, -16, 26, 4, C.ink, 2),   // 幞頭（唐宋官帽）
+    straw: sp => poly('-44,-8 0,-40 44,-8', hat(sp, C.gold)) + rect(-44, -10, 88, 4, C.wood, 2),
+    hood: sp => path('M-30 24 Q-34 -36 0 -38 Q34 -36 30 24 L21 24 Q24 -12 0 -15 Q-24 -12 -21 24Z', hat(sp, C.wood)),
+    beret: sp => ell(-2, -22, 27, 10, hat(sp, C.g9)) + rect(-21, -20, 42, 6, hat(sp, C.g9), 2),
+    space: () => path('M-34 0 a34 34 0 1 0 68 0 a34 34 0 1 0 -68 0Z M-30 0 a30 30 0 1 1 60 0 a30 30 0 1 1 -60 0Z', C.paper3, 'fill-rule="evenodd"') + circ(0, 0, 30, 'rgba(225,238,240,.28)') + ell(-13, -16, 8, 4, 'rgba(255,255,255,.7)')
+  };
+  // 拿在前手的小東西（hold 寫名字；原點＝手）
+  const HOLDS = {
+    scroll: () => rect(-7, -32, 14, 42, C.cream) + rect(-10, -36, 20, 6, C.wood, 3) + rect(-10, 6, 20, 6, C.wood, 3),
+    brush: () => cap(0, 4, 8, -30, 4, C.wood) + ell(-1, 9, 3, 6, C.ink),
+    bone: () => path('M-8 -30 Q0 -32 8 -30 L10 -24 Q16 -12 14 6 Q0 10 -14 6 Q-16 -12 -10 -24Z', C.cream) + rect(-1, -18, 2, 12, C.wood),
+    letter: () => rect(-15, -12, 30, 22, C.cream, 2) + circ(0, -1, 5, C.red),
+    coin: () => circ(0, -4, 10, C.gold) + circ(0, -4, 7, '#DDBB5F'),
+    torch: () => cap(0, 10, 0, -34, 6, C.wood) + path('M0 -62 Q14 -44 8 -34 L-8 -34 Q-14 -44 0 -62Z', C.red) + path('M0 -52 Q6 -42 4 -36 L-4 -36 Q-6 -42 0 -52Z', C.gold),
+    staff: () => cap(0, -70, 0, 96, 6, C.wood),
+    book: () => rect(-16, -14, 32, 24, C.g7, 2) + rect(-13, -12, 26, 20, C.cream) + rect(-1, -12, 2, 20, C.paper3),
+    phone: () => rect(-8, -16, 16, 28, C.ink, 3) + rect(-6, -13, 12, 20, C.g3, 1),
+    shell: () => path('M0 6 Q-12 0 -12 -14 Q-10 -26 0 -32 Q6 -22 9 -14 Q12 -4 0 6Z', C.clay3) + rect(-3, -22, 7, 2, C.purple),
+    flagS: sp => rect(-1.5, -60, 3, 70, C.wood) + path('M1 -60 L34 -54 L1 -42Z', hat(sp, C.red))
+  };
+
+  // ---------- 新姿勢 ----------
+  Object.assign(POSES, {
+    walk: { h: [0, -92], n: [4, -150], t: [6, -174], aF: [[18, -118], [32, -94]], aB: [[-16, -118], [-30, -94]], lF: [[16, -46], [26, 0]], lB: [[-12, -46], [-24, -2]] },
+    push: { h: [0, -90], n: [22, -142], t: [30, -164], aF: [[46, -126], [74, -124]], aB: [[40, -120], [70, -112]], lF: [[14, -46], [24, 0]], lB: [[-24, -44], [-46, -2]] },
+    kneel: { h: [0, -54], n: [2, -112], t: [4, -136], aF: [[24, -84], [40, -64]], aB: [[-10, -82], [18, -66]], lF: [[28, -34], [32, 0]], lB: [[-6, -4], [-44, -4]] },
+    bow: { h: [0, -92], n: [16, -142], t: [26, -160], tilt: 14, aF: [[22, -112], [26, -90]], aB: [[-12, -112], [-14, -88]], lF: [[9, -46], [13, 0]], lB: [[-9, -46], [-14, 0]] },
+    // 騎馬：y＝屁股（坐的高度），腳往下垂；配 noShadow，擺在 horse 道具上面（見 CONTRACT.md）
+    ride: { h: [0, -30], n: [4, -88], t: [8, -112], aF: [[26, -64], [48, -56]], aB: [[16, -62], [40, -52]], lF: [[20, -14], [14, 26]], lB: [[16, -12], [8, 24]] }
+  });
+
+  // ---------- 道具庫（原點＝底部中央貼地；s 縮放、flip 左右翻、rot 旋轉、op 透明度；顏色可寫 C 的名字或 #色碼） ----------
+  const ICOL = 'rgba(21,23,20,.28)';
+  Object.assign(PROPS, {
+    // 建築
+    pyramid: x => {
+      const W = x.W || 400, H = x.H || W * .64, f = col(x.f) || C.sand, f2 = col(x.f2) || C.brick, top = x.wip ? H * x.wip : H, hw = W / 2 * (1 - top / H), ex = W * .1 * (1 - top / H);
+      let s = groundShadow(0, 4, W * .62, 12);
+      if (x.wip) s += poly(`${-W / 2},0 ${-hw},${-top} ${hw},${-top} ${W / 2},0`, f) + poly(`${W * .1},0 ${ex},${-top} ${hw},${-top} ${W / 2},0`, f2) + poly(`${-W * .9},0 ${-hw},${-top} ${-hw + W * .1},${-top} ${-W * .62},0`, col(x.ramp) || C.brick2);   // 沒蓋完＋坡道
+      else s += poly(`${-W / 2},0 0,${-H} ${W / 2},0`, f) + poly(`${W * .1},0 0,${-H} ${W / 2},0`, f2) + (x.cap ? poly(`${-W * .05},${-H * .9} 0,${-H} ${W * .05},${-H * .9}`, C.gold) : '');
+      for (let i = 1; i < 12 && H * i / 12 <= top; i++) { const w2 = W / 2 * (1 - i / 12); s += rect(-w2, -H * i / 12, w2 * 2, 1.6, 'rgba(110,80,40,.22)'); }
+      return place(x, s);
+    },
+    obelisk: x => { const H = x.H || 300, W = x.W || H * .1; let s = groundShadow(0, 3, W * 1.4, 8) + poly(`${-W / 2},0 ${-W * .36},${-H * .9} ${W * .36},${-H * .9} ${W / 2},0`, col(x.f) || C.brick3) + poly(`${W * .12},0 ${W * .1},${-H * .9} ${W * .36},${-H * .9} ${W / 2},0`, C.brick, 'opacity=".8"') + poly(`${-W * .36},${-H * .9} 0,${-H} ${W * .36},${-H * .9}`, C.gold); for (let i = 0; i < 10; i++) s += rect(-W * .12, -H * .85 + i * H * .075, W * .24, H * .03, 'rgba(110,80,40,.3)', 1); return place(x, s); },
+    mudHouse: x => {
+      const W = x.W || 160, H = x.H || 110, f = col(x.f) || C.brick3;
+      let s = groundShadow(0, 3, W * .62, 8) + both(rect(-W / 2, -H, W, H, f, 3), 'cm-warm') + rect(-W / 2 - 4, -H - 8, W + 8, 10, col(x.f2) || C.brick, 2);
+      if (x.dome) s += path(`M${-W * .3} ${-H - 6} Q${-W * .3} ${-H - W * .38} 0 ${-H - W * .38} Q${W * .3} ${-H - W * .38} ${W * .3} ${-H - 6}Z`, f);
+      if (x.door !== false) s += path(`M${-W * .12} 0 L${-W * .12} ${-H * .5} Q0 ${-H * .62} ${W * .12} ${-H * .5} L${W * .12} 0Z`, C.ink);
+      if (x.win !== false) s += rect(-W * .38, -H * .72, W * .13, H * .16, C.ink, 2) + rect(W * .25, -H * .72, W * .13, H * .16, C.ink, 2);
+      return place(x, s);
+    },
+    house: x => {
+      const W = x.W || 170, H = x.H || 110, f = col(x.f) || C.cream, k = x.roof || 'gable', rc = col(x.roofC) || (k === 'thatch' ? C.gold : k === 'tile' ? C.g9 : C.red);
+      let s = groundShadow(0, 3, W * .62, 8) + both(rect(-W / 2, -H, W, H, f));
+      if (k === 'gable') s += poly(`${-W / 2 - 12},${-H} 0,${-H - W * .42} ${W / 2 + 12},${-H}`, rc) + poly(`0,${-H - W * .42} ${W / 2 + 12},${-H} ${W * .18},${-H}`, 'rgba(0,0,0,.12)');
+      if (k === 'tile') s += path(`M${-W * .68} ${-H + 2} Q${-W * .46} ${-H - 4} ${-W * .32} ${-H - W * .32} L${W * .32} ${-H - W * .32} Q${W * .46} ${-H - 4} ${W * .68} ${-H + 2}Z`, rc) + rect(-W * .36, -H - W * .35, W * .72, 7, rc, 3);
+      if (k === 'thatch') s += path(`M${-W / 2 - 14} ${-H + 10} Q${-W * .3} ${-H - W * .5} 0 ${-H - W * .52} Q${W * .3} ${-H - W * .5} ${W / 2 + 14} ${-H + 10}Z`, rc);
+      if (k === 'flat') s += rect(-W / 2 - 6, -H - 10, W + 12, 12, rc, 2);
+      s += rect(-W * .1, -H * .56, W * .2, H * .56, C.wood, 2) + rect(-W * .38, -H * .7, W * .16, H * .22, C.g9, 2) + rect(W * .22, -H * .7, W * .16, H * .22, C.g9, 2);
+      return place(x, s);
+    },
+    wall: x => {
+      const W = x.W || 400, H = x.H || 120, f = col(x.f) || C.brick, rnd = seeded(x.seed || 6);
+      let s = rect(-W / 2, -H, W, H, f) + rect(-W / 2, -H, W, 8, col(x.f2) || C.brick2, 0, 'opacity=".7"');
+      if (x.crenel !== false) for (let xx = -W / 2; xx < W / 2 - 12; xx += 34) s += rect(xx, -H - 18, 20, 20, f);
+      for (let i = 0; i < W * H / 4000; i++) s += rect(-W / 2 + rnd() * (W - 44), -H + 14 + rnd() * (H - 30), 40, 14, col(x.f2) || C.brick2, 2, 'opacity=".45"');
+      if (x.gate) s += path(`M${-x.gate / 2} 0 L${-x.gate / 2} ${-H * .55} Q0 ${-H * .55 - x.gate * .6} ${x.gate / 2} ${-H * .55} L${x.gate / 2} 0Z`, C.ink);
+      return place(x, s);
+    },
+    tower: x => { const W = x.W || 70, H = x.H || 220, f = col(x.f) || C.brick; let s = groundShadow(0, 3, W * .8, 6) + both(rect(-W / 2, -H, W, H, f)); if (x.roof === 'cone') s += poly(`${-W / 2 - 10},${-H} 0,${-H - W * 1.1} ${W / 2 + 10},${-H}`, col(x.roofC) || C.red); else for (let i = 0; i < 3; i++) s += rect(-W / 2 + i * W * .4, -H - 14, W * .2, 16, f); return place(x, s + rect(-W * .12, -H * .8, W * .24, H * .12, C.ink, W * .1)); },
+    column: x => {
+      const H = x.H || 240, W = x.W || H * .13, f = col(x.f) || C.cream, st = x.style || 'greek';
+      let s = groundShadow(0, 2, W * .9, 5);
+      if (st === 'egypt') s += rect(-W / 2, -H * .86, W, H * .86, f) + path(`M${-W / 2} ${-H * .86} Q${-W * 1.1} ${-H * .95} ${-W * .8} ${-H} L${W * .8} ${-H} Q${W * 1.1} ${-H * .95} ${W / 2} ${-H * .86}Z`, f) + rect(-W / 2, -H * .8, W, 4, C.g7) + rect(-W / 2, -H * .77, W, 4, C.red) + rect(-W * .7, -H * 1.03, W * 1.4, H * .03, col(x.f2) || C.gold);
+      else if (st === 'persia') s += rect(-W * .36, -H * .86, W * .72, H * .86, f) + rect(-W / 2, -H * .05, W, H * .05, f) + rect(-W * .4, -H * .92, W * .8, H * .06, f) + rect(-W * 1.15, -H, W * 1.05, H * .1, f, 4) + rect(W * .1, -H, W * 1.05, H * .1, f, 4) + circ(-W * 1.15, -H * .93, W * .24, f) + circ(W * 1.15, -H * .93, W * .24, f);   // 雙牛柱頭（簡化）
+      else { s += rect(-W * .62, -H * .04, W * 1.24, H * .04, f) + rect(-W / 2, -H * .93, W, H * .89, f); for (let i = 1; i < 4; i++) s += rect(-W / 2 + i * W / 4 - 1.5, -H * .9, 3, H * .84, 'rgba(0,0,0,.08)'); s += rect(-W * .7, -H, W * 1.4, H * .06, f) + ell(-W * .58, -H * .95, W * .2, H * .025, f) + ell(W * .58, -H * .95, W * .2, H * .025, f); }
+      return place(x, s + sh(rect(-W / 2, -H * .9, W, H * .86, f)));
+    },
+    temple: x => {
+      const W = x.W || 360, H = x.H || 220, f = col(x.f) || C.cream, n = x.n || 6, cw = W * .07, gap = (W - 40 - cw) / (n - 1);
+      let s = groundShadow(0, 4, W * .6, 12) + rect(-W / 2, -H * .08, W, H * .08, col(x.f2) || C.paper3) + rect(-W / 2 + 8, -H * .14, W - 16, H * .06, f);
+      for (let i = 0; i < n; i++) s += PROPS.column({ x: -W / 2 + 20 + cw / 2 + i * gap, y: -H * .14, H: H * .62, W: cw, f: x.f });
+      s += rect(-W / 2 + 6, -H * .86, W - 12, H * .1, f) + poly(`${-W / 2},${-H * .86} 0,${-H} ${W / 2},${-H * .86}`, f) + poly(`${-W * .4},${-H * .875} 0,${-H * .975} ${W * .4},${-H * .875}`, col(x.f2) || C.paper3);
+      return place(x, s);
+    },
+    hall: x => {   // 中國式殿堂：夯土台基＋木柱＋大屋頂（roof:'thatch' 茅草，商朝；預設 'tile' 瓦頂，漢以後）
+      const W = x.W || 300, H = x.H || 170, f = col(x.f) || C.wood, th = x.roof === 'thatch', rc = col(x.roofC) || (th ? C.gold : C.g9), n = x.n || 5;
+      let s = groundShadow(0, 4, W * .62, 10) + rect(-W / 2, -H * .16, W, H * .16, col(x.base) || C.brick3) + rect(-W / 2, -H * .16, W, 5, C.brick2);
+      for (let i = 0; i < n; i++) s += rect(-W * .4 + i * (W * .8 - 10) / (n - 1), -H * .6, 10, H * .44, f);
+      s += rect(-W * .42, -H * .62, W * .84, H * .06, f);
+      if (th) { s += path(`M${-W * .58} ${-H * .54} Q${-W * .4} ${-H * .7} ${-W * .22} ${-H} L${W * .22} ${-H} Q${W * .4} ${-H * .7} ${W * .58} ${-H * .54}Z`, rc); for (let i = 1; i < 8; i++) s += rect(-W * .5 + i * W * .12, -H * .9 + Math.abs(i - 4) * H * .05, 3, H * .3, 'rgba(110,80,40,.25)'); }
+      else s += path(`M${-W * .64} ${-H * .58} Q${-W * .5} ${-H * .62} ${-W * .36} ${-H * .88} L${W * .36} ${-H * .88} Q${W * .5} ${-H * .62} ${W * .64} ${-H * .58} Q${W * .45} ${-H * .66} 0 ${-H * .66} Q${-W * .45} ${-H * .66} ${-W * .64} ${-H * .58}Z`, rc) + rect(-W * .39, -H * .93, W * .78, H * .06, rc, 3);
+      return place(x, s);
+    },
+    dome: x => { const W = x.W || 200, H = x.H || 200, f = col(x.f) || C.cream; return place(x, groundShadow(0, 3, W * .6, 8) + both(rect(-W / 2, -H * .55, W, H * .55, f)) + path(`M${-W * .36} ${-H * .55} Q${-W * .38} ${-H * .98} 0 ${-H * .98} Q${W * .38} ${-H * .98} ${W * .36} ${-H * .55}Z`, col(x.domeC) || C.g5) + rect(-2, -H * 1.04, 4, H * .07, C.gold) + path(`M${-W * .1} 0 L${-W * .1} ${-H * .3} Q0 ${-H * .4} ${W * .1} ${-H * .3} L${W * .1} 0Z`, C.ink) + rect(-W * .36, -H * .42, W * .1, H * .14, C.ink, 4) + rect(W * .26, -H * .42, W * .1, H * .14, C.ink, 4)); },
+    castle: x => { const W = x.W || 360, H = x.H || 240, f = x.f || 'paper3'; return place(x, PROPS.tower({ x: 0, y: -H * .4, W: W * .24, H: H * .5, f }) + PROPS.wall({ x: 0, y: 0, W: W * .72, H: H * .45, f, gate: W * .16 }) + PROPS.tower({ x: -W * .38, y: 0, W: W * .2, H: H * .78, f, roof: 'cone', roofC: x.roofC }) + PROPS.tower({ x: W * .38, y: 0, W: W * .2, H: H * .78, f, roof: 'cone', roofC: x.roofC })); },
+    zig: x => ziggurat(x.x, x.y, x.W || 300, x.H || 160, C.brick3, C.brick, C.brick2),
+    // 自然
+    tree: x => {
+      const H = x.H || 200, k = x.kind || 'round', f = col(x.f) || C.g7, f2 = col(x.f2) || C.g9;
+      let s = groundShadow(0, 3, H * .3, 6);
+      if (k === 'pine') { s += rect(-H * .03, -H * .3, H * .06, H * .3, C.wood); for (let i = 0; i < 3; i++) s += poly(`${-H * (.3 - i * .07)},${-H * (.2 + i * .22)} 0,${-H * (.55 + i * .22)} ${H * (.3 - i * .07)},${-H * (.2 + i * .22)}`, i % 2 ? f : f2); }
+      else if (k === 'cedar') { s += rect(-H * .035, -H * .78, H * .07, H * .78, C.wood); [[.3, .44], [.5, .38], [.68, .29], [.84, .18]].forEach(([y, w], i) => { s += ell(0, -H * y, H * w, H * .075, i % 2 ? f : f2); }); }
+      else if (k === 'cypress') s += rect(-H * .025, -H * .15, H * .05, H * .15, C.wood) + ell(0, -H * .55, H * .11, H * .45, f2) + ell(-H * .03, -H * .6, H * .06, H * .36, f, 'opacity=".6"');
+      else s += rect(-H * .04, -H * .5, H * .08, H * .5, C.wood) + circ(-H * .16, -H * .6, H * .2, f2) + circ(H * .15, -H * .62, H * .21, f2) + circ(0, -H * .8, H * .24, f) + circ(H * .06, -H * .62, H * .16, f, 'opacity=".7"');
+      return place(x, s);
+    },
+    palm: x => palm(x.x, x.y, x.H || 200, col(x.f), col(x.f2)),
+    reeds: x => reedTuft(x.x, x.y, x.n || 7, col(x.f)),
+    papyrus: x => { const H = x.H || 120, n = x.n || 5; let s = ''; for (let i = 0; i < n; i++) { const dx = (i - (n - 1) / 2) * H * .12, hh = H * (.75 + ((i * 37) % 5) / 16); s += rect(dx - 1.5, -hh, 3, hh, C.g7) + poly(`${r1(dx)},${r1(-hh)} ${r1(dx - H * .13)},${r1(-hh - H * .16)} ${r1(dx + H * .13)},${r1(-hh - H * .16)}`, C.g5); } return place(x, s); },
+    mountain: x => { const W = x.W || 400, H = x.H || 220; return place(x, poly(`${-W / 2},0 0,${-H} ${W / 2},0`, col(x.f) || C.g5) + poly(`0,${-H} ${W / 2},0 ${W * .08},0`, col(x.f2) || C.g7, 'opacity=".6"') + (x.snow ? poly(`${-W * .12},${-H * .76} 0,${-H} ${W * .12},${-H * .76} ${W * .04},${-H * .8} ${-W * .03},${-H * .74}`, C.cream) : '')); },
+    hills: x => { const W = x.W || 800, H = x.H || 80; return place(x, path(`M${-W / 2} 0 L${-W / 2} ${-H * .4} Q${-W * .25} ${-H} 0 ${-H * .5} T${W / 2} ${-H * .7} L${W / 2} 0Z`, col(x.f) || C.g3)); },
+    cloud: x => place(x, puff(0, 0, x.r || 30, col(x.f) || C.cream)),
+    waves: x => { const W = x.W || 400, n = x.n || 3, f = col(x.f) || C.g2; let s = ''; for (let j = 0; j < n; j++) for (let xx = -W / 2 + (j % 2) * 30; xx < W / 2 - 40; xx += 60) s += path(`M${xx} ${j * 22} q15 -12 30 0 q-15 -5 -30 0Z`, f, 'opacity=".8"'); return place(x, s); },
+    // 交通
+    ship: x => {   // 原點＝吃水線中央，船頭朝右
+      const k = x.kind || 'galley', f = col(x.f) || C.wood, sail = col(x.sail) || C.cream; let s = '';
+      if (k === 'galley') {   // 古代划槳帆船（腓尼基、希臘、羅馬）：細節是學者依浮雕、沉船重建的樣子
+        for (let i = 0; i < 9; i++) s += cap(-104 + i * 26, -34, -118 + i * 26, 8, 4, C.wood);
+        s += path('M-150 -30 Q-160 -70 -178 -86 Q-150 -66 -120 -58 L120 -58 Q150 -62 168 -96 Q178 -70 150 -30 Q0 -6 -150 -30Z', f) + rect(-138, -62, 276, 9, col(x.trim) || C.red, 3) + circ(170, -100, 9, f);
+        s += rect(-4, -232, 8, 178, C.ink) + rect(-92, -224, 184, 8, C.wood, 3) + path('M-86 -216 L86 -216 Q96 -150 86 -86 L-86 -86 Q-96 -150 -86 -216Z', sail);
+        if (x.stripes) for (let i = 0; i < 4; i++) s += rect(-74 + i * 42, -214, 20, 126, col(x.stripes), 0, 'opacity=".8"');
+      } else if (k === 'reed') {   // 蘆葦船（兩河、尼羅河）
+        s += both(path('M-130 -6 Q-150 -40 -160 -58 Q-120 -18 -80 -16 L80 -16 Q120 -18 160 -58 Q150 -40 130 -6 Q0 14 -130 -6Z', C.gold), 'cm-warm');
+        for (let i = -3; i <= 3; i++) s += rect(i * 34 - 2, -16, 4, 18, C.clay2);
+        if (x.mast !== false) s += rect(-3, -150, 6, 136, C.wood) + path('M-56 -146 L56 -146 L48 -40 L-48 -40Z', sail);
+      } else if (k === 'junk') {   // 中國帆船（硬帆）
+        s += path('M-160 -60 L-150 -20 Q0 6 140 -20 L170 -66 Q20 -44 -160 -60Z', f) + rect(-150, -70, 40, 14, f, 3);
+        [[-50, 210, 130], [70, 170, 104]].forEach(([mx, hh, ww]) => { s += rect(mx - 3, -hh - 50, 6, hh, C.ink) + path(`M${mx - ww / 2} ${-hh - 40} L${mx + ww / 2} ${-hh - 34} L${mx + ww / 2 + 8} -64 L${mx - ww / 2 + 4} -60Z`, col(x.sail) || C.clay3); for (let j = 1; j < 6; j++) s += rect(mx - ww / 2 + 2, -hh - 40 + j * (hh - 24) / 6, ww + 4, 3, C.wood); });
+      } else if (k === 'tall') {   // 大航海時代的多桅帆船
+        s += path('M-170 -50 L-176 -110 L-110 -100 L-100 -64 L110 -64 L180 -86 L150 -24 Q0 4 -150 -24Z', f) + rect(-150, -60, 290, 8, col(x.trim) || C.gold, 2);
+        [[-70, 230], [20, 270], [110, 200]].forEach(([mx, hh]) => { s += rect(mx - 3, -hh - 60, 6, hh, C.ink); [0, 1].forEach(j => { const y = -hh - 40 + j * hh * .45, ww = 100 - j * 6 - (mx > 80 ? 24 : 0); s += path(`M${mx - ww / 2} ${y} L${mx + ww / 2} ${y} Q${mx + ww / 2 + 10} ${y + hh * .2} ${mx + ww / 2} ${y + hh * .38} L${mx - ww / 2} ${y + hh * .38} Q${mx - ww / 2 + 10} ${y + hh * .2} ${mx - ww / 2} ${y}Z`, sail); }); });
+        s += path('M20 -340 L60 -332 L20 -322Z', col(x.flag) || C.red);
+      } else if (k === 'steam') {   // 蒸汽船
+        s += path('M-170 -50 L170 -50 L150 -6 Q0 6 -150 -6Z', col(x.f) || C.ink) + rect(-110, -96, 200, 46, C.cream, 4) + rect(-10, -168, 34, 76, C.red) + rect(-10, -168, 34, 14, C.ink) + puff(16, -190, 18, C.paper3) + puff(-20, -214, 24, C.paper3);
+        for (let i = 0; i < 6; i++) s += circ(-90 + i * 30, -74, 6, C.g9);
+      }
+      return place(x, s);
+    },
+    horse: x => {   // 朝右；騎士用 pose 'ride'，x＝馬的 x−4s、y＝馬的 y−98s
+      const f = col(x.f) || C.wood, m = col(x.mane) || C.ink; let s = groundShadow(0, 3, 74, 8);
+      [[-44, -62, -48, 0], [-30, -62, -24, 0], [36, -62, 42, 0], [50, -62, 58, 0]].forEach((l, i) => { s += cap(l[0], l[1], l[2], l[3] - 4, 10, i % 2 ? f : C.clay2) + rect(l[2] - 6, -7, 12, 7, C.ink, 2); });
+      s += path('M-60 -86 Q-86 -78 -88 -36 Q-74 -58 -60 -72Z', m) + ell(0, -80, 64, 27, f) + path('M36 -94 L60 -152 L84 -148 L70 -86Z', f) + path('M60 -152 Q72 -172 98 -162 L114 -132 Q110 -120 98 -124 L76 -136Z', f) + path('M58 -150 L62 -168 L70 -152Z', f) + path('M56 -150 Q46 -118 36 -96 L46 -94 Q56 -118 66 -148Z', m) + circ(92, -150, 3, C.ink);
+      if (x.saddle) s += rect(-26, -110, 48, 16, col(x.saddle), 4);
+      return place(x, s);
+    },
+    camel: x => { const f = col(x.f) || C.clay3; let s = groundShadow(0, 3, 70, 8); [[-40, -70, -42, 0], [-26, -70, -22, 0], [32, -70, 36, 0], [46, -70, 52, 0]].forEach(l => { s += cap(l[0], l[1], l[2], l[3] - 4, 9, f) + ell(l[2], -3, 8, 4, C.clay2); }); return place(x, s + ell(0, -88, 60, 26, f) + path('M-30 -104 Q-10 -150 14 -104Z', f) + path('M40 -96 Q70 -110 66 -150 L84 -156 Q96 -150 100 -138 L80 -134 Q86 -100 50 -76Z', f) + circ(88, -148, 3, C.ink) + rect(-34, -116, 60, 14, col(x.load) || C.red, 4)); },
+    cart: x => { const f = col(x.f) || C.wood; return place(x, groundShadow(0, 3, 80, 8) + rect(-70, -76, 140, 44, f, 4) + rect(66, -50, 70, 6, f, 3) + circ(-36, -24, 24, C.ink) + circ(-36, -24, 8, C.paper3) + circ(36, -24, 24, C.ink) + circ(36, -24, 8, C.paper3)); },
+    // 器物
+    scroll: x => { const W = x.W || 90, H = x.H || 120; let s = rect(-W / 2, -H, W, H, col(x.f) || C.cream) + rect(-W / 2 - 6, -H - 6, W + 12, 10, C.wood, 5) + rect(-W / 2 - 6, -4, W + 12, 10, C.wood, 5); for (let i = 0; i < Math.floor((H - 24) / 13); i++) s += rect(-W / 2 + 10, -H + 14 + i * 13, (W - 20) * (i % 3 === 2 ? .7 : 1), 3, ICOL); return place(x, s); },
+    slips: x => { const n = x.n || 8, H = x.H || 120; let s = ''; for (let i = 0; i < n; i++) s += rect(-n * 7 + i * 14, -H, 12, H, C.clay3, 2) + rect(-n * 7 + i * 14 + 4, -H + 12, 4, H * .7, ICOL); return place(x, s + rect(-n * 7 - 2, -H * .8, n * 14 + 2, 3, C.wood) + rect(-n * 7 - 2, -H * .25, n * 14 + 2, 3, C.wood)); },   // 竹簡
+    book: x => place(x, path('M0 -6 Q-30 -16 -60 -8 L-60 -70 Q-30 -78 0 -68Z', C.cream) + path('M0 -6 Q30 -16 60 -8 L60 -70 Q30 -78 0 -68Z', C.paper2) + rect(-50, -58, 40, 3, ICOL) + rect(-50, -46, 40, 3, ICOL) + rect(10, -58, 40, 3, ICOL) + rect(10, -46, 40, 3, ICOL)),
+    amphora: x => place(x, groundShadow(0, 2, 26, 5) + both(path('M-10 -96 L10 -96 L12 -80 Q34 -60 20 -16 L4 0 L-4 0 L-20 -16 Q-34 -60 -12 -80Z', col(x.f) || C.clay), 'cm-warm') + cap(-12, -88, -24, -70, 5, col(x.f) || C.clay) + cap(12, -88, 24, -70, 5, col(x.f) || C.clay)),
+    ding: x => { const f = col(x.f) || C.g6, f2 = col(x.f2) || C.g8; let s = groundShadow(0, 2, 52, 6) + cap(-26, -30, -32, 0, 7, f2) + cap(26, -30, 32, 0, 7, f2) + cap(0, -30, 0, 0, 7, f2) + path('M-44 -90 L44 -90 Q46 -40 22 -26 L-22 -26 Q-46 -40 -44 -90Z', f) + rect(-48, -96, 96, 10, f2, 3) + rect(-32, -120, 12, 26, f2) + rect(20, -120, 12, 26, f2) + rect(-40, -82, 80, 7, 'rgba(21,23,20,.22)'); for (let i = 0; i < 6; i++) s += circ(-30 + i * 12, -58, 3, 'rgba(21,23,20,.25)'); return place(x, s); },   // 青銅鼎
+    bone: x => {   // 占卜用的牛肩胛骨：燒出「卜」字形裂紋、旁邊刻字（刻痕只是樣子，不是真的字）
+      let s = path('M-30 -120 Q-10 -128 10 -120 L14 -100 Q40 -60 44 0 Q0 14 -44 0 Q-40 -60 -14 -100Z', col(x.f) || C.cream) + rect(-10, -128, 20, 14, col(x.f) || C.cream, 4);
+      [[-22, -70], [2, -54], [18, -82], [-12, -28], [18, -24]].forEach(([cx, cy]) => { s += rect(cx - 1.2, cy - 14, 2.4, 22, C.wood) + rect(cx, cy - 7, 11, 2.2, C.wood); });
+      if (x.glyph !== false) { const rnd = seeded(x.seed || 4); for (let i = 0; i < 9; i++) { const gx = -30 + (i % 3) * 24 + rnd() * 6, gy = -100 + Math.floor(i / 3) * 34 + rnd() * 6; s += rect(gx, gy, 9, 2, ICOL) + rect(gx + 3, gy - 4, 2, 10, ICOL); } }
+      return place(x, s);
+    },
+    shell: x => { let s = path('M0 0 Q-24 -10 -26 -42 Q-22 -70 0 -86 Q14 -64 22 -42 Q30 -16 0 0Z', col(x.f) || C.clay3); [[-24, -30], [-26, -52], [-16, -72], [20, -36], [22, -58]].forEach(([sx, sy]) => { s += poly(`${sx},${sy} ${sx + (sx < 0 ? -14 : 14)},${sy - 6} ${sx},${sy - 10}`, col(x.f) || C.clay3); }); return place(x, s + path('M-4 -20 Q-12 -40 0 -60', 'none', `stroke="${C.clay2}" stroke-width="3"`)); },   // 骨螺
+    fire: x => place(x, path('M0 -80 Q34 -40 22 -6 L-22 -6 Q-34 -40 0 -80Z', C.red) + path('M0 -56 Q16 -30 10 -8 L-10 -8 Q-16 -30 0 -56Z', C.gold)),
+    brazier: x => place(x, groundShadow(0, 2, 34, 5) + cap(-20, -30, -26, 0, 5, C.ink) + cap(20, -30, 26, 0, 5, C.ink) + path('M-34 -50 L34 -50 Q30 -26 0 -26 Q-30 -26 -34 -50Z', C.ink) + PROPS.fire({ x: 0, y: -46, s: .6 })),
+    well: x => place(x, ell(0, -10, 60, 18, C.paper3) + rect(-60, -40, 120, 30, C.brick2) + ell(0, -40, 60, 18, C.brick3) + ell(0, -40, 44, 12, C.ink)),
+    flag: x => { const H = x.H || 160; return place(x, rect(-3, -H, 6, H, C.wood) + path(`M3 ${-H} Q30 ${-H - 10} 60 ${-H} T110 ${-H} L110 ${-H + 56} Q80 ${-H + 46} 60 ${-H + 56} T3 ${-H + 56}Z`, col(x.f) || C.red)); },
+    sign: x => { const W = x.W || 160, H = x.H || 54; return place(x, rect(-4, -H - 40, 8, H + 40, C.wood) + both(rect(-W / 2, -H - 50, W, H, col(x.f) || C.cream, 4)) + txt(0, -H - 50 + H * .66, x.t || '', x.fs || 24, col(x.tc) || C.ink)); },
+    crate: x => place(x, groundShadow(0, 2, 40, 5) + both(rect(-34, -60, 68, 60, col(x.f) || C.clay2, 3), 'cm-warm') + rect(-34, -34, 68, 6, C.wood) + rect(-6, -60, 6, 60, C.wood)),
+    barrel: x => place(x, groundShadow(0, 2, 34, 5) + both(path('M-26 0 Q-36 -40 -26 -80 L26 -80 Q36 -40 26 0Z', col(x.f) || C.wood), 'cm-warm') + rect(-32, -66, 64, 5, C.ink) + rect(-32, -18, 64, 5, C.ink)),
+    bricks: x => { const n = x.n || 4, m = x.m || 3; let s = ''; for (let j = 0; j < n; j++) for (let i = 0; i < m; i++) s += rect(-m * 26 + i * 52 + (j % 2) * 12, -(j + 1) * 22, 48, 20, col(x.f) || C.clay, 2) + rect(-m * 26 + i * 52 + (j % 2) * 12, -(j + 1) * 22, 48, 5, C.clay3, 1); return place(x, s); },
+    crowd: x => { const n = x.n || 6, W = x.W || 300, rnd = seeded(x.seed || 12), cs = [C.g5, C.g7, C.clay2, C.brick2, C.g3, C.wood]; let s = ''; for (let i = 0; i < n; i++) { const cx = -W / 2 + (i + .5) * W / n + (rnd() - .5) * 14, hh = 70 + rnd() * 24, c = cs[Math.floor(rnd() * cs.length)]; s += path(`M${r1(cx - 20)} 0 Q${r1(cx - 22)} ${r1(-hh * .7)} ${r1(cx)} ${r1(-hh * .72)} Q${r1(cx + 22)} ${r1(-hh * .7)} ${r1(cx + 20)} 0Z`, c) + circ(cx, -hh * .84, 13, col(x.skin) || C.skinB); } return place(x, s); },   // 背景人群（剪影，不畫臉）
+    road: x => { const W = x.W || 300, w2 = x.w2 || 60, L = x.L || 300, f = col(x.f) || C.paper3; let s = poly(`${-W / 2},0 ${W / 2},0 ${w2 / 2},${-L} ${-w2 / 2},${-L}`, f); for (let i = 0; i < 6; i++) { const t0 = i / 6 + .02, t1 = t0 + .08, wd = t => 7 * (1 - t) + 1.5; s += poly(`${r1(-wd(t0))},${r1(-L * t0)} ${r1(wd(t0))},${r1(-L * t0)} ${r1(wd(t1))},${r1(-L * t1)} ${r1(-wd(t1))},${r1(-L * t1)}`, col(x.dash) || C.cream, 'opacity=".7"'); } return place(x, s); },
+    spark: x => { const R = x.r || 18; return place(x, poly(`0,${-R} ${R * .22},${-R * .22} ${R},0 ${R * .22},${R * .22} 0,${R} ${-R * .22},${R * .22} ${-R},0 ${-R * .22},${-R * .22}`, col(x.f) || C.gold)); },
+    arrow: x => { const L = x.L || 80; return place(x, poly(`0,-6 ${L - 18},-6 ${L - 18},-16 ${L},0 ${L - 18},16 ${L - 18},6 0,6`, col(x.f) || C.red)); },
+    table: x => { const W = x.W || 200; return place(x, groundShadow(0, 2, W * .55, 6) + rect(-W / 2, -76, W, 12, col(x.f) || C.wood, 3) + rect(-W / 2 + 10, -66, 10, 66, col(x.f) || C.wood) + rect(W / 2 - 20, -66, 10, 66, col(x.f) || C.wood)); },
+    shelf: x => { const W = x.W || 160, H = x.H || 220, rnd = seeded(x.seed || 3), cs = [C.g7, C.red, C.gold, C.g5, C.clay2, C.g9]; let s = rect(-W / 2, -H, W, H, C.wood); for (let j = 0; j < 4; j++) { let xx = -W / 2 + 8; while (xx < W / 2 - 22) { const bw = 10 + rnd() * 10; s += rect(xx, -H + 10 + j * H / 4, bw, H / 4 - 16, cs[Math.floor(rnd() * cs.length)]); xx += bw + 2; } } return place(x, s); },
+    lamp: x => lamp(x.x, x.y, x.H || 200, x.s || 1, x.dir || 1),
+    scooter: x => scooter(x.x, x.y, x.s || 1)
+  });
+  // 字卡小圖示（120×90）：通用的再多幾個
+  Object.assign(ICONS, {
+    water() { return rect(0, 0, 120, 90, C.g3) + path('M0 50 Q30 38 60 50 T120 48 L120 90 L0 90Z', C.g5) + path('M0 66 Q30 56 60 66 T120 64 L120 90 L0 90Z', C.g7) + circ(94, 22, 12, C.cream); },
+    brick() { let s = rect(0, 0, 120, 90, C.paper); for (let j = 0; j < 4; j++) for (let i = 0; i < 3; i++) s += rect(8 + i * 36 + (j % 2) * 12, 10 + j * 19, 32, 15, C.clay, 2); return s; },
+    scrollI() { return rect(0, 0, 120, 90, C.g3) + rect(34, 14, 52, 62, C.cream) + rect(28, 8, 64, 9, C.wood, 4) + rect(28, 73, 64, 9, C.wood, 4) + rect(42, 28, 36, 3, ICOL) + rect(42, 40, 36, 3, ICOL) + rect(42, 52, 26, 3, ICOL); },
+    coinI() { return rect(0, 0, 120, 90, C.g7) + circ(48, 48, 26, C.gold) + circ(48, 48, 19, '#DDBB5F') + circ(80, 40, 22, C.gold) + circ(80, 40, 16, '#DDBB5F'); },
+    ship() { return rect(0, 0, 120, 90, C.g3) + rect(0, 62, 120, 28, C.g5) + path('M14 60 Q60 76 106 60 L98 70 Q60 80 22 70Z', C.wood) + rect(58, 14, 4, 48, C.ink) + path('M36 18 L84 18 L80 52 L40 52Z', C.cream); },
+    road() { return rect(0, 0, 120, 90, C.sand) + poly('30,90 90,90 66,10 54,10', C.paper3) + rect(58, 70, 4, 14, C.cream) + rect(58, 46, 4, 12, C.cream) + rect(59, 26, 3, 10, C.cream) + rect(92, 30, 18, 30, C.clay2, 2); },
+    letterI() { return rect(0, 0, 120, 90, C.g3) + rect(22, 20, 76, 50, C.cream, 4) + poly('22,20 60,50 98,20', C.paper3) + circ(60, 50, 9, C.red); },
+    question() { return rect(0, 0, 120, 90, C.g9) + txt(60, 70, '？', 66, C.gold); },
+    people() { return rect(0, 0, 120, 90, C.paper) + [24, 60, 96].map((x, i) => circ(x, 34, 12, [C.skin, C.skinB, C.skinC][i]) + path(`M${x - 18} 90 Q${x - 18} 52 ${x} 52 Q${x + 18} 52 ${x + 18} 90Z`, [C.g5, C.red, C.gold][i])).join(''); },
+    star() { return rect(0, 0, 120, 90, C.g7) + poly('60,12 69,36 94,36 74,52 82,78 60,62 38,78 46,52 26,36 51,36', C.gold); }
+  });
+
+  // ---------- 通用場景（sceneOpt 調顏色；細節用 back[]／props[] 擺道具） ----------
+  Object.assign(SCENES, {
+    // 戶外：天空＋太陽＋遠山＋地面（＋河）。o：sky、sun:[x比例,y比例]|false、hz 地平線比例、far 遠山色|false、ground、river:{y,h,tilt,c}、near 前景色
+    land(w, h, o) {
+      o = o || {}; const hz = h * (o.hz != null ? o.hz : .5);
+      let s = rect(0, 0, w, h, col(o.sky) || C.sky);
+      if (o.sun !== false) { const sx = w * (o.sun ? o.sun[0] : .76), sy = h * (o.sun ? o.sun[1] : .16), R = Math.min(w, h); s += circ(sx, sy, R * .32, 'url(#cm-sun)') + circ(sx, sy, R * .07, '#FFF8DC'); }
+      if (o.far !== false) s += path(`M0 ${r1(hz + 2)} L0 ${r1(hz - h * .03)} Q${r1(w * .25)} ${r1(hz - h * .08)} ${r1(w * .5)} ${r1(hz - h * .03)} T${w} ${r1(hz - h * .06)} L${w} ${r1(hz + 2)}Z`, col(o.far) || C.g3);
+      s += rect(0, hz, w, h - hz, col(o.ground) || C.sand);
+      if (o.river) { const R = o.river, y0 = h * (R.y != null ? R.y : .62), rh = h * (R.h || .1), t = h * (R.tilt != null ? R.tilt : .03); s += path(`M0 ${r1(y0 + t)} L${w} ${r1(y0 - t)} L${w} ${r1(y0 - t + rh)} Q${r1(w * .5)} ${r1(y0 + rh + t * .2)} 0 ${r1(y0 + t + rh)}Z`, col(R.c) || C.g5); for (let i = 0; i < 7; i++) { const xx = (i * 113 + 30) % w; s += rect(xx, y0 + rh * (.25 + (i % 3) * .2) - (xx / w - .5) * 2 * t, 50 + (i % 3) * 24, 4, C.g2, 2, 'opacity=".7"'); } }
+      if (o.near) s += path(`M0 ${r1(h * .86)} Q${r1(w * .5)} ${r1(h * .8)} ${w} ${r1(h * .86)} L${w} ${h} L0 ${h}Z`, col(o.near));
+      return { bg: s };
+    },
+    // 海上：o：sky、hz、water、sun、far（遠方海岸色|false）
+    sea(w, h, o) {
+      o = o || {}; const hz = h * (o.hz != null ? o.hz : .45);
+      let s = rect(0, 0, w, h, col(o.sky) || C.sky);
+      if (o.sun !== false) { const sx = w * (o.sun ? o.sun[0] : .78), sy = h * (o.sun ? o.sun[1] : .16); s += circ(sx, sy, Math.min(w, h) * .3, 'url(#cm-sun)') + circ(sx, sy, Math.min(w, h) * .07, '#FFF8DC'); }
+      if (o.far) s += path(`M0 ${r1(hz)} Q${r1(w * .2)} ${r1(hz - h * .05)} ${r1(w * .4)} ${r1(hz)}Z`, col(o.far));
+      s += rect(0, hz, w, h - hz, col(o.water) || C.g5);
+      for (let i = 0; i < 14; i++) { const yy = hz + (h - hz) * ((i * .37) % 1), xx = (i * 151) % w, k = (yy - hz) / (h - hz); s += rect(xx, yy, 30 + k * 70, 3 + k * 4, C.g2, 2, 'opacity=".55"'); }
+      return { bg: s };
+    },
+    // 室內：o：wall、brick（磚牆）、floor、hz 牆腳比例、window:[x,y,w,h]（比例）、winC 窗外顏色
+    room(w, h, o) {
+      o = o || {}; const hz = h * (o.hz != null ? o.hz : .72);
+      let s = o.brick ? brickWall(0, 0, w, hz, col(o.wall) || C.brick3, C.brick, o.seed || 9) : rect(0, 0, w, hz, col(o.wall) || C.paper2);
+      if (o.window) { const [a, b, c, d] = o.window; s += rect(w * a - 8, h * b - 8, w * c + 16, h * d + 16, C.wood, 3) + rect(w * a, h * b, w * c, h * d, col(o.winC) || C.g3); }
+      s += rect(0, hz, w, h - hz, col(o.floor) || C.paper3) + rect(0, hz, w, 6, 'rgba(21,23,20,.12)');
+      return { bg: s };
+    },
+    // 單色底（特寫、心情格）：o：c、zoom（速度線）、cx、cy
+    flat(w, h, o) { o = o || {}; let s = rect(0, 0, w, h, col(o.c) || C.g7); if (o.zoom) s += zoom(w * (o.cx != null ? o.cx : .5), h * (o.cy != null ? o.cy : .5), Math.min(w, h) * .15, Math.max(w, h), 30, 'rgba(247,243,230,.16)', o.seed || 4); return { bg: s }; },
+    // 夜晚：o：sky、moon:[x,y]、ground
+    night(w, h, o) { o = o || {}; const rnd = seeded(o.seed || 17); let s = rect(0, 0, w, h, col(o.sky) || C.night); for (let i = 0; i < 40; i++) s += circ(rnd() * w, rnd() * h * .6, .8 + rnd() * 1.8, C.cream, 'opacity=".8"'); const m = o.moon || [.78, .16]; s += circ(w * m[0], h * m[1], 90, 'url(#cm-glow)', 'opacity=".4"') + circ(w * m[0], h * m[1], 34, C.cream) + circ(w * m[0] + 12, h * m[1] - 8, 30, col(o.sky) || C.night); if (o.ground !== false) s += path(`M0 ${r1(h * .78)} Q${r1(w * .5)} ${r1(h * .72)} ${w} ${r1(h * .8)} L${w} ${h} L0 ${h}Z`, col(o.ground) || C.g9); return { bg: s }; },
+    // 時光隧道（出發／抵達那一格）：漩渦＋搖搖車
+    vortex(w, h, o) { o = o || {}; const cx = w * (o.cx != null ? o.cx : .5), cy = h * (o.cy != null ? o.cy : .45); let s = rect(0, 0, w, h, C.g9) + circ(cx, cy, w * .7, C.g8) + circ(cx, cy, w * .5, C.g7) + circ(cx, cy, w * .3, C.g6) + zoom(cx, cy, w * .18, Math.max(w, h), 44, 'rgba(247,243,230,.14)', 9) + circ(cx, cy, w * .3, 'url(#cm-glow)'); if (o.year) s += txt(cx, cy + 20, o.year, Math.min(w, h) * .12, 'rgba(247,243,230,.5)'); return { bg: s, fg: o.car === false ? '' : car(cx, cy + h * .12, (o.carS || 1) * Math.min(w, h) / 700, { rot: -10, noShadow: true, lights: true }) }; }
+  });
+  // 封面：sceneOpt.plain＝不畫巴比倫古城（第 2 話以後的封面用 back[] 擺自己的建築）
+  const coverBabylon = SCENES.cover;
+  SCENES.cover = (w, h, o) => {
+    if (!o || !o.plain) return coverBabylon(w, h);
+    let s = rect(0, 0, w, h, C.g9) + circ(w * .55, h * .46, w * .62, C.g8) + circ(w * .55, h * .46, w * .44, C.g7) + circ(w * .55, h * .46, w * .28, C.g6) + zoom(w * .55, h * .46, w * .2, w * .95, 44, 'rgba(247,243,230,.14)', 9) + circ(w * .55, h * .46, w * .3, 'url(#cm-glow)');
+    s += path(`M0 ${h * .8} Q${w * .5} ${h * .74} ${w} ${h * .78} L${w} ${h} L0 ${h}Z`, col(o.ground) || C.brick2) + path(`M0 ${h * .9} Q${w * .4} ${h * .84} ${w} ${h * .93} L${w} ${h} L0 ${h}Z`, col(o.near) || C.g5);
+    return { bg: s, fg: car(w * .55, h * .56, 1.7, { rot: -12, noShadow: true, lights: true }) };
+  };
+
+  // ---------- 新版面（畫布 800×1060） ----------
+  Object.assign(A.LAYOUTS, {
+    quad: [{ x: 10, y: 10, w: 383, h: 515 }, { x: 407, y: 10, w: 383, h: 515 }, { x: 10, y: 539, w: 383, h: 511 }, { x: 407, y: 539, w: 383, h: 511 }],
+    stack3: [{ x: 10, y: 10, w: 780, h: 338 }, { x: 10, y: 362, w: 780, h: 338 }, { x: 10, y: 714, w: 780, h: 336 }],
+    duo: [{ x: 10, y: 10, w: 780, h: 513 }, { x: 10, y: 537, w: 780, h: 513 }],
+    bigL: [{ x: 10, y: 10, w: 500, h: 1040 }, { x: 524, y: 10, w: 266, h: 513 }, { x: 524, y: 537, w: 266, h: 513 }],
+    trioR: [{ x: 10, y: 10, w: 780, h: 340 }, { x: 10, y: 364, w: 242, h: 686 }, { x: 266, y: 364, w: 524, h: 686 }]
+  });
+
+  // ---------- 地圖庫：海岸、島、河（[緯度, 經度]，大約 0.5～1 度精度的簡化線，只給小孩看相對位置） ----------
+  const pp = a => { const o = []; for (let i = 0; i < a.length; i += 2) o.push([a[i], a[i + 1]]); return o; };
+  GEO.seas = {   // 區域圖：陸地當底色，這些多邊形塗成海
+    med: pp([36.1, -5.35, 36.7, -4.4, 36.8, -2.4, 37.6, -1, 38.35, -.5, 39.45, -.35, 40.7, .85, 41.4, 2.2, 42.3, 3.3, 43.5, 3.9, 43.3, 5.4, 43.1, 5.9, 43.7, 7.3, 44.4, 8.9, 44.1, 9.8, 43.55, 10.3, 42.95, 10.5, 42.1, 11.8, 41.2, 13.55, 40.85, 14.25, 40.6, 14.8, 40.05, 15.5, 39.3, 16.05, 38.1, 15.65, 37.92, 16.06, 38.6, 16.55, 39.08, 17.12, 39.7, 16.5, 40.45, 17.2, 40.05, 17.95, 39.8, 18.35, 40.15, 18.5, 40.65, 17.95, 41.12, 16.87, 41.9, 16.2, 42.45, 14.2, 43.6, 13.5, 44.4, 12.3, 45.45, 12.35, 45.65, 13.75, 44.85, 13.85, 45.33, 14.4, 44.1, 15.2, 43.5, 16.45, 42.65, 18.1, 42.1, 19.1, 41.3, 19.45, 40.45, 19.45, 39.6, 20, 38.95, 20.75, 38.3, 21.3, 37.65, 21.4, 36.9, 21.7, 36.38, 22.48, 36.75, 22.57, 36.44, 23.2, 37.55, 22.8, 37.95, 23.65, 37.65, 24.03, 38.15, 24.6, 38.63, 24.12, 39, 23.3, 39.4, 23.2, 40.1, 22.6, 40.6, 22.95, 39.95, 23.7, 40.15, 24.4, 40.93, 24.4, 40.85, 25.9, 40.05, 26.2, 40, 26.25, 39.3, 26.7, 38.3, 26.3, 37.85, 27.25, 37.03, 27.43, 36.85, 28.27, 36.62, 29.1, 36.2, 29.6, 36.88, 30.7, 36.55, 32, 36.02, 32.8, 36.38, 33.93, 36.8, 34.6, 36.6, 36.17, 36.1, 35.9, 35.52, 35.78, 34.45, 35.82, 33.9, 35.48, 33.27, 35.2, 32.82, 34.98, 32.08, 34.77, 31.5, 34.45, 31.13, 33.8, 31.26, 32.3, 31.5, 31.8, 31.47, 30.37, 31.2, 29.9, 30.83, 28.95, 31.35, 27.23, 31.57, 25.15, 32.08, 23.97, 32.77, 22.64, 32.9, 21.6, 32.12, 20.07, 30.8, 20, 30.4, 19.6, 31.2, 16.6, 32.37, 15.1, 32.9, 13.18, 32.93, 12.08, 33.8, 10.9, 33.88, 10.1, 34.74, 10.76, 35.5, 11.07, 35.83, 10.64, 37.08, 11.05, 36.85, 10.32, 37.27, 9.87, 36.95, 8.75, 36.9, 7.77, 36.88, 6.9, 36.75, 5.08, 36.77, 3.06, 36.5, 1.3, 35.7, -.63, 35.3, -2.95, 35.25, -3.93, 35.57, -5.37, 35.89, -5.32]),
+    marmara: pp([41, 28.98, 40.77, 29.9, 40.4, 28.9, 40.35, 27.97, 40.4, 26.7, 40.97, 27.5, 41.07, 28.25]),
+    black: pp([41.2, 29.1, 41.12, 30.6, 41.28, 31.42, 42.02, 35.15, 41.3, 36.33, 41, 37.88, 41, 39.72, 41.65, 41.63, 42.15, 41.67, 43, 41, 43.6, 39.73, 44.72, 37.78, 45.35, 36.6, 45.03, 35.38, 44.5, 34.17, 44.6, 33.5, 45.35, 32.5, 46.1, 33.6, 46.5, 32, 46.48, 30.75, 45.2, 29.7, 44.17, 28.65, 43.2, 27.95, 42.5, 27.5, 41.9, 28, 41.25, 29]),
+    caspian: pp([45.8, 47.8, 46.8, 49.5, 47.1, 51.9, 46.6, 53, 45.4, 53.3, 44.5, 50.3, 43.65, 51.15, 41.3, 52.9, 40, 53, 37.4, 53.9, 36.9, 54, 36.8, 53.2, 36.7, 52.65, 36.9, 50.65, 37.47, 49.46, 38.45, 48.88, 40.45, 50.35, 42.06, 48.3, 42.98, 47.5, 44, 47.2, 45, 47]),
+    // 紅海＋阿拉伯海＋波斯灣＋印度洋一圈（南邊在圖外封口）
+    ind: pp([29.95, 32.55, 29.6, 32.35, 28.35, 33.1, 27.25, 33.83, 26.1, 34.28, 25.07, 34.9, 23.95, 35.48, 22.2, 36.6, 19.6, 37.22, 15.6, 39.45, 13, 42.75, 11.6, 43.15, 10.44, 45, 11.3, 49.2, 11.83, 51.28, 10.4, 51.4, 7.98, 49.85, 5.35, 48.53, 2.04, 45.34, -.36, 42.55, -2.27, 40.9, -4.05, 39.67, -6.8, 39.3, -10.5, 40.4, -15, 40.7, -15, 110, -8.5, 110, -5.9, 105, -3.8, 102.26, -.95, 100.35, 2, 98.7, 5.55, 95.3, 7.9, 98.3, 14.08, 98.2, 16.5, 97.6, 15.8, 95, 16, 94.2, 20.15, 92.9, 22.35, 91.8, 21.8, 89.5, 21.6, 88.2, 20.2, 86.6, 17.7, 83.3, 16.17, 81.13, 13.08, 80.29, 11.93, 79.83, 10.3, 79.85, 9.28, 79.3, 8.8, 78.15, 8.08, 77.55, 8.5, 76.95, 9.97, 76.25, 11.25, 75.77, 12.87, 74.84, 15.5, 73.82, 18.95, 72.82, 21.17, 72.7, 22.3, 72.6, 21.75, 72.15, 20.7, 70.98, 20.9, 70.37, 21.64, 69.6, 22.24, 68.97, 22.47, 69.07, 22.47, 70.07, 23, 70.2, 22.83, 69.35, 23.2, 68.7, 23.6, 68.4, 24, 67.45, 24.82, 66.98, 25.4, 66.6, 25.2, 64.6, 25.12, 62.33, 25.3, 60.62, 25.64, 57.77, 27.18, 56.27, 26.55, 54.88, 27.83, 52.06, 28.97, 50.83, 30.05, 50.16, 29.95, 48.55, 29.37, 47.98, 26.65, 50.15, 24.75, 50.8, 25.6, 50.8, 26.15, 51.2, 25.3, 51.55, 24.8, 51.6, 24.45, 54.35, 25.27, 55.3, 25.8, 55.95, 26.38, 56.4, 25.12, 56.35, 24.35, 56.75, 23.6, 58.6, 22.53, 59.8, 20.6, 58.7, 19.67, 57.7, 17, 54.1, 14.53, 49.13, 12.78, 45.03, 12.65, 43.45, 13.32, 43.25, 14.8, 42.95, 16.89, 42.55, 21.5, 39.18, 24.08, 38.05, 26.23, 36.45, 27.35, 35.7, 27.95, 35, 29.53, 35, 28.5, 34.5, 27.9, 34.3, 28.24, 33.62, 29.05, 33.1]),
+    // 東亞的海（越南→中國→朝鮮半島→俄羅斯，東邊、南邊在圖外封口，再沿印尼、馬來半島回來）
+    eas: pp([8.6, 104.7, 10.35, 107.08, 11.9, 109.15, 13.77, 109.23, 16.05, 108.22, 18.67, 105.7, 20.85, 106.7, 21.48, 109.12, 20.25, 110.2, 21.2, 110.4, 21.85, 111.97, 22.2, 113.55, 22.28, 114.17, 23.35, 116.68, 24.48, 118.08, 26.08, 119.6, 28, 120.7, 28.65, 121.45, 29.88, 121.9, 30.35, 121.25, 31.1, 121.85, 31.8, 121.9, 32.4, 121.2, 33.4, 120.6, 34.7, 119.4, 35.4, 119.55, 36.07, 120.38, 36.9, 122.4, 37.4, 122.7, 37.5, 122.1, 37.55, 121.4, 37.8, 120.75, 37.18, 119.95, 37.75, 119.15, 38.4, 117.6, 39, 117.72, 39.2, 118.5, 39.93, 119.6, 40.7, 120.85, 40.65, 122.2, 39.6, 121.5, 38.8, 121.25, 39, 121.8, 39.9, 124.3, 38.7, 125.4, 38, 125.7, 37.45, 126.6, 36.75, 126.15, 35.98, 126.7, 34.8, 126.38, 34.75, 127.75, 35.1, 129.04, 35.5, 129.4, 36.03, 129.4, 37.75, 128.9, 39.15, 127.45, 39.9, 127.6, 41.8, 129.8, 43.1, 131.9, 42.8, 132.9, 45, 136.5, 47.5, 139, 50, 141, 50, 165, -12, 165, -10, 125, -8.3, 115.5, -7.2, 112.7, -6.95, 110.4, -6.1, 106.8, -2, 105.8, 1.25, 103.8, 1.35, 104.2, 3.8, 103.33, 6.13, 102.25, 7.2, 100.6, 10.5, 99.2, 12.57, 99.96, 13.5, 100.5, 12.93, 100.88, 12.2, 102.5, 10.6, 104.18, 10, 105.08]),
+    // 大西洋東岸＋北海＋波羅的海（西邊、南邊在圖外封口）
+    atl: pp([36.1, -5.35, 35.78, -5.8, 34, -6.85, 33.6, -7.6, 31.5, -9.77, 30.4, -9.6, 27.9, -12.9, 23.7, -15.9, 20.9, -17.05, 14.7, -17.45, 9.5, -13.7, 8.48, -13.23, 6.3, -10.8, 4.37, -7.72, 5.3, -4, 5.55, -.2, 6.45, 3.4, 4.3, 6, 4.05, 9.7, .4, 9.45, -.65, 8.7, -6, 12.3, -8.8, 13.23, -12.6, 13.4, -15.2, 12.15, -22.95, 14.5, -26.65, 15.15, -33.9, 18.4, -34.83, 20, -33.95, 25.6, -33, 27.9, -29.85, 31.03, -25.95, 32.6, -23.85, 35.4, -19.85, 34.85, -17.9, 36.9, -15, 40.7, -40, 40, -40, -40, 70, -40, 71, 25, 69.65, 18.95, 67.28, 14.4, 63.7, 9, 60.4, 5.3, 58.97, 5.73, 58, 7.05, 59, 10.5, 57.7, 11.9, 55.6, 13, 56.66, 16.36, 59.33, 18.07, 62.4, 17.3, 65.58, 22.15, 65, 25.47, 63.1, 21.6, 60.45, 22.27, 60.17, 24.94, 59.93, 30.3, 59.4, 28, 59.44, 24.75, 58.38, 24.5, 57, 24.1, 57.75, 22.6, 56.5, 21, 55.7, 21.13, 54.6, 19.6, 54.4, 18.65, 54.18, 15.57, 53.9, 14.2, 54.18, 12.1, 54.33, 10.15, 56.15, 10.2, 57.73, 10.6, 57.12, 8.6, 55.47, 8.45, 53.87, 8.7, 53.5, 8.1, 53.45, 6.8, 52.95, 4.75, 52.1, 4.27, 51.95, 4.05, 51.4, 3.5, 51.05, 2.37, 50.95, 1.85, 50.73, 1.6, 49.5, .1, 49.65, -1.62, 48.65, -2, 48.4, -4.5, 47.75, -3.37, 47.27, -2.2, 46.15, -1.15, 45.6, -1.2, 44.65, -1.25, 43.48, -1.56, 43.35, -3, 43.47, -3.8, 43.55, -5.65, 43.37, -8.4, 42.88, -9.27, 42.23, -8.72, 41.15, -8.62, 38.7, -9.2, 37.02, -8.99, 37, -7.93, 36.53, -6.3, 36, -5.6])
+  };
+  GEO.isles = {
+    sicily: pp([38.2, 15.55, 37.85, 15.29, 37.5, 15.09, 37.07, 15.29, 36.69, 15.13, 37.06, 14.25, 37.28, 13.55, 37.65, 12.59, 37.8, 12.43, 38.02, 12.5, 38.12, 13.36, 38.04, 14.02, 38.23, 15.24]),
+    sardinia: pp([41.24, 9.15, 40.92, 9.5, 40.38, 9.7, 39.94, 9.7, 39.2, 9.55, 39.2, 9.1, 38.87, 8.64, 39.05, 8.4, 39.9, 8.5, 40.56, 8.3, 40.95, 8.22, 40.92, 8.7]),
+    corsica: pp([43, 9.42, 42.7, 9.45, 42.1, 9.55, 41.6, 9.28, 41.39, 9.16, 41.67, 8.9, 41.92, 8.73, 42.57, 8.75, 42.68, 9.3]),
+    crete: pp([35.6, 23.6, 35.34, 25.13, 35.2, 26.1, 35.3, 26.3, 35, 25.75, 34.93, 24.75, 35.25, 23.55]),
+    cyprus: pp([35.7, 34.58, 35.34, 33.32, 35.4, 32.92, 35.2, 32.95, 34.75, 32.4, 34.67, 33.04, 34.56, 33.03, 34.9, 33.63, 35.12, 33.94, 34.96, 34.08]),
+    mallorca: pp([39.95, 2.85, 39.87, 3.2, 39.6, 3.45, 39.35, 3.1, 39.55, 2.4, 39.75, 2.65]),
+    britain: pp([51.13, 1.3, 50.82, -.14, 50.8, -1.1, 50.6, -2.45, 50.37, -4.14, 50.07, -5.7, 50.2, -5.5, 51.1, -4.2, 51.45, -2.6, 51.48, -3.18, 51.88, -5.3, 52.4, -4.08, 52.8, -4.7, 53.4, -4.4, 53.4, -3, 54.05, -2.9, 54.9, -3.3, 54.65, -4.9, 55.45, -4.63, 55.3, -5.8, 56.4, -5.5, 57.9, -5.2, 58.62, -5, 58.6, -3.5, 58.44, -3.1, 57.48, -4.22, 57.15, -2.1, 56.46, -2.97, 55.95, -3.2, 55.77, -2, 55, -1.45, 54.48, -.6, 53.75, -.33, 52.9, .3, 52.95, 1.3, 52.48, 1.75, 51.95, 1.28, 51.5, .6, 51.39, 1.38]),
+    ireland: pp([54.6, -5.9, 53.35, -6.2, 52.33, -6.45, 51.9, -8.47, 51.45, -9.8, 52.1, -10.3, 52.6, -9.6, 53.27, -9.05, 53.95, -10, 54.27, -8.47, 55.37, -7.37, 55, -7.3]),
+    srilanka: pp([9.8, 80.1, 8.57, 81.23, 7.72, 81.7, 6.12, 81.12, 5.92, 80.59, 6.03, 80.22, 6.93, 79.85, 8.03, 79.8, 8.98, 79.9]),
+    taiwan: pp([25.13, 121.74, 25, 122, 23.98, 121.62, 22.75, 121.15, 21.9, 120.85, 22.62, 120.27, 23, 120.15, 24.05, 120.42, 24.25, 120.5, 24.85, 120.92, 25.3, 121.53]),
+    hainan: pp([20.03, 110.33, 19.6, 111, 18.25, 109.5, 19.1, 108.65, 20, 109.7]),
+    kyushu: pp([33.95, 130.95, 33.25, 131.65, 31.9, 131.45, 31, 130.67, 31.6, 130.2, 32.75, 129.85, 33.4, 129.55, 33.6, 130.4]),
+    shikoku: pp([34.35, 134, 34, 134.6, 33.25, 134.2, 32.75, 133, 33.5, 132.4, 33.9, 132.8]),
+    honshu: pp([34, 130.9, 34.35, 132.45, 34.6, 133.9, 34.68, 135.2, 34.2, 135.15, 33.45, 135.75, 34.5, 136.8, 34.7, 137.7, 34.6, 138.85, 35.3, 139.7, 35.7, 140.85, 38.25, 141, 39.65, 142, 40.5, 141.5, 41.5, 140.9, 41, 140, 39.7, 140.05, 37.9, 139.05, 37.5, 137.3, 36.6, 136.6, 36, 136, 35.65, 136.05, 35.5, 134.2, 35.55, 133, 34.4, 131.4]),
+    hokkaido: pp([41.75, 140.7, 41.9, 140.1, 43.2, 141, 45.4, 141.7, 44.3, 145.3, 43.3, 145.6, 43, 144.4, 41.93, 143.25, 42.3, 141]),
+    borneo: pp([1.55, 110.35, 3.17, 113.03, 4.4, 114, 4.95, 114.95, 5.98, 116.07, 6.9, 116.85, 5.84, 118.12, 4.25, 117.9, 3.3, 117.6, -1.25, 116.85, -3.5, 116, -3.45, 114.6, -3, 111, -.03, 109.33, 2, 109.6]),
+    luzon: pp([18.6, 120.8, 18.4, 122.2, 16, 122.1, 14, 124.1, 12.6, 124.1, 13.6, 122, 14.4, 120.9, 15.5, 119.9, 16.5, 120.3, 18, 120.5]),
+    mindanao: pp([9.8, 125.5, 7.2, 126.5, 6, 125.3, 6.9, 122.1, 8.5, 123.5])
+  };
+  GEO.rivers = {
+    euphrates: GEO.euphrates, tigris: GEO.tigris, shatt: GEO.shatt,
+    nile: pp([.43, 33.2, 1.5, 33, 3.6, 32.05, 4.85, 31.6, 9.5, 31.65, 13.2, 32.65, 15.6, 32.5, 17.7, 33.97, 19.55, 33.3, 18.55, 31.85, 19.17, 30.48, 21.8, 31.35, 22.35, 31.62, 24.09, 32.9, 24.98, 32.87, 25.7, 32.64, 26.16, 32.72, 26.05, 32.25, 26.56, 31.7, 27.18, 31.18, 28.1, 30.75, 29.07, 31.1, 30.05, 31.23, 30.2, 31.15]),
+    nileRosetta: pp([30.2, 31.15, 30.8, 30.75, 31.46, 30.37]), nileDamietta: pp([30.2, 31.15, 30.9, 31.4, 31.52, 31.84]),
+    indus: pp([35.3, 75.6, 35.75, 74.6, 34.9, 72.9, 34.1, 72.7, 33.9, 72.25, 32.95, 71.55, 31.83, 70.9, 30.4, 70.9, 28.9, 70.45, 27.7, 68.86, 27.3, 68.2, 25.4, 68.37, 24, 67.45]),
+    ravi: pp([32.5, 75.8, 31.6, 74.3, 30.65, 72.85, 30.3, 71.9, 29.35, 71.05, 28.9, 70.45]),
+    ganges: pp([29.95, 78.15, 26.45, 80.35, 25.43, 81.85, 25.3, 83, 25.6, 85.15, 25.25, 87, 24.8, 87.9, 23.8, 89.5, 22.3, 90.7]),
+    yellow: pp([36.06, 103.8, 37.5, 105.2, 38.5, 106.3, 39.7, 106.8, 40.75, 108.6, 40.6, 110, 40.27, 111.15, 39.4, 111.2, 37.6, 110.6, 36, 110.5, 35.65, 110.6, 34.6, 110.3, 34.78, 111.2, 34.9, 112.4, 34.92, 113.65, 34.9, 114.35, 35, 115, 35.8, 115.5, 36.25, 116.2, 36.7, 117, 37.1, 117.9, 37.4, 118.4, 37.75, 119.15]),
+    yangtze: pp([28.77, 104.6, 28.9, 105.45, 29.55, 106.55, 30.8, 108.4, 31, 109.6, 30.75, 111.3, 30.3, 112.2, 29.45, 113.1, 30.58, 114.3, 29.75, 116, 30.5, 117.05, 31.35, 118.38, 32.06, 118.78, 32.2, 119.45, 31.95, 120.3, 31.6, 121.5]),
+    danube: pp([47.95, 8.5, 48.4, 10, 49, 12.1, 48.57, 13.45, 48.3, 14.3, 48.2, 16.4, 48.15, 17.1, 47.8, 18.75, 47.5, 19.05, 46, 18.7, 45.25, 19.85, 44.8, 20.45, 44.6, 22.5, 44, 22.9, 43.85, 25.95, 44.1, 27.3, 45.27, 27.97, 45.17, 28.8, 45.2, 29.65]),
+    rhine: pp([47.6, 9.5, 47.56, 7.6, 48.58, 7.8, 49.5, 8.45, 50, 8.27, 50.36, 7.6, 50.94, 6.96, 51.22, 6.77, 51.85, 5.9, 51.92, 4.4, 51.95, 4.05]),
+    seine: pp([48.3, 4.1, 48.85, 2.35, 49.44, 1.1, 49.45, .15]),
+    tiber: pp([43.5, 12.1, 43.1, 12.4, 42.45, 12.4, 41.9, 12.48, 41.74, 12.25]),
+    mississippi: pp([47.2, -95.2, 45, -93.3, 43, -91.2, 41.5, -90.6, 38.6, -90.2, 37, -89.2, 35.1, -90.1, 32.3, -90.9, 31, -91.6, 30, -90.1, 29.15, -89.25]),
+    amazon: pp([-4.2, -73.2, -3.2, -68, -3.1, -60, -2.4, -54.7, -1.4, -51.5, -.1, -50])
+  };
+  GEO.world = {   // 世界圖：海當底色，這些是陸地（約 2～5 度精度）；地中海、黑海、裏海另外塗海
+    afroEurasia: pp([36, -6, 34, -7, 31.5, -9.8, 28, -13, 21, -17, 14.7, -17.4, 10, -14, 6, -10, 4.4, -7.7, 5, -2, 6.4, 3.4, 4, 7, 4, 9.7, 0, 9.4, -6, 12.3, -12, 13.6, -17, 11.8, -23, 14.5, -29, 16.5, -34, 18.4, -34.8, 20, -33.9, 25.6, -30, 31, -26, 32.8, -24, 35.5, -19.8, 34.8, -15, 40.7, -10.5, 40.4, -4, 39.7, 0, 42.5, 2, 45.3, 5.3, 48.5, 10.4, 51.4, 11.8, 51.3, 10.4, 45, 11.6, 43.2, 13, 42.7, 15.6, 39.5, 19.6, 37.2, 22, 36.8, 24, 35.5, 27.2, 33.8, 29.9, 32.6, 28, 34.6, 24, 38, 21.5, 39.2, 16.9, 42.5, 12.7, 43.5, 12.8, 45, 14.5, 49, 17, 54, 19, 57.8, 22.5, 59.8, 23.6, 58.6, 25, 56.5, 26.4, 56.4, 24.4, 54.4, 24.8, 51.6, 26.1, 51.2, 25.6, 50.8, 26.6, 50.1, 29.4, 48, 30, 48.6, 29, 50.8, 27.2, 56.3, 25.6, 57.8, 25.2, 61.6, 24.8, 67, 23.6, 68.4, 22.5, 70, 21, 72.7, 19, 72.8, 15.5, 73.8, 12.9, 74.8, 10, 76.2, 8.1, 77.5, 9.3, 79.3, 13, 80.3, 16.2, 81.1, 17.7, 83.3, 20.2, 86.6, 21.6, 88.2, 22, 89.5, 22.4, 91.8, 20.2, 92.9, 16, 94.2, 16.5, 97.6, 14, 98.2, 8, 98.3, 5.5, 100.3, 2.5, 101.8, 1.3, 103.6, 1.4, 104.2, 3.8, 103.3, 6.1, 102.3, 7.2, 100.6, 10.5, 99.2, 13.5, 100.5, 12.2, 102.5, 10.5, 104, 8.6, 104.7, 10.4, 107.1, 12.3, 109.2, 16, 108.2, 18.7, 105.7, 20.9, 106.7, 21.5, 109.1, 20.3, 110.2, 21.9, 112, 22.3, 114.2, 23.4, 116.7, 24.5, 118.1, 26.1, 119.6, 28, 120.7, 29.9, 121.9, 31.2, 121.8, 32.4, 121.2, 34.7, 119.4, 36.1, 120.4, 37.4, 122.6, 37.5, 121.4, 37.8, 119.2, 39, 117.7, 39.9, 119.6, 40.7, 121, 39, 121.4, 39.9, 124.3, 37.5, 126.6, 34.8, 126.4, 35.1, 129, 38, 128.6, 39.9, 127.6, 41.8, 129.8, 43.1, 131.9, 46, 138, 50, 140.5, 53.5, 141.4, 54.5, 137, 59.3, 143, 59.6, 150.5, 62, 164, 60, 163, 61.5, 173, 64.5, 177, 65, 180, 70, 180, 70, 160, 72, 140, 73, 113, 77.7, 104, 72, 80, 68.5, 73, 69, 60, 68.5, 44, 66.5, 40, 69, 33, 71, 25, 69.6, 19, 67.3, 14.4, 63.6, 9, 60.4, 5.2, 58, 7, 59, 10.5, 57.7, 11.9, 55.6, 13, 56.6, 16.4, 59.3, 18.1, 62.4, 17.3, 65.6, 22.2, 65, 25.5, 63, 21.5, 60.4, 22.3, 60.2, 25, 59.9, 30.2, 59.4, 24.7, 57, 24.1, 57.7, 22.6, 56.5, 21, 54.6, 19.6, 54.4, 18.6, 54.2, 15.6, 54.2, 12.1, 54.3, 10.2, 56.2, 10.2, 57.7, 10.6, 57.1, 8.6, 55.5, 8.4, 53.9, 8.7, 53.5, 6.8, 52.9, 4.7, 51.4, 3.5, 51, 2.4, 49.5, .1, 49.65, -1.6, 48.6, -2, 48.4, -4.6, 47.3, -2.2, 46.2, -1.2, 43.5, -1.5, 43.4, -3.8, 43.6, -5.7, 43.4, -8.4, 42.9, -9.3, 41.1, -8.6, 38.7, -9.4, 37, -9, 37, -7.9, 36.5, -6.3]),
+    northAmerica: pp([66, -168, 64.5, -165, 60, -164.5, 58.7, -157, 55, -163, 56, -158, 57.5, -152, 59.5, -151, 60.5, -146, 59.5, -139.5, 58, -136.5, 55, -131.5, 50, -127.5, 48.4, -124.7, 46.2, -124, 42, -124.3, 40.4, -124.4, 37.8, -122.5, 34.5, -120.5, 34, -118.5, 32.7, -117.2, 30, -115.8, 27.5, -114.2, 22.9, -109.9, 26, -111.3, 29, -112.9, 31.5, -114.8, 28, -111.3, 25.6, -109.4, 23.2, -106.4, 20.6, -105.3, 19.1, -104.3, 18, -102.2, 16.8, -99.9, 15.7, -96.5, 15, -92.5, 13.5, -89.8, 11, -85.7, 9.6, -84.6, 8.3, -82.7, 7.5, -80.4, 9, -79.5, 7.5, -77.8, 9.5, -78.9, 9.3, -82.2, 11, -83.7, 15, -83.2, 15.8, -86.5, 15.9, -88.6, 17.5, -88.2, 21.5, -87, 21.3, -89.7, 19.8, -90.6, 18.6, -91.8, 18.1, -94.5, 19.2, -96.1, 22.2, -97.8, 25.9, -97.2, 28, -97, 29.5, -94.7, 29.2, -90.1, 30.4, -88, 30.2, -85.7, 29.8, -84.2, 28, -82.8, 25.9, -81.7, 25.1, -80.4, 26.7, -80, 30.4, -81.4, 32.1, -80.9, 35.2, -75.5, 37, -76, 38.9, -74.9, 40.5, -74, 41.2, -72, 41.7, -70, 42.7, -70.6, 43.7, -70.2, 44.8, -66.9, 43.5, -65.6, 44.7, -63.5, 46.2, -60, 47, -64.8, 46.8, -71.2, 49.3, -67, 50.2, -66, 50.2, -60, 51.4, -57, 53.5, -56, 56.5, -61.5, 58.5, -62.8, 60.4, -64.6, 58.8, -69.3, 62.5, -74, 60.8, -78.2, 58.5, -77, 55.3, -77.7, 52, -79, 51.3, -80.5, 55, -82.3, 57, -92.4, 59, -94.8, 61, -94, 63.5, -90.5, 66.5, -86, 68, -81, 69.7, -82, 68.5, -90, 68.3, -98, 67.8, -109, 68.8, -115, 69.5, -121, 69.3, -131, 69.5, -138, 70.2, -145, 71.3, -156.8, 70.5, -160, 68.9, -166.2, 67.5, -164]),
+    southAmerica: pp([8, -77.4, 7, -77.8, 3.8, -77.3, 1.6, -79, -1, -80.4, -2.5, -80, -4.4, -81.3, -6, -81, -9, -78.6, -13, -76.4, -15.4, -75.2, -18.5, -70.3, -23.6, -70.4, -27, -70.8, -33, -71.6, -37, -73.2, -41.5, -73.8, -45, -74.4, -50, -75.4, -53, -74, -54.9, -67.3, -52.4, -68.4, -48, -65.9, -45, -67.2, -42.6, -63.7, -41, -65, -39, -62.3, -38.6, -58, -36.3, -56.7, -34.8, -55, -33.7, -53.4, -31, -50.7, -28.5, -48.8, -25.5, -48.5, -23, -43.2, -22.9, -41.9, -20, -40.1, -16, -39, -13, -38.5, -10, -36, -8, -34.9, -5.2, -35.5, -3, -39.5, -2.5, -44.3, -1, -48.5, 0, -50, 2, -51, 4.6, -52.3, 5.8, -55.2, 6.8, -58.2, 8.5, -60.6, 10.7, -61.6, 10.6, -64.3, 10.5, -66.9, 11.5, -70, 12.5, -71.7, 11.2, -74.2, 10.4, -75.5, 9.4, -76.2, 8.6, -77.2]),
+    australia: pp([-10.7, 142.5, -12.5, 141.6, -16.5, 141.4, -17.5, 140.5, -16, 137, -14.8, 135.5, -12.2, 136.8, -11.1, 132.5, -12.4, 130.8, -14.9, 128.4, -14, 126.5, -16.5, 123, -18, 122.2, -20.3, 118.6, -21.8, 114.1, -24.8, 113.6, -28.8, 114.6, -31.9, 115.7, -34.4, 115.1, -35, 117.9, -33.9, 122, -32.2, 127.5, -31.7, 131.2, -32.2, 133.6, -34.9, 135.7, -32.9, 137.8, -34.9, 138.5, -37.5, 140.2, -38.4, 142.5, -37.8, 144.9, -39.1, 146.4, -37.8, 149.9, -35, 150.7, -33.9, 151.3, -32.5, 152.5, -28.2, 153.6, -25, 152.8, -22.5, 150.4, -19.3, 146.8, -16.9, 145.8, -14.5, 144.5, -14.2, 143.5]),
+    greenland: pp([60, -43.5, 61, -48, 65, -52.5, 69, -51, 70.6, -54.5, 72.8, -56.5, 76.5, -68.5, 78.5, -73, 82, -60, 83.6, -32, 81.5, -12, 77.5, -18.5, 74, -20, 70.3, -22, 68.5, -27, 65.5, -37, 62.5, -42]),
+    baffin: pp([62.3, -70.5, 66.5, -61.8, 70, -67, 73.6, -79.5, 72.8, -89, 70, -84, 68.2, -75, 65.2, -73, 64.2, -77.5, 62.6, -74]),
+    iceland: pp([66.5, -23, 66.5, -15, 65, -13.5, 63.4, -18, 63.8, -22.7, 65, -24]),
+    madagascar: pp([-12, 49.3, -15.5, 50.5, -20, 48.9, -25.4, 47.1, -25.2, 44, -21.5, 43.5, -16.2, 44.4, -15.4, 47.2]),
+    sumatra: pp([5.6, 95.3, 2, 98.7, -.95, 100.3, -3.8, 102.3, -5.9, 105, -3, 106, -1, 104.5, 1, 103, 2.5, 101, 4, 98.5]),
+    java: pp([-6, 106, -6.1, 106.8, -6.95, 110.4, -6.9, 112.6, -7.6, 114.4, -8.7, 114.4, -8.2, 111, -7.7, 109, -7.4, 106.4, -6.8, 105.3]),
+    newGuinea: pp([-.8, 131.2, -1.4, 137.5, -2.6, 140.7, -5.4, 145.8, -6.8, 147.8, -10.7, 150.5, -10.3, 148, -8.1, 146, -9, 143.4, -8.1, 138.9, -5, 137.6, -4, 133, -2.6, 132.1]),
+    nzNorth: pp([-34.4, 172.7, -36.8, 174.8, -37.7, 178.5, -39.6, 177, -41.6, 175.2, -39.3, 173.8, -38, 174.6]),
+    nzSouth: pp([-40.5, 172.7, -41.3, 174.2, -43.6, 172.8, -46.6, 169, -46.2, 166.6, -43.9, 168.8, -41.8, 171.4]),
+    cuba: pp([21.9, -84.9, 23.1, -82.4, 23.2, -80.6, 21.2, -76.4, 20.1, -74.2, 19.9, -77.7, 21.6, -79.5, 21.8, -83.5]),
+    hispaniola: pp([19.9, -72.8, 19.7, -70, 18.5, -68.4, 18.2, -71.2, 18.3, -74.4])
+  };
+  ['britain', 'ireland', 'srilanka', 'taiwan', 'hainan', 'kyushu', 'shikoku', 'honshu', 'hokkaido', 'borneo', 'luzon', 'mindanao'].forEach(k => { GEO.world[k] = GEO.isles[k]; });
+
+  // 通用地圖：m＝{ bounds:{lon:[西,東], lat:[南,北]}, world?, land?, rivers:['nile', {k|pts, w, f}], areas:[{pts, f, op}], routes:[{pts, f}],
+  //   labels:[{t, lat, lon, size, f, rot}], cities:[{n, lat, lon, main, side:'l'|'r', dy}], taiwan:false（不畫「臺灣在哪」）, cap, alt }
+  // 經度一度的長度乘 cos(中間緯度)；沒有 bounds 的舊資料（第 1 話）走 mapMeso。
+  A.map = function (m) {
+    if (!m.bounds) return A.mapMeso(m);
+    const b = m.bounds, W = 760, mid = (b.lat[0] + b.lat[1]) / 2, kLon = W / (b.lon[1] - b.lon[0]), kLat = kLon / Math.cos(mid * Math.PI / 180);
+    const H = r1((b.lat[1] - b.lat[0]) * kLat), px = (lat, lon) => [r1((lon - b.lon[0]) * kLon), r1((b.lat[1] - lat) * kLat)];
+    const P = a => a.map(p => px(p[0], p[1]).join(',')).join(' '), SEA = C.g5, LAND = col(m.land) || C.brick3;
+    const world = m.world || b.lon[1] - b.lon[0] > 90;
+    let s;
+    if (world) { s = rect(0, 0, W, H, SEA); Object.keys(GEO.world).forEach(k => { s += poly(P(GEO.world[k]), LAND); }); ['med', 'marmara', 'black', 'caspian'].forEach(k => { s += poly(P(GEO.seas[k]), SEA); }); }
+    else { s = rect(0, 0, W, H, LAND); Object.keys(GEO.seas).forEach(k => { s += poly(P(GEO.seas[k]), SEA); }); Object.keys(GEO.isles).forEach(k => { s += poly(P(GEO.isles[k]), LAND); }); }
+    (m.areas || []).forEach(a => { s += poly(P(a.pts), col(a.f) || C.g3, `opacity="${a.op || .6}"`); });
+    const line = (a, w, f, dash) => { let d = ''; for (let i = 0; i < a.length - 1; i++) { const p = px(a[i][0], a[i][1]), q = px(a[i + 1][0], a[i + 1][1]); if (!dash) { d += cap(p[0], p[1], q[0], q[1], w, f); continue; } const L = Math.hypot(q[0] - p[0], q[1] - p[1]), n = Math.max(1, Math.round(L / 22)); for (let j = 0; j < n; j++) { const t0 = j / n, t1 = (j + .55) / n; d += cap(p[0] + (q[0] - p[0]) * t0, p[1] + (q[1] - p[1]) * t0, p[0] + (q[0] - p[0]) * t1, p[1] + (q[1] - p[1]) * t1, w, f); } } return d; };
+    (m.rivers || []).forEach(r => { const a = typeof r === 'string' ? GEO.rivers[r] : (r.pts || GEO.rivers[r.k]); if (a) s += line(a, (r && r.w) || 6, col(r && r.f) || C.g7); });
+    (m.routes || []).forEach(r => { s += line(r.pts, r.w || 5, col(r.f) || C.red, true); });
+    (m.labels || []).forEach(l => { const p = px(l.lat, l.lon); s += txt(p[0], p[1], l.t, l.size || 22, col(l.f) || C.ink, l.rot ? { tr: `rotate(${l.rot} ${p[0]} ${p[1]})` } : null); });
+    (m.cities || []).forEach(c => { const p = px(c.lat, c.lon), dir = c.side === 'l' ? -1 : 1; s += circ(p[0], p[1], c.main ? 15 : 7, c.main ? 'url(#cm-redglow)' : 'none') + circ(p[0], p[1], c.main ? 8 : 6, c.main ? C.red : C.ink) + txt(p[0] + dir * 14, p[1] + 8 + (c.dy || 0), c.n, c.main ? 26 : 22, C.ink, { a: dir < 0 ? 'end' : 'start' }); });
+    if (m.taiwan !== false) {   // 臺灣在哪：在圖裡就標出來，不在就在圖邊畫箭頭指過去
+      const t = px(23.7, 121), inside = t[0] > 20 && t[0] < W - 20 && t[1] > 20 && t[1] < H - 20;
+      if (inside) s += circ(t[0], t[1], 6, C.red) + txt(t[0] + 12, t[1] + 26, '臺灣', 20, C.red, { a: 'start' });
+      else {
+        const cx = W / 2, cy = H / 2, dx = t[0] - cx, dy = t[1] - cy, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, k = Math.min((W / 2 - 34) / Math.abs(ux || 1e-9), (H / 2 - 34) / Math.abs(uy || 1e-9)), ex = cx + ux * k, ey = cy + uy * k, ang = Math.atan2(uy, ux) * 180 / Math.PI;
+        s += `<g transform="translate(${r1(ex)} ${r1(ey)}) rotate(${r1(ang)})">` + poly('-34,-7 -6,-7 -6,-16 14,0 -6,16 -6,7 -34,7', C.red) + `</g>`;
+        const lx = Math.max(110, Math.min(W - 110, ex - ux * 40)), ly = Math.max(30, Math.min(H - 14, ey - uy * 40 + (uy > .3 ? -14 : 26)));
+        s += rect(lx - 104, ly - 21, 208, 30, C.cream, 6, 'opacity=".9"') + txt(lx, ly, '往這邊很遠很遠才是臺灣', 17, C.wood);
+      }
+    }
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${QE(m.alt || '')}" style="display:block;width:100%;height:auto">${s}</svg>`;
+  };
+  const QE = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // ---------- 擴充：每一話自己的場景／角色／道具／圖示／姿勢／版面／河流，寫在自己的 data 檔 ----------
+  // ComicArt.extend({ scenes:{v2e3_agora(w,h,o){…return {bg,fg}}}, cast:{v2e3_guide:{name, skin:'skinB', top:'g5', skirt:'gold', hair:'curly', hat:'band', hatC:'red', r:22, k:.95}}, props:{…}, icons:{…} })
+  // 名字重複會丟錯（不准蓋掉共用的或別話的）。cast 的顏色可寫 C 的名字（g7、skinB…）或 #色碼。
+  const COLOR_KEYS = ['skin', 'top', 'skirt', 'bottom', 'robe', 'trim', 'leg', 'sleeve', 'shoe', 'stripe'];
+  function castOf(o) { const sp = Object.assign({ r: 22, k: 1, shoe: C.ink }, o); COLOR_KEYS.forEach(k => { if (sp[k]) sp[k] = col(sp[k]); }); if (!sp.skin) sp.skin = C.skin; if (!sp.robe && !sp.leg) sp.leg = sp.skin; return sp; }
+  A.extend = function (o) {
+    const REG = { scenes: SCENES, cast: CAST, props: PROPS, icons: ICONS, poses: POSES, expr: EXPR, parts: PARTS, holds: HOLDS, layouts: A.LAYOUTS, rivers: GEO.rivers };
+    Object.keys(o || {}).forEach(k => {
+      const R = REG[k]; if (!R) throw new Error('ComicArt.extend：不認得「' + k + '」，只能用 ' + Object.keys(REG).join('、'));
+      Object.keys(o[k]).forEach(n => { if (R[n]) throw new Error(`ComicArt.extend：${k}.${n} 已經有了，換個名字（前面加這一話的編號，例如 v2e3_${n}）`); R[n] = k === 'cast' ? castOf(o[k][n]) : o[k][n]; });
+    });
+    return A;
+  };
+  A.k = { C, r1, col, at, place, rect, poly, circ, ell, path, txt, cap, sh, both, groundShadow, seeded, wedges, palm, reedTuft, brickWall, sack, jar, lamp, zoom, puff, ziggurat, tablet, notebook, car, scooter, stele, actor: o => actor(o), prop: x => prop(x) };
+  A.PROPS = PROPS; A.PARTS = PARTS; A.HOLDS = HOLDS;
 
   A.POSES = POSES; A.EXPR = EXPR; A.CAST = CAST;
   if (typeof module !== 'undefined' && module.exports) module.exports = A;

@@ -1,7 +1,8 @@
 /* comics/comic.js — 世界史漫畫閱讀器。資料（data/*.js 的 COMIC_DATA）和畫面分開；每一話照同一個格式，換資料就能用。
    流程：封面 → 一格一格（滑動／按鈕／點螢幕）→ 重點整理 → 時間軸＋地圖 → 小測驗（quizkit.js 元件、reading-core.js 判分）。
    直向：整頁看、翻一格多顯示一格；橫向：一次放大看一格（一頁放不下的字才不會太小）。
-   還沒接學習幣、完成標示、錯題庫（Yoda 看過第 1 話才做）：作答結果只留在這一頁；要接的時候接在 onDone。 */
+   還沒接學習幣、完成標示、錯題庫（Yoda 看過第 1 話才做）：作答結果只留在這一頁；要接的時候接在 onDone。
+   地圖走 A.map（有 bounds 的通用地圖；第 1 話沒有 bounds → 兩河流域專用圖）；測驗結果頁的「下一話」看 catalog.js 的 ready。規格：CONTRACT.md。 */
 (function () {
   'use strict';
   const A = window.ComicArt, QK = window.QuizKit, ZR = window.ZhReading, esc = QK.esc;
@@ -88,7 +89,7 @@
     }
     function whereHTML() {
       return `<div class="cm-sh"><p class="cm-eyebrow">WHERE &amp; WHEN</p><h2>在哪裡？什麼時候？</h2>
-        <figure class="cm-fig">${A.mapMeso(ep.map)}<figcaption>${esc(ep.map.cap)}</figcaption></figure>
+        <figure class="cm-fig">${A.map(ep.map)}<figcaption>${esc(ep.map.cap)}</figcaption></figure>
         <figure class="cm-fig">${A.timeline(ep.timeline.items)}<figcaption>${esc(ep.timeline.cap)}</figcaption></figure>
         <p class="cm-src"><b>資料查證：</b>${ep.sources.map(esc).join('；')}</p></div>`;
     }
@@ -99,9 +100,12 @@
         const g = ZR.grade(quiz.items);
         if (opts.onDone) opts.onDone(ep, g, quiz.items);
         const wrong = quiz.items.filter(s => !s.right).map(s => `<li>${esc(s.q.q)}<br><small>✓ ${esc(QK.answerText(s.q))}</small></li>`).join('');
-        return `<div class="cm-sh"><p class="cm-eyebrow">RESULT</p><h2>答對 ${g.ok} / ${g.n} 題 ${g.ok === g.n ? '🎉' : g.pct >= ZR.PASS ? '👍' : '💪'}</h2>${wrong ? `<p>再看一次這幾題：</p><ul class="cm-wrong">${wrong}</ul>` : '<p>全對！阿凱說要請你吃布丁（但他沒寫下來）。</p>'}
+        // 下一話：catalog.js 標 ready 的才給連結（目錄是唯一的上架開關）
+        const all = window.COMIC_CATALOG ? COMIC_CATALOG.vols.flatMap(v => v.eps) : [], ni = all.findIndex(e => e.id === ep.id), nx = ni >= 0 ? all[ni + 1] : null;
+        const nextHTML = nx && nx.ready ? `<p class="cm-next"><a class="btn primary big" href="${esc(nx.id)}.html">下一話：${esc(nx.t)} ▶</a></p>` : `<p class="cm-next">下一話〈${esc(ep.next)}〉還在製作中。</p>`;
+        return `<div class="cm-sh"><p class="cm-eyebrow">RESULT</p><h2>答對 ${g.ok} / ${g.n} 題 ${g.ok === g.n ? '🎉' : g.pct >= ZR.PASS ? '👍' : '💪'}</h2>${wrong ? `<p>再看一次這幾題：</p><ul class="cm-wrong">${wrong}</ul>` : `<p>${esc(ep.perfect || '全對！阿凱和小禾幫你拍拍手！')}</p>`}
           <div class="qk-row"><button type="button" class="btn primary big" data-c="retry">↻ 再測一次</button><button type="button" class="btn big" data-c="again">📖 從頭再看一次</button></div>
-          <p class="cm-next">下一話〈${esc(ep.next)}〉還在製作中。</p></div>`;
+          ${nextHTML}<p class="cm-next"><a href="index.html">📚 回漫畫目錄</a></p></div>`;
       }
       const st = quiz.items[quiz.i], q = st.q;
       const fb = st.done ? `<div class="fb ${st.right ? 'ok' : 'no'}"><div class="fbh">${st.right ? '答對了！🎉' : '再看一次 👀'}</div><div>${esc(q.why)}${QK.extra(st)}</div></div><div class="qk-row"><button type="button" class="btn primary big wide" data-c="nextq">${quiz.i + 1 < quiz.items.length ? '下一題 ▶' : '看結果 ▶'}</button></div>` : '';

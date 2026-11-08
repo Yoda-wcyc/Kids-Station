@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#E4DFCC">
+<title>時光搖搖車 世界史漫畫目錄</title>
+<link rel="stylesheet" href="../style.css?v=494b1daab7">
+<link rel="stylesheet" href="comic.css?v=beea9d7dcb">
+</head>
+<body class="cm-cat">
+<header class="cm-top"><a href="../index.html#s/history">← 回歷史</a><span id="cm-ep">時光搖搖車・世界史漫畫</span></header>
+<main class="cm-sh" id="cat"></main>
+<script src="catalog.js?v=577689c646"></script>
+<script>
+/* 目錄頁：7 冊可收合；ready 的話是連結，還沒做的灰色「製作中」（不給連結，不會有壞連結）。收合狀態記在本機。 */
+(function () {
+  'use strict';
+  const C = window.COMIC_CATALOG, esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let st = {}; try { st = JSON.parse(localStorage.getItem('kids_comic_cat') || '{}'); } catch (e) { st = {}; }
+  const n = C.vols.reduce((a, v) => a + v.eps.filter(e => e.ready).length, 0);
+  document.getElementById('cat').innerHTML = `<p class="cm-eyebrow">THE TEN-DOLLAR TIME RIDE</p><h2>阿凱和小禾的世界史旅行</h2><p class="cm-lead">從古文明坐到今天：7 冊、42 話，照時代順序。每一話看完有重點、地圖和 5 題小測驗。現在上架 ${n} 話，其他還在製作中。</p>`
+    + C.vols.map(v => {
+      const ready = v.eps.some(e => e.ready), open = st[v.no] != null ? st[v.no] : ready;
+      return `<details class="cm-vol-box" data-v="${v.no}"${open ? ' open' : ''}><summary><b>第 ${v.no} 冊　${esc(v.t)}</b><small>${esc(v.span)}${ready ? '' : '・製作中'}</small></summary><ol class="cm-eps">`
+        + v.eps.map((e, i) => {
+          const body = `<span class="cm-no">${i + 1}</span><span class="cm-et"><b>${esc(e.t)}</b><small>${esc(e.when)}・${esc(e.where)}</small></span>`;
+          return `<li>${e.ready ? `<a class="cm-ep-card" href="${esc(e.id)}.html">${body}<i>▶</i></a>` : `<div class="cm-ep-card wip">${body}<i>製作中</i></div>`}</li>`;
+        }).join('') + `</ol></details>`;
+    }).join('');
+  document.querySelectorAll('details.cm-vol-box').forEach(d => d.addEventListener('toggle', () => { st[d.dataset.v] = d.open ? 1 : 0; try { localStorage.setItem('kids_comic_cat', JSON.stringify(st)); } catch (e) { /* 私密模式 */ } }));
+})();
+</script>
+</body>
+</html>

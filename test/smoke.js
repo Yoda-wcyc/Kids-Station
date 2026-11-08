@@ -1012,7 +1012,7 @@ ok(idx.indexOf('syncmerge.js') < idx.indexOf('syncauto.js') && idx.indexOf('sync
 const sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
 ['國語', '數學', '社會', '歷史', '自然', '英文', "n: 'AI'", '遊戲', '#s/', 'math/balance.html', '準備中，敬請期待', '← 回'].forEach(t => ok(sj.includes(t), 'subjects.js has ' + t));
 ok((sj.match(/\{ k: '[a-z]+', n: /g) || []).length === 8, '8 subject tabs');
-ok(/repeat\(8,/.test(fs.readFileSync(path.join(root, 'subjects.css'), 'utf8')) && sj.includes("href: 'comics/v1e1.html'") && fs.existsSync(path.join(root, 'comics/v1e1.html')), '歷史科：分頁列 8 欄、漫畫卡指到 comics/v1e1.html');
+ok(/repeat\(8,/.test(fs.readFileSync(path.join(root, 'subjects.css'), 'utf8')) && sj.includes("href: 'comics/index.html'") && fs.existsSync(path.join(root, 'comics/index.html')) && fs.existsSync(path.join(root, 'comics/catalog.js')), '歷史科：分頁列 8 欄、漫畫卡指到目錄頁 comics/index.html（各話檢查在 test/comics.test.js）');
 
 // ---- AI 與 遊戲（Scratch 塔防）：檔案存在、非空；活動卡片的 src 都找得到 ----
 const nonEmpty = rel => { const p = path.join(root, rel); return fs.existsSync(p) && fs.statSync(p).size > 0; };
