@@ -70,27 +70,43 @@ body{background:var(--bg)}
   </section>
   <section class="card end center" id="end" hidden></section>
 </main>
-<script src="fracadd.js?v=146d4f9620"></script>
+<script src="fracadd.js?v=99c3ff9db6"></script>
+<script src="../kids-mistakes.js?v=38bc198597"></script>
 <script>
 (function () {
 'use strict';
 /* 〈異分母分數加減〉頁面（2026-11-09）。出題、判分在 fracadd.js（window.FA）。要登入（requireLogin＋一輪開始 startActivity('math')）。
    一題一次：第一次送出的答案定對錯（值對但沒約分／沒化成帶分數只提醒，不算）；答錯給算法。每題 KidsCoins.answer(ok,'math')＋KidsDaily.rec('math', ok, 'fracadd')。
-   不送 practice_round（後端白名單沒有這個 item，學習幣規則不動）；不進錯題庫（隨機題，每次都是新題）。 */
+   一般一輪不送 practice_round（後端白名單沒有這個 item，學習幣規則不動）。
+   📕 錯題庫（2026-11-09）：每題 KidsMistakes.record('math', 'fa:…', ok, p)（id＝題目本身，見 fracadd.js mkId）；答錯收進去、在錯題庫裡連對 3 次畢業。
+     ?mistakes=1＝錯題重練：錯題庫裡 type 'fracadd' 的題（最多 30 題）用 id 原題重出，同一個數字鍵、一樣要最簡；做完送 practice_round 'math:mistakes'（同其他數學錯題頁）。
+     重練也一樣記學習幣、每日清單數學「異分母加減」（就是在練異分母加減）。練習額度在錯題庫按「只練錯題」時已經算過。 */
 var $ = function (id) { return document.getElementById(id); };
-var R = null, N = 10, F = ['w', 'n', 'd'];
+var R = null, N = 10, F = ['w', 'n', 'd'], MK = /[?&]mistakes=1(?:&|$)/.test(location.search);
 window.FAPage = { R: function () { return R; } };   // 測試用
 function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
 function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
-function rec(ok) {
+function rec(q, ok) {
   try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'math'); } catch (e) { }
   if (window.KidsDaily) KidsDaily.rec('math', ok, 'fracadd');   // 每日清單：數學「異分母加減」
+  try { if (!window.KidsMistakes) return null; var m = FA.mkEntry(q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e) { return null; }
 }
+function coinReport(item, c, n) { try { if (window.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); } catch (e) { } }
+function mkList() {
+  var out = [], seen = {};
+  try { KidsMistakes.list('math').forEach(function (e) { if (out.length >= 30 || !e.p || e.p.type !== 'fracadd') return; var q = FA.fromId(e.id); if (q && !seen[q.id]) { seen[q.id] = 1; out.push(q); } }); } catch (e) { }
+  return out;
+}
+function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['eq', 'gcd', 'gcdword', 'multiples', 'multiply', 'fraction'], 'fracadd') : ''; } catch (e) { return ''; } }
+var MKBACK = '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>';
 function frHTML(x) { var f = x.n ? '<span class="fr"><span class="n">' + x.n + '</span><span>' + x.d + '</span></span>' : ''; return x.w ? '<span class="mix"><span class="w">' + x.w + '</span>' + f + '</span>' : f || '0'; }
+function begin(qs, mk) {
+  R = { qs: qs, i: 0, ok: 0, grad: 0, mk: mk }; N = qs.length;
+  $('home').hidden = true; $('end').hidden = true; $('play').hidden = false; one();
+}
 function start() {
   if (!authOK() || !startAct(start)) return;
-  R = { qs: FA.round(N), i: 0, ok: 0 };
-  $('home').hidden = true; $('end').hidden = true; $('play').hidden = false; one();
+  begin(FA.round(10), false);
 }
 function one() {
   var q = R.qs[R.i]; R.v = { w: '', n: '', d: '' }; R.f = 'n'; R.done = false;
@@ -109,7 +125,7 @@ function key(k) {
 function submit() {
   var q = R.qs[R.i], g = FA.grade(q, R.v), m = $('msg');
   if (g.st === 'bad' || g.st === 'fix') { m.textContent = g.msg; m.className = 'msg bad'; return; }   // 只提醒，不算對錯
-  var ok = g.st === 'ok'; R.done = true; if (ok) R.ok++; rec(ok); paint();
+  var ok = g.st === 'ok'; R.done = true; if (ok) R.ok++; if (rec(q, ok) === 'graduated') R.grad++; paint();
   m.textContent = ok ? '✓ 答對了！' : '✗ 差一點！正確答案是 ' + FA.txt(q.ans); m.className = 'msg ' + (ok ? 'good' : 'bad');
   $('keys').hidden = true;
   $('fb').innerHTML = (ok ? '' : '<ol class="steps">' + FA.steps(q).map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>') +
@@ -117,8 +133,12 @@ function submit() {
 }
 function end() {
   $('play').hidden = true; var e = $('end'); e.hidden = false;
-  e.innerHTML = '<p class="big">' + (R.ok >= 8 ? '🏆' : '💪') + '</p><p class="score" id="fa-score">' + R.ok + ' / ' + N + '</p><p>' + (R.ok >= 8 ? '很棒！通分、約分都很熟了。' : '再來一輪，會越算越快！') + '</p>' +
-    '<div class="row"><button type="button" class="btn primary big" id="again">再來一輪 ▶</button><button type="button" class="btn" id="back">看算法</button></div>';
+  if (R.mk) {
+    coinReport('math:mistakes', R.ok, N);
+    e.innerHTML = '<p class="big">' + (R.ok === N ? '🏆' : '💪') + '</p><p class="score" id="fa-score">' + R.ok + ' / ' + N + '</p><p id="fa-grad">' + (R.grad ? '🎓 有 ' + R.grad + ' 題錯題畢業了！' : '同一題連續答對 3 次就會畢業喔！') + '</p>' +
+      '<div class="row">' + MKBACK + mkMore() + '</div>';
+  } else e.innerHTML = '<p class="big">' + (R.ok >= 8 ? '🏆' : '💪') + '</p><p class="score" id="fa-score">' + R.ok + ' / ' + N + '</p><p>' + (R.ok >= 8 ? '很棒！通分、約分都很熟了。' : '再來一輪，會越算越快！') + (R.ok < N ? '答錯的題在 📕 錯題庫。' : '') + '</p>' +
+    '<div class="row"><button type="button" class="btn primary big" id="again">再來一輪 ▶</button><button type="button" class="btn" id="back">看算法</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a></div>';
   R = null;
 }
 document.addEventListener('click', function (e) {
@@ -137,6 +157,13 @@ document.addEventListener('keydown', function (e) {
   else if (e.key === 'Tab' || e.key === ' ') { e.preventDefault(); key('next'); }
   else if (e.key === 'Enter') { e.preventDefault(); key('ok'); }
 });
+if (MK) {
+  document.title = '異分母錯題練習'; document.querySelector('.fa h1').textContent = '📕 異分母加減錯題練習';
+  document.querySelector('.fa header p').textContent = '答錯過的異分母加減再算一次（答案一樣要最簡）。同一題連續答對 3 次就會畢業 🎓';
+  var mq = mkList();
+  if (mq.length) begin(mq, true);
+  else { $('home').hidden = true; $('end').hidden = false; $('end').innerHTML = '<p id="mk-empty">目前沒有異分母加減錯題 🎉</p><div class="row">' + MKBACK + mkMore() + '</div>'; }
+}
 })();
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>

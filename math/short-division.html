@@ -182,7 +182,7 @@ body{background:var(--bg)}
   </section>
 </main>
 
-<script src="../kids-mistakes.js?v=ec0475b713"></script>
+<script src="../kids-mistakes.js?v=38bc198597"></script>
 <script src="short-division.js?v=17afc65cb7"></script>
 <script src="gcd-word.js?v=889d7b62a4"></script>
 <script src="word-level.js?v=0dd1455f2c"></script>
@@ -579,7 +579,7 @@ var W = null;                           // 這一輪
 window.SDPage.W = function () { return W; };
 window.SDPage.wQ = function () { wQ(); };   // 測試用：換掉 W.items 後重畫目前這一題
 function mkLeft(type) {   // 數學錯題庫裡還有幾題：'gcd'＝短除法、'gcdword'＝應用題、'eq'＝天平（其他；倍數 'multiples'、乘法 'multiply'、分數 'fraction' 不算）
-  try { return KidsMistakes.list('math').filter(function (e) { var t = e.p && e.p.type; return type === 'eq' ? (t !== 'gcd' && t !== 'gcdword' && t !== 'multiples' && t !== 'multiply' && t !== 'fraction' && t !== 'paper' && t !== 'grade') : t === type; }).length; } catch (e) { return 0; }
+  try { return KidsMistakes.list('math').filter(function (e) { var t = e.p && e.p.type; return type === 'eq' ? (t !== 'gcd' && t !== 'gcdword' && t !== 'multiples' && t !== 'multiply' && t !== 'fraction' && t !== 'fracadd' && t !== 'paper' && t !== 'grade') : t === type; }).length; } catch (e) { return 0; }
 }
 function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['multiples', 'multiply', 'fraction']) : ''; } catch (e) { return ''; } }
 function wMsg(t, kind) { var m = $('w-msg'); m.innerHTML = t || ''; m.className = 'sd-msg' + (kind ? ' ' + kind : ''); }

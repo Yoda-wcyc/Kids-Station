@@ -91,6 +91,7 @@
     multiples: ['倍數', 'index.html#s/math/multiples', '📖 回「倍數與公倍數」看 📖 教學，再做一次練習'],
     multiply: ['乘法', 'index.html#s/math/multiply', '✏️ 回「乘法快算」的練習，用拆解提示和直式格子一步一步算'],
     fraction: ['分數', 'index.html#s/math/fraction', '🍰 回「分數比較大小」的 📖 教學，用分數條、數線比一比'],
+    fracadd: ['異分母加減', 'index.html#s/math/fracadd', '➕ 回「異分母分數加減」看「怎麼算」：先找最小公倍數通分，分子加減，最後約分'],
     word: ['應用題', 'index.html#s/math/short-division-word', '']
   };
   const WL_UNIT = { gcdword: 'gw', multiples: 'mul', fraction: 'frc', multiply: 'mx', eq: 'bal' };
@@ -200,6 +201,7 @@
     if (p.type === 'fraction') return p.c != null ? 'fword' : 'fraction';
     if (p.type === 'multiply') return p.lv === 'word' ? 'word' : 'multiply';
     if (p.type === 'gcd') return 'gcd';
+    if (p.type === 'fracadd') return 'fracadd';
     return /^eqw:/.test(id) ? 'word' : 'eq';   // 天平應用題 eqw:、一般天平 eq:
   }
   // 英文錯題分類：🎤 口說、⌨️ 拼字（打字題）、其他
@@ -276,7 +278,7 @@
         const u = Object.keys(wl).sort((x, y) => wl[y] - wl[x])[0], star = ['', '★☆☆', '★★☆', '★★★'][wlStar(obj(snap.wordLv)[u])];
         groups.push({ k: 'math', kind: by.fword && by.fword >= (by.word || 0) ? 'mathFraction' : 'mathWord', n: nw, title: '數學・應用題', unitHref: WL_HREF[u] || MATH_KIND.word[1], mkHref: SBY.math.mk, extra: `應用題目前難度 ${star}` });
       }
-      ['eq', 'gcd', 'multiples', 'multiply', 'fraction'].forEach(kd => { if (by[kd]) groups.push({ k: 'math', kind: 'mathCalc', calc: kd, n: by[kd], title: `數學・${MATH_KIND[kd][0]}`, unitHref: MATH_KIND[kd][1], mkHref: SBY.math.mk, extra: '' }); });
+      ['eq', 'gcd', 'multiples', 'multiply', 'fraction', 'fracadd'].forEach(kd => { if (by[kd]) groups.push({ k: 'math', kind: 'mathCalc', calc: kd, n: by[kd], title: `數學・${MATH_KIND[kd][0]}`, unitHref: MATH_KIND[kd][1], mkHref: SBY.math.mk, extra: '' }); });
     }
     { const by = { spell: [], speak: [], choice: [] }; live(keMk).forEach(id => by[enKind(id)].push(id));
       const NM = { spell: '英文・拼字', speak: '英文・口說', choice: '英文・選擇題' }, SOL = { spell: 'enSpell', speak: 'enSpeak', choice: 'enChoice' };

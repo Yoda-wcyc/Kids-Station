@@ -108,7 +108,8 @@
   //   社會／自然 → iframe mindmap/<科>.html?mistakes=1[&u=單元]；數學 → iframe math/balance.html?mistakes=1（錯題全是短除法 p.type 'gcd'／應用題 'gcdword' 時改開
   //   math/short-division.html?mistakes=1（只有應用題時 ?mistakes=word）；都有時天平做完有「接著練短除法錯題」，短除法做完有「接著練應用題錯題」）；AI → 在這頁重答（KidsMistakes.aiPlay）
   //   2026-10-21：倍數（p.type 'multiples'）→ math/multiples.html?mistakes=1、乘法（'multiply'）→ math/multiply.html?mistakes=1；順序＝天平 → 短除法 → 應用題 → 倍數 → 乘法，
-  //   每一頁做完都有「接著練…錯題」（KidsMistakes.mathMore）；2026-10-27：分數（'fraction'）→ math/fraction.html?mistakes=1，排在乘法後面
+  //   每一頁做完都有「接著練…錯題」（KidsMistakes.mathMore）；2026-10-27：分數（'fraction'）→ math/fraction.html?mistakes=1，排在乘法後面；
+  //   2026-11-09：異分母加減（'fracadd'）→ math/fracadd.html?mistakes=1，排在分數後面
   // geo → iframe geo/unit.html?mistakes=1（2026-11-09；原題型重出），清單按「地圖技能／臺灣篇／世界篇 → 單元」分組（GEO_MK_UNITS）
   const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai', 'geo'];   // chinese → iframe chinese/reading.html?mistakes=1（2026-11-01；閱讀和成語的錯題都在這頁練）
   // 國語卡片小字：完成幾篇（kids_done.zh 跟著同步＋本機 kids_zh_reading）
@@ -120,8 +121,8 @@
   const KM = () => window.KidsMistakes;
   const mathMkSrc = () => {
     let l = []; try { l = KM().list('math').filter(e => !e.p || e.p.type !== 'paper'); } catch (e) { }   // 紙本錯題有自己的區塊和按鈕，不算這裡
-    const n = t => l.filter(e => e.p && e.p.type === t).length, g = n('gcd'), w = n('gcdword'), m = n('multiples'), x = n('multiply'), f = n('fraction'), gr = n('grade');   // grade＝五下起（math/grade.html，2026-11-06）
-    return !l.length || g + w + m + x + f + gr < l.length ? 'math/balance.html?mistakes=1' : g ? 'math/short-division.html?mistakes=1' : w ? 'math/short-division.html?mistakes=word' : m ? 'math/multiples.html?mistakes=1' : x ? 'math/multiply.html?mistakes=1' : f ? 'math/fraction.html?mistakes=1' : 'math/grade.html?mistakes=1';
+    const n = t => l.filter(e => e.p && e.p.type === t).length, g = n('gcd'), w = n('gcdword'), m = n('multiples'), x = n('multiply'), f = n('fraction'), fa = n('fracadd'), gr = n('grade');   // grade＝五下起（math/grade.html，2026-11-06）；fracadd＝異分母加減（2026-11-09）
+    return !l.length || g + w + m + x + f + fa + gr < l.length ? 'math/balance.html?mistakes=1' : g ? 'math/short-division.html?mistakes=1' : w ? 'math/short-division.html?mistakes=word' : m ? 'math/multiples.html?mistakes=1' : x ? 'math/multiply.html?mistakes=1' : f ? 'math/fraction.html?mistakes=1' : fa ? 'math/fracadd.html?mistakes=1' : 'math/grade.html?mistakes=1';
   };
   const mkDesc = k => { let n = 0; try { n = KM() ? KM().count(k) : 0; } catch (e) { } return n ? `有 ${n} 題等你復仇` : '目前沒有錯題 🎉'; };
   MK_SUBJ.forEach(k => { if (ACTS[k]) ACTS[k].push({ id: 'mistakes', title: '錯題庫', desc: () => mkDesc(k), icon: '📕', href: `#s/${k}/mistakes` }); });

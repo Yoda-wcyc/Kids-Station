@@ -3,7 +3,8 @@
      減法一定大減小、答案不會是 0 或負的；大約一半的題目答案要約分（以公分母寫出來還能再約）。一輪 10 題同一輪不重複。
    判分 grade(q, {w, n, d})（整數、分子、分母，空白＝0／沒填）：
      值不對 → 'wrong'；值對但沒約分、或假分數沒化成帶分數、或整數答案寫成分數 → 'fix'（只提醒、不算對錯，改好再送）；最簡 → 'ok'。
-   steps(q)：答錯時看的算法（通分 → 分子加減 → 約分／化成帶分數）。 */
+   steps(q)：答錯時看的算法（通分 → 分子加減 → 約分／化成帶分數）。
+   mkId／fromId／mkEntry：數學錯題庫（id 'fa:…'，見下面），fracadd.html?mistakes=1 用 id 原題重練。 */
 (function (G) {
   'use strict';
   const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
@@ -30,10 +31,24 @@
       if (op === '-' && imp(a) * d2 <= imp(b) * d1) continue;   // 大減小、不出 0
       const q = { kind, op, a, b }, ans = answer(q);
       if (!mixed && op === '+' && ans.w > 1) continue;
-      return Object.assign(q, { id: `${kind}:${a.w}_${a.n}/${a.d}${op}${b.w}_${b.n}/${b.d}`, ans });
+      return Object.assign(q, { id: mkId(q), ans });
     }
     return null;
   }
+  /* 錯題庫（2026-11-09）：id 就是題目本身＝'fa:' 兩個數夾運算符，一個數＝[整數.]分子_分母（真分數不寫整數）：
+     'fa:1_3+3_4'＝1/3＋3/4、'fa:2.1_3-1_4'＝2又1/3－1/4。題型由「有沒有整數＋運算符」推回來，fromId 用 id 原題重出。 */
+  const tok = x => (x.w ? x.w + '.' : '') + x.n + '_' + x.d;
+  const mkId = q => 'fa:' + tok(q.a) + q.op + tok(q.b);
+  function fromId(id) {
+    const m = /^fa:(?:(\d)\.)?(\d{1,2})_(\d{1,2})([+-])(?:(\d)\.)?(\d{1,2})_(\d{1,2})$/.exec(String(id));
+    if (!m) return null;
+    const a = { w: +(m[1] || 0), n: +m[2], d: +m[3] }, b = { w: +(m[5] || 0), n: +m[6], d: +m[7] }, op = m[4];
+    if (![a, b].every(x => x.d >= 2 && x.d <= 12 && x.n >= 1 && x.n < x.d) || (op === '-' && imp(a) * b.d <= imp(b) * a.d)) return null;
+    const mixed = a.w || b.w, q = { kind: mixed ? (op === '+' ? 'madd' : 'msub') : (op === '+' ? 'add' : 'sub'), op, a, b };
+    return Object.assign(q, { id: mkId(q), ans: answer(q) });
+  }
+  // 錯題庫的一筆：p 只放清單要畫的（v＝兩個數的整數、分子、分母，op），不放答案、不放畫面
+  const mkEntry = q => ({ id: mkId(q), p: { type: 'fracadd', v: [q.a.w, q.a.n, q.a.d, q.b.w, q.b.n, q.b.d], op: q.op, q: txt(q.a) + (q.op === '+' ? ' ＋ ' : ' － ') + txt(q.b) } });
   // 一輪 n 題：四種題型輪流；一半左右要約分（不夠就多抽幾次）
   function round(n, rnd) {
     rnd = rnd || Math.random;
@@ -77,7 +92,7 @@
     out.push(`答案：${txt(q.ans)}`);
     return out;
   }
-  const FA = { gcd, lcm, KINDS, KIND_NAME, gen, round, answer, parse, grade, steps, txt, imp };
+  const FA = { gcd, lcm, KINDS, KIND_NAME, gen, round, answer, parse, grade, steps, txt, imp, mkId, fromId, mkEntry };
   if (typeof module !== 'undefined' && module.exports) module.exports = FA;
   G.FA = FA;
 })(typeof window !== 'undefined' ? window : globalThis);
