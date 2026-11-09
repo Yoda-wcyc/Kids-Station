@@ -63,25 +63,28 @@ body{background:var(--bg)}
   <section id="exam" hidden></section>
 </main>
 
-<script src="../syncmerge.js?v=e5ed981668"></script>
+<script src="../syncmerge.js?v=bc2c991ea7"></script>
 <script src="../completion.js?v=39bc9551b3"></script>
 <script src="places.js?v=0393f5fbbd"></script>
 <script src="maps/tw.js?v=343cf4c0c4"></script>
 <script src="maps/world.js?v=28f70987d8"></script>
-<script src="geo.js?v=be68cba9d1"></script>
+<script src="geo.js?v=e9e7e65839"></script>
 <script src="../comics/catalog.js?v=8418e7f2d1"></script>
 <script src="history.js?v=3c22632db2"></script>
+<script src="../kids-mistakes.js?v=ec0475b713"></script>
 <script>
 /* 地理單元頁（2026-11-08；引擎 geo/geo.js，規格 geo/CONTRACT.md）。?u=<單元 m1～m5、t1～t6、w1～w7>［&tab=prac|exam］
-   單元資料 data/<單元>.js 照網址載（只載這一個單元）；還沒做好的單元顯示「準備中」。 */
-var GEO_U = (/[?&]u=([a-z0-9]+)/.exec(location.search) || [])[1] || '';
-if (Geo.UNIT_RE.test(GEO_U)) document.write('<script src="data/' + GEO_U + '.js"><\/script>');
+   單元資料 data/<單元>.js 照網址載（只載這一個單元）；還沒做好的單元顯示「準備中」。
+   ?mistakes=1＝📕 錯題練習（2026-11-09）：載錯題庫裡有錯題的那幾個單元，Geo.mkPage 原題型重做。 */
+var GEO_U = (/[?&]u=([a-z0-9]+)/.exec(location.search) || [])[1] || '', GEO_MK = /[?&]mistakes=1/.test(location.search);
+if (GEO_MK) { try { var GEO_MKU = {}; KidsMistakes.list('geo').forEach(function (e) { var u = e.id.split('-')[0]; if (Geo.UNIT_RE.test(u) && !GEO_MKU[u]) { GEO_MKU[u] = 1; document.write('<script src="data/' + u + '.js"><\/script>'); } }); } catch (e) { } }
+else if (Geo.UNIT_RE.test(GEO_U)) document.write('<script src="data/' + GEO_U + '.js"><\/script>');
 </script>
 <script>
 (function () {
   var meta = null;
   try { (KidsCompletion.GEO_UNITS || []).forEach(function (x) { if (x[0] === GEO_U) meta = { title: x[1], group: x[2] }; }); } catch (e) { }
-  window.GeoPage = Geo.page(document, GEO_U, meta);
+  window.GeoPage = GEO_MK ? Geo.mkPage(document) : Geo.page(document, GEO_U, meta);
 })();
 </script>
 <script>
@@ -137,6 +140,6 @@ if (Geo.UNIT_RE.test(GEO_U)) document.write('<script src="data/' + GEO_U + '.js"
 <script src="../kids-done.js?v=de42d7120a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
 <script src="../sync.js?v=12631d8738"></script>
-<script>try { if (window.GeoPage && window.KidsDone) KidsDone.mount(document.getElementById('kdone'), 'geo:' + GEO_U, {}); } catch (e) { }</script>
+<script>try { if (window.GeoPage && !GEO_MK && window.KidsDone) KidsDone.mount(document.getElementById('kdone'), 'geo:' + GEO_U, {}); } catch (e) { }</script>
 </body>
 </html>

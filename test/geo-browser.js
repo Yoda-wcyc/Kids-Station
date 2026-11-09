@@ -3,6 +3,7 @@
 // 每個單元：820 寬（iPad 直放）重點／練習 3 組／測驗每一題都畫得出來、拖拉題的卡片不用捲就看得到；第一題 drag、第一題 puzzle 用「模擬觸控」拖拉作答到答對；
 //           375 寬（手機）重點、各題型都不能左右捲動；全程 JS 例外、console.error 要 0。
 // 第一個單元另外：整組 10 題答對 → kids_done.geo.<u>p1＝100；測驗 10 題答對 → <u>t＝100、頁首橫幅顯示；首頁地理分頁 9 個科目分頁、三區可收合、18 張單元卡＋🗺️ 歷史地圖。
+// 2026-11-09 📕 錯題庫（第一個單元，見 mkRun）：答錯地圖題＋拖拉題 → 錯題庫分組列出 → 原題型重練（真的點、真的拖）→ 連對 3 次畢業移出。
 // 2026-11-08 世界篇（w1～w7）另外：🎬 開場短漫畫一格一格翻完、每一格的地點在旁邊地圖亮起來、版面不疊、看完記 kids_done.geo.<u>o、重點頁「這一洲的歷史故事」；
 //           🗺️ 歷史地圖（geo/history.html，全部單元一起跑或加 --history）42 話每一點都放大得到、點得到（44px、不跟別的點疊）、卡片連到對的漫畫；漫畫地圖頁的「🌍 在地圖上看這一站」連得過來。
 'use strict';
@@ -188,6 +189,72 @@ async function unitRun(u, first) {
   }
 }
 
+// 📕 錯題庫（2026-11-09）：練習答錯一題地圖題（tap）＋一題拖拉題 → 首頁地理錯題庫按部分／單元分組列出 → 只練錯題（iframe 開 unit.html?mistakes=1）
+//   → 原題型重出：真的點圓圈、真的觸控拖拉答對 → 再兩輪答對 → 畢業移出（墓碑 d:1），錯題庫清空；學習幣算社會、每日紀錄記地理
+const NO_AUTH = `window.KidsAuth = window.KidsAuth || {}; KidsAuth.requireLogin = () => true; KidsAuth.startActivity = () => true; return 1`;
+async function mkRun(u) {
+  await width(820);
+  await go('/geo/unit.html?u=' + u); await ev(`localStorage.removeItem('kids_mistakes'); ${NO_AUTH}`);
+  const pick = await ev(`const P = Geo.unit('${u}').practice, f = t => { const i = P.findIndex(q => q.type === t); return { id: P[i].id, g: Math.floor(i / 10) + 1, i: i % 10 }; }; return { tap: f('tap'), drag: f('drag') }`);
+  for (const t of ['tap', 'drag']) {   // 答錯：tap 點錯的圓圈；drag 兩張地名卡互換
+    const x = pick[t];
+    await ev(`GeoPage.setTab('prac'); GeoPage.start('prac', ${x.g}); GeoPage.goto(${x.i}); const R = GeoPage.run(), q = R.qs[R.i], m = R.m;
+      if (q.type === 'tap') m.act('pin', q.pins.map(p => typeof p === 'string' ? p : p.id).find(id => id !== q.a)); else q.items.forEach((it, k) => { m.act('card', k); m.act('slot', q.items[(k + 1) % q.items.length].to); });
+      m.act('ok'); return 1`);
+    assert(await ev(`return !!document.querySelector('#g-fb .fb.no')`), `mk ${x.id} (${t}): answered wrong`);
+  }
+  const bk = await ev(`return JSON.parse(localStorage.getItem('kids_mistakes')).geo`);
+  assert(bk[pick.tap.id] && bk[pick.drag.id] && JSON.stringify(Object.keys(bk[pick.tap.id].p)) === '["ty","s"]' && bk[pick.tap.id].p.ty === 'tap' && bk[pick.drag.id].p.ty === 'drag', 'mk: both wrong answers stored as {ty, s}: ' + JSON.stringify(bk).slice(0, 200));
+  // 首頁錯題庫
+  await go('/index.html#s/geo'); await sleep(400); await ev(NO_AUTH);
+  assert(await ev(`const t = [...document.querySelectorAll('#subject .tile')].find(a => a.getAttribute('href') === '#s/geo/mistakes'); return !!t && /2 題/.test(t.textContent)`), 'mk: 地理 home has 📕 錯題庫 tile (2 題)');
+  await ev(`location.hash = '#s/geo/mistakes'; return 1`); await sleep(400);
+  const L = await ev(`return { books: [...document.querySelectorAll('#mk-list .mk-book summary')].map(s => s.textContent), units: [...document.querySelectorAll('#mk-list .mk-uh')].map(h => h.textContent), ids: [...document.querySelectorAll('#mk-list li[data-id]')].map(li => li.dataset.id), badges: [...document.querySelectorAll('#mk-list .badge')].map(b => b.textContent), noH: document.documentElement.scrollWidth <= innerWidth + 1 }`);
+  const grp = { m: '地圖技能', t: '臺灣篇', w: '世界篇' }[u[0]];
+  assert(L.books.length === 1 && L.books[0].includes(grp) && L.units.length === 1 && /單元.　/.test(L.units[0]) && L.ids.length === 2 && L.badges.includes('📍 點地圖') && L.badges.includes('🏷️ 拖地名') && L.noH, 'mk: list grouped 部分 → 單元: ' + JSON.stringify(L));
+  await shot('mk-list.png');
+  await ev(`document.getElementById('mk-go').click(); return 1`); await sleep(800);
+  assert(await ev(`const f = document.querySelector('.frame-wrap iframe'); return location.hash === '#s/geo/mistakes-go' && !!f && /geo\\/unit\\.html\\?mistakes=1/.test(f.src) && !!(f.contentWindow.GeoPage && f.contentWindow.GeoPage.run())`), 'mk: 只練錯題 → iframe geo/unit.html?mistakes=1 running');
+  // 第 1 輪（直接開頁面）：真的點、真的拖
+  await go('/geo/unit.html?mistakes=1');
+  await ev(`window.__coin = []; window.__day = []; if (window.KidsCoins) { const a = KidsCoins.answer; KidsCoins.answer = function (ok, k) { __coin.push(k); return a.apply(this, arguments); }; } if (window.KidsDaily) { const d = KidsDaily.rec; KidsDaily.rec = function (k, ok) { __day.push(k); return d.apply(this, arguments); }; } return 1`);
+  const R0 = await ev(`const R = GeoPage.run(); return R.qs.map(q => q.id + ':' + q.type)`);
+  assert(R0.length === 2 && R0.includes(pick.tap.id + ':tap') && R0.includes(pick.drag.id + ':drag'), 'mk replay: both questions back with their own type: ' + R0);
+  for (let k = 0; k < 2; k++) {
+    const t = await ev(`const R = GeoPage.run(); return R.qs[R.i].type`);
+    if (t === 'tap') {
+      const c = await ev(`const R = GeoPage.run(), q = R.qs[R.i], s = Geo.pinsOf(q, Geo.view(q.fig)).find(s => s.id === q.a), svg = document.querySelector('#g-q svg.geo-svg'), p = svg.createSVGPoint(); p.x = s.x; p.y = s.y; const r = p.matrixTransform(svg.getScreenCTM()); return [r.x, r.y]`);
+      await tap(c[0], c[1]);
+      assert(await ev(`const R = GeoPage.run(); return R.m.state().pick === R.qs[R.i].a`), 'mk replay tap: real tap on the map picks the right circle');
+      await shot('mk-replay-tap.png');
+    } else {
+      const n = await ev(`return GeoPage.run().qs[GeoPage.run().i].items.length`);
+      for (let j = 0; j < n; j++) {
+        const c = await ev(`${COORDS} const card = document.querySelector('.geo-card[data-v="${j}"]').getBoundingClientRect(); return { from: [Math.round(card.left + card.width / 2), Math.round(card.top + card.height / 2)], to: scr(tg[${j}]) }`);
+        await touchDrag(c.from[0], c.from[1], c.to[0], c.to[1]);
+      }
+      assert(await ev(`const R = GeoPage.run(), q = R.qs[R.i]; return JSON.stringify(R.m.state().at) === JSON.stringify(q.items.map(x => x.to))`), 'mk replay drag: touch drag places every name');
+    }
+    await ev(`document.querySelector('[data-g="ok"]').click(); return 1`); await sleep(80);
+    assert(await ev(`return !!document.querySelector('#g-fb .fb.ok')`), `mk replay ${t}: 確定 → 答對了`);
+    await ev(`document.getElementById('g-next').click(); return 1`); await sleep(80);
+  }
+  const r1 = await ev(`return { score: document.getElementById('g-score').textContent, coin: __coin, day: __day, bk: JSON.parse(localStorage.getItem('kids_mistakes')).geo }`);
+  assert(r1.score === '2 / 2' && r1.bk[pick.tap.id].c === 1 && !r1.bk[pick.tap.id].d && (!r1.coin.length || r1.coin.every(k => k === 'social')) && r1.day.join() === 'geo,geo', 'mk round 1: 2/2, still in the book (c=1), coins social, daily geo: ' + JSON.stringify({ c: r1.coin, d: r1.day }));
+  // 第 2、3 輪答對 → 畢業
+  for (let k = 2; k <= 3; k++) {
+    await go('/geo/unit.html?mistakes=1');
+    await ev(`const R = GeoPage.run(); while (GeoPage.run() === R) { const q = R.qs[R.i], m = R.m; if (q.type === 'tap') m.act('pin', q.a); else q.items.forEach((it, j) => { m.act('card', j); m.act('slot', it.to); }); m.act('ok'); document.getElementById('g-next').click(); } return 1`);
+  }
+  const r3 = await ev(`return { txt: document.querySelector('#prac .card').textContent, bk: JSON.parse(localStorage.getItem('kids_mistakes')).geo, back: (document.querySelector('#prac a[target="_top"]') || {}).getAttribute && document.querySelector('#prac a[target="_top"]').getAttribute('href') }`);
+  assert(/有 2 題錯題畢業了/.test(r3.txt) && r3.bk[pick.tap.id].d === 1 && r3.bk[pick.drag.id].d === 1 && r3.back === '../index.html#s/geo/mistakes', 'mk round 3: both graduated (tombstones), back link to 錯題庫');
+  await go('/index.html#s/geo/mistakes'); await sleep(400);
+  assert(await ev(`return !!document.getElementById('mk-empty') && !document.querySelector('#mk-list li')`), 'mk: 錯題庫 empty after graduating');
+  await go('/geo/unit.html?mistakes=1');
+  assert(await ev(`return !!document.getElementById('mk-empty')`), 'mk: replay page with no mistakes says so');
+  await ev(`localStorage.removeItem('kids_mistakes'); return 1`);
+}
+
 (async () => {
   if (OUT) fs.mkdirSync(OUT, { recursive: true });
   await new Promise(r => srv.listen(PS, '127.0.0.1', r));
@@ -211,6 +278,7 @@ async function unitRun(u, first) {
     await cdp('Page.addScriptToEvaluateOnNewDocument', { source: 'window.__comicTest = 1; window.speechSynthesis && (window.speechSynthesis.speak = function(){});' });   // 漫畫引擎的測試掛勾（iframe 裡也有）
     for (let k = 0; k < UNITS.length; k++) { await unitRun(UNITS[k], k === 0); if (/^w\d$/.test(UNITS[k])) await introRun(UNITS[k]); }
     if (!ARGS.length || ARGS.includes('--history')) await historyRun();
+    if (UNITS.length) await mkRun(UNITS[0]);
     // 首頁：地理分頁
     for (const w of [820, 375]) {
       await width(w);
@@ -218,7 +286,7 @@ async function unitRun(u, first) {
       const H = await ev(`const tabs = [...document.querySelectorAll('#subjects .stab')]; return { tabs: tabs.length, minW: Math.min(...tabs.map(t => t.getBoundingClientRect().width)), oneRow: new Set(tabs.map(t => Math.round(t.getBoundingClientRect().top))).size, books: [...document.querySelectorAll('#subject details.book')].map(d => d.dataset.g), tiles: document.querySelectorAll('#subject .tile').length, noH: document.documentElement.scrollWidth <= innerWidth + 1, desc: (document.querySelector('#subject .tile small') || {}).textContent }`);
       assert(H.tabs === 9 && H.oneRow === 1 && H.minW >= 34 && H.books.join() === '地圖技能,臺灣篇,世界篇' && H.noH, `home ${w}: 9 tabs in one row (min width ${Math.round(H.minW)}px), 3 collapsible parts, no h-scroll`);
       await ev(`document.querySelectorAll('#subject details.book').forEach(d => d.open = true); return 1`); await sleep(100);
-      assert(await ev(`return document.querySelectorAll('#subject .tile').length`) === 19 && await ev(noH), `home ${w}: 18 unit tiles + 🗺️ 歷史地圖, no h-scroll when all open`);
+      assert(await ev(`return document.querySelectorAll('#subject .tile').length`) === 20 && await ev(noH), `home ${w}: 18 unit tiles + 🗺️ 歷史地圖 + 📕 錯題庫, no h-scroll when all open`);
       await shot(`home-geo-${w}.png`);
     }
     await ev(`location.hash = '#s/geo/t1'; return 1`); await sleep(600);

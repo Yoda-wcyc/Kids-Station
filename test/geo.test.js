@@ -166,5 +166,25 @@ ok(/href="\.\.\/geo\/history\.html\?ep=\$\{esc\(ep\.id\)\}"/.test(read('comics/c
   ok(k === 't1p1,w1o,w7o', 'done.geo keeps w1o～w7o (intro seen), drops m1o/w8o: ' + k);
   ok(KC.record({}, 'geo', 'w3o', 100, 1).geo.w3o === 100 && KC.evaluate('geo:w3', {}, { done: { geo: { w3o: 100 } } }).status === 'todo', 'intro seen is recorded but does not count toward completion'); }
 
+// ---- 📕 錯題庫（2026-11-09；kids-mistakes.js 的 geo 科）：id＝題目 id、p＝{ty, s}、單元由 id 推、同步收 geo、塞滿 ≤ MAX_BYTES/4 ----
+{
+  const KMc = require(path.join(root, 'kids-mistakes.js'))._core, all = Object.values(U).flatMap(u => u.practice.concat(u.test));
+  ok(KMc.SUBJ.includes('geo') && /MK_SUBJ = \[[^\]]*'geo'/.test(read('syncmerge.js')), 'geo is a mistakes subject in kids-mistakes.js and syncmerge.js');
+  ok(all.every(q => { const p = Geo.mkP(q); return Object.keys(p).join() === 'ty,s' && p.ty === q.type && p.s === q.q && Geo.byId(q.id) === q && KMc.unitOf('geo', q.id, p) === q.id.split('-')[0]; }), 'mkP = {ty, s} only (no figure); byId finds every question; unitOf from the id');
+  ok(KMc.unitOf('geo', 'x1-p01', {}) === '' && KMc.unitOf('geo', 't1-p04x', {}) === '' && Geo.byId('t1-p99') === null && Geo.byId('zz') === null, 'unknown ids → no unit, no question');
+  // 答錯收進去、連對 3 次畢業（不是社會／自然的隔天複習）
+  const b = {}, q = all.find(x => x.type === 'tap'), id = q.id;
+  ok(!KMc.SPACED.includes('geo') && KMc.mark(b, id, false, Geo.mkP(q), 1000) === 'added' && !b[id].due && ['counted', 'counted', 'graduated'].every((r, i) => KMc.mark(b, id, true, Geo.mkP(q), 2000 + i) === r) && b[id].d === 1, 'geo mistakes: wrong → added; 3 right in a row → graduated');
+  ok(SM.mergeMk({ geo: { [id]: { c: 0, w: 1, t: 5, u: 5, p: Geo.mkP(q) } } }, {}).geo[id].p.ty === q.type, 'syncmerge keeps mk.geo');
+  // 最壞情況：720 題全錯＋300 墓碑 ≤ MAX_BYTES/4（同步上限不放寬）
+  const bk = {}; all.forEach(x => { bk[x.id] = { c: 2, w: 9, t: 1.8e12, u: 1.8e12, p: Geo.mkP(x) }; }); for (let i = 0; i < 300; i++) bk['m1-dead' + i] = { d: 1, w: 9, t: 1.8e12, u: 1.8e12 };
+  const n = SM.bytes(SM.normMk({ geo: bk }));
+  ok(all.length === 720 && n <= SM.MAX_BYTES / 4, 'mk.geo worst case (720 wrong + 300 tombstones) ' + n + ' B ≤ MAX_BYTES/4 = ' + SM.MAX_BYTES / 4);
+  // 頁面接線
+  ok(g.includes("KidsMistakes.record('geo', q.id, !!ok, mkP(q))") && /rec\(ok, q\)/.test(g) && /function mkPage\(/.test(g) && !/'geo:mistakes'/.test(g), 'geo.js: practice/test record mistakes; mkPage replays; no new practice_round item');
+  ok(at('../kids-mistakes.js') >= 0 && at('../kids-mistakes.js') < html.indexOf('document.write') && /GEO_MK \? Geo\.mkPage\(document\)/.test(html), 'unit.html loads kids-mistakes.js before the data loader; ?mistakes=1 → mkPage');
+  ok(/'geo\/unit\.html\?mistakes=1'/.test(sj) && /GEO_MK_UNITS/.test(sj), 'subjects.js: geo mistakes route + 地圖技能／臺灣篇／世界篇 grouping');
+}
+
 console.log(`geo: ${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

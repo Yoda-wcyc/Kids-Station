@@ -33,6 +33,7 @@
     done.mg:{'g5b1q':%, 'g5b1t':分, 'g5bR':分}   ← 數學五下～六下（math/grade.html，2026-11-06 加，跟 fr 一樣不升版）：單元練習一輪最佳 %、單元測驗最高分、整冊總複習最高分；各項取大
     done.geo:{'m1p1':%, 'm1t':分}   ← 🌍 地理（geo/unit.html，2026-11-08 加，跟 mg 一樣不升版）：練習各組（p1～p3）最佳 %、單元測驗最高分；各項取大；'w1o'～'w7o'＝世界篇開場漫畫看完（100，2026-11-08 加）
     mk.chinese                              ← 國語錯題庫（2026-11-01 加；舊版裝置的 normMk 會丟掉、新版下次同步從本機補回）
+    mk.geo                                  ← 地理錯題庫（2026-11-09 加，同 chinese 不升版；p 只有 {ty, s}）
     mk.<科>.<id>.due                         ← 🔁 隔天複習（社會／自然）下次到期的日子（台北時間第幾天；2026-11-01 加，不升版：舊版裝置會丟掉 → 那題當今天到期；一樣新時 墓碑 ＞ 有 due ＞ 沒 due）
    - mp、fr：各項取大。mx：acc 取大、sp 取小、ok 取最早（聯集）。舊版（v5）裝置的 normDone 會丟掉 mp／mx → 新版下次同步從本機補回來（跟 v4→v5 的 done 一樣）。
    文件格式 v5（2026-10-20 起；v4 欄位完全不變，只多一個 done 欄位，舊文件少了它就當空的）：
@@ -202,7 +203,7 @@
   const ctrSum = c => { const s = { stars: 0, quizzes: 0 }; Object.keys(obj(c)).forEach(d => { s.stars += int0(c[d] && c[d].stars); s.quizzes += int0(c[d] && c[d].quizzes); }); return s; };
 
   // ---- mk：各科錯題庫（kids_mistakes；格式見 kids-mistakes.js 檔頭；這裡的整理規則要跟 kids-mistakes.js _core 一致，smoke 會對）----
-  const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai'], MK_GRAD = 3, MK_DEL = 300, MK_ID = 200, MK_P = 4000;
+  const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai', 'geo'], MK_GRAD = 3, MK_DEL = 300, MK_ID = 200, MK_P = 4000;
   const nat = x => { x = +x; return isFinite(x) && x > 0 ? Math.floor(x) : 0; };
   function normMkP(p) { if (!p || typeof p !== 'object' || Array.isArray(p)) return {}; try { const s = JSON.stringify(p); return s.length <= MK_P ? JSON.parse(s) : {}; } catch (e) { return {}; } }
   function normMkEntry(e) {

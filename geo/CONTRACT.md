@@ -152,6 +152,7 @@ test/geo-browser.js  無頭 Chrome 實測（必跑）
 - 完成（`geo:<id>`）：練習 3 組**各有一輪 ≥ 80%**＋單元測驗 **≥ 80 分**。紀錄存在 `kids_done.geo`（`'<id>p1'～'p3'`、`'<id>t'`，取最佳），跟著帳號同步。
 - 學習幣：每題 `KidsCoins.answer(ok, 'social')`；一組／一次測驗結束送 `practice_round` 的 `geo:practice`／`geo:test`（後端白名單見 kids-member Code.gs）。
 - 每日紀錄：`KidsDaily.rec('geo', ok)`（家長頁「地理」一列）。
+- 錯題庫：見 §10（題目 id 上線後不改，錯題靠它找回原題）。
 
 ## 6. 共用檔：誰都不准動
 
@@ -210,7 +211,32 @@ node test\smoke.js
 - `geo-browser.js` 要有 Chrome（`C:\Program Files\Google\Chrome\Application\chrome.exe`）。平行跑時換 port：`$env:GEO_PS=8890; $env:GEO_PD=9430`。要截圖：`$env:GEO_SHOTS='<資料夾>'`。
 - 自己用眼睛看過每一題的圖（截圖或開 `geo/unit.html?u=<id>`）：圓圈有沒有落在對的地方、地名有沒有被蓋住、題目和圖說的一致。
 
-## 10. 提交
+## 10. 📕 錯題庫（2026-11-09）
+
+沿用全站的 `kids-mistakes.js`（科目 `geo`），不另起一套；寫單元的人**不用做任何事**，只要題目 id 不改。
+
+```
+練習／測驗每答一題 ─ geo.js mkRec → KidsMistakes.record('geo', 題目 id, ok, {ty, s})
+   答錯 → 收進錯題庫（c＝0、w＋1）；在庫裡的題答對 → c＋1，連續答對 3 次 → 畢業，留墓碑 {d:1}
+   （不是社會／自然的「隔天複習」；練習、測驗、錯題練習答對都算數）
+首頁 #s/geo/mistakes ─ 錯題清單（免登入），分組：地圖技能／臺灣篇／世界篇 → 單元一　方位…（subjects.js GEO_MK_UNITS；單元由題目 id 推，不另存）
+   「只練錯題」（要登入；練習額度算 social）→ #s/geo/mistakes-go → iframe geo/unit.html?mistakes=1
+geo/unit.html?mistakes=1 ─ 照錯題的 id 載那幾個單元的 data 檔 → Geo.mkPage：最近答錯的在前、一輪最多 30 題，
+   用 Geo.byId 找回原題，原題型重出（地圖題點地圖、拖拉題拖拉），答完馬上看解說
+```
+
+| 項目 | 規則 |
+|---|---|
+| 存什麼 | `kids_mistakes.geo['t1-p04'] = {c, w, t, u, p:{ty:'tap', s:'題目文字'}}`；**不存圖、選項、答案**（重出時從 data 檔拿） |
+| 同步 | syncmerge v4 的 `mk.geo`（舊版裝置會丟掉、新版下次同步從本機補回，同國語）；720 題全錯＋300 墓碑約 123KB ≤ 同步上限 500KB／4（test/geo.test.js 擋） |
+| 學習幣 | 每題 `KidsCoins.answer(ok, 'social')`（同練習）；錯題練習**不送** practice_round（後端沒有 `geo:mistakes` 白名單，不新增） |
+| 每日紀錄 | 每題 `KidsDaily.rec('geo', ok)`（同練習） |
+| 完成判定 | 不受影響：只看 `kids_done.geo` 的 p1～p3、t（錯題練習不寫 kids_done） |
+| 開場漫畫 | 不受影響（`?mistakes=1` 沒有 `u`，不開開場分頁、不記 `<單元>o`） |
+
+改了 data 檔的題目文字：已經在錯題庫裡的那一題清單上還是舊字（重練時用新題目），沒關係；**改 id 或刪題**＝那筆錯題找不到原題，重練時自動略過（清單上還在，答不到）→ 所以 id 上線後不改。
+
+## 11. 提交
 
 - 正本沒有 git。改完在正本跑 `python deploy_copy.py`（複製到 `_deploy\Kids-Station\`），再到部署夾 `git commit -- geo/data/<id>.js geo/places.js`（只交自己的檔；`places.js` 有別人同時改時先 `git diff` 確認只有自己的那幾行）。
 - 不准 add `deploy_copy.py`、`考卷\`、`game\`；不准 force push。commit 訊息結尾加 `Co-Authored-By: …`（照當次的指示）。

@@ -84,6 +84,7 @@
   };
   ACTS.geo = GEO_UNITS.map(([id, t, g]) => ({ id, title: `${GEO_UNITS.filter(x => x[2] === g).findIndex(x => x[0] === id) + 1}. ${t}`, grp: g, icon: g === '地圖技能' ? '🧭' : g === '臺灣篇' ? '🏝️' : '🌐', desc: () => geoDesc(id), src: `geo/unit.html?u=${id}`, dk: `geo:${id}` }));
   // 🗺️ 歷史地圖（2026-11-08，geo/history.html）：世界史漫畫 42 話標在世界地圖上，點了開漫畫；不算單元完成（沒有 dk）
+  const GEO_MK_UNITS = GEO_UNITS.map(([id, t, g]) => [id, t, `${g} 單元${NUMS[GEO_UNITS.filter(x => x[2] === g).findIndex(x => x[0] === id)]}`]);
   ACTS.geo.push({ id: 'history', title: '🗺️ 歷史地圖', grp: '世界篇', icon: '🗺️', desc: '時光搖搖車 42 話發生在哪裡？點地圖上的點，打開那一話的漫畫', src: 'geo/history.html' });
   ANIM_SEGS.forEach(([c, t]) => ACTS.math.push({ id: 'anim-' + c.toLowerCase(), title: `🎬 ${c} ${t}`, icon: '🎬', src: `math/anim.html?id=${c}`, hidden: true }));
   // 數學五下起（2026-11-06，康軒）：每個單元一張卡 → iframe 開 math/grade.html?u=<單元>，每冊最後一張「總複習」（?r=<冊>）。
@@ -106,7 +107,8 @@
   //   math/short-division.html?mistakes=1（只有應用題時 ?mistakes=word）；都有時天平做完有「接著練短除法錯題」，短除法做完有「接著練應用題錯題」）；AI → 在這頁重答（KidsMistakes.aiPlay）
   //   2026-10-21：倍數（p.type 'multiples'）→ math/multiples.html?mistakes=1、乘法（'multiply'）→ math/multiply.html?mistakes=1；順序＝天平 → 短除法 → 應用題 → 倍數 → 乘法，
   //   每一頁做完都有「接著練…錯題」（KidsMistakes.mathMore）；2026-10-27：分數（'fraction'）→ math/fraction.html?mistakes=1，排在乘法後面
-  const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai'];   // chinese → iframe chinese/reading.html?mistakes=1（2026-11-01；閱讀和成語的錯題都在這頁練）
+  // geo → iframe geo/unit.html?mistakes=1（2026-11-09；原題型重出），清單按「地圖技能／臺灣篇／世界篇 → 單元」分組（GEO_MK_UNITS）
+  const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai', 'geo'];   // chinese → iframe chinese/reading.html?mistakes=1（2026-11-01；閱讀和成語的錯題都在這頁練）
   // 國語卡片小字：完成幾篇（kids_done.zh 跟著同步＋本機 kids_zh_reading）
   const zhDesc = () => { let n = 0; try { const d = (JSON.parse(localStorage.getItem('kids_done')) || {}).zh || {}, l = JSON.parse(localStorage.getItem('kids_zh_reading')) || {}; n = new Set(Object.keys(d).concat(Object.keys(l).filter(k => l[k] && l[k].done))).size; } catch (e) { } return '記敘、說明、童詩、新聞、圖表、多篇比較…從讀懂字面到深度思考，分 L1～L4 一級一級往上' + (n ? `｜已完成 ${n} 篇` : ''); };
   // 成語卡片小字：完成幾個成語（kids_done.cy 跟著同步＋本機 kids_zh_idioms；只數 cy001～cy100）
@@ -151,10 +153,10 @@
       const unit = mk[2] && (MM_UNITS[k] || []).some(x => x[0] === mk[2]) ? mk[2] : '', back = `#s/${k}/mistakes${unit ? '-' + unit : ''}`;
       if (!mk[1] || k === 'ai') {
         document.documentElement.classList.remove('frame-mode');
-        if (mk[1]) KM().aiPlay(box); else KM().page(box, { k, n: s.n, units: MM_UNITS[k], unit, ulist: k === 'math' ? MATH_UNITS : undefined });
+        if (mk[1]) KM().aiPlay(box); else KM().page(box, { k, n: s.n, units: MM_UNITS[k], unit, ulist: k === 'math' ? MATH_UNITS : k === 'geo' ? GEO_MK_UNITS : undefined });
       } else {
         document.documentElement.classList.add('frame-mode');
-        const src = k === 'math' ? mathMkSrc() : k === 'chinese' ? 'chinese/reading.html?mistakes=1' : `mindmap/${k}.html?mistakes=1${unit ? '&u=' + unit : ''}`;
+        const src = k === 'math' ? mathMkSrc() : k === 'chinese' ? 'chinese/reading.html?mistakes=1' : k === 'geo' ? 'geo/unit.html?mistakes=1' : `mindmap/${k}.html?mistakes=1${unit ? '&u=' + unit : ''}`;
         box.innerHTML = `<div class="frame-top"><a class="btn" href="${back}">← 回錯題庫</a><b>📕 ${s.n}錯題練習</b></div><div class="frame-wrap"><iframe src="${src}" title="${s.n}錯題練習" allow="clipboard-write; web-share"></iframe></div>`;
       }
       window.scrollTo(0, 0); setH(); return;

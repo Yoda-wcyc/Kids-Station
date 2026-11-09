@@ -16,6 +16,7 @@
        'mg:<題目id>'，p＝{type:'grade', qid, b:'五下 單元一', q:題目純文字}（五下～六下 math/grade.js 用 qid 找回原題，2026-11-06）；
        'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯）、'pf:<題>'（約分通分 15 題答錯，2026-11-05）、'pm:'／'pe:'（期中錯題／期中類題）、'ps:'（扇形小考錯題，2026-11-06）、'pc:'（期中第 15、17 題類題 5 題，2026-11-06），p＝{type:'paper', set:'p'|'v'|'f'|'m'|'e'|'s'|'c', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
+     地理 id＝geo/data 的題目 id（'t1-p04'、'w3-t02'；單元由 id 推），p＝{ty:題型 tap|drag|mc|puzzle, s:題目文字}（只存這兩樣，不存圖；geo/unit.html?mistakes=1 用 id 找回原題、原題型重出，連對 3 次畢業，2026-11-09）
    🔁 隔天複習（間隔重複，2026-11-01，只開在社會、自然＝SPACED；國語、數學、AI 照舊「連對 3 次」）：
      答錯 → c＝0、due＝明天；到期（台北時間的日子 ≥ due）答對 → c＋1，due＝今天＋[1,3,7][c]（1 天 → 3 天 → 7 天）；7 天那次也答對（c 已經是 2）→ 畢業留墓碑。
      還沒到期答對：不動（不算數）。舊錯題沒有 due → 當作今天到期。c 照舊 0～2（＝過了幾次間隔），錯題庫的 ●○○ 也照用。
@@ -27,7 +28,7 @@
   'use strict';
 
   // ================= _core：純函式 =================
-  var SUBJ = ['chinese', 'social', 'science', 'math', 'ai'];   // chinese（2026-11-01）：id＝'<篇id>:<題id>'，p＝{a:篇id, q:題id, t:篇名, s:題目, ans:正解文字}（chinese/reading.js）
+  var SUBJ = ['chinese', 'social', 'science', 'math', 'ai', 'geo'];   // geo（2026-11-09，見檔頭）；chinese（2026-11-01）：id＝'<篇id>:<題id>'，p＝{a:篇id, q:題id, t:篇名, s:題目, ans:正解文字}（chinese/reading.js）
   var GRAD = 3, MAX_DEL = 300, MAX_ID = 200, MAX_P = 4000, ROUND = 30;
   var SPACED = ['social', 'science'], IV = [1, 3, 7], DAY = 864e5, TPE = 8 * 3600e3;
   function dayIdx(t) { return Math.floor((+t + TPE) / DAY); }   // 台北時間的第幾天
@@ -118,6 +119,7 @@
   var LCM_T = ['bus', 'brick', 'light', 'run', 'gear', 'stack', 'duty', 'zongzi', 'rem', 'meet3', 'pack3'];
   function unitOf(k, id, p) {
     p = p || {};
+    if (k === 'geo') return (/^([mtw]\d)-[pt]\d\d$/.exec(id) || [])[1] || '';   // 地理：題目 id 開頭就是單元
     if (k !== 'math') return p.u || '';
     switch (p.type) {
       case 'grade': return (/^mg:(g[56][ab]\d+)-/.exec(id) || [])[1] || '';
@@ -155,7 +157,8 @@
   // ================= 瀏覽器：畫面（首頁 #s/<科>/mistakes） =================
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var KLABEL = { w: '考考自己', a: '背架構', q: '練習題', L: '素養題組', X: '單元測驗', F: '閃卡', I: '互動題' };
-  function badgeOf(subj, p) { if (subj === 'chinese') return p.t || '閱讀'; if (subj === 'math') return p.type === 'paper' ? (p.src || '紙本') : p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : p.type === 'grade' ? (p.b || '數學') : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
+  var GEO_LAB = { tap: '📍 點地圖', drag: '🏷️ 拖地名', mc: '🗺️ 看圖選答', puzzle: '🧩 地圖拼圖' };   // 同 geo.js LAB
+  function badgeOf(subj, p) { if (subj === 'geo') return GEO_LAB[p.ty] || '地理'; if (subj === 'chinese') return p.t || '閱讀'; if (subj === 'math') return p.type === 'paper' ? (p.src || '紙本') : p.type === 'gcd' ? '短除法' : p.type === 'gcdword' ? '應用題' : p.type === 'multiples' ? '倍數' : p.type === 'multiply' ? '乘法' : p.type === 'fraction' ? '分數' : p.type === 'grade' ? (p.b || '數學') : '換你算'; if (subj === 'ai') return p.tag ? plain(p.tag).split('·')[0].trim() || 'AI 挑戰' : 'AI 挑戰'; return KLABEL[p.k] || '題目'; }
   function textOf(subj, p) {
     if (subj === 'math') return p.q || '';
     if (subj === 'ai') return (p.q || '') + (p.opts && p.opts[p.c] != null ? '　→ ' + p.opts[p.c] : '');
@@ -243,7 +246,7 @@
     var go = box.querySelector('#mk-go');
     if (go) go.onclick = function start() {
       if (!authOK('練錯題')) return;
-      if (!quotaOK(k, start)) return;
+      if (!quotaOK(k === 'geo' ? 'social' : k, start)) return;   // 地理的練習額度、學習幣都算社會（同 geo.js）
       location.hash = '#s/' + k + '/mistakes-go' + (unit ? '-' + unit : '');
     };
     [['mk-paper-go', 'paper-mk'], ['mk-paper-30', 'paper-30'], ['mk-paper-15', 'paper-15'], ['mk-paper-20', 'paper-20'], ['mk-paper-1517', 'paper-1517']].forEach(function (b) {

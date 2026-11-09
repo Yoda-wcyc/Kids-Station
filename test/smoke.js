@@ -904,7 +904,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 文件大小：五科都塞滿（每科 300 題＋300 墓碑、p 是長句）也遠小於 1MB
   // 2026-11-01 加國語（chinese）成第五科：塞滿從約 378KB 變約 473KB，預算由 450KB 調成 500KB（伺服器上限 1MB 的一半），
   // 另外加一條「錯題庫塞滿＋英文作答壓縮後」整份文件仍 < 1MB（真正的上限）。
-  const big4 = {}; KMc.SUBJ.forEach(s => { const bk = {}; for (let i = 0; i < 300; i++) { bk[s + 'L' + i] = { c: 2, w: 9, t: 1.8e12, u: 1.8e12, p: { u: 'u1', k: 'w', pid: 'u1-l1-t1-p3', ci: 2, a: '荷蘭東印度公司', s: '十七世紀荷蘭東印度公司為了和中國、日本貿易，在臺灣南部建立據點並修築熱蘭遮城' } }; bk[s + 'D' + i] = { d: 1, w: 9, t: 1.8e12, u: 1.8e12 }; } big4[s] = bk; });
+  // 地理（geo，2026-11-09）p 只有 {ty, s}、題目數固定 720：最壞情況另外在 test/geo.test.js 用真的題目算（≤ MAX_BYTES/4），這裡的五科塞滿不含它
+  const big4 = {}; KMc.SUBJ.filter(s => s !== 'geo').forEach(s => { const bk = {}; for (let i = 0; i < 300; i++) { bk[s + 'L' + i] = { c: 2, w: 9, t: 1.8e12, u: 1.8e12, p: { u: 'u1', k: 'w', pid: 'u1-l1-t1-p3', ci: 2, a: '荷蘭東印度公司', s: '十七世紀荷蘭東印度公司為了和中國、日本貿易，在臺灣南部建立據點並修築熱蘭遮城' } }; bk[s + 'D' + i] = { d: 1, w: 9, t: 1.8e12, u: 1.8e12 }; } big4[s] = bk; });
   const mkBytes = SM.bytes(SM.normMk(big4));
   ok(mkBytes < 500 * 1024, 'mk at maximum stays well under the 1MB server limit: ' + mkBytes + ' B');
   // 2026-11-01 🔁 隔天複習：社會、自然每筆多一個 due（下次到期的日子）→ 塞滿時仍在 500KB 預算內
@@ -915,8 +916,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   ok(fullMk < 1000 * 1000, 'mk at maximum + English answers compacted: whole doc < 1MB server limit: ' + fullMk + ' B');
   // 頁面：每科頁有 📕 錯題庫卡、各頁載入 kids-mistakes.js、練錯題送 practice_round <科>:mistakes
   const sjm = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
-  ok(/MK_SUBJ = \['chinese', 'social', 'science', 'math', 'ai'\]/.test(sjm) && sjm.includes("'chinese/reading.html?mistakes=1'") && sjm.includes("icon: '📕'") && sjm.includes('mistakes-go') && sjm.includes('math/balance.html?mistakes=1') && sjm.includes('?mistakes=1'), 'subjects.js: 錯題庫 tiles + routes');
-  [['index.html', 'kids-mistakes.js'], ['chinese/reading.html', '../kids-mistakes.js'], ['mindmap/social.html', '../kids-mistakes.js'], ['mindmap/science.html', '../kids-mistakes.js'], ['math/balance.html', '../kids-mistakes.js'], ['math/short-division.html', '../kids-mistakes.js'], ['math/multiples.html', '../kids-mistakes.js'], ['math/multiply.html', '../kids-mistakes.js'], ['math/fraction.html', '../kids-mistakes.js'], ['ai/ask-well.html', '../kids-mistakes.js'], ['ai/hallucinate.html', '../kids-mistakes.js'], ['ai/secrets.html', '../kids-mistakes.js']]
+  ok(/MK_SUBJ = \['chinese', 'social', 'science', 'math', 'ai', 'geo'\]/.test(sjm) && sjm.includes("'geo/unit.html?mistakes=1'") && sjm.includes("'chinese/reading.html?mistakes=1'") && sjm.includes("icon: '📕'") && sjm.includes('mistakes-go') && sjm.includes('math/balance.html?mistakes=1') && sjm.includes('?mistakes=1'), 'subjects.js: 錯題庫 tiles + routes');
+  [['index.html', 'kids-mistakes.js'], ['chinese/reading.html', '../kids-mistakes.js'], ['mindmap/social.html', '../kids-mistakes.js'], ['mindmap/science.html', '../kids-mistakes.js'], ['math/balance.html', '../kids-mistakes.js'], ['math/short-division.html', '../kids-mistakes.js'], ['math/multiples.html', '../kids-mistakes.js'], ['math/multiply.html', '../kids-mistakes.js'], ['math/fraction.html', '../kids-mistakes.js'], ['ai/ask-well.html', '../kids-mistakes.js'], ['ai/hallucinate.html', '../kids-mistakes.js'], ['ai/secrets.html', '../kids-mistakes.js'], ['geo/unit.html', '../kids-mistakes.js']]
     .forEach(([f, s]) => ok(new RegExp('<script src="' + s.replace(/[.]/g, '\\.') + '(\\?v=[0-9a-f]+)?"></script>').test(fs.readFileSync(path.join(root, f), 'utf8')), f + ' loads kids-mistakes.js'));   // 部署夾有 ?v=<雜湊>（deploy_copy 防快取）
   const idxh = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   ok(idxh.indexOf('kids-mistakes.js') < idxh.indexOf('subjects.js'), 'index: kids-mistakes.js before subjects.js');
