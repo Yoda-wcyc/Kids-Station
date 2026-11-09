@@ -271,7 +271,7 @@
     const A = window.KidsAuth, inn = !!(A && A.configured() && A.isLoggedIn()), T = inn && window.KidsDaily ? KidsDaily.today() : null;
     const count = k => { if (!T) return 0; const s = T.made.find(x => x.k === k); return s ? s.n : 0; };
     const cards = (window.KidsSubjects || []).map(s => { const n = count(s.k); return `<a class="tile hs-c" data-k="${s.k}" href="${s.k === 'english' ? '#en' : '#s/' + s.k}"><span class="ti">${s.i}</span><b>${s.n}</b>${n ? `<small>今天 ${n} 題</small>` : ''}</a>`; }).join('');
-    const guest = inn || !A || !A.configured() ? '' : `<section class="card hs-guest" id="hs-guest"><h2>📋 今天要做什麼？</h2><p>登入後，這裡會有今天的清單：英文、數學、閱讀，做完自動打勾。</p><a class="btn primary big" href="${esc(A.loginUrl(location.href))}">🔑 去登入</a></section>`;
+    const guest = inn || !A || !A.configured() ? '' : `<section class="card hs-guest" id="hs-guest"><h2>📋 今天要做什麼？</h2><p>登入後，這裡會有今天的清單：英文、數學、閱讀、歷史、地理，做完自動打勾。</p><a class="btn primary big" href="${esc(A.loginUrl(location.href))}">🔑 去登入</a></section>`;
     app.innerHTML = guest + `<h2 class="hs-h">全部科目</h2><div class="tiles hs">${cards}</div>
       <nav class="hs-links" aria-label="其他功能"><a class="btn" id="tile-map" href="map.html">🗺️ 課程地圖<small>哪些單元學完了</small></a><a class="btn" id="hs-parent" href="#parent">👨‍👩‍👦 家長</a></nav>${shareRow()}`;
   }
@@ -343,7 +343,10 @@
     const tags = [...new Set(D.phrases.map(p => p.tag))];
     app.innerHTML = top('片語', '#learn') + `${radios('phlv', [['', '全部等級'], ['1', '必會'], ['2', '基本'], ['3', '進階']], PHF.lv)}
       <div class="filters"><select id="phtag" aria-label="類別"><option value="">全部類別</option>${tags.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}</select></div>
+      <button class="btn primary big" id="phgo">🎯 隨機練 10 題片語</button><p class="muted">今日清單的片語題：照上面選的等級、類別出題</p>
       ${lfBar('phrases')}<p class="muted" id="phn"></p><div class="cards" id="phl"></div>`;
+    // 今日清單「片語」的入口：一回 10 題（mode practice＝學習幣白名單裡的一般練習；不出 🎤，iPad 上比較順）
+    $('#phgo').onclick = () => startQuiz({ modules: ['phrases'], topics: [...new Set(D.phrases.filter(p => (!PHF.lv || String(p.lv) === PHF.lv) && (!PHF.tag || p.tag === PHF.tag)).map(p => 'phrases:' + p.lv + '|' + p.tag))], count: 10, allowSpeak: false, mode: 'practice' });
     const draw = () => {
       const L = D.phrases.filter(p => (!PHF.lv || String(p.lv) === PHF.lv) && (!PHF.tag || p.tag === PHF.tag) && lfPass('phrases', KE.phraseItemId(p)));
       $('#phn').textContent = `這裡有 ${L.length} 個片語，點英文就會唸`;
@@ -362,8 +365,10 @@
   }
   const PLV = { lv: '' };
   function pPatterns() {
-    app.innerHTML = top('句型', '#learn') + `${radios('plv', [['', '全部等級'], ['1', '簡單'], ['2', '基本'], ['3', '進階']], PLV.lv)}${lfBar('patterns')}<div class="cards" id="pl"></div>`;
+    app.innerHTML = top('句型', '#learn') + `${radios('plv', [['', '全部等級'], ['1', '簡單'], ['2', '基本'], ['3', '進階']], PLV.lv)}<button class="btn primary big" id="pgo">🎯 隨機練 10 題句型</button><p class="muted">今日清單的句型題：照上面選的等級出題</p>${lfBar('patterns')}<div class="cards" id="pl"></div>`;
     const lvOf = p => p.lv || 2;
+    // 今日清單「句型」的入口：一回 10 題（不出 🎤）
+    $('#pgo').onclick = () => startQuiz({ modules: ['patterns'], topics: D.patterns.filter(p => !PLV.lv || String(lvOf(p)) === PLV.lv).map(p => 'patterns:' + p.id), count: 10, allowSpeak: false, mode: 'patterns' });
     const draw = () => {
       $('#pl').innerHTML = D.patterns.slice().sort((a, b) => lvOf(a) - lvOf(b)).filter(p => (!PLV.lv || String(lvOf(p)) === PLV.lv) && lfPass('patterns', KE.patternItemId(p))).map(p => `<div class="card pat ${isL(KE.patternItemId(p)) ? 'is-learned' : ''}"><span class="lvb lv${lvOf(p)}">${KE.PATTERN_LV[lvOf(p)]}</span><div class="ph en say">${esc(p.pattern)}</div><div class="zh">${esc(p.zh)}</div><div class="exs">${p.ex.map(e => `<div><span class="en say">${esc(e.en)}</span><small>${esc(e.zh)}</small></div>`).join('')}</div><div class="row wrap"><button class="btn primary" data-p="${esc(p.id)}">🎯 練這個句型</button>${learnUI(KE.patternItemId(p))}</div></div>`).join('');
       $$('[data-p]').forEach(b => b.onclick = () => startQuiz({ modules: ['patterns'], topics: ['patterns:' + b.dataset.p], count: 10, allowSpeak: canSpeak, mode: 'patterns' }));
@@ -631,7 +636,7 @@
     if (!skipped) record(q, res.ok, q.input === 'mic' ? (res.ok ? q.answer : '') : input);
     // 學習幣（kids-coins.js）：每答一題記進「這一分鐘」；跳過不算作答
     if (window.KidsCoins) skipped ? KidsCoins.activity('english') : KidsCoins.answer(res.ok, 'english');
-    if (!skipped && window.KidsDaily) KidsDaily.rec('english', res.ok);   // 家長頁每日學習紀錄
+    if (!skipped && window.KidsDaily) KidsDaily.rec('english', res.ok, KE.dailyKind(q));   // 家長頁每日學習紀錄；句型、片語另記子目標
     Q.answers.push({ q, ok: res.ok, skip: !!skipped, input });
     // 📝 考試：不給回饋、不唸答案，直接下一題；全部答完才看結果
     if (Q.exam) { Q.i++; Q.answered = false; if (Q.i >= Q.list.length) finish(); else { pQuiz(); window.scrollTo(0, 0); } return; }

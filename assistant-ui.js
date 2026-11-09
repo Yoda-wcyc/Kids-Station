@@ -38,6 +38,7 @@
     + '.td-r{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;min-height:60px;padding:6px 12px;margin:0 0 8px;border:2px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);text-decoration:none}'
     + '.td-r.cur{border-color:var(--pri);border-width:3px;background:#fff8ec}.td-r.done{background:transparent;border-color:transparent;color:var(--muted);min-height:44px;padding:2px 12px;margin-bottom:4px}'
     + '.td-i{width:30px;text-align:center;font-size:1.2rem}.td-r.cur .td-i{color:var(--pri)}.td-n{font-size:1.25rem;width:72px}.td-v{font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums}.td-r.done .td-n,.td-r.done .td-v{font-size:1.05rem;font-weight:600}'
+    + '.td-subs{display:flex;flex-wrap:wrap;gap:8px;margin:-2px 0 10px 42px}.td-s{display:inline-flex;align-items:center;min-height:44px;padding:4px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);text-decoration:none;font-weight:700;font-variant-numeric:tabular-nums}a.td-s{border-color:var(--pri)}.td-s.ok{color:var(--muted);border-color:transparent;background:transparent;font-weight:600}'
     + '.td-side{margin-left:auto;display:flex;align-items:center;gap:12px}.td-note{font-size:.95rem;color:var(--muted);white-space:nowrap}.td-go{min-height:44px;padding:4px 18px;box-shadow:none;font-size:1rem}.td-hint{flex-basis:100%;order:9;color:var(--muted);font-size:.82rem;padding-left:42px}'
     + 'a.td-main{display:flex;width:100%;min-height:72px;font-size:1.35rem;font-weight:800;margin:6px 0 10px;border-radius:20px;white-space:normal;text-align:center}'
     + '.td-party{margin:6px 0 10px;padding:16px;text-align:center;font-size:1.35rem;font-weight:800;background:var(--ok-bg,#e6f8ee);color:#145c38;border-radius:20px}.td-party.pop{animation:td-pop .9s ease-out}'
@@ -85,19 +86,33 @@
   const tasksHtml = r => r.tasks.length ? `<ol class="kas-tasks" id="kas-tasks">${r.tasks.map(taskLi).join('')}</ol>`
     : '<p class="kas-done">🎉 今天的任務都完成了！可以到課程地圖看看你走了多遠。</p>';
   // ---------- 今天的清單 ----------
-  const num = r => `${r.n} / ${r.goal}${r.key === 'r' ? ' 篇' : ''}`;
+  // 一列一項（2026-11-09 五項）：✅ 做完的變灰、縮小；▶ 現在該做的那一列放大、下面才有「去哪裡做」的按鈕；其他沒做完的只在列裡寫一行小字
+  const num = r => `${r.n} / ${r.goal}${r.unit === '題' ? '' : ' ' + r.unit}`;
+  const SUBI = { sentence: '💬', phrase: '🔗', mul: '✖️', fracadd: '➕' };
+  const subLine = r => (r.subs || []).map(s => `${s.name} ${s.n}/${s.goal}${s.done ? ' ✓' : ''}`).join('・');
   function rowHtml(r, cur) {
     const side = r.done ? (r.over ? '<span class="td-note">今天超標了 🎉</span>' : '') : `<span class="td-note">${cur && r.left ? `還差 ${r.left} ${r.unit}` : ''}</span><span class="btn td-go">${r.n ? '繼續' : '開始'}</span>`;
-    const hint = r.key === 'm' && r.mx ? '<small class="td-hint">⚡ 快算 3 題算 1 題</small>' : '';
-    return `<a class="td-r ${r.done ? 'done' : cur ? 'cur' : ''}" data-key="${r.key}" href="${esc(link(r.href))}"><span class="td-i" aria-hidden="true">${r.done ? '✅' : cur ? '▶' : '○'}</span><b class="td-n">${esc(r.name)}</b><span class="td-v">${num(r)}</span>${hint}<span class="td-side">${side}</span></a>`;
+    const hint = r.done ? '' : r.subs && r.subs.length ? `<small class="td-hint">${esc(subLine(r))}</small>` : r.key === 'm' && r.mx ? '<small class="td-hint">⚡ 快算 3 題算 1 題</small>' : r.key === 'r' ? '<small class="td-hint">閱讀文章或成語故事，讀完一篇都算</small>' : '';
+    return `<a class="td-r ${r.done ? 'done' : cur ? 'cur' : ''}" data-key="${r.key}" href="${esc(link(r.href))}"><span class="td-i" aria-hidden="true">${r.done ? '✅' : cur ? '▶' : '○'}</span><b class="td-n">${esc(r.name)}</b><span class="td-v">${num(r)}</span>${hint}<span class="td-side">${side}</span></a>` + (cur ? subHtml(r) : '');
+  }
+  // 現在這一列下面一排按鈕（列本身是連結，不能再包連結）：沒達到的子目標點去練；閱讀兩種都能去
+  function subHtml(r) {
+    if (r.done) return '';
+    const go = (href, t, sub) => `<a class="td-s"${sub ? ` data-sub="${sub}"` : ''} href="${esc(link(href))}">${t}</a>`;
+    if (r.key === 'r') return `<div class="td-subs" data-key="r">${go(r.href, '📚 閱讀文章 ▶')}${go(r.alt, '📜 成語故事 ▶')}</div>`;
+    if (!r.subs || !r.subs.length) return '';
+    return `<div class="td-subs" data-key="${r.key}">${r.subs.map(s => s.done ? `<span class="td-s ok" data-sub="${s.key}">${esc(s.name)} ${s.n}/${s.goal} ✓</span>` : go(s.href, `${SUBI[s.key] || ''} ${esc(s.name)} ${s.n}/${s.goal} 去練 ▶`, s.key)).join('')}</div>`;
   }
   function listHtml(T) {
     return `<section class="td" id="td" aria-label="今天的清單"><div class="td-h"><b>今天（${esc(T.label)}）</b><span id="td-count">${T.doneN} / ${T.total} 完成</span></div>${T.rows.map(r => rowHtml(r, T.next && r.key === T.next.key)).join('')}</section>`;
   }
   // 主按鈕：英文、數學優先用小助理挑的那一項（錯題、複習也算題數）；閱讀一定要讀一篇，到閱讀列表
-  const nextHref = (T, r) => { const c = T.next.key === 'r' ? null : r.tasks.find(t => t.k === T.next.k); return c ? c.href : T.next.href; };
+  // 子目標還沒到：直接去那一頁（那裡做的題也算總數）；數學有子目標時只有那兩頁算，不用小助理挑的錯題；閱讀、歷史、地理用清單給的入口
+  const nextHref = (T, r) => { const n = T.next, c = n.key === 'r' || n.subLeft || (n.key === 'm' && (n.subs || []).length) ? null : r.tasks.find(t => t.k === n.k); return c ? c.href : n.href; };
   let partyDay = '';
   function mainHtml(T, r) {
+    const s = T.next && (T.next.subs || []).find(x => !x.done);
+    if (s) return `<a class="btn primary td-main" id="td-next" href="${esc(link(s.href))}">接著做：${esc(T.next.name)}${esc(s.name)}（還差 ${s.left} 題）</a>`;
     if (T.next) return `<a class="btn primary td-main" id="td-next" href="${esc(link(nextHref(T, r)))}">接著做：${esc(T.next.name)}（還差 ${T.next.left} ${T.next.unit}）</a>`;
     if (window.KidsDaily && KidsDaily.party(T.day, T.allDone)) partyDay = T.day;
     return `<p class="td-party${partyDay === T.day ? ' pop' : ''}" id="td-party">🎉 今天的清單全部完成了！</p>`;

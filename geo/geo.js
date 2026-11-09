@@ -535,6 +535,7 @@
       var n = run.qs.length, pct = Math.round(run.ok / n * 100), host = sec();
       if (run.mode === 'test') { doneRec(uid + 't', pct); report('geo:test', run.ok, n); }
       else { doneRec(uid + 'p' + run.g, pct); report('geo:practice', run.ok, n); }
+      safe(function () { if (window.KidsDaily && KidsDaily.finish) KidsDaily.finish('geo'); });   // 每日清單「地理 1 組」：一組練習或一次測驗做完（錯題重練不走這裡）
       var pass = pct >= PASS, list = run.mode === 'test' ? '<div class="card">' + run.res.map(function (x, i) {
         return '<div class="ri ' + (x.ok ? 'ok' : 'no') + '" data-ok="' + x.ok + '"><span class="mk">' + (x.ok ? '✔' : '✘') + '</span><b>(' + (i + 1) + ')</b> ' + esc(x.q.q) + (x.ok ? '' : '<br><span class="right">正解：' + esc(ansText(x.q)) + '</span><br>💡 ' + esc(x.q.why)) + '</div>';
       }).join('') + '</div>' : '';

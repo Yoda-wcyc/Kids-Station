@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>異分母分數加減</title>
+<link rel="stylesheet" href="../style.css?v=494b1daab7">
+<style>
+body{background:var(--bg)}
+[hidden]{display:none!important}
+.fa{max-width:860px;margin:0 auto;padding:12px 16px calc(48px + env(safe-area-inset-bottom))}
+.fa h1{font-size:clamp(1.35rem,1rem + 1.4vw,1.8rem);margin:4px 0 2px}
+@media (max-width:600px){.fa header{padding-right:84px}}
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.15;margin:0 .1em;font-variant-numeric:tabular-nums;font-weight:800}
+.fr>span{padding:0 .18em;min-width:.9em;text-align:center}
+.fr .n{border-bottom:.1em solid currentColor}
+.mix{display:inline-flex;align-items:center;white-space:nowrap;vertical-align:middle}
+.mix .w{font-weight:800;margin-right:.05em}
+.qline{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.35em;font-size:clamp(2rem,1.5rem + 2.4vw,2.8rem);margin:8px 0 4px}
+.prog{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-weight:700;margin:4px 0 8px}
+/* 答案：整數｜分子／分母三個大格子（點一下選格子，下面的數字鍵盤輸入） */
+.ans{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0}
+.box{min-width:2.6em;min-height:64px;padding:4px 10px;font:inherit;font-size:1.9rem;font-weight:800;text-align:center;border:3px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-variant-numeric:tabular-nums;cursor:pointer}
+.box.on{border-color:var(--pri);box-shadow:0 0 0 3px #ffd9b8}
+.box:empty::before{content:attr(data-ph);color:#b9c0c8;font-size:1rem;font-weight:600}
+.afr{display:flex;flex-direction:column;align-items:center;gap:6px}
+.afr .bar{width:100%;height:5px;background:var(--ink);border-radius:3px}
+.keys{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:520px;margin:10px auto 0}
+.keys .btn{min-height:64px;font-size:1.6rem;font-weight:800;padding:0}
+.keys .wide{grid-column:span 2;font-size:1.15rem}
+.msg{min-height:1.6em;margin:10px 0 0;font-size:1.12rem;font-weight:700;line-height:1.7;text-align:center}
+.msg.bad{color:var(--no)}.msg.good{color:var(--ok)}
+.steps{margin:8px 0;padding-left:1.3em;line-height:2}
+.end .big{font-size:3rem;margin:0}.end .score{font-size:2rem;font-weight:800}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:10px 0 0}
+.how li{line-height:1.9}
+</style>
+</head>
+<body>
+<main class="fa">
+  <header>
+    <h1>➕ 異分母分數加減</h1>
+    <p class="muted">分母不一樣的分數加減：先通分、再加減、最後約分。每天清單的數學「異分母加減」就是做這裡的題目（1 題算 1 題）。</p>
+  </header>
+  <section class="card how" id="home">
+    <h2>怎麼算？</h2>
+    <ol>
+      <li>找兩個分母的<b>最小公倍數</b>當公分母（例：<span class="fr"><span class="n">1</span><span>4</span></span>＋<span class="fr"><span class="n">1</span><span>6</span></span>，4 和 6 的最小公倍數是 12）</li>
+      <li><b>通分</b>：<span class="fr"><span class="n">3</span><span>12</span></span>＋<span class="fr"><span class="n">2</span><span>12</span></span></li>
+      <li><b>分子</b>加減，分母不變：<span class="fr"><span class="n">5</span><span>12</span></span></li>
+      <li>能<b>約分</b>就約分；分子比分母大就化成<b>帶分數</b>。帶分數可以先化成假分數再算。</li>
+    </ol>
+    <p>一輪 10 題：真分數加、減，帶分數加、減。答案要寫成<b>最簡分數</b>（或帶分數、整數）。</p>
+    <div class="row"><button type="button" class="btn primary big" id="go">✏️ 開始一輪 10 題</button></div>
+  </section>
+  <section class="card" id="play" hidden>
+    <div class="prog" id="prog"></div>
+    <div class="qline" id="qline"></div>
+    <div class="ans" id="ans">
+      <button type="button" class="box" data-f="w" data-ph="整數" aria-label="整數部分（沒有就空著）"></button>
+      <div class="afr"><button type="button" class="box" data-f="n" data-ph="分子" aria-label="分子"></button><div class="bar"></div><button type="button" class="box" data-f="d" data-ph="分母" aria-label="分母"></button></div>
+    </div>
+    <div class="keys" id="keys">
+      <button type="button" class="btn" data-k="1">1</button><button type="button" class="btn" data-k="2">2</button><button type="button" class="btn" data-k="3">3</button><button type="button" class="btn" data-k="4">4</button><button type="button" class="btn" data-k="5">5</button>
+      <button type="button" class="btn" data-k="6">6</button><button type="button" class="btn" data-k="7">7</button><button type="button" class="btn" data-k="8">8</button><button type="button" class="btn" data-k="9">9</button><button type="button" class="btn" data-k="0">0</button>
+      <button type="button" class="btn" data-k="bs" aria-label="刪掉一個字">⌫</button><button type="button" class="btn wide" data-k="next">下一格 ➜</button><button type="button" class="btn primary wide" data-k="ok" id="ok">確定 ✓</button>
+    </div>
+    <p class="msg" id="msg"></p>
+    <div id="fb"></div>
+  </section>
+  <section class="card end center" id="end" hidden></section>
+</main>
+<script src="fracadd.js?v=146d4f9620"></script>
+<script>
+(function () {
+'use strict';
+/* 〈異分母分數加減〉頁面（2026-11-09）。出題、判分在 fracadd.js（window.FA）。要登入（requireLogin＋一輪開始 startActivity('math')）。
+   一題一次：第一次送出的答案定對錯（值對但沒約分／沒化成帶分數只提醒，不算）；答錯給算法。每題 KidsCoins.answer(ok,'math')＋KidsDaily.rec('math', ok, 'fracadd')。
+   不送 practice_round（後端白名單沒有這個 item，學習幣規則不動）；不進錯題庫（隨機題，每次都是新題）。 */
+var $ = function (id) { return document.getElementById(id); };
+var R = null, N = 10, F = ['w', 'n', 'd'];
+window.FAPage = { R: function () { return R; } };   // 測試用
+function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
+function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
+function rec(ok) {
+  try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'math'); } catch (e) { }
+  if (window.KidsDaily) KidsDaily.rec('math', ok, 'fracadd');   // 每日清單：數學「異分母加減」
+}
+function frHTML(x) { var f = x.n ? '<span class="fr"><span class="n">' + x.n + '</span><span>' + x.d + '</span></span>' : ''; return x.w ? '<span class="mix"><span class="w">' + x.w + '</span>' + f + '</span>' : f || '0'; }
+function start() {
+  if (!authOK() || !startAct(start)) return;
+  R = { qs: FA.round(N), i: 0, ok: 0 };
+  $('home').hidden = true; $('end').hidden = true; $('play').hidden = false; one();
+}
+function one() {
+  var q = R.qs[R.i]; R.v = { w: '', n: '', d: '' }; R.f = 'n'; R.done = false;
+  $('prog').innerHTML = '<span>第 ' + (R.i + 1) + ' / ' + N + ' 題</span><span class="muted">答對 ' + R.ok + ' 題</span><span class="muted">' + FA.KIND_NAME[q.kind] + '</span>';
+  $('qline').innerHTML = frHTML(q.a) + '<span>' + (q.op === '+' ? '＋' : '－') + '</span>' + frHTML(q.b) + '<span>＝</span><span>？</span>';
+  $('msg').textContent = ''; $('msg').className = 'msg'; $('fb').innerHTML = ''; $('keys').hidden = false; paint();
+}
+function paint() { Array.prototype.forEach.call(document.querySelectorAll('.box'), function (b) { var f = b.getAttribute('data-f'); b.textContent = R.v[f]; b.classList.toggle('on', f === R.f && !R.done); }); }
+function key(k) {
+  if (!R || R.done) return;
+  if (k === 'ok') return submit();
+  if (k === 'next') { R.f = F[(F.indexOf(R.f) + 1) % 3]; return paint(); }
+  if (k === 'bs') R.v[R.f] = R.v[R.f].slice(0, -1); else if (R.v[R.f].length < 3) R.v[R.f] += k;
+  paint();
+}
+function submit() {
+  var q = R.qs[R.i], g = FA.grade(q, R.v), m = $('msg');
+  if (g.st === 'bad' || g.st === 'fix') { m.textContent = g.msg; m.className = 'msg bad'; return; }   // 只提醒，不算對錯
+  var ok = g.st === 'ok'; R.done = true; if (ok) R.ok++; rec(ok); paint();
+  m.textContent = ok ? '✓ 答對了！' : '✗ 差一點！正確答案是 ' + FA.txt(q.ans); m.className = 'msg ' + (ok ? 'good' : 'bad');
+  $('keys').hidden = true;
+  $('fb').innerHTML = (ok ? '' : '<ol class="steps">' + FA.steps(q).map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>') +
+    '<div class="row"><button type="button" class="btn primary big" id="next">' + (R.i + 1 < N ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
+}
+function end() {
+  $('play').hidden = true; var e = $('end'); e.hidden = false;
+  e.innerHTML = '<p class="big">' + (R.ok >= 8 ? '🏆' : '💪') + '</p><p class="score" id="fa-score">' + R.ok + ' / ' + N + '</p><p>' + (R.ok >= 8 ? '很棒！通分、約分都很熟了。' : '再來一輪，會越算越快！') + '</p>' +
+    '<div class="row"><button type="button" class="btn primary big" id="again">再來一輪 ▶</button><button type="button" class="btn" id="back">看算法</button></div>';
+  R = null;
+}
+document.addEventListener('click', function (e) {
+  var t = e.target.closest('button'); if (!t) return;
+  if (t.id === 'go' || t.id === 'again') return start();
+  if (t.id === 'back') { $('end').hidden = true; $('home').hidden = false; return; }
+  if (t.id === 'next') { R.i++; if (R.i >= N) end(); else one(); return; }
+  var f = t.getAttribute('data-f'); if (f && R && !R.done) { R.f = f; return paint(); }
+  var k = t.getAttribute('data-k'); if (k) key(k);
+});
+// 實體鍵盤（電腦）：數字、Backspace、Tab／空白＝下一格、Enter＝確定
+document.addEventListener('keydown', function (e) {
+  if (!R || R.done) { if (e.key === 'Enter' && $('next')) { e.preventDefault(); $('next').click(); } return; }
+  if (/^\d$/.test(e.key)) { e.preventDefault(); key(e.key); }
+  else if (e.key === 'Backspace') { e.preventDefault(); key('bs'); }
+  else if (e.key === 'Tab' || e.key === ' ') { e.preventDefault(); key('next'); }
+  else if (e.key === 'Enter') { e.preventDefault(); key('ok'); }
+});
+})();
+</script>
+<script src="../kids-auth.js?v=42d7c72a13"></script>
+<script src="../kids-coins.js?v=94d7e71619"></script>
+<script src="../syncmerge.js?v=e578a07c2e"></script>
+<script src="../kids-daily.js?v=79c5f7d15c"></script>
+<script src="../syncauto.js?v=d7ed49f73e"></script>
+<script src="../sync.js?v=12631d8738"></script>
+</body>
+</html>

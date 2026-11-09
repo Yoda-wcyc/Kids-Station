@@ -30,6 +30,9 @@
     return choiceIds.slice(0, kc).concat(typedIds.slice(0, kt));
   }
   const isTyped = q => TYPED_TYPES.includes(q && q.type);
+  // 每日清單的英文小分類（kids-daily.js，2026-11-09）：片語＝片語頁的題；句型＝句型頁的題＋課本句子題（重組、中翻英整句、看提示造句、🎤 唸句子；口語考試不算）；其他＝''
+  const dailyKind = q => !q ? '' : q.module === 'phrases' ? 'phrase'
+    : q.module === 'patterns' || (q.module === 'textbook' && !q.oral && /^(reorder|zh2en-type|tb-ask-type|speak)$/.test(q.type)) ? 'sentence' : '';
   const SRC_LABEL = { moe: '教育部基本字彙', moe1200: '教育部 1200 字', moe800: '教育部 800 字（國中進階）', extra: '補充字', textbook: '課本補充字', geptkids: '小學英檢', gept1: '全民英檢初級' };
   const PATTERN_LV = { 1: '簡單', 2: '基本', 3: '進階' };
   const POS = { n: '名詞', v: '動詞', adj: '形容詞', adv: '副詞', num: '數字', pron: '代名詞', prep: '介系詞', conj: '連接詞', art: '冠詞', int: '感嘆詞', aux: '助動詞' };
@@ -703,7 +706,7 @@
     }
   };
 
-  const KE = { Engine, phraseInEx, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, TB_TYPES, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, phraseInEx, wordKey, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, dailyKind, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, TB_TYPES, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

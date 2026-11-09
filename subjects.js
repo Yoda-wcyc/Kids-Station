@@ -17,9 +17,11 @@
       { id: 'short-division-word', title: '短除法：應用題', icon: '🧮', src: 'math/short-division.html?tab=word', hidden: true },
       // 2026-10-21：五上單元三〈倍數與公倍數〉（教學／練習／考試）＋〈乘法快算〉（考卷上算錯最多的乘法）
       { id: 'multiples', title: '倍數與公倍數', desc: '五上單元三：倍數判斷、範圍內的倍數、最小公倍數、四種應用題判斷（不超過／比它多／剛好／最少幾包），考試可選隨機考卷或紙本練習卷第一回、第二回（照原卷配分）', icon: '✖️', src: 'math/multiples.html', dk: 'math:mul', grp: '五上' },
-      { id: 'multiply', title: '乘法快算', desc: '九九、二位數×一位數、二位數×二位數、三位數×一位數：練習有拆解提示和直式格子，挑戰一輪 20 題計時', icon: '⚡', src: 'math/multiply.html', dk: 'math:mx', grp: '五上' },
+      { id: 'multiply', title: '乘法快算', desc: '九九、二位數×一位數、二位數×二位數、三位數×一位數：練習有拆解提示和直式格子，挑戰一輪 20 題計時；每日清單只算二位數×二位數', icon: '⚡', src: 'math/multiply.html', dk: 'math:mx', grp: '五上' },
       // 2026-10-27：五上〈分數比較大小〉（教學／練習／考試）
       { id: 'fraction', title: '分數比較大小', desc: '分數條、數線看懂比大小：同分母、同分子、跟 1 跟一半比、通分、先約分、假分數化帶分數；按 ＞＜＝ 大按鈕，考試一份 100 分', icon: '🍰', src: 'math/fraction.html', dk: 'math:frc', grp: '五上' },
+      // 2026-11-09：異分母分數加減（隨機出題，每日清單數學「異分母加減」算這裡的題；不算單元完成，沒有 dk）
+      { id: 'fracadd', title: '異分母分數加減', desc: '每日清單的數學題：分母 2～12，真分數、帶分數加減，先通分再約分；一輪 10 題，每次都是新題', icon: '➕', src: 'math/fracadd.html', grp: '五上' },
       // 2026-11-03：📝 紙本錯題／類題 30 題（入口在數學錯題庫的紙本區，不列卡片）
       { id: 'paper-mk', title: '紙本錯題', icon: '📝', src: 'math/paper.html?mistakes=1', hidden: true },
       { id: 'paper-30', title: '類題 30 題', icon: '🎯', src: 'math/paper.html?set=30', hidden: true },

@@ -46,6 +46,9 @@
     }
     return out;
   }
+  // 每日清單（2026-11-09 家長定）：兩個數都至少兩位數（含二位數×整十）才算今日數學題數；九九、二位×一位、三位×一位不算
+  function daily(a, b) { return isInt(a) && isInt(b) && a >= 10 && b >= 10; }
+  var DAILY_LV = { d22t: 1, d22: 1 };   // 題型列標「算今日題數」的（應用題看那一題的數字）
   // 錯題庫重做：檢查數字合理
   function valid(a, b) { return isInt(a) && isInt(b) && a >= 1 && b >= 1 && a <= 9999 && b <= 999; }
 
@@ -217,7 +220,7 @@
     return { n: n, ok: ok, acc: n ? Math.round(ok / n * 100) : 0, total: Math.round(tot * 10) / 10, avg: n ? Math.round(tot / n * 10) / 10 : 0 };
   }
 
-  var MX = { LV: LV, LV_NAME: LV_NAME, LV_EG: LV_EG, gen: gen, round: round, valid: valid, split: split, parts: parts, hint: hint, full: full,
+  var MX = { LV: LV, LV_NAME: LV_NAME, LV_EG: LV_EG, gen: gen, round: round, valid: valid, daily: daily, DAILY_LV: DAILY_LV, split: split, parts: parts, hint: hint, full: full,
     vertical: vertical, rowDigits: rowDigits, colSteps: colSteps, addSteps: addSteps, checkRow: checkRow, parseNum: parseNum, summarize: summarize,
     WCTX: WCTX, ctxD: ctxD, distract: distract, validWord: validWord, genWord: genWord, wordText: wordText, wordUnit: wordUnit, wordRound: wordRound };
   if (typeof module !== 'undefined' && module.exports) module.exports = MX;

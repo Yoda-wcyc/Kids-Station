@@ -61,6 +61,11 @@ ok(X.parseNum('８５５') === 855 && X.parseNum(' 1,020 ') === 1020 && X.parseN
 const s = X.summarize([8, 9.5, 12, 6.5], [true, true, false, true]);
 ok(s.acc === 75 && s.total === 36 && s.avg === 9 && s.n === 4 && s.ok === 3, 'summarize: ' + JSON.stringify(s));
 ok(X.valid(15, 57) && !X.valid(0, 3) && !X.valid('15', 3) && !X.valid(15, 1000), 'valid');
+// 每日清單（2026-11-09）：兩個數都至少兩位數才算；九九、二位×一位、三位×一位不算；題型列只有 d22t、d22 標「算」
+ok(X.daily(15, 57) && X.daily(15, 50) && X.daily(99, 99) && !X.daily(8, 4) && !X.daily(78, 3) && !X.daily(345, 6) && !X.daily('15', 57), 'daily: 2-digit × 2-digit only');
+ok(Object.keys(X.DAILY_LV).sort().join() === 'd22,d22t' && X.round('d22', 200, rnd).every(q => X.daily(q.a, q.b)) && X.round('nn', 50, rnd).every(q => !X.daily(q.a, q.b)) && X.round('d21', 50, rnd).every(q => !X.daily(q.a, q.b)), 'daily levels');
+const mh = require('fs').readFileSync(path.join(__dirname, '..', 'math', 'multiply.html'), 'utf8');
+ok(mh.includes("if (window.KidsDaily && X.daily(q.a, q.b)) KidsDaily.rec('math', ok, 'mul')") && !mh.includes("rec('mathx'") && /: 'd22', mode: 'prac'/.test(mh), 'page: only 2×2 recorded as 乘法, default d22');
 
 console.log(`multiply: ${pass} passed, ${fail} failed`);
 if (fail) process.exitCode = 1;

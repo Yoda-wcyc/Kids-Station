@@ -77,7 +77,7 @@ body{background:var(--bg)}
 </main>
 
 <script src="../kids-mistakes.js?v=ec0475b713"></script>
-<script src="multiply.js?v=8f29524857"></script>
+<script src="multiply.js?v=05c1bfe05f"></script>
 <script src="word-level.js?v=0dd1455f2c"></script>
 <script>
 (function () {
@@ -89,13 +89,16 @@ body{background:var(--bg)}
    📕 錯題重練（?mistakes=1 也是）：數學錯題庫裡 type 'multiply' 的題（id 'mx:<a>x<b>'），做完送 practice_round 'math:mistakes'。
    📝 應用題（2026-11-01，題型列最後一顆）：MX.WCTX 生活故事，寫答案（單位顯示在後面），不開直式格子；錯題 id 'mxw:<故事>:<a>x<b>'，p 多帶 c（故事）原題重做；
      一樣送 practice_round 'math:multiply'，但挑戰不送 KidsDone（不算單元完成）。
-   每次作答 KidsCoins.answer(ok,'math')；練習／挑戰一輪結束送 practice_round 'math:multiply'；挑戰結束 KidsDone.record('mx', 題型, {acc, sec})。 */
+   每次作答 KidsCoins.answer(ok,'math')；練習／挑戰一輪結束送 practice_round 'math:multiply'；挑戰結束 KidsDone.record('mx', 題型, {acc, sec})。
+   每日清單（2026-11-09 家長定）：只有兩個數都至少兩位數的題（MX.daily）記進每日紀錄，算清單數學的「乘法」1 題 1 題；九九、二位×一位、三位×一位照樣練、給學習幣，但不算今日題數（題型按鈕上有標）。預設題型 d22。
+     挑戰沒有倒數計時（只算平均秒數，二位×二位 ≤20 秒是單元完成門檻，照舊）。 */
 var $ = function (id) { return document.getElementById(id); };
 var X = window.MX, MK = /[?&]mistakes=1(?:&|$)/.test(location.search);
 var N_PRAC = 10, N_CHAL = 20, UIK = 'kids_mx_ui';
 function ld() { try { return JSON.parse(localStorage.getItem(UIK)) || {}; } catch (e) { return {}; } }
 var LVS = X.LV.concat(['word']);   // 應用題（2026-11-01）：放在題型列最後；不算單元完成（挑戰也不記達標）
-var S = { lv: LVS.indexOf(ld().lv) >= 0 ? ld().lv : 'd21', mode: 'prac', grid: !!ld().grid };
+// 預設二位數×二位數（2026-11-09：每日清單只算兩位×兩位以上）；以前存的是不算題數的題型就回到 d22，還是可以自己點回去練
+var S = { lv: X.DAILY_LV[ld().lv] || ld().lv === 'word' ? ld().lv : 'd22', mode: 'prac', grid: !!ld().grid };
 var R = null;
 window.MXPage = { S: S, R: function () { return R; } };   // 測試用
 function saveUI() { try { localStorage.setItem(UIK, JSON.stringify({ lv: S.lv, grid: S.grid })); } catch (e) { } }
@@ -105,7 +108,7 @@ function coinReport(item, c, n) { try { if (window.KidsCoins && n) KidsCoins.rep
 function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
 function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
 function mkRec(q, ok) {
-  if (window.KidsDaily) KidsDaily.rec('mathx', ok);   // 每日學習紀錄：一題記一次；快算記 x，今日清單 3 題折 1 題
+  if (window.KidsDaily && X.daily(q.a, q.b)) KidsDaily.rec('math', ok, 'mul');   // 每日學習紀錄（2026-11-09）：兩位數×兩位數以上才算，1 題算 1 題（今日清單「乘法」）；九九、二位×一位等不算
   try {
     if (!window.KidsMistakes) return null;
     if (q.c != null) return KidsMistakes.record('math', 'mxw:' + q.c + ':' + q.a + 'x' + q.b, ok, { type: 'multiply', a: q.a, b: q.b, lv: 'word', c: q.c, q: X.wordText(q) });   // 應用題：c＝故事，原題重做
@@ -126,7 +129,7 @@ function now() { return (window.performance && performance.now) ? performance.no
 function msg(t, kind) { var m = $('msg'); m.innerHTML = t || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); }
 
 /* ---------- 題型、分頁 ---------- */
-$('lv').insertAdjacentHTML('beforeend', LVS.map(function (k) { return '<button type="button" class="btn sm" data-lv="' + k + '" aria-pressed="' + (k === S.lv) + '">' + X.LV_NAME[k] + '<small style="opacity:.75">　' + X.LV_EG[k] + '</small></button>'; }).join(''));
+$('lv').insertAdjacentHTML('beforeend', LVS.map(function (k) { return '<button type="button" class="btn sm" data-lv="' + k + '" aria-pressed="' + (k === S.lv) + '">' + X.LV_NAME[k] + '<small style="opacity:.75">　' + X.LV_EG[k] + '</small>' + (X.DAILY_LV[k] ? '' : '<small class="lv-nd" style="display:block;opacity:.75">' + (k === 'word' ? '兩位×兩位的題才算今日題數' : '不算今日題數') + '</small>') + '</button>'; }).join(''));
 $('lv').addEventListener('click', function (e) {
   var b = e.target.closest('[data-lv]'); if (!b) return;
   S.lv = b.getAttribute('data-lv'); saveUI();
@@ -341,8 +344,8 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=94d7e71619"></script>
-<script src="../syncmerge.js?v=bc2c991ea7"></script>
-<script src="../kids-daily.js?v=ccba824243"></script>
+<script src="../syncmerge.js?v=e578a07c2e"></script>
+<script src="../kids-daily.js?v=79c5f7d15c"></script>
 <script src="../completion.js?v=39bc9551b3"></script>
 <script src="../kids-done.js?v=de42d7120a"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>

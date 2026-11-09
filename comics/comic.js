@@ -97,10 +97,23 @@
         <figure class="cm-fig">${A.timeline(ep.timeline.items)}<figcaption>${esc(ep.timeline.cap)}</figcaption></figure>
         <p class="cm-src"><b>資料查證：</b>${ep.sources.map(esc).join('；')}</p></div>`;
     }
-    function quizStart() { quiz.items = ep.quiz.map(q => QK.prep(q)); quiz.i = 0; }
+    function quizStart() { quiz.items = ep.quiz.map(q => QK.prep(q)); quiz.i = 0; quiz.fin = 0; }
+    // 每日清單「歷史 1 話」（2026-11-09）：測驗做完記一話（重看、再測一次也算；結果頁重畫不重複記）；
+    // 本機 kids_comic＝{seen:{話id:時間}, next:下一話沒看過的 id}（首頁按鈕用；漫畫頁不同步，只在這台）
+    function epDone() {
+      if (quiz.fin || !/^v\d+e\d+$/.test(ep.id)) return;
+      quiz.fin = 1;
+      if (window.KidsDaily && KidsDaily.finish) KidsDaily.finish('comic');
+      try {
+        const s = JSON.parse(localStorage.getItem('kids_comic') || '{}') || {}, seen = Object.assign({}, s.seen); seen[ep.id] = Date.now();
+        const all = window.COMIC_CATALOG ? COMIC_CATALOG.vols.flatMap(v => v.eps).filter(e => e.ready) : [], nx = all.find(e => !seen[e.id]);
+        localStorage.setItem('kids_comic', JSON.stringify({ seen, next: nx ? nx.id : '' }));
+      } catch (e) { }
+    }
     function quizHTML() {
       if (!quiz.items.length) quizStart();
       if (quiz.i >= quiz.items.length) {
+        epDone();
         const g = ZR.grade(quiz.items);
         if (opts.onDone) opts.onDone(ep, g, quiz.items);
         const wrong = quiz.items.filter(s => !s.right).map(s => `<li>${esc(s.q.q)}<br><small>✓ ${esc(QK.answerText(s.q))}</small></li>`).join('');
