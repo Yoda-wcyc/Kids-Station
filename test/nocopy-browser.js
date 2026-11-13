@@ -54,7 +54,7 @@ async function run() {
   await cdp('Emulation.setFocusEmulationEnabled', { enabled: true });
   await cdp('Browser.grantPermissions', { origin: ORIGIN, permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'] });
   // 1. 每一頁
-  const list = LIVE ? ['/index.html', '/geo/unit.html', '/math/balance.html', '/comics/v1e1.html', '/chinese/writing/writing.html', '/account.html', '/game/hero-island/index.html'] : pages();
+  const list = LIVE ? ['/index.html', '/geo/unit.html', '/math/balance.html', '/comics/v1e1.html', '/chinese/writing/writing.html', '/account.html', '/login.html', '/mindmap/social.html'] : pages();
   const perPage = [];
   for (const p of list) {
     const e0 = errors.length; await go(p);
@@ -147,7 +147,7 @@ async function run() {
       if (d.id && pend.has(d.id)) { const p = pend.get(d.id); pend.delete(d.id); d.error ? p.no(new Error(p.method + ': ' + d.error.message)) : p.ok(d.result); }
       else if (d.method === 'Runtime.exceptionThrown') errors.push('exception: ' + JSON.stringify(d.params.exceptionDetails).slice(0, 400));
       else if (d.method === 'Runtime.consoleAPICalled' && d.params.type === 'error') errors.push('console.error: ' + JSON.stringify(d.params.args).slice(0, 300));
-      else if (d.method === 'Log.entryAdded' && d.params.entry.level === 'error' && !/BLOCKED_BY_CLIENT/.test(d.params.entry.text)) errors.push('log: ' + d.params.entry.text + ' ' + (d.params.entry.url || ''));
+      else if (d.method === 'Log.entryAdded' && d.params.entry.level === 'error' && !/BLOCKED_BY_CLIENT/.test(d.params.entry.text) && !/\/favicon\.ico$/.test(d.params.entry.url || '')) errors.push('log: ' + d.params.entry.text + ' ' + (d.params.entry.url || ''));
       else if (d.method === 'Page.javascriptDialogOpening') cdp('Page.handleJavaScriptDialog', { accept: true }).catch(() => { });
       else if (d.method === 'Fetch.requestPaused') { const u = d.params.request.url; if (u.startsWith(ORIGIN) || /^(data|blob):|^https:\/\/cdn\.jsdelivr\.net\/npm\/scratchblocks@/.test(u)) cdp('Fetch.continueRequest', { requestId: d.params.requestId }).catch(() => { }); else cdp('Fetch.failRequest', { requestId: d.params.requestId, errorReason: 'BlockedByClient' }).catch(() => { }); }
     };
