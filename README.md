@@ -68,6 +68,7 @@ deploy_copy.py    正本 → 部署夾的複製（含排除規則）
 completion.js     單元完成的唯一判定處（純函式，node test/completion.test.js）
 kids-done.js      單元完成：補存紀錄 kids_done＋每個單元頁頁首橫幅（瀏覽器）
 map.html          🗺️ 課程地圖（首頁、帳號頁、各科卡片頁有入口）
+nocopy.js         全站禁止複製／剪下／貼上（2026-11-13 家長指令）：每一頁 <head> 都要載（新頁也要；smoke 會擋）；例外只給 data-copy-ok／data-paste-ok（分享網址、同步碼、天平題目代碼）；瀏覽器實測 node test/nocopy-browser.js
 ```
 
 紀錄存在瀏覽器 localStorage：`ke_progress`、`ke_mistakes`、`ke_settings`、`ke_log`、`ke_learned`、`ke_correct`、`ke_agg`（壓縮過的舊紀錄）；配對資訊 `ke_sync`（只在這台）。家長頁可以匯出／匯入 JSON 備份（含學會紀錄）。

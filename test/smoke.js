@@ -1334,6 +1334,18 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
 // 五下、六上、六下社會／自然資料檢查（2026-11-02）：作者的檢查也跑一遍
 { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'math-grade.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/math-grade.test.js passes (數學五下～六下：每題答案驗算): ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
 ['g5b-social.test.js', 'g5b-science.test.js', 'g6a-social.test.js', 'g6a-science.test.js', 'g6b-social.test.js', 'g6b-science.test.js'].forEach(f => { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'mindmap', 'test', f)], { encoding: 'utf8' }); ok(r.status === 0, 'mindmap/test/' + f + ' passes: ' + (r.stdout || '').slice(-1500) + (r.stderr || '').slice(-1500)); });
+// 2026-11-13 全站禁止複製貼上：每一頁（跟 deploy_copy 部署的同一批）都在 <head> 載入根目錄的 nocopy.js
+{ const pages = [], walk = d => fs.readdirSync(d, { withFileTypes: true }).forEach(e => {
+    const f = path.join(d, e.name), rel = path.relative(root, f).split(path.sep);
+    if (rel[0] === 'game' && rel[1] === 'scratch-td' && rel.length >= 3 && rel[2] !== 'web') return;   // 只部署 web\（講義正本離線用）
+    if (e.isDirectory()) { if (!/^(\.git|node_modules|__pycache__|考卷|scratchpad|test|_demo)$/.test(e.name) && rel.join('/') !== 'game/hero-world/src') walk(f); }
+    else if (/\.html$/i.test(e.name)) pages.push(f);
+  }); walk(root);
+  const bad = pages.filter(f => { const h = fs.readFileSync(f, 'utf8'), m = h.slice(0, h.indexOf('</head>')).match(/<script src="((?:\.\.\/)*)nocopy\.js(?:\?v=\w+)?"><\/script>/); return !m || path.resolve(path.dirname(f), m[1] + 'nocopy.js') !== path.join(root, 'nocopy.js'); });
+  ok(pages.length >= 80 && !bad.length, `nocopy.js loaded in <head> of every page (${pages.length}): missing/wrong path ` + bad.map(f => path.relative(root, f)).join(', '));
+  const nc = fs.readFileSync(path.join(root, 'nocopy.js'), 'utf8');
+  ok(['copy', 'cut', 'paste', 'drop', 'beforeinput', 'contextmenu', 'keydown'].every(t => nc.includes(`'${t}'`)) && /input,textarea,\[contenteditable\]/.test(nc), 'nocopy.js blocks copy/cut/paste/drop/beforeinput/contextmenu/keys, inputs stay typable');
+}
 console.log(`bank build: engine ${msEngine.toFixed(0)} ms, all ${allQs.length} questions ${msBank.toFixed(0)} ms`);
 console.log(`OK  ${checks} checks | words ${W.length} (lv ${lvCount.join('/')}/${W800.length}) | phrases ${PH.length} (${[1, 2, 3].map(l => PH.filter(p => p.lv === l).length).join('/')}) | roots ${R.length} | grammar ${G.length} (${G.reduce((s, g) => s + g.q.length, 0)} q) | patterns ${P.length} | questions ${E.meta.length}`);
 console.log('pool per type:', JSON.stringify(counts));

@@ -223,7 +223,7 @@
       const done = () => say('已複製連結 ✓ 可以貼給朋友了');
       const legacy = () => {
         const ta = document.createElement('textarea'); let ok = false;
-        ta.value = SHARE.url; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+        ta.value = SHARE.url; ta.setAttribute('readonly', ''); ta.setAttribute('data-copy-ok', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
         document.body.appendChild(ta); ta.select();
         try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
         ta.remove();
@@ -763,7 +763,7 @@
     return `<section class="card sync-card"><h2>☁️ 裝置同步（iPad ↔ 電腦）</h2>${code
       ? `<p>這台已開啟同步，同步碼：<b class="sync-code">${esc(code)}</b></p><div class="row wrap"><button class="btn" id="scopy">📋 複製同步碼</button><button class="btn" id="sshare">🔗 傳送同步連結</button><button class="btn primary" id="snow">🔄 立即同步</button><button class="btn danger" id="soff">取消同步</button></div>`
       : `<p>在第一台按「產生同步碼」，再到另一台輸入同一組同步碼（或打開同步連結），兩台的紀錄就會自動合在一起。</p><div class="row wrap"><button class="btn primary" id="sgen">產生同步碼</button></div>
-        <div class="row wrap"><input id="scode" class="code-in" placeholder="輸入同步碼 ABCD-EFGH" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="輸入同步碼"><button class="btn" id="spair">連線</button></div>`}
+        <div class="row wrap"><input id="scode" class="code-in" data-paste-ok placeholder="輸入同步碼 ABCD-EFGH" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="輸入同步碼"><button class="btn" id="spair">連線</button></div>`}
       <p class="sync-status">${esc(P.statusText())}</p>
       <p class="muted">會同步：作答紀錄、學會紀錄、錯題庫；語音速度等設定每台各自保存。⚠️ 拿到同步碼的人都看得到練習紀錄（只有練習資料，沒有姓名等個人資料），請不要公開分享。</p></section>`;
   }

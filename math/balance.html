@@ -363,6 +363,7 @@ footer .share-row{margin:14px 0 0}
   *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0s!important;scroll-behavior:auto!important}
 }
 </style>
+<script src="../nocopy.js?v=3339ad6e06"></script>
 </head>
 <body>
 <main class="wrap">
@@ -374,7 +375,7 @@ footer .share-row{margin:14px 0 0}
     <div class="share-row">
       <button type="button" class="btn share" id="btn-share-top" data-share="top">🔗 分享這個遊戲</button>
       <p class="share-msg" id="share-msg-top" role="status" aria-live="polite"></p>
-      <input class="share-url" id="share-url-top" type="text" readonly hidden aria-label="遊戲網址">
+      <input class="share-url" id="share-url-top" type="text" readonly hidden data-copy-ok aria-label="遊戲網址">
     </div>
   </header>
 
@@ -497,10 +498,10 @@ footer .share-row{margin:14px 0 0}
     <div class="box">
       <h3>把題目帶到別台電腦</h3>
       <label for="code-out" class="h2-sub">題目代碼（複製起來，貼到別台電腦）</label>
-      <textarea id="code-out" readonly rows="2"></textarea>
+      <textarea id="code-out" readonly rows="2" data-copy-ok></textarea>
       <div class="row" style="margin-top:8px"><button type="button" class="btn small" id="btn-copy">複製題目代碼</button></div>
       <label for="code-in" class="h2-sub" style="display:block;margin-top:14px">貼上題目代碼（會加在清單後面）</label>
-      <textarea id="code-in" rows="2" placeholder="例如 (x+3)-2=10; x+5=12"></textarea>
+      <textarea id="code-in" rows="2" data-paste-ok placeholder="例如 (x+3)-2=10; x+5=12"></textarea>
       <div class="row" style="margin-top:8px"><button type="button" class="btn small" id="btn-import">匯入</button></div>
       <p class="msg" id="code-msg" role="status" aria-live="polite"></p>
     </div>
@@ -575,7 +576,7 @@ footer .share-row{margin:14px 0 0}
     <div class="share-row">
       <button type="button" class="btn share" id="btn-share-bottom" data-share="bottom">🔗 分享這個遊戲</button>
       <p class="share-msg" id="share-msg-bottom" role="status" aria-live="polite"></p>
-      <input class="share-url" id="share-url-bottom" type="text" readonly hidden aria-label="遊戲網址">
+      <input class="share-url" id="share-url-bottom" type="text" readonly hidden data-copy-ok aria-label="遊戲網址">
     </div>
   </footer>
 </main>
@@ -1692,7 +1693,7 @@ function shareCopy(pos, why, reason){
   var done = '已複製連結 ✓ 可以貼給朋友了' + (SHARE_WHY[why] || '');
   function legacy(){
     var ok = false, ta = document.createElement('textarea');
-    ta.value = SHARE.url; ta.setAttribute('readonly', '');
+    ta.value = SHARE.url; ta.setAttribute('readonly', ''); ta.setAttribute('data-copy-ok', '');
     ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none';
     document.body.appendChild(ta); ta.select();
     try { ok = document.execCommand('copy'); } catch (e){ ok = false; }
