@@ -11,7 +11,7 @@
       opts: ["He is running to catch the bus.", "He is getting off the bus slowly.", "He is waiting at the bus stop with an umbrella.", "He is driving the bus down the street."], a: 0 },
     { id: 'i-L1-03-04', pic: { e: '🚌🏃🏻‍♂️ 👧🏻☂️🚏' }, q: "What can we say about the girl?",
       opts: ["She is running after the boy.", "She is buying a ticket from the driver.", "She is holding an umbrella at the bus stop.", "She is looking for her lost umbrella."], a: 2 },
-    { id: 'i-L1-03-05', pic: { e: '📄🐈🔍', t: 'Lost Cat · White with a black tail · Last seen near Park Road · Call 0912-345-678' }, q: "What does the poster say about the cat?",
+    { id: 'i-L1-03-05', pic: { e: '📄🐈🔍', t: 'Lost Cat · Orange with a white tail · Last seen near Park Road · Call 0912-345-678' }, q: "What does the poster say about the cat?",
       opts: ["It is all black except for its tail.", "Someone saw it near Park Road.", "Its owner will give money to the finder.", "It was found sleeping in the park."], a: 1 }
   ]
 });

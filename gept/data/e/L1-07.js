@@ -3,7 +3,7 @@
   id: 'e-L1-07',
   title: '看圖辨義 7',
   items: [
-    { id: 'e-L1-07-01', pic: { e: '👦🏻📚', t: 'Library' }, q: 'Where is the boy?', opts: ['He is in the gym.', 'He is in the library.', 'He is in the music room.'], a: 1 },
+    { id: 'e-L1-07-01', pic: { e: '👦🏻📚' }, q: 'Where is the boy?', opts: ['He is in the gym.', 'He is in the library.', 'He is in the music room.'], a: 1 },
     { id: 'e-L1-07-02', pic: { e: '📕📅', t: 'Return by May 20' }, q: 'When should the girl return the book?', opts: ['She should return it by May 12.', 'She should return it by March 20.', 'She should return it by May 20.'], a: 2 },
     { id: 'e-L1-07-03', pic: { e: '👩🏻🤫👧🏻👦🏻' }, q: 'What is the woman telling the children?', opts: ['She is telling them to be quiet.', 'She is telling them to run fast.', 'She is telling them to sing loudly.'], a: 0 },
     { id: 'e-L1-07-04', pic: { e: '👧🏻💻' }, q: 'What is the girl doing?', opts: ['She is watching TV.', 'She is playing the piano.', 'She is using a computer.'], a: 2 },

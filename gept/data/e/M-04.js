@@ -5,7 +5,7 @@
   parts: {
     L1: { items: [
       { id: 'e-M-04-L1-01', pic: { e: '👦🏻🎸' }, q: 'What is the boy doing?', opts: ['He is playing the piano.', 'He is playing the guitar.', 'He is singing a song.'], a: 1 },
-      { id: 'e-M-04-L1-02', pic: { e: '📅', t: 'Saturday, June 6' }, q: 'What day is it today?', opts: ['It is Sunday.', 'It is Thursday.', 'It is Saturday.'], a: 2 },
+      { id: 'e-M-04-L1-02', pic: { e: '📅', t: 'Yesterday was Friday.' }, q: 'What day is it today?', opts: ['It is Sunday.', 'It is Thursday.', 'It is Saturday.'], a: 2 },
       { id: 'e-M-04-L1-03', pic: { e: '👵🏻💧🪴' }, q: 'What is the woman doing?', opts: ['She is watering the plants.', 'She is washing the dishes.', 'She is drinking water.'], a: 0 },
       { id: 'e-M-04-L1-04', pic: { e: '❄️👦🏻🧥🧣🧤' }, q: 'What is the boy wearing?', opts: ['He is wearing shorts.', 'He is wearing a T-shirt.', 'He is wearing a coat and gloves.'], a: 2 },
       { id: 'e-M-04-L1-05', pic: { e: '🚌🚏', t: 'Bus 18  8:20' }, q: 'When does Bus 18 come?', opts: ['It comes at eight twelve.', 'It comes at eight twenty.', 'It comes at two eighteen.'], a: 1 }

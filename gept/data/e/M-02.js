@@ -6,7 +6,7 @@
   parts: {
     L1: { items: [
       { id: 'e-M-02-L1-01', pic: { e: '👦🏻🪥🦷🪞' }, q: 'What is the boy doing?', opts: ['He is brushing his teeth.', 'He is washing his hands.', 'He is taking a bath.'], a: 0 },
-      { id: 'e-M-02-L1-02', pic: { e: '⏰', t: '6:45' }, q: 'What time is it?', opts: ['It is seven forty-five.', 'It is six fifty-four.', 'It is six forty-five.'], a: 2 },
+      { id: 'e-M-02-L1-02', pic: { e: '📱', t: '6:45' }, q: 'What time is it?', opts: ['It is seven forty-five.', 'It is six fifty-four.', 'It is six forty-five.'], a: 2 },
       { id: 'e-M-02-L1-03', pic: { e: '👩🏻‍🍳👧🏻🍪🍪' }, q: 'What are they making?', opts: ['They are making a pizza.', 'They are making cookies.', 'They are making noodles.'], a: 1 },
       { id: 'e-M-02-L1-04', pic: { e: '🏖️☀️👨🏻👦🏻🏐' }, q: 'Where are they?', opts: ['They are in the mountains.', 'They are at the library.', 'They are at the beach.'], a: 2 },
       { id: 'e-M-02-L1-05', pic: { e: '🛒🥚🥛🍞', t: 'NT$95' }, q: 'How much are the eggs, milk, and bread?', opts: ['They are ninety-five dollars.', 'They are fifty-nine dollars.', 'They are nine dollars.'], a: 0 }
