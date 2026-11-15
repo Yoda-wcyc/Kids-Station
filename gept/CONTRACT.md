@@ -7,8 +7,8 @@ gept/
   gept-core.js       規格常數（PARTS／LIM）＋檢查規則＋計分（純函式，頁面與 Node 共用）
   gept-tts.js        語音（speechSynthesis en-US，男女聲）
   gept.js、gept.css  畫面（首頁、題型練習、模擬考、寫作口說）
-  index.html  practice.html  mock.html  task.html
-  vocab/             檢查用詞表（教育部 2000、CEFR-J、Octanove C1、專有名詞）
+  index.html  practice.html  mock.html  task.html  words.html（中高級單字）
+  vocab/             檢查用詞表（教育部 2000、初級補充字 e-extra、CEFR-J、Octanove C1、專有名詞）
   data/catalog.js    題目清單（工具產生，不要手改）
   data/<級>/<部分>-<nn>.js   一檔一組 ← 作者只寫這裡
   tools/check.js     檢查工具
@@ -92,7 +92,7 @@ gept/
 
 ## 4. 內容規則
 
-1. **用字**：只用該級詞表（SPEC §6）＋規則變化形＋允許的專有名詞／數字／時間。初級**零表外字**；中級每組 `extra` ≤ 6；高級 ≤ 3%。檢查工具不認的字＝換一個字，不要硬加 `extra`。
+1. **用字**：只用該級詞表（SPEC §6；初級＝教育部 2000＋`vocab/e-extra.js` 初級補充字）＋規則變化形＋允許的專有名詞／數字／時間。初級**零表外字**；中級每組 `extra` ≤ 6；高級 ≤ 3%。檢查工具不認的字＝換一個字，不要硬加 `extra`。
 2. **長度**：照 `gept-core.js` `LIM`（SPEC §5）。初級一句 ≤ 20 字、大部分 8～15 字。
 3. **選項**：數量照官方；只能有一個正解；干擾選項要「看起來可能、但有明確理由錯」（同音、相關字、時態、聽到的字但意思不對），不要出搞笑或明顯無關的選項；選項長度相近，正解不要老是最長的。
 4. **答案分布**：每組每個字母都要當過答案、單一字母不超過平均 1.6 倍＋1、不能連 4 題同一個（檢查工具會擋）。
@@ -127,4 +127,6 @@ node test/gept.test.js               # 單元測試＋全部題目檢查（網�
 - `practice.html?set=e-L1-03`：一組題型練習（官方作答方式；作答後看文字稿與解答）。`practice.html?mistakes=1&lv=e`：錯題重練。
 - `mock.html?set=e-M-01`：完整初試，聽力照官方次數自動播、不能重播，閱讀計時；交卷後模擬換算 120 分制、判斷通過。
 - `task.html?set=e-W2-01`：寫作、口說（題目＋作答框或計時＋範文＋家長評分）。
+- 一組題型練習（聽讀）或一份模擬考做完送學習幣「一輪」`practice_round` `english:gept`（後端 kids-2026-11-16-a 起白名單有）。`words.html?lv=i|a`＝中高級單字（聽發音＋聽寫）。
+- 撞題：`check.js` 全站檢查會比對同級不同組的每一題／每一篇（同一句 ≥ 7 字、或 5-gram 重疊 ≥ 50%）＝錯誤；改練習組那一方。
 - 紀錄：每題 `KidsCoins.answer(ok,'english')`、`KidsDaily.rec('english', ok)`；聽讀答錯進錯題庫 `kids_mistakes.gept`（id＝題目 id，p＝{u:級, pt:部分, s:題目短句}，連對 3 次畢業，未畢業最多 100 題）；成績存本機 `kids_gept`（不同步）。

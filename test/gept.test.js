@@ -23,6 +23,10 @@ const inL = (w, lv) => C.tokens(w).every(t => C.stems(t.k, lv).some(s => lex[lv]
 ok(Object.keys(lex.e).length > 1900 && Object.keys(lex.i).length > Object.keys(lex.e).length && Object.keys(lex.a).length > Object.keys(lex.i).length, 'lexicons grow e < i < a');
 ok(['went', 'children', 'stopped', 'running', 'bigger', 'happier', 'carries', 'knives', "didn't", "I'm", "Tom's", 'better', 'babysitter', 'slowly', 'cannot', 'fourth', 'oh'].every(w => inL(w, 'e') || /^[A-Z]/.test(w)), 'e: irregular / regular forms, contractions, -ly, cannot, ordinals pass');
 ok(!inL('grandparents', 'e') && !inL('announcement', 'e') && inL('community', 'a') && !inL('community', 'i'), 'e blocks off-list words; i (B1) blocks community, a (B2) allows it');
+ok(['hometown', 'photographer', 'online', 'prefer', 'tour'].every(w => inL(w, 'e')) && !inL('passport', 'e') && !inL('election', 'e') && V.eextra.length <= 150, 'e: 初級補充字 (e-extra) allowed; passport (LTTC 中級), election not');
+ok(!C.IRR.data && inL('data', 'a') && C.stems('data', 'a').indexOf('datum') < 0, 'data is a normal word (CEFR-J B2), not the plural of datum');
+const sq = (ans, v) => C.gradeQ({ q: { ans } }, v);
+ok(sq(['2/3', 'two thirds'], 'Two-Thirds') && sq(['2/3'], '2 / 3') && sq(['the hospital'], 'Hospital.') && sq(['hospital'], 'a hospital') && !sq(['hospital'], 'school'), 'short answers: case, punctuation, hyphen, leading article ignored');
 ok(C.tokens('at 7:30 a.m. in the 1990s, NT$500, Room B').map(t => t.k).join(' ') === 'at am in the nt room', 'tokens skip numbers, decades, single letters');
 // ---- 檢查工具會擋的錯 ----
 const base = { id: 'e-L2-99', items: Array.from({ length: 10 }, (_, i) => ({ id: 'e-L2-99-' + String(i + 1).padStart(2, '0'), spk: 'F', say: 'Where is your bag?', opts: ['It is here.', 'Yes, I am.', 'At six.'], a: i % 3 })) };
@@ -35,6 +39,10 @@ bad(s => { s.items[2].id = 'e-L2-99-07'; }, /id 要是 e-L2-99-03/, 'id order bl
 bad(s => { s.items.pop(); }, /要 10 題/, 'item count blocked');
 bad(s => { s.extra = ['grandparents']; }, /初級不可以用 extra/, 'extra not allowed at elementary');
 bad(s => { s.items[3].say = 'I think that my best friend and I will go to the big park near the school after class today.'; }, /太長/, 'sentence length limit');
+// 撞題偵測
+const mk = (id, s) => { const items = [{ id: id + '-01', s, opts: ['a', 'b', 'c', 'd'], a: 0 }]; return /-M-/.test(id) ? { id, parts: { R1: { items: items.map(x => Object.assign({}, x, { id: id + '-R1-01' })) } } } : { id, items }; };
+ok(CK.dups([mk('e-R1-98', 'You look ___. Did you sleep well last night?'), mk('e-M-98', 'You look ___. Did you sleep well last night?')]).length === 1, 'dups: same sentence across practice / mock flagged');
+ok(CK.dups([mk('e-R1-98', 'My little sister is afraid of big dogs at the park.'), mk('e-R1-97', 'We went to the zoo and saw a baby elephant.')]).length === 0 && CK.dups([mk('e-R1-98', 'Ben is ___ because his dog is sick today.'), mk('i-R1-98', 'Ben is ___ because his dog is sick today.')]).length === 0, 'dups: different sentences / different levels not flagged');
 // ---- 全部題目 ----
 const r = CK.run([]);
 ok(!r.errors.length, 'gept/tools/check.js: every set passes (' + r.sets.length + ' sets)\n  ' + r.errors.slice(0, 8).join('\n  '));
@@ -58,10 +66,12 @@ ok(KMc.liveList(capB).length === 100 && capB['e-L2-01-0'].d === 1, 'cap: the 101
 // ---- 頁面接線 ----
 const gj = read('gept/gept.js');
 ok(gj.includes("KidsCoins.answer(!!ok, 'english')") && gj.includes("KidsDaily.rec('english', !!ok)") && gj.includes("KidsMistakes.record('gept', Q.id, !!ok, G.mkP(Q))") && gj.includes("KidsDaily.rec('english', null)"), 'gept.js records coins (english), daily (english total only), mistakes; open tasks count as null');
-ok(!/practice_round/.test(gj.replace(/\/\*[\s\S]*?\*\//g, '')) && !/KidsDaily\.rec\('english', [^)]*, '/.test(gj), 'no new practice_round item; no sentence/phrase sub-goal kind');
-['index', 'practice', 'mock', 'task'].forEach(p => {
+const gjc = gj.replace(/\/\*[\s\S]*?\*\//g, '');
+ok((gjc.match(/practice_round/g) || []).length === 1 && gjc.includes("item: 'english:gept'") && (gjc.match(/coinRound\(/g) || []).length === 3 && !/KidsDaily\.rec\('english', [^)]*, '/.test(gj), 'practice_round only english:gept (one set / one mock); no sentence/phrase sub-goal kind');
+ok(/MODES = \[[^\]]*'gept'/.test(read('kids-coins.js')), 'kids-coins MODES allows english:gept');
+['index', 'practice', 'mock', 'task', 'words'].forEach(p => {
   const h = read('gept/' + p + '.html'), at = s => h.search(new RegExp(s.replace(/[.]/g, '\\.') + '(\\?v=[0-9a-f]+)?"'));
-  ok(at('../nocopy.js') > 0 && at('../nocopy.js') < h.indexOf('</head>') && at('../kids-mistakes.js') > 0 && at('gept-core.js') < at('gept.js') && at('data/catalog.js') < at('gept.js') && at('../syncmerge.js') < at('../kids-daily.js') && at('../sync.js') > 0, p + '.html loads nocopy (head), mistakes, core → catalog → page, syncmerge → daily, sync');
+  ok(at('../nocopy.js') > 0 && at('../nocopy.js') < h.indexOf('</head>') && (p === 'words' || at('../kids-mistakes.js') > 0) && at('gept-core.js') < at('gept.js') && (p === 'words' ? at('vocab/cefrj.js') < at('gept.js') && at('vocab/e-extra.js') > 0 : at('data/catalog.js') < at('gept.js')) && at('../syncmerge.js') < at('../kids-daily.js') && at('../sync.js') > 0, p + '.html loads nocopy (head), mistakes, core → catalog → page, syncmerge → daily, sync');
 });
 ok(/id="tile-gept" href="gept\/index\.html"/.test(read('app.js')) && read('app.js').includes('pWords(sub2)'), 'English page has the 全民英檢 tile; #learn/words/<src> opens a source');
 ok(['gept/SPEC.md', 'gept/CONTRACT.md'].every(f => fs.existsSync(path.join(root, f))) && /未確認/.test(read('gept/SPEC.md')) && /https:\/\/www\.gept\.org\.tw/.test(read('gept/SPEC.md')), 'SPEC.md (with sources and 未確認 items) and CONTRACT.md exist');

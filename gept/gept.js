@@ -4,7 +4,7 @@
    - 每題（聽、讀自動判分）KidsCoins.answer(ok,'english')＋KidsDaily.rec('english', ok)（只算英文總數，不算句型、片語子目標）；
      答錯進錯題庫 KidsMistakes.record('gept', 題目id, ok, {u:級, pt:部分, s:短句})，在錯題庫裡連對 3 次畢業（kids-mistakes.js 未畢業最多 100 題）。
    - 寫作、口說（不自動給分）：每完成一題 KidsDaily.rec('english', null)＋KidsCoins.activity('english')。
-   - 不送 practice_round（學習幣後端白名單沒有 gept 類別；要加得先改後端）。
+   - 一組題型練習（聽、讀）或一份模擬考做完：送 practice_round 'english:gept'（correct／total＝自動判分題；錯題練習不送）。後端白名單 kids-2026-11-16-a 加的。
    - 成績存本機 kids_gept＝{best:{組id:{p,c,n,t}}, mock:[{id,t,lc,ln,rc,rn,L,R,pass}], task:{組id:{t,sc,b}}}（不同步）。 */
 (function (W) {
   'use strict';
@@ -33,6 +33,7 @@
     if (W.KidsDaily) KidsDaily.rec('english', !!ok);
     try { return W.KidsMistakes ? KidsMistakes.record('gept', Q.id, !!ok, G.mkP(Q)) : null; } catch (e) { return null; }
   }
+  function coinRound(c, n) { try { if (W.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: 'english:gept', correct: c, total: n }); } catch (e) { } }
   function recOpen() { try { if (W.KidsCoins) KidsCoins.activity('english'); } catch (e) { } if (W.KidsDaily) KidsDaily.rec('english', null); }
 
   // ---------- 載入題目 ----------
@@ -162,7 +163,8 @@
       // 單字
       h += '<section class="card"><h2>🔤 單字</h2>' + (lv === 'e' ? '<p>初級的出題範圍＝教育部國中小基本 2000 字（1,200 基本字＋800 國中進階字）。用英文區的單字卡練（可以篩選來源）：</p><div class="gp-sets">' +
         '<a class="btn" href="../index.html#learn/words/moe1200">教育部 1200 字</a><a class="btn" href="../index.html#learn/words/moe800">教育部 800 字（國中進階）</a><a class="btn" href="../index.html#learn/words/gept1">全民英檢初級補充字</a></div>' :
-        '<p class="gp-note">' + L.n + '的單字範圍比教育部 2000 字大很多（' + (lv === 'i' ? '約 4,600 字' : '約 7,900 字') + '）；單字練習之後再做，現在先用題目裡的生字。</p>') + '</section>';
+        '<p>' + L.n + '的單字範圍＝教育部 2000 字＋' + (lv === 'i' ? 'CEFR-J A1～B1（約 4,600 字）' : 'CEFR-J A1～B2＋Octanove C1（約 7,900 字）') + '。教育部 2000 字用英文區單字卡（有中文）；再往上的字在這裡聽發音、練聽寫：</p><div class="gp-sets">' +
+        '<a class="btn" href="../index.html#learn/words/moe1200">教育部 1200 字</a><a class="btn" href="../index.html#learn/words/moe800">教育部 800 字（國中進階）</a>' + (lv === 'a' ? '<a class="btn" href="words.html?lv=i">中級單字</a>' : '') + '<a class="btn primary" id="gp-wlink" href="words.html?lv=' + lv + '">' + L.n + '單字</a></div>') + '</section>';
       // 錯題、紀錄
       var mk = []; try { mk = W.KidsMistakes ? KidsMistakes.list('gept', lv) : []; } catch (e) { }
       h += '<section class="card"><h2>📕 ' + L.n + '錯題（' + mk.length + ' 題）</h2>' + (mk.length ? '<p class="gp-note">聽力、閱讀答錯的題會收進來；同一題連續答對 3 次就畢業 🎓</p><ul class="gp-mk">' + mk.slice(0, 10).map(function (e) { return '<li><span class="gp-tag">' + esc((P[e.p.pt] || {}).n0 || e.p.pt) + '</span> <span class="en">' + esc(e.p.s) + '</span>' + (e.c ? '（已連對 ' + e.c + ' 次）' : '') + '</li>'; }).join('') + '</ul>' +
@@ -223,7 +225,7 @@
     }
     function end() {
       TTS.stop();
-      if (R.setId) saveBest(R.setId, R.ok, R.n);
+      if (R.setId) { saveBest(R.setId, R.ok, R.n); coinRound(R.ok, R.n); }
       var p = R.n ? Math.round(R.ok / R.n * 100) : 0;
       root.innerHTML = head(esc(R.title), R.back) + '<section class="card center"><p class="gp-big">' + (p >= 80 ? '🏆' : '💪') + '</p><p class="gp-big" id="gp-res">' + R.ok + ' / ' + R.n + '</p>' +
         (MK ? '<p>' + (R.grad ? '🎓 有 ' + R.grad + ' 題錯題畢業了！' : '同一題連續答對 3 次就會畢業喔！') + '</p>' : '<p>' + (p >= 80 ? '很棒！' : '再練一次會更好！') + (R.wrong.length ? '答錯的題收進 📕 錯題了。' : '') + '</p>') +
@@ -332,7 +334,7 @@
       var all = G.questions(R.set).filter(G.auto), lq = all.filter(function (Q) { return M.L.indexOf(Q.part) >= 0; }), rq = all.filter(function (Q) { return M.L.indexOf(Q.part) < 0; });
       var res = {}; all.forEach(function (Q) { res[Q.id] = G.gradeQ(Q, R.ans[Q.id]); rec(Q, res[Q.id]); });
       var lc = lq.filter(function (Q) { return res[Q.id]; }).length, rc = rq.filter(function (Q) { return res[Q.id]; }).length, Ls = G.scale(lc, lq.length), Rs = G.scale(rc, rq.length), pass = G.passLR(lv, Ls, Rs), L = G.LV[lv];
-      saveMock({ id: R.set.id, t: Date.now(), lc: lc, ln: lq.length, rc: rc, rn: rq.length, L: Ls, R: Rs, pass: pass });
+      saveMock({ id: R.set.id, t: Date.now(), lc: lc, ln: lq.length, rc: rc, rn: rq.length, L: Ls, R: Rs, pass: pass }); coinRound(lc + rc, all.length);
       var parts = M.L.concat.apply(M.L, M.R.map(function (r) { return r.parts; }));
       var rev = parts.map(function (p) {
         var qs = all.filter(function (Q) { return Q.part === p; }), c = qs.filter(function (Q) { return res[Q.id]; }).length, isL = M.L.indexOf(p) >= 0;
@@ -498,5 +500,84 @@
     }
   }
 
-  W.GeptPage = { home: home, practice: practice, mock: mock, task: task, _: { screens: screens, screenHTML: screenHTML, ld: ld } };
+  // =====================================================================
+  // 中級、高級單字 words.html?lv=i|a（初級用英文區單字卡：#learn/words/moe1200、moe800、gept1）
+  // 詞表只有英文（CEFR-J、Octanove 沒有中文、詞性），所以這頁做「點字聽發音＋聽寫拼字」；只列教育部 2000 字＋初級補充字以外的字。
+  // =====================================================================
+  function wordList(lv) {
+    var V = W.GEPT_VOCAB || {}, cj = V.cefrj || {}, base = G.lexOf('e', V), seen = {}, out = [];
+    var lvls = lv === 'a' ? ['B2', 'C1'] : ['A1', 'A2', 'B1'];
+    if (lv === 'a') { ['A1', 'A2', 'B1'].forEach(function (k) { (cj[k] || []).forEach(function (w) { seen[w.toLowerCase()] = 1; }); }); }   // 高級頁不重列中級的字
+    lvls.forEach(function (k) {
+      (k === 'C1' ? V.c1 || [] : cj[k] || []).forEach(function (raw) {
+        var w = String(raw).split('/')[0].trim(), key = String(raw).toLowerCase();
+        if (!/^[A-Za-z]/.test(w) || seen[key]) return; seen[key] = 1;
+        if (G.tokens(w).every(function (t) { return G.stems(t.k, 'e').some(function (s) { return base[s]; }); })) return;   // 初級已有
+        out.push({ w: w, c: k });
+      });
+    });
+    return out;
+  }
+  function words() {
+    var root = $('gp'), lv = arg('lv') === 'a' ? 'a' : 'i', L = G.LV[lv], all = wordList(lv), lvls = lv === 'a' ? ['B2', 'C1'] : ['A1', 'A2', 'B1'];
+    var F = { c: '', q: '', page: 0 }, PAGE = 80, Z = null;
+    W.GeptWords = { all: function () { return all; }, Z: function () { return Z; } };   // 測試用
+    function pick() { var q = F.q.trim().toLowerCase(); return all.filter(function (x) { return (!F.c || x.c === F.c) && (!q || x.w.toLowerCase().indexOf(q) >= 0); }); }
+    function say(w) { TTS.stop(); rateOf(lv); TTS.speak(w, 'N'); }
+    function draw() {
+      var list = pick(), pages = Math.max(1, Math.ceil(list.length / PAGE)); F.page = Math.min(F.page, pages - 1);
+      var show = list.slice(F.page * PAGE, F.page * PAGE + PAGE);
+      $('gp-wn').textContent = '這裡有 ' + list.length + ' 個字' + (pages > 1 ? '（第 ' + (F.page + 1) + '／' + pages + ' 頁）' : '') + '，點字就會唸';
+      $('gp-wl').innerHTML = show.map(function (x) { return '<button type="button" class="btn gp-w en" data-say="' + esc(x.w) + '">' + esc(x.w) + '<small>' + x.c + '</small></button>'; }).join('');
+      $('gp-wp').innerHTML = pages > 1 ? '<button type="button" class="btn" data-pg="-1"' + (F.page ? '' : ' disabled') + '>⬅️ 上一頁</button><span>' + (F.page + 1) + ' / ' + pages + '</span><button type="button" class="btn" data-pg="1"' + (F.page < pages - 1 ? '' : ' disabled') + '>下一頁 ➡️</button>' : '';
+    }
+    function list0() {
+      Z = null; TTS.stop();
+      root.innerHTML = head('🔤 ' + L.n + '單字', 'index.html?lv=' + lv) + '<section class="card"><p>' + L.n + '的單字範圍＝教育部 2000 字＋' + (lv === 'a' ? 'CEFR-J A1～B2＋Octanove C1' : 'CEFR-J A1～B1') + '。教育部 2000 字在英文區單字卡（有中文）；這裡列' + (lv === 'a' ? '中級單字頁以外、B2 和 C1' : '教育部 2000 字以外') + '的 ' + all.length + ' 個字。</p>' +
+        '<p class="gp-note">這份詞表只有英文（沒有中文意思和詞性），所以這裡練「聽發音＋聽寫拼字」；不知道意思的字可以查字典或問爸媽。</p>' +
+        '<div class="gp-row" style="justify-content:flex-start"><input id="gp-wq" class="gp-in en" style="max-width:260px" type="search" placeholder="🔍 搜尋" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="搜尋單字">' +
+        '<div class="gp-sets" role="group" aria-label="程度">' + [''].concat(lvls).map(function (k) { return '<button type="button" class="btn" data-c="' + k + '" aria-pressed="' + (F.c === k) + '">' + (k || '全部') + '</button>'; }).join('') + '</div>' +
+        '<button type="button" class="btn primary" id="gp-wgo">🎧 聽寫 10 個字</button></div><p class="muted" id="gp-wn"></p><div class="gp-wl" id="gp-wl"></div><div class="gp-row" id="gp-wp"></div>' +
+        '<p class="gp-note">字表來源：CEFR-J Vocabulary Profile 1.5（Tono Laboratory, TUFS）' + (lv === 'a' ? '；Octanove Vocabulary Profile C1（Octanove Labs，CC BY-SA 4.0）' : '') + '。</p></section>';
+      var q = $('gp-wq'); q.value = F.q; q.oninput = function () { F.q = q.value; F.page = 0; draw(); };
+      draw();
+    }
+    // 聽寫：從目前篩選的字（單一字、3 個字母以上）隨機 10 個
+    function quiz() {
+      if (!authOK() || !startAct(quiz)) return;
+      var pool = pick().filter(function (x) { return /^[A-Za-z]{3,}$/.test(x.w); }), qs = [];
+      while (pool.length && qs.length < 10) qs.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+      if (!qs.length) return;
+      Z = { qs: qs, i: 0, ok: 0 }; one();
+    }
+    function one() {
+      var x = Z.qs[Z.i];
+      root.innerHTML = head('🎧 ' + L.n + '單字聽寫', 'words.html?lv=' + lv) + '<section class="card"><div class="gp-prog"><span>聽寫拼字</span><span class="muted">第 ' + (Z.i + 1) + ' / ' + Z.qs.length + ' 題・答對 ' + Z.ok + '</span></div>' +
+        '<div class="gp-row"><button type="button" class="btn big" id="gp-ws">🔊 再聽一次</button></div><div class="gp-row"><input id="gp-wi" class="gp-in en" style="max-width:360px" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="聽到什麼字？" aria-label="拼出聽到的字"><button type="button" class="btn primary" id="gp-wok">確定</button></div><div id="gp-wf"></div></section>';
+      say(x.w);
+      var inp = $('gp-wi'); inp.onkeydown = function (e) { if (e.key === 'Enter') $('gp-wok').click(); };
+    }
+    function check() {
+      var x = Z.qs[Z.i], inp = $('gp-wi'); if (!inp || inp.disabled || !inp.value.trim()) return;
+      var ok = inp.value.trim().toLowerCase() === x.w.toLowerCase(); inp.disabled = true; $('gp-wok').disabled = true; if (ok) Z.ok++;
+      try { if (W.KidsCoins) KidsCoins.answer(ok, 'english'); } catch (e) { } if (W.KidsDaily) KidsDaily.rec('english', ok);
+      var last = Z.i + 1 >= Z.qs.length;
+      $('gp-wf').innerHTML = '<div class="gp-fb ' + (ok ? 'ok' : 'no') + '" id="gp-wr">' + (ok ? '✓ 答對了！' : '✗ 正確拼法：') + '<b class="en">' + esc(x.w) + '</b>（' + x.c + '）</div><div class="gp-row"><button type="button" class="btn primary big" id="gp-wnx">' + (last ? '看結果 🏁' : '下一題 ▶') + '</button></div>';
+    }
+    root.addEventListener('click', function (e) {
+      var t = e.target.closest('button'); if (!t) return;
+      if (t.hasAttribute('data-say')) return say(t.getAttribute('data-say'));
+      if (t.hasAttribute('data-c')) { F.c = t.getAttribute('data-c'); F.page = 0; D.querySelectorAll('[data-c]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === t)); }); return draw(); }
+      if (t.hasAttribute('data-pg')) { F.page += +t.getAttribute('data-pg'); draw(); return W.scrollTo(0, 0); }
+      if (t.id === 'gp-wgo') return quiz();
+      if (!Z) return;
+      if (t.id === 'gp-ws') return say(Z.qs[Z.i].w);
+      if (t.id === 'gp-wok') return check();
+      if (t.id === 'gp-wnx') { Z.i++; if (Z.i < Z.qs.length) return one(); TTS.stop(); root.innerHTML = head('🎧 ' + L.n + '單字聽寫', 'words.html?lv=' + lv) + '<section class="card center"><p class="gp-big" id="gp-wres">' + Z.ok + ' / ' + Z.qs.length + '</p><div class="gp-row"><button type="button" class="btn primary" id="gp-wback">回單字表</button></div></section>'; return; }
+      if (t.id === 'gp-wback') return list0();
+    });
+    list0();
+  }
+
+  W.GeptPage = { home: home, practice: practice, mock: mock, task: task, words: words, _: { screens: screens, screenHTML: screenHTML, ld: ld, wordList: wordList } };
 })(window);

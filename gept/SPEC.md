@@ -148,7 +148,7 @@
 
 | 級別 | 本站基準詞表（在 repo、會上線） | 授權 | 備註 |
 |---|---|---|---|
-| 初級 | **教育部《國民中小學英語基本字彙 2000 字》**＝十二年國教課綱英語文附錄五「參考字彙表」表一 1,200 字（1,211 條）＋表二 800 字（794 條）→ `gept/vocab/moe2000.js` | 官方課綱文件（國家教育研究院發布）https://www.naer.edu.tw/upload/1/16/doc/812/(發布版)國民中小學暨普通型高級中等學校-語文領域-英語文課程綱要.pdf | 2026-11-15 下載、逐條解析 |
+| 初級 | **教育部《國民中小學英語基本字彙 2000 字》**＋**初級補充字** `gept/vocab/e-extra.js`（108 字，見下）。教育部 2000 字＝＝十二年國教課綱英語文附錄五「參考字彙表」表一 1,200 字（1,211 條）＋表二 800 字（794 條）→ `gept/vocab/moe2000.js` | 官方課綱文件（國家教育研究院發布）https://www.naer.edu.tw/upload/1/16/doc/812/(發布版)國民中小學暨普通型高級中等學校-語文領域-英語文課程綱要.pdf | 2026-11-15 下載、逐條解析 |
 | 中級 | 教育部 2000 字 ＋ **CEFR-J Vocabulary Profile 1.5 的 A1～B1**（約 4,600 個字形）→ `gept/vocab/cefrj.js` | 「can be used for research and commercial purposes with no charge, provided that you cite the dataset properly」；著作權屬 Tono Laboratory, TUFS | https://github.com/openlanguageprofiles/olp-en-cefrj |
 | 高級 | 上面全部 ＋ CEFR-J B2 ＋ **Octanove Vocabulary Profile C1**（1,009 字）→ `gept/vocab/octanove-c1.js` | **CC BY-SA 4.0**（本站改作檔同授權釋出） | C2 不收；高級另允許 ≤ 3% 宣告過的表外字 |
 
@@ -163,6 +163,9 @@
 | 高級：LTTC **中高級**（沒有高級字表）vs 教育部＋CEFR-J A1～B2＋C1 | 7,793 | 1,864 | 1,808 |
 
   → 初級照教育部 2000 字出題會比 LTTC 初級字表**略窄**（約 10% 的 LTTC 初級字不能用），是家長要求「照課綱基準」的刻意取捨；中、高級兩邊重疊約八成。
+- **初級補充字 `e-extra.js`（2026-11-16 第二階段整合加）**：教育部 2000 字沒有、但 LTTC 初級字表有的 207 條（含變化形判斷後）裡，只挑初級考試常見情境會用到的 **108 字**（ability、adventure、attend、audience、chat、countryside、delay、hometown、online、photographer、prefer、tour、worth…）；政治、法律、軍事、經濟、抽象學術字（election、prison、weapon、debt、policy…）、品牌（Coke）、真人（Confucius）不收，國名地名走 `names.js`。只是 108 個字的清單，不是 LTTC 字表的複製；`check.js` 在本機有 LTTC 字表時會擋「補充字不在 LTTC 初級字表」。
+  - 查證附記：passport、announcement、concert、fireworks、elevator、salty、contest、mailbox、grandparents 這幾個字**不在 LTTC 初級字表**（在 LTTC 中級字表），所以初級照樣不用；機場廣播改用 boarding pass 這類初級字寫。
+- **中、高級單字頁** `gept/words.html?lv=i|a`：CEFR-J／Octanove 詞表只有英文（沒有中文、詞性），所以只做「點字聽發音＋聽寫拼字 10 題」，列教育部 2000 字＋初級補充字以外的字（中級 A1～B1 約 2,100 字、高級 B2＋C1 約 3,000 字）；教育部 2000 字仍用英文區單字卡（有中文）。
 
 ## 7. 孩子程度對照（10 歲、五年級、英文已學到六下）
 

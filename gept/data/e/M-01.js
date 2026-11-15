@@ -37,7 +37,7 @@
     L4: { items: [
       { id: 'e-M-01-L4-01', spk: 'F', intro: 'Listen to the art teacher.', say: "Class, next Monday we will have art class in the park. We will draw trees and flowers. Please bring your crayons. You don't need to bring any paper. I will give you some.", q: 'What should the students bring?', pics: [{ e: '📄' }, { e: '🖍️' }, { e: '✂️' }], a: 1 },
       { id: 'e-M-01-L4-02', spk: 'M', intro: 'Listen to the message.', say: "Hi, Nina. This is Andy. Let's meet at the MRT station at two tomorrow, not at the bookstore. Then we can walk to the art museum together. Call me if you can't come.", q: 'Where will Nina and Andy meet?', pics: [{ e: '📚' }, { e: '🖼️🏛️' }, { e: '🚇' }], a: 2 },
-      { id: 'e-M-01-L4-03', spk: 'M', intro: 'Listen to the teacher.', say: "Students, the school bus will leave at three today, not at four. Please be at the school gate at a quarter to three. Don't be late!", q: 'What time should the students be at the school gate?', pics: [{ e: '🕒', t: '2:45' }, { e: '🕒', t: '3:00' }, { e: '🕓', t: '4:00' }], a: 0 },
+      { id: 'e-M-01-L4-03', spk: 'M', intro: 'Listen to the teacher.', say: "Students, the school bus will leave at three today, not at four. Please be at the school gate at a quarter to three. Don't be late!", q: 'What time should the students be at the school gate?', pics: [{ e: '🏫', t: '2:45' }, { e: '🏫', t: '3:00' }, { e: '🏫', t: '4:00' }], a: 0 },
       { id: 'e-M-01-L4-04', spk: 'F', intro: 'Listen to Mia talk about her pet.', say: "I have a pet at home. It is small and white. It has long ears and red eyes. It likes to eat carrots. It doesn't bark, and it can't fly.", q: "What is Mia's pet?", pics: [{ e: '🐶' }, { e: '🐰' }, { e: '🐦' }], a: 1 },
       { id: 'e-M-01-L4-05', spk: 'M', intro: 'Listen to the man.', say: 'Hello, everyone. The movie will start in five minutes. Please turn off your phones and do not talk during the movie. Please put your trash in the trash can when you leave. Enjoy the show!', q: 'Where would you hear this?', pics: [{ e: '🏊' }, { e: '🏫📚' }, { e: '🎬🍿' }], a: 2 }
     ] },
@@ -86,7 +86,7 @@
         ],
         qs: [
           { id: 'e-M-01-R3-04', q: 'What time will they see the movie?', opts: ['10:30 a.m.', '1:00 p.m.', '3:30 p.m.', '6:00 p.m.'], a: 2 },
-          { id: 'e-M-01-R3-05', q: 'Nina is 11 years old, and Oliver is 12. How much are their two tickets?', opts: ['NT$400.', 'NT$480.', 'NT$560.', 'NT$280.'], a: 1 },
+          { id: 'e-M-01-R3-05', q: 'Nina and Oliver are both 10 years old. How much are their two tickets?', opts: ['NT$280.', 'NT$400.', 'NT$480.', 'NT$560.'], a: 1 },
           { id: 'e-M-01-R3-06', q: 'How will they go to the movie theater?', opts: ['By bus.', 'By MRT.', 'By car.', 'On foot.'], a: 2 }
         ] },
       { id: 'e-M-01-R3-g3',

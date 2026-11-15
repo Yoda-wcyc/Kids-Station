@@ -89,7 +89,7 @@
     'understood:understand undertook:undertake upset:upset woke:wake woken:wake wore:wear worn:wear wove:weave woven:weave wept:weep won:win wound:wind withdrew:withdraw wrote:write written:write ' +
     'overcame:overcome overtook:overtake overtaken:overtake undergone:undergo underwent:undergo foresaw:foresee foreseen:foresee mislaid:mislay misled:mislead outgrew:outgrow ' +
     'children:child men:man women:woman feet:foot teeth:tooth mice:mouse geese:goose oxen:ox people:person lives:life wives:wife knives:knife leaves:leaf wolves:wolf halves:half shelves:shelf thieves:thief ' +
-    'loaves:loaf selves:self calves:calf data:datum media:medium criteria:criterion phenomena:phenomenon analyses:analysis crises:crisis theses:thesis hypotheses:hypothesis bases:basis ' +
+    'loaves:loaf selves:self calves:calf media:medium criteria:criterion phenomena:phenomenon analyses:analysis crises:crisis theses:thesis hypotheses:hypothesis bases:basis ' +
     'better:good best:good worse:bad worst:bad more:many most:many less:little least:little further:far furthest:far farther:far farthest:far elder:old eldest:old ' +
     'me:i my:i mine:i myself:i us:we our:we ours:we ourselves:we him:he his:he himself:he her:she hers:she herself:she its:it itself:it them:they their:they theirs:they themselves:they ' +
     'yours:you yourself:you yourselves:you your:you an:a could:can would:will might:may should:shall').split(' ').forEach(function (p) { var x = p.split(':'); IRR[x[0]] = x[1]; });
@@ -106,11 +106,11 @@
       ps.forEach(function (t) { if (/[^s]s$/.test(t) && t.length > 3) S[t.slice(0, -1)] = 1; });   // 表上寫複數（socks、chopsticks）→ 單數也算
     });
   }
-  // lexOf(lv, V)：該級允許的字（小寫原形）。e＝教育部 2000；i＝教育部 2000＋CEFR-J A1～B1；a＝教育部 2000＋CEFR-J A1～B2＋Octanove C1
+  // lexOf(lv, V)：該級允許的字（小寫原形）。e＝教育部 2000＋初級補充字（e-extra）；i＝教育部 2000＋CEFR-J A1～B1；a＝教育部 2000＋CEFR-J A1～B2＋Octanove C1
   function lexOf(lv, V) {
     var S = {};
     ALWAYS.forEach(function (w) { S[w] = 1; });
-    var m = V.moe || {}; (m.t1 || []).concat(m.t2 || []).forEach(function (s) { addEntry(S, s); });
+    var m = V.moe || {}; (m.t1 || []).concat(m.t2 || [], V.eextra || []).forEach(function (s) { addEntry(S, s); });   // eextra＝初級補充字（vocab/e-extra.js，LTTC 初級字表裡的常用字）
     var cj = V.cefrj || {}, lvls = lv === 'i' ? ['A1', 'A2', 'B1'] : lv === 'a' ? ['A1', 'A2', 'B1', 'B2'] : [];
     lvls.forEach(function (k) { (cj[k] || []).forEach(function (s) { addEntry(S, s); }); });
     if (lv === 'a') (V.c1 || []).forEach(function (s) { addEntry(S, s); });
@@ -188,9 +188,11 @@
 
   // ================= 判分與換算 =================
   function norm(s) { return String(s == null ? '' : s).toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+  // 短答比對：不分大小寫、去標點（連字號＝空格，two-thirds＝two thirds）、不管開頭冠詞（a／an／the）；數字、分數的不同寫法由作者列在 ans
+  function normAns(s) { return norm(s).replace(/^(a|an|the) /, ''); }
   function gradeQ(Q, v) {   // v＝選項索引（數字）或短答文字
     var q = Q.q;
-    if (q.ans) return (q.ans || []).some(function (a) { return norm(a) === norm(v); });
+    if (q.ans) return (q.ans || []).some(function (a) { return normAns(a) === normAns(v); });
     return v === q.a;
   }
   function scale(c, n) { return n ? Math.round(c / n * 120) : 0; }   // 模擬換算（官方是量尺分數，算法不公開）

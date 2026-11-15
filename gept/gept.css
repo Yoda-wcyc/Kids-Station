@@ -69,3 +69,8 @@ textarea.gp-in{min-height:220px;line-height:1.7}
 details.gp-d{border:2px solid var(--line);border-radius:14px;padding:6px 12px;margin:8px 0;background:#fff}
 details.gp-d summary{cursor:pointer;font-weight:800;min-height:40px;display:flex;align-items:center}
 .gp-mk li{margin:4px 0;line-height:1.6}
+/* 中高級單字頁 words.html */
+.gp-wl{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));margin:8px 0}
+.gp-w{min-height:52px;font-size:1.05rem;justify-content:space-between;gap:6px;padding:6px 12px}
+.gp-w small{font-size:.72rem;font-weight:700;opacity:.6}
+.gp-sets .btn[aria-pressed="true"]{background:var(--pri);border-color:var(--pri);color:#fff}

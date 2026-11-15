@@ -29,7 +29,7 @@
       texts: [{ type: 'menu', title: 'Grandma Lin\'s Noodle Shop', table: { head: ['Food and Drinks', 'Price'], rows: [['Beef noodles', 'NT$150'], ['Chicken noodles', 'NT$120'], ['Vegetable noodles', 'NT$90'], ['Dumplings (10)', 'NT$80'], ['Soup of the day', 'NT$40'], ['Black tea', 'NT$25']] }, body: 'Large bowl: add NT$20.\nFree black tea for students from Monday to Friday.\nOpen from 11 a.m. to 8 p.m.' }],
       qs: [
         { id: 'e-R3-01-07', q: 'How much is a large bowl of vegetable noodles?', opts: ['NT$20.', 'NT$90.', 'NT$100.', 'NT$110.'], a: 3 },
-        { id: 'e-R3-01-08', q: 'Ben is a student. On Tuesday, he orders beef noodles and black tea. How much does he pay?', opts: ['NT$175.', 'NT$170.', 'NT$150.', 'NT$195.'], a: 2 },
+        { id: 'e-R3-01-08', q: 'When can students get free black tea?', opts: ['Every day.', 'On Saturday and Sunday.', 'From Monday to Friday.', 'From 11 a.m. to 8 p.m.'], a: 2 },
         { id: 'e-R3-01-09', q: 'What can you NOT get at this shop?', opts: ['Rice.', 'Soup.', 'Dumplings.', 'Tea.'], a: 0 }
       ]
     },
@@ -40,7 +40,7 @@
         { type: 'article', title: 'Our Trip to Hualien', body: 'Last winter vacation, my family went to Hualien by train. We wanted to leave early, but my little sister got up late. So we missed the 7:10 train and took the next one. The train ride was fun. I sat by the window and saw the blue sea. When we arrived, my uncle met us at the station. He drove us to a beautiful beach. In the evening, we ate fresh fish at a small night market. I hope we can go back again next year.' }
       ],
       qs: [
-        { id: 'e-R3-01-10', q: 'What time did the family arrive in Hualien?', opts: ['At 9:40.', 'At 10:45.', 'At 12:30.', 'At 13:05.'], a: 1 },
+        { id: 'e-R3-01-10', q: 'When does Train 216 arrive in Hualien?', opts: ['At 9:40.', 'At 10:45.', 'At 12:30.', 'At 13:05.'], a: 1 },
         { id: 'e-R3-01-11', q: 'Why did the family miss the first train?', opts: ['The train left early.', 'Their uncle drove too slowly.', 'They could not find the station.', 'The little sister got up late.'], a: 3 },
         { id: 'e-R3-01-12', q: 'What is the story mainly about?', opts: ['How to buy train tickets.', 'A night market in Taipei.', 'A family trip to Hualien.', 'Life in a small town.'], a: 2 }
       ]

@@ -3,7 +3,7 @@
   id: 'i-L1-01',
   title: '看圖辨義 1',
   items: [
-    { id: 'i-L1-01-01', pic: { e: '🚉🚆🕙👨🏻‍💼🧳', t: 'Train 152 to Hualien · Platform 3 · 10:40 · Delayed 15 minutes' }, q: "What can we learn from the sign?",
+    { id: 'i-L1-01-01', pic: { e: '🚉🚆👨🏻‍💼🧳', t: 'Train 152 to Hualien · Platform 3 · 10:40 · Delayed 15 minutes' }, q: "What can we learn from the sign?",
       opts: ["The train to Hualien will leave from Platform 5.", "The train to Hualien will now leave at about 10:55.", "The train to Hualien has already left the station.", "The train to Hualien will arrive fifteen minutes early."], a: 1 },
     { id: 'i-L1-01-02', pic: { e: '🚉🚆🕙👨🏻‍💼🧳', t: 'Train 152 to Hualien · Platform 3 · 10:40 · Delayed 15 minutes' }, q: "Where should people taking this train wait?",
       opts: ["They should wait on Platform 13.", "They should wait on Platform 30.", "They should wait in the ticket office.", "They should wait on Platform 3."], a: 3 },

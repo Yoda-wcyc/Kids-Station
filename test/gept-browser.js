@@ -3,6 +3,7 @@
 // 820 寬（iPad 直放）＋觸控模擬：首頁三級分頁 → 初級「問答」一組（真的點選項，第 1 題故意答錯）→ 錯題庫收進 'e-L2-01-01'（p 只有 u/pt/s）、學習幣算英文、每日清單英文總數＋10
 //   → 段落填空一組（題組畫面）→ 錯題重練 3 輪畢業（墓碑）→ 初級模擬考整份跑完（聽力自動播、閱讀計時）到計分（模擬換算、達標判斷、成績存 kids_gept）
 //   → 寫作單句（家長評分 0～2）、口說回答問題（計時跑完到自評）；375 寬不左右捲；全程 JS 例外、console.error 要 0。
+//   → 每組練習／每份模擬考做完送一次 practice_round 'english:gept'（錯題練習不送）；中級、高級各一組練習＋一份模擬考全對；中高級單字頁（清單、篩選、聽寫 10 題）。
 // 語音：window.__GEPT_FAST 讓 TTS 立刻念完、倒數縮短（只在測試注入；正式頁面沒有）。
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), { spawn } = require('child_process');
@@ -31,7 +32,8 @@ async function press(sel) {
   if (!c) throw new Error('not found: ' + sel); await tap(c[0], c[1]);
 }
 const HOOK = `KidsAuth.requireLogin = () => true; KidsAuth.startActivity = () => true; KidsAuth.configured = () => true; KidsAuth.isLoggedIn = () => true;
-  window.__coin = []; const a = KidsCoins.answer; KidsCoins.answer = function (ok, k) { __coin.push(k); return a.apply(this, arguments); }; return 1`;
+  window.__coin = []; const a = KidsCoins.answer; KidsCoins.answer = function (ok, k) { __coin.push(k); return a.apply(this, arguments); };
+  window.__round = []; const rp = KidsCoins.report; KidsCoins.report = function (ev) { if (ev && ev.type === 'practice_round') __round.push(ev); return rp.apply(this, arguments); }; return 1`;
 const DAILY_E = `const D = KESyncMerge.ddSum(JSON.parse(localStorage.getItem('kids_daily') || '{}'))[KESyncMerge.ddDay(Date.now())] || {}; return (D.e || [0])[0]`;
 const BOOK = `return (JSON.parse(localStorage.getItem('kids_mistakes') || '{}').gept) || {}`;
 // 練習頁：把目前畫面的每一題點掉（wrong＝要答錯的題 id）；回傳這個畫面的題 id
@@ -51,6 +53,29 @@ async function practiceRun(url, wrong) {
     await press('#gp-next');
   }
   return ev(`return document.getElementById('gp-res') && document.getElementById('gp-res').textContent`);
+}
+
+async function mockRun(id, wrongId) {
+  await go('/gept/mock.html?set=' + id); await ev(HOOK); await press('#gp-go');
+  let guard = 0;
+  while (guard++ < 400) {
+    const st = await ev(`const R = GeptMock.R(); if (R.result) return { done: 1 }; if (document.getElementById('gp-lp')) return { lp: 1 }; if (document.getElementById('gp-rb')) return { rb: 1 }; const s = document.getElementById('gp-ls'); return { q0: s && s.getAttribute('data-q0') }`);
+    if (st.done) break;
+    if (st.lp) { await press('#gp-lp'); continue; }
+    if (st.rb) {
+      const qs = await ev(`return GeptMock.R().rq.map(Q => ({ id: Q.id, a: Q.q.a, ans: Q.q.ans || null }))`);
+      for (const q of qs) { if (q.ans) { await ev(`const i = document.querySelector('[data-in="${q.id}"]'); i.value = ${JSON.stringify(q.ans[0])}; i.dispatchEvent(new Event('input', { bubbles: true })); return 1`); } else await press(`[data-q="${q.id}"][data-v="${q.a}"]`); }
+      assert(await ev(`return /已答 (\\d+) \\/ \\1/.test(document.getElementById('gp-rc').textContent)`), 'mock reading: every question answered (' + qs.length + ')');
+      await press('#gp-sub'); continue;
+    }
+    if (st.q0) {
+      const qs = await ev(`const R = GeptMock.R(); const S = R.sc[R.si]; return S.qs.map(Q => ({ id: Q.id, a: Q.q.a, ans: Q.q.ans || null, n: (Q.q.opts || Q.q.pics || []).length || 3 }))`);
+      for (const q of qs.filter(x => x.ans)) await ev(`const i = document.querySelector('[data-in="${q.id}"]'); if (i) { i.value = ${JSON.stringify((qs.find(x => x.id === q.id).ans || [''])[0])}; i.dispatchEvent(new Event('input', { bubbles: true })); } return 1`);   // 長篇聽力短答題（高級）
+      for (const q of qs.filter(x => !x.ans)) { const done = await ev(`return GeptMock.R().ans['${q.id}'] != null`); if (!done && await ev(`return !!document.querySelector('[data-q="${q.id}"]')`)) await press(`[data-q="${q.id}"][data-v="${q.id === wrongId ? (q.a + 1) % q.n : q.a}"]`); }
+      for (let i = 0; i < 40 && (await ev(`const s = document.getElementById('gp-ls'); return s && s.getAttribute('data-q0')`)) === st.q0; i++) await sleep(100);
+    }
+  }
+  return ev(`return GeptMock.R().result`);
 }
 
 async function run() {
@@ -73,6 +98,7 @@ async function run() {
   assert(bk['e-L2-01-01'] && bk['e-L2-01-01'].c === 0 && JSON.stringify(Object.keys(bk['e-L2-01-01'].p)) === '["u","pt","s"]' && bk['e-L2-01-01'].p.u === 'e' && Object.keys(bk).length === 1, 'wrong answer stored in kids_mistakes.gept (p = u, pt, s only)');
   assert(await ev(DAILY_E) === 10 && (await ev(`return __coin.length === 10 && __coin.every(k => k === 'english')`)), 'daily english +10, coins counted as english');
   assert((await ev(`return JSON.parse(localStorage.getItem('kids_gept')).best['e-L2-01'].p`)) === 90, 'best score saved (90%)');
+  assert(JSON.stringify(await ev(`return __round`)) === JSON.stringify([{ type: 'practice_round', item: 'english:gept', correct: 9, total: 10 }]), 'set done → one practice_round english:gept 9/10');
   // 3. 段落填空（題組畫面，題號連續）
   assert(await practiceRun('/gept/practice.html?set=e-R2-01', []) === '8 / 8', 'e-R2-01 cloze groups: 8 / 8');
   await go('/gept/practice.html?set=e-R3-01'); await ev(HOOK); await press('#gp-go');
@@ -83,33 +109,16 @@ async function run() {
     await answerScreen('GeptPractice.R()', []); await press('#gp-next');
     assert(await ev(`return document.getElementById('gp-res').textContent`) === '1 / 1', 'mistakes replay round ' + (k + 1) + ': 1 / 1');
   }
-  assert((await ev(BOOK))['e-L2-01-01'].d === 1, 'after 3 right in a row the mistake graduates (tombstone d:1)');
+  assert((await ev(BOOK))['e-L2-01-01'].d === 1 && (await ev(`return __round.length`)) === 0, 'after 3 right in a row the mistake graduates (tombstone d:1); mistakes rounds send no practice_round');
   await go('/gept/practice.html?mistakes=1&lv=e');
   assert(await ev(`return !!document.getElementById('gp-mk-empty')`), 'mistakes page: empty after graduation');
   // 5. 初級模擬考整份
-  await go('/gept/mock.html?set=e-M-01'); await ev(HOOK); await press('#gp-go');
-  let guard = 0, wrongId = 'e-M-01-L1-01';
-  while (guard++ < 400) {
-    const st = await ev(`const R = GeptMock.R(); if (R.result) return { done: 1 }; if (document.getElementById('gp-lp')) return { lp: 1 }; if (document.getElementById('gp-rb')) return { rb: 1 }; const s = document.getElementById('gp-ls'); return { q0: s && s.getAttribute('data-q0') }`);
-    if (st.done) break;
-    if (st.lp) { await press('#gp-lp'); continue; }
-    if (st.rb) {
-      const qs = await ev(`return GeptMock.R().rq.map(Q => ({ id: Q.id, a: Q.q.a, ans: Q.q.ans || null }))`);
-      for (const q of qs) { if (q.ans) { await ev(`const i = document.querySelector('[data-in="${q.id}"]'); i.value = ${JSON.stringify(q.ans[0])}; i.dispatchEvent(new Event('input', { bubbles: true })); return 1`); } else await press(`[data-q="${q.id}"][data-v="${q.a}"]`); }
-      assert(await ev(`return /已答 (\\d+) \\/ \\1/.test(document.getElementById('gp-rc').textContent)`), 'mock reading: every question answered (' + qs.length + ')');
-      await press('#gp-sub'); continue;
-    }
-    if (st.q0) {
-      const qs = await ev(`const R = GeptMock.R(); const S = R.sc[R.si]; return S.qs.map(Q => ({ id: Q.id, a: Q.q.a, n: (Q.q.opts || Q.q.pics || []).length || 3 }))`);
-      for (const q of qs) { const done = await ev(`return GeptMock.R().ans['${q.id}'] != null`); if (!done && await ev(`return !!document.querySelector('[data-q="${q.id}"]')`)) await press(`[data-q="${q.id}"][data-v="${q.id === wrongId ? (q.a + 1) % q.n : q.a}"]`); }
-      for (let i = 0; i < 40 && (await ev(`const s = document.getElementById('gp-ls'); return s && s.getAttribute('data-q0')`)) === st.q0; i++) await sleep(100);
-    }
-  }
-  const mr = await ev(`return GeptMock.R().result`);
+  const mr = await mockRun('e-M-01', 'e-M-01-L1-01');
   assert(mr && mr.lc === 29 && mr.rc === 30 && mr.L === 116 && mr.R === 120 && mr.pass === true, 'mock e-M-01 scored: listening 29/30 → 116, reading 30/30 → 120, pass');
+  assert(JSON.stringify(await ev(`return __round`)) === JSON.stringify([{ type: 'practice_round', item: 'english:gept', correct: 59, total: 60 }]), 'mock done → one practice_round english:gept 59/60');
   assert(await ev(`return /模擬換算，非官方成績/.test(document.body.textContent) && document.getElementById('gp-pass').textContent.includes('達到通過標準')`), 'mock result shows 模擬換算，非官方成績 and the pass line');
   assert(await ev(`const m = JSON.parse(localStorage.getItem('kids_gept')).mock; return m.length === 1 && m[0].id === 'e-M-01' && m[0].L === 116`), 'mock history saved in kids_gept');
-  assert((await ev(BOOK))[wrongId] && (await ev(BOOK))[wrongId].c === 0, 'mock wrong answer went into the mistakes book');
+  assert((await ev(BOOK))['e-M-01-L1-01'] && (await ev(BOOK))['e-M-01-L1-01'].c === 0, 'mock wrong answer went into the mistakes book');
   await shot('gp-mock-result-820.png');
   await width(375); assert(await ev(`return document.documentElement.scrollWidth <= innerWidth + 1`), '375: mock result no horizontal scroll'); await width(820);
   // 6. 寫作：單句寫作家長評分
@@ -133,6 +142,21 @@ async function run() {
     assert(await ev(`return !!document.querySelector('${sel}') && document.querySelectorAll('[data-q]').length > 0`), s + ' first screen renders (' + sel + ')');
     await shot('gp-' + s + '.png');
   }
+  // 7c. 中級、高級：各一組練習全對、一份模擬考全對（計分、通過）
+  for (const s of ['i-L3-01', 'a-L2-01']) { const r = await practiceRun('/gept/practice.html?set=' + s, []); const m = /^(\d+) \/ (\d+)$/.exec(r || ''); assert(m && m[1] === m[2] && (await ev(`return __round.length === 1 && __round[0].item === 'english:gept' && __round[0].correct === __round[0].total`)), s + ' practice all right: ' + r + ', one round event'); }
+  for (const [m, ln, rn] of [['i-M-01', 35, 35], ['a-M-01', 40, 40]]) { const r = await mockRun(m, ''); assert(r && r.lc === ln && r.rc === rn && r.L === 120 && r.R === 120 && r.pass === true, m + ' mock all right: ' + JSON.stringify(r)); }
+  // 7d. 中高級單字頁：首頁連結、清單、點字唸、聽寫 10 題
+  await go('/gept/index.html?lv=i'); assert(await ev(`return !!document.querySelector('a[href="words.html?lv=i"]')`), 'home 中級: words link'); await go('/gept/index.html?lv=a'); assert(await ev(`return !!document.querySelector('a[href="words.html?lv=a"]') && !!document.querySelector('a[href="words.html?lv=i"]')`), 'home 高級: words links');
+  for (const [lv, lo, hi] of [['i', 1800, 2600], ['a', 2500, 3600]]) {
+    await go('/gept/words.html?lv=' + lv); await ev(HOOK);
+    const n = await ev(`return GeptWords.all().length`); assert(n > lo && n < hi && (await ev(`return document.querySelectorAll('#gp-wl [data-say]').length === 80 && !GeptWords.all().some(x => x.w === 'apple')`)), lv + ' words: ' + n + ' words, 80 per page, no 2000-list words');
+    await press('#gp-wl [data-say]'); await press('[data-c="' + (lv === 'a' ? 'C1' : 'B1') + '"]'); assert(await ev(`return /這裡有 \\d+ 個字/.test(document.getElementById('gp-wn').textContent) && [...document.querySelectorAll('#gp-wl small')].every(x => x.textContent === '${lv === 'a' ? 'C1' : 'B1'}')`), lv + ' words: level filter');
+    await press('#gp-wgo');
+    for (let k = 0; k < 10; k++) { const w = await ev(`return GeptWords.Z().qs[GeptWords.Z().i].w`); await ev(`document.getElementById('gp-wi').value = ${JSON.stringify(w)}; return 1`); await press('#gp-wok'); await press('#gp-wnx'); }
+    assert(await ev(`return document.getElementById('gp-wres').textContent`) === '10 / 10', lv + ' words: dictation 10 / 10');
+    await width(375); assert(await ev(`return document.documentElement.scrollWidth <= innerWidth + 1`), '375: words page no horizontal scroll'); await width(820);
+  }
+  await shot('gp-words-a.png');
   // 8. 375 寬
   await width(375);
   for (const u of ['/gept/index.html?lv=a', '/gept/practice.html?set=a-R1-01', '/gept/task.html?set=a-W2-01']) { await go(u); assert(await ev(`return document.documentElement.scrollWidth <= innerWidth + 1`), '375: no horizontal scroll ' + u); }
