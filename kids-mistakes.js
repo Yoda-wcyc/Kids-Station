@@ -18,6 +18,8 @@
          math/fracadd.js FA.fromId 用 id 原題重做；歸五上單元六；隨機題會一直冒新的 → 未畢業最多留 MAX_FA＝50 題，超過把最舊答錯的蓋墓碑擠掉，2026-11-09）；
        'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯）、'pf:<題>'（約分通分 15 題答錯，2026-11-05）、'pm:'／'pe:'（期中錯題／期中類題）、'ps:'（扇形小考錯題，2026-11-06）、'pc:'（期中第 15、17 題類題 5 題，2026-11-06），p＝{type:'paper', set:'p'|'v'|'f'|'m'|'e'|'s'|'c', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
+     全民英檢 gept id＝gept/data 的題目 id（'e-L1-01-03'、'i-M-01-R3-12'；級別＝id 第一個字），p＝{u:級 e|i|a, pt:部分 L1…R3, s:題目短句（≤ 60 字）}（gept/gept.js；gept/practice.html?mistakes=1&lv=<級> 用 id 找回原題重做，
+       連對 3 次畢業；題庫會越寫越多 → 未畢業最多留 MAX_GEPT＝100 題，超過把最舊答錯的蓋墓碑擠掉，同異分母；2026-11-15）
      地理 id＝geo/data 的題目 id（'t1-p04'、'w3-t02'；單元由 id 推），p＝{ty:題型 tap|drag|mc|puzzle, s:題目文字}（只存這兩樣，不存圖；geo/unit.html?mistakes=1 用 id 找回原題、原題型重出，連對 3 次畢業，2026-11-09）
    🔁 隔天複習（間隔重複，2026-11-01，只開在社會、自然＝SPACED；國語、數學、AI 照舊「連對 3 次」）：
      答錯 → c＝0、due＝明天；到期（台北時間的日子 ≥ due）答對 → c＋1，due＝今天＋[1,3,7][c]（1 天 → 3 天 → 7 天）；7 天那次也答對（c 已經是 2）→ 畢業留墓碑。
@@ -30,8 +32,8 @@
   'use strict';
 
   // ================= _core：純函式 =================
-  var SUBJ = ['chinese', 'social', 'science', 'math', 'ai', 'geo'];   // geo（2026-11-09，見檔頭）；chinese（2026-11-01）：id＝'<篇id>:<題id>'，p＝{a:篇id, q:題id, t:篇名, s:題目, ans:正解文字}（chinese/reading.js）
-  var GRAD = 3, MAX_DEL = 300, MAX_ID = 200, MAX_P = 4000, ROUND = 30, MAX_FA = 50;
+  var SUBJ = ['chinese', 'social', 'science', 'math', 'ai', 'geo', 'gept'];   // geo（2026-11-09，見檔頭）；chinese（2026-11-01）：id＝'<篇id>:<題id>'，p＝{a:篇id, q:題id, t:篇名, s:題目, ans:正解文字}（chinese/reading.js）
+  var GRAD = 3, MAX_DEL = 300, MAX_ID = 200, MAX_P = 4000, ROUND = 30, MAX_FA = 50, MAX_GEPT = 100;
   var SPACED = ['social', 'science'], IV = [1, 3, 7], DAY = 864e5, TPE = 8 * 3600e3;
   function dayIdx(t) { return Math.floor((+t + TPE) / DAY); }   // 台北時間的第幾天
   function isDue(e, now) { return !!e && !e.d && !(e.due > dayIdx(now)); }
@@ -142,7 +144,7 @@
     return '';
   }
 
-  var core = { SUBJ: SUBJ, GRAD: GRAD, MAX_DEL: MAX_DEL, MAX_FA: MAX_FA, ROUND: ROUND, SPACED: SPACED, IV: IV, canon: canon, normBook: normBook, normAll: normAll, mergeBook: mergeBook, mergeAll: mergeAll, mark: mark, cap: cap, liveList: liveList, dueList: dueList, isDue: isDue, dayIdx: dayIdx, hash: hash, plain: plain, unitOf: unitOf, LCM_T: LCM_T };
+  var core = { SUBJ: SUBJ, GRAD: GRAD, MAX_DEL: MAX_DEL, MAX_FA: MAX_FA, MAX_GEPT: MAX_GEPT, ROUND: ROUND, SPACED: SPACED, IV: IV, canon: canon, normBook: normBook, normAll: normAll, mergeBook: mergeBook, mergeAll: mergeAll, mark: mark, cap: cap, liveList: liveList, dueList: dueList, isDue: isDue, dayIdx: dayIdx, hash: hash, plain: plain, unitOf: unitOf, LCM_T: LCM_T };
   if (typeof module !== 'undefined' && module.exports) { module.exports = { _core: core }; return; }
 
   // ================= 瀏覽器：存取 =================
@@ -158,6 +160,7 @@
     if (SUBJ.indexOf(subj) < 0 || !okId(String(id || ''))) return null;
     var a = loadAll(), b = a[subj] || (a[subj] = {}), r = mark(b, String(id), !!ok, p, now(), spaced(subj));
     if (r === 'added' && subj === 'math' && String(id).indexOf('fa:') === 0) cap(b, 'fa:', MAX_FA, now());   // 異分母隨機題：未畢業最多 50 題
+    if (r === 'added' && subj === 'gept') cap(b, '', MAX_GEPT, now());   // 全民英檢：未畢業最多 100 題
     if (r) saveAll(a);
     return r;
   }

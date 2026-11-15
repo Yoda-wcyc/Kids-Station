@@ -326,6 +326,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       ['數學 倍數練習＋考試', 'math/multiples.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
       ['數學 乘法練習＋挑戰（兩位×兩位以上才記，清單「乘法」）', 'math/multiply.html', /function mkRec\(q, ok\) \{\s*if \(window\.KidsDaily && X\.daily\(q\.a, q\.b\)\) KidsDaily\.rec\('math', ok, 'mul'\)/],
       ['數學 異分母分數加減（清單「異分母加減」）', 'math/fracadd.html', "KidsDaily.rec('math', ok, 'fracadd')"],
+      ['英文 全民英檢準備區（題型練習、模擬考、錯題；只算英文總數）', 'gept/gept.js', "if (W.KidsDaily) KidsDaily.rec('english', !!ok);"],
       ['數學 短除法換你算', 'math/short-division.html', /function mkRec\(Q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
       ['數學 紙本錯題＋類題 30 題', 'math/paper.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
       ['數學 短除法應用題', 'math/short-division.html', /function wRec\(Q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
@@ -375,7 +376,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     const entryFiles = found.filter(f => f !== 'kids-coins.js' && /KidsCoins\.answer\(/.test(read(f).replace(/\/\*[\s\S]*?\*\//g, '')));
     ok(entryFiles.length >= 12, 'found entry files: ' + entryFiles.length);
     entryFiles.forEach(f => { const s = read(f); ok(s.includes(R) || s.includes('dailyRec(') || f === 'chinese/reading-core.js', 'file with KidsCoins.answer must record too: ' + f); });
-    const PAGES = ['index.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/fraction.html', 'math/multiples.html', 'math/multiply.html', 'math/short-division.html', 'math/paper.html', 'math/grade.html', 'math/fracadd.html', 'geo/unit.html', 'chinese/reading.html', 'chinese/idioms/idioms.html', 'ai/ask-well.html', 'ai/hallucinate.html', 'ai/secrets.html', 'game/hero-island/index.html', 'game/hero-world/index.html', 'game/kids-town/index.html']
+    const PAGES = ['index.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/fraction.html', 'math/multiples.html', 'math/multiply.html', 'math/short-division.html', 'math/paper.html', 'math/grade.html', 'math/fracadd.html', 'gept/practice.html', 'gept/mock.html', 'gept/task.html', 'geo/unit.html', 'chinese/reading.html', 'chinese/idioms/idioms.html', 'ai/ask-well.html', 'ai/hallucinate.html', 'ai/secrets.html', 'game/hero-island/index.html', 'game/hero-world/index.html', 'game/kids-town/index.html']
       .concat(fs.readdirSync(path.join(root, 'comics')).filter(f => /^v\d+e\d+\.html$/.test(f)).map(f => 'comics/' + f));   // 漫畫每一話（comic.js 記錄）自動列進來
     PAGES.forEach(f => { const s = read(f), a = s.indexOf('syncmerge.js"'), a2 = s.indexOf('syncmerge.js?'), m = a >= 0 ? a : a2, b = s.search(/kids-daily\.js["?]/); ok(m >= 0 && b > m, 'page loads syncmerge.js then kids-daily.js: ' + f); });
     // 每個有記錄的 html 都在清單裡（新頁面忘了載 kids-daily.js 會擋）

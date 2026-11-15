@@ -176,6 +176,14 @@ nocopy.js         全站禁止複製／剪下／貼上（2026-11-13 家長指令
 - 小助理：`snap.daily`＝今天的清單；任務先排沒達標科目的錯題／複習，再來別科的錯題／複習，再來沒達標科目的新單元。主按鈕指到的那一項不在「其他任務」重複。15 分鐘目標任務已拿掉（學習幣後端照舊）。
 - 慶祝：每台每天一次（`kids_daily_party`，不同步）。瀏覽器實測：kids-member `tests\daily-stats-browser.js`。
 
+## 🏅 全民英檢準備區（gept/，2026-11-15）
+
+- 入口：英文頁（#en）「🏅 全民英檢」卡片 → `gept/index.html`（選級別：初級／中級「進階挑戰」／高級「超級挑戰」）。規格查證 `gept/SPEC.md`（官方來源、未確認項），寫題契約 `gept/CONTRACT.md`（作者只看這兩份）。
+- 頁面：`practice.html?set=<組>`（題型練習一組，聽力照官方次數播、答完才看文字稿）、`practice.html?mistakes=1&lv=<級>`（錯題重練）、`mock.html?set=<級>-M-nn`（完整初試，聽力自動播不能重播、閱讀計時，交卷後模擬換算 120 分制＋通過判斷）、`task.html?set=<組>`（複試寫作、口說：TTS 出題＋計時＋範文／範例＋家長評分）。
+- 題目：`gept/data/<級>/<部分>-<nn>.js` 一檔一組；改完跑 `node gept/tools/check.js --write`（用字、句長、題數、選項、答案分布、id；更新 data/catalog.js）。詞表 `gept/vocab/`（教育部 2000 字、CEFR-J、Octanove C1；LTTC 字表只在本機 scratchpad\gept-local\）。
+- 紀錄：每題學習幣算英文、每日清單算英文總數（不算句型、片語）；聽讀答錯進 `kids_mistakes.gept`（連對 3 次畢業、未畢業最多 100 題）；成績 `kids_gept`（本機、不同步）。不送 practice_round。
+- 測試：`node test/gept.test.js`、瀏覽器 `node test/gept-browser.js`。
+
 ## 🃏 名詞閃卡＋🔁 隔天複習（社會、自然，2026-11-01）
 
 - **閃卡**：各單元頁模式列「🃏 閃卡」。卡片在 `mindmap/data/<科>/cards.js`（社會 u1～u4：25／20／21／20 張、自然 n1～n4：29／42／34／29 張，共 220 張；校對後刪掉重複、籠統的卡，不為了湊數補卡），只從該單元的節點標題與重點句整理，每張用 `ref` 指回節點或重點句（`node test/flashcards.test.js` 檢查 ref、正面名詞出現在 ref 文字裡、沒有籠統詞、id 唯一、張數）。一輪 15 張：沒看過 → 記不得的 → 到期該複習的 → 其他看過的；點卡片翻面（自動朗讀 zh-TW，也有 🔊 鈕）、左右滑動或 ◀ ▶ 換卡；翻面後「我記得 ✓／再想想 ✗」。看過的卡記在本機 `kids_mm_cards`（不同步）；自己判斷記不記得，不算學習幣、不算單元完成。

@@ -206,7 +206,7 @@
   const ctrSum = c => { const s = { stars: 0, quizzes: 0 }; Object.keys(obj(c)).forEach(d => { s.stars += int0(c[d] && c[d].stars); s.quizzes += int0(c[d] && c[d].quizzes); }); return s; };
 
   // ---- mk：各科錯題庫（kids_mistakes；格式見 kids-mistakes.js 檔頭；這裡的整理規則要跟 kids-mistakes.js _core 一致，smoke 會對）----
-  const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai', 'geo'], MK_GRAD = 3, MK_DEL = 300, MK_ID = 200, MK_P = 4000;
+  const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai', 'geo', 'gept'], MK_GRAD = 3, MK_DEL = 300, MK_ID = 200, MK_P = 4000;
   const nat = x => { x = +x; return isFinite(x) && x > 0 ? Math.floor(x) : 0; };
   function normMkP(p) { if (!p || typeof p !== 'object' || Array.isArray(p)) return {}; try { const s = JSON.stringify(p); return s.length <= MK_P ? JSON.parse(s) : {}; } catch (e) { return {}; } }
   function normMkEntry(e) {

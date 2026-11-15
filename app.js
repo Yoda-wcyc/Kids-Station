@@ -280,7 +280,7 @@
     const st = stats(), mc = mistakeIds().length;
     app.innerHTML = top('🔤 英文', '#home') + `
       <div class="stats"><div class="stat"><span>🔥</span><b>${st.streak}</b><small>連續天數</small></div><div class="stat"><span>✏️</span><b>${st.today}</b><small>今天做的題目</small></div><div class="stat"><span>⭐</span><b>${S.progress.stars}</b><small>星星</small></div></div>
-      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? `翰林五年級・${D.textbook.length} 個單元` : '準備中', 'c2')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}<a class="tile c1" href="map.html"><span class="ti">🗺️</span><b>課程地圖</b><small>哪些單元學完了、還差哪些</small></a></div>
+      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? `翰林五年級・${D.textbook.length} 個單元` : '準備中', 'c2')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}<a class="tile c1" href="map.html"><span class="ti">🗺️</span><b>課程地圖</b><small>哪些單元學完了、還差哪些</small></a><a class="tile c3" id="tile-gept" href="gept/index.html"><span class="ti">🏅</span><b>全民英檢</b><small>初級・中級・高級 題型練習與模擬考</small></a></div>
       <p class="muted center">小提示：看到英文，點一下就會唸給你聽 👂</p>`;
   }
 
@@ -288,15 +288,16 @@
   const LF = { lv: '', tag: '', src: '', q: '', page: 0 };
   const PAGE = 40; // 單字卡一頁 40 張（1200 字一次全畫，iPad 會卡）
   function pLearn(sub) {
-    if (sub === 'words') return pWords();
+    if (sub === 'words') return pWords(sub2);   // #learn/words/<來源>：從全民英檢準備區直接開某個來源（moe1200、moe800、gept1）
     if (sub === 'roots') return pRoots();
     if (sub === 'grammar') return pGrammar();
     if (sub === 'patterns') return pPatterns();
     if (sub === 'phrases') return pPhrases();
     app.innerHTML = top('學習') + `<div class="tiles">${tile('#learn/words', '🔤', '單字卡', `${D.words.length} 個常用字`, 'c1')}${tile('#learn/phrases', '🔗', '片語', `${D.phrases.length} 個常用片語`, 'c5')}${tile('#learn/roots', '🧩', '字根字首', `${D.roots.length} 組拆字密碼`, 'c2')}${tile('#learn/grammar', '📐', '文法', `${D.grammar.length} 個主題`, 'c3')}${tile('#learn/patterns', '💬', '句型', `${D.patterns.length} 個好用句型`, 'c4')}</div>`;
   }
-  function pWords() {
+  function pWords(src) {
     const srcs = E.sources(), tags = [...new Set(D.words.flatMap(w => w.tags || []))];
+    if (src && srcs.includes(src)) Object.assign(LF, { src, lv: '', tag: '', q: '', page: 0 });
     app.innerHTML = top('單字卡', '#learn') + `<div class="filters">
       <input id="fq" class="search" type="search" placeholder="🔍 搜尋英文或中文" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="搜尋單字">
       <select id="flv" aria-label="等級"><option value="">全部等級</option><option value="1">等級 1</option><option value="2">等級 2</option><option value="3">等級 3</option><option value="4">進階（國中）</option></select>

@@ -905,7 +905,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 2026-11-01 加國語（chinese）成第五科：塞滿從約 378KB 變約 473KB，預算由 450KB 調成 500KB（伺服器上限 1MB 的一半），
   // 另外加一條「錯題庫塞滿＋英文作答壓縮後」整份文件仍 < 1MB（真正的上限）。
   // 地理（geo，2026-11-09）p 只有 {ty, s}、題目數固定 720：最壞情況另外在 test/geo.test.js 用真的題目算（≤ MAX_BYTES/4），這裡的五科塞滿不含它
-  const big4 = {}; KMc.SUBJ.filter(s => s !== 'geo').forEach(s => { const bk = {}; for (let i = 0; i < 300; i++) { bk[s + 'L' + i] = { c: 2, w: 9, t: 1.8e12, u: 1.8e12, p: { u: 'u1', k: 'w', pid: 'u1-l1-t1-p3', ci: 2, a: '荷蘭東印度公司', s: '十七世紀荷蘭東印度公司為了和中國、日本貿易，在臺灣南部建立據點並修築熱蘭遮城' } }; bk[s + 'D' + i] = { d: 1, w: 9, t: 1.8e12, u: 1.8e12 }; } big4[s] = bk; });
+  // 全民英檢（gept，2026-11-15）p 只有 {u, pt, s}、未畢業最多 100 題：最壞情況另外在 test/gept.test.js 算（≤ MAX_BYTES/4），這裡也不含它
+  const big4 = {}; KMc.SUBJ.filter(s => s !== 'geo' && s !== 'gept').forEach(s => { const bk = {}; for (let i = 0; i < 300; i++) { bk[s + 'L' + i] = { c: 2, w: 9, t: 1.8e12, u: 1.8e12, p: { u: 'u1', k: 'w', pid: 'u1-l1-t1-p3', ci: 2, a: '荷蘭東印度公司', s: '十七世紀荷蘭東印度公司為了和中國、日本貿易，在臺灣南部建立據點並修築熱蘭遮城' } }; bk[s + 'D' + i] = { d: 1, w: 9, t: 1.8e12, u: 1.8e12 }; } big4[s] = bk; });
   const mkBytes = SM.bytes(SM.normMk(big4));
   ok(mkBytes < 500 * 1024, 'mk at maximum stays well under the 1MB server limit: ' + mkBytes + ' B');
   // 2026-11-01 🔁 隔天複習：社會、自然每筆多一個 due（下次到期的日子）→ 塞滿時仍在 500KB 預算內
