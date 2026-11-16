@@ -77,6 +77,24 @@ async function run() {
   assert(isl && /✓2 🔒/.test(isl.t) && isl.off, '學習島數字塔說明卡：五下單元一 ✓2 🔒（灰） ' + JSON.stringify(isl));
   await shot('5-island-card');
 
+  // ---- 1d. 學習島右側清單（☰ 清單、搜尋結果）也標，外觀跟說明卡一樣；點鎖住的 → 一樣是「去挑戰」的卡（2026-11-17）----
+  await ev(`document.getElementById('isl-back').click(); document.getElementById('isl-listbtn').click(); await new Promise(r => setTimeout(r, 500)); return 1`);
+  const LI = h => `[...document.querySelectorAll('#isl-items a')].find(a => /#s\\/math\\/${h}$/.test(a.getAttribute('href')))`;
+  const il = await ev(`const a = ${LI('g5b1')}, b = ${LI('g5b2')}, c = ${LI('g5b3')}, ca = a.querySelector('.kl-b'), card = document.createElement('span');
+    card.innerHTML = KidsLock.badge('mg:g5b1'); document.body.appendChild(card); const cs = getComputedStyle(ca), ks = getComputedStyle(card.firstChild), same = ['backgroundColor', 'color', 'borderRadius', 'fontWeight'].every(p => cs[p] === ks[p]); card.remove();
+    a.scrollIntoView({ block: 'center' }); return { open: document.getElementById('isl-list').getBoundingClientRect().width > 100, a: a.textContent, off: a.classList.contains('kl-off'), f: getComputedStyle(a).filter, b: b.textContent, bOff: b.classList.contains('kl-off'), c: c.textContent, same, lk: ca.classList.contains('kl-lk') }`);
+  assert(il.open && /✓2 🔒/.test(il.a) && il.off && /grayscale/.test(il.f) && il.lk && il.same && /✓1/.test(il.b) && !/🔒/.test(il.b) && !il.bOff && !/✓/.test(il.c), '學習島右側清單：五下單元一 ✓2 🔒（灰、跟說明卡同一個標籤樣式）、單元二 ✓1、單元三沒標 ' + JSON.stringify(il));
+  await sleep(150); await shot('11-island-list-badges');
+  // 搜尋結果：打字篩選後標示還在
+  const qs = await ev(`const a = ${LI('g5b1')}, t = a.textContent.replace(/✓.*$/, '').replace(/^\\S+\\s/, '').trim(), q = document.getElementById('isl-q'); q.value = t.slice(0, 6); q.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 200)); const vis = [...document.querySelectorAll('#isl-items li')].filter(li => !li.hidden).map(li => li.textContent); return { q: q.value, vis, hit: vis.find(x => /✓2 🔒/.test(x)) || '' }`);
+  assert(qs.vis.length >= 1 && qs.hit && qs.vis.length < 40, '學習島清單搜尋「' + qs.q + '」：結果裡的五下單元一還是 ✓2 🔒 ' + JSON.stringify(qs.vis.slice(0, 5)));
+  await shot('12-island-search-badges');
+  await ev(`${LI('g5b1')}.click(); return 1`); await sleep(1600);
+  const ig = await ev(FR + `const k = d && d.getElementById('kl-gate'), a = k && k.querySelector('.kl-go'); return { hash: location.hash, gate: k ? k.querySelector('h2').textContent : '', go: a ? a.textContent : '', href: a ? a.getAttribute('href') : '' }`);
+  assert(ig.hash === '#s/math/g5b1' && ig.gate === '這個你已經練 2 次了' && /去挑戰 → 五下 單元二/.test(ig.go) && /#s\/math\/g5b2$/.test(ig.href), '點清單裡鎖住的單元 → 跟說明卡一樣：「這個你已經練 2 次了・去挑戰 → 五下 單元二」 ' + JSON.stringify(ig));
+  await shot('13-island-list-click-locked');
+
   // ---- 3. 家長頁解鎖 ----
   await go('/index.html#parent'); await sleep(400);
   const p1 = await ev(`const s = document.getElementById('kl-parent'); return s ? { h: s.querySelector('h2').textContent, items: [...s.querySelectorAll('li')].map(l => l.textContent) } : null`);
@@ -90,6 +108,27 @@ async function run() {
   assert(await ev(`return !document.getElementById('kl-gate') && !document.getElementById('tabs').hidden`), '解鎖後單元頁進得去');
   const re = await ev(`KidsDone.record('mg', 'g5b1t', 88); return KidsLock.state('mg:g5b1')`);
   assert(re.n === 2 && re.locked, '解鎖後再做 1 次 → 又鎖住');
+
+  // ---- 3b. 🦉 學習小助理：有鎖的時候任務、下一步、「去做 ▶」都不指到鎖住的單元，改指下一個更難的（2026-11-17）----
+  // 數學天平 8 題 10 天前全做完、天平和短除法都做滿 2 次（鎖）→ ③ 很久沒練的複習改成挑戰〈短除法：應用題〉；社會單元一鎖住 → 從單元二開始
+  await go('/index.html'); await ev(RESET);
+  await ev(`const t = Date.now() - 10 * 864e5, bal = {}; for (let i = 1; i <= 8; i++) bal['b' + i] = t; let d = { bal }; ['math:balance', 'math:sd', 'mm:social:u1'].forEach(k => { d = KidsLock.setV(d, k, 2); }); localStorage.setItem('kids_done', JSON.stringify(d)); return 1`);
+  await go('/assistant.html'); await ev(HOOK); await ev(`KidsAssistantUI.page(document.getElementById('kas-page')); return 1`); await sleep(300);
+  const as = await ev(`const r = KidsAssistantUI.analyze(), m = r._.cand.find(t => t.k === 'math'), s = r._.cand.find(t => t.k === 'social'), li = document.querySelector('#kas-tasks li[data-k="math"]');
+    return { m: m && [m.kind, m.title, m.href], s: s && [s.kind, s.title, s.href], li: li ? [li.textContent, li.querySelector('a.kas-go').getAttribute('href')] : null, all: r.tasks.concat(r.next).map(t => t.href), locked: ['math:balance', 'math:sd', 'mm:social:u1'].map(k => KidsLock.state(k).locked) }`);
+  const bad = ['index.html#s/math/balance', 'index.html#s/math/short-division', 'index.html#s/social/u1'];
+  assert(as.locked.every(Boolean) && as.m && as.m[2] === 'index.html#s/math/short-division-word' && /挑戰〈五上 短除法：應用題〉/.test(as.m[1]) && as.s && as.s[2] === 'index.html#s/social/u2' && as.all.every(h => bad.indexOf(h) < 0),
+    '小助理：數學複習改指〈短除法：應用題〉（天平、短除法都鎖）、社會從單元二開始；任務和下一步沒有一個指到鎖住的單元 ' + JSON.stringify(as));
+  assert(as.li && /已經練 2 次了/.test(as.li[0]) && as.li[1] === 'index.html#s/math/short-division-word', '小助理完整頁「去做 ▶」：數學那項連到應用題 ' + JSON.stringify(as.li));
+  await ev(`document.querySelector('#kas-tasks li[data-k="math"]').scrollIntoView({ block: 'center' }); return 1`); await sleep(150); await shot('14-assistant-page-locked');
+  await ev(`document.querySelector('#kas-tasks li[data-k="math"] a.kas-go').click(); return 1`); await sleep(1800);
+  const ad = await ev(FR + `return { hash: location.hash, src: document.querySelector('#subject iframe') && document.querySelector('#subject iframe').getAttribute('src'), gate: !!(d && d.getElementById('kl-gate')) }`);
+  assert(ad.hash === '#s/math/short-division-word' && !ad.gate, '按「去做 ▶」→ 開到短除法應用題、沒有被鎖 ' + JSON.stringify(ad));
+  // 首頁卡片：「其他任務」／「接著做」也一樣
+  await go('/index.html'); await ev(HOOK); await ev(`window.dispatchEvent(new Event('kids-done-changed')); return 1`); await sleep(1200);
+  const hm = await ev(`const b = document.getElementById('assist'), d = document.getElementById('td-more'); if (d) d.open = true; const hrefs = [...b.querySelectorAll('a.kas-go, #td-next')].map(a => a.getAttribute('href')); return { shown: !b.hidden, hrefs, main: (document.getElementById('td-next') || {}).textContent || '' }`);
+  assert(hm.shown && hm.hrefs.length && hm.hrefs.every(h => ['#s/math/balance', '#s/math/short-division', '#s/social/u1'].indexOf(h) < 0) && hm.hrefs.indexOf('#s/math/short-division-word') >= 0, '首頁小助理卡片：接著做／其他任務都不指到鎖住的單元 ' + JSON.stringify(hm));
+  await ev(`document.getElementById('td-more').scrollIntoView({ block: 'center' }); return 1`); await sleep(150); await shot('15-home-assistant-locked');
 
   // ---- 5. 其他頁的進頁檢查 ----
   const lockAll = `const KL = KidsLock, keys = ${'%KEYS%'}; let d = JSON.parse(localStorage.getItem('kids_done') || '{}'); keys.forEach(k => { d = KL.setV(d, k, 2); }); localStorage.setItem('kids_done', JSON.stringify(d)); return keys.length`;

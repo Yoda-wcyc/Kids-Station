@@ -672,7 +672,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     ok(R(U({ x: { ok: 12, wrong: 2, streak: 5, last: 'ok', lastShown: 40 } }), 'x') === 'm14,40' && R(U({ x: '12,2,5,o,40' }), 'x') === 'm14,40', 'mmBlanks v8: mastered (last ok, streak ≥3) → flag only; v7 string upgrades too');
     ok(R(U({ x: { ok: 0, wrong: 0, streak: 0, lastShown: 9 } }), 'x') === undefined && R(U({ x: '0,0,0,,9' }), 'x') === undefined, 'mmBlanks v8: shown but never answered → not synced');
     const nR = SM.normalize({ mmBlanks: { 'science:n9': { sess: 1, w: {}, a: { 'n9-a': { ok: 2, wrong: 0, streak: 2, last: 'ok' }, 'rel:n9-a': { ok: 5, wrong: 0, streak: 5, last: 'ok' } } } } }).mmBlanks['science:n9'].a;
-    ok(same(nR, { 'n9-a': '2,0,2,' }), 'mmBlanks v8: rel: records (not quizzed since 10-11) not synced: ' + C(nR));
+    ok(same(nR, { '-a': '2,0,2,' }), 'mmBlanks v8: rel: records (not quizzed since 10-11) not synced (2026-11-17：節點 id 省掉單元名 n9-a → -a): ' + C(nR));
     ok(SM.normalize({ mmBlanks: { 'science:n9': { sess: 1, w: { a: 'm3', b: 'mx,1', c: 'm,2' }, a: {} } } }).mmBlanks['science:n9'].w.a === undefined, 'mmBlanks v8: broken flags dropped, do not throw');
     const big = U({ x: { ok: 400, wrong: 300, streak: 9, last: 'ok', lastShown: 70 }, y: { ok: 150, wrong: 2, streak: 0, last: 'wrong', lastShown: 3 } }), nB = SM.normalize(big);
     ok(nB.mmBlanks['science:n9'].w.x === 'm198,70' && same(SM.normalize(nB), nB) && same(SM.normalize({ mmBlanks: SM.expandBl(nB.mmBlanks) }), nB), 'mmBlanks v8: capped / flag records stable through normalize → expand → normalize');
@@ -853,12 +853,15 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   ok(SM.bytes(SM.normDg(dg6)) <= SM.DG_MAX_BYTES && SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX <= SM.MAX_BYTES / 4, 'daily stats + goals at their caps fit the budget: ' + (SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX));
   const projBytes = SM.bytes(SM.normalize(projDoc));
   ok(g6a.length === 9 && projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats) after 六下 (9 units, sized like 六上) still ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes (六下已上線 ' + g6bHave + ' 單元)');
+  // 2026-11-17 瘦身（背架構節點 id 省掉單元名、天平刪除墓碑 100 → 50；上限一個都沒放寬）：dd 用上限 DD_MAX 算，最壞情況 127,544 → 124,016 B，空出約 4KB 給以後的新功能
+  const worstCap = SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX;
+  ok(worstCap <= 124100 && SM.MAX_BYTES / 4 - worstCap >= 3900, 'worst case at caps after the 2026-11-17 trim: ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (was 127,544 B / 456 B)');
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
   // 2026-11-02 五下上線塞滿約 156KB 超過 1/4 → v7 壓成字串（114,868 B，六下必超）→ v8 只同步答過的、封頂、熟練旗標
-  ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === 100 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,9999')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
+  ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === SM.MAX_EQ_DEL && SM.MAX_EQ_DEL === 50 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,9999')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
   const bigAll = SM.compact(Object.assign({}, maxDoc, { log: big.log.concat(big.log.map(e => Object.assign({}, e, { t: e.t + 1e7, a: e.a + '-again' }))) }));
   ok(SM.bytes(bigAll) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq) && same(bigAll.dd, sec.dd) && SM.bytes(sec.dd) <= SM.DD_MAX, 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(bigAll));
-  console.log('sync v9 doc size: sections max ' + secBytes + ' B (六下全上線估 ' + projBytes + ' B); 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
+  console.log('sync v9 doc size: sections max ' + secBytes + ' B (六下全上線估 ' + projBytes + ' B；dd 用上限算 ' + worstCap + ' B，剩 ' + (SM.MAX_BYTES / 4 - worstCap) + ' B); 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
 }
 
 // ---- 📕 錯題庫（kids-mistakes.js；社會／自然／數學／AI）＋ 同步 v4 的 mk 欄位 ----

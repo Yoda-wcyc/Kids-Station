@@ -336,5 +336,40 @@ const MANY = snap({
   if (fs.existsSync(lifeJson)) ['grocery:shop', 'waiter:waiter', 'lost:lost', 'class:class'].forEach(x => { const [sec, k] = x.split(':'); ok(JSON.parse(fs.readFileSync(lifeJson, 'utf8'))[sec] && KA._.townLabel('town:life:' + k).label !== '生活任務', 'town life label ' + k); });
 }
 
+// ---------- 13. 做過幾次（kids-lock.js，2026-11-17）：建議不指到已鎖的單元，改指 kids-lock 的「下一個更難的」 ----------
+{
+  const KL = require(path.join(root, 'kids-lock.js'));
+  const withN = (done, keys) => keys.reduce((d, k) => KL.setV(d, k, 2), done);   // 這一輪做過 2 次＝鎖住（不是最後一個）
+  const bal = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8].map(i => ['b' + i, NOW - 10 * DAY]));
+  const math = r => r.tasks.find(t => t.k === 'math');
+  // 很久沒練（③ 複習）：最後完成的單元＝天平；沒鎖 → 複習天平；鎖了 → 挑戰短除法；短除法也鎖了 → 跳過去應用題
+  const s0 = math(KA.analyze(snap({ ctx: { done: { bal } } })));
+  ok(s0 && s0.kind === 'stale' && s0.href === 'index.html#s/math/balance', 'lock: control — stale review points at balance ' + JSON.stringify(s0));
+  const s1 = math(KA.analyze(snap({ ctx: { done: withN({ bal }, ['math:balance']) } })));
+  ok(s1 && s1.kind === 'stale' && s1.href === 'index.html#s/math/short-division' && s1.title === '數學好久沒練了：挑戰〈五上 短除法：換你算〉' && /已經練 2 次/.test(s1.why) && routeOk(s1.href), 'lock: stale on a locked unit → next harder (sd) ' + JSON.stringify(s1));
+  const s2 = math(KA.analyze(snap({ ctx: { done: withN({ bal }, ['math:balance', 'math:sd']) } })));
+  ok(s2 && s2.href === 'index.html#s/math/short-division-word' && routeOk(s2.href), 'lock: next skips another locked unit (balance, sd → gw) ' + (s2 && s2.href));
+  // 「去做 ▶」的 ④ 完成到一半：短除法做一半但已經鎖了 → 挑戰應用題
+  const f0 = math(KA.analyze(snap({ ctx: { done: { sd: { l20: 100 } } } }))), f1 = math(KA.analyze(snap({ ctx: { done: withN({ sd: { l20: 100 } }, ['math:sd']) } })));
+  ok(f0 && f0.kind === 'finish' && f0.href === 'index.html#s/math/short-division', 'lock: control — finish sd ' + JSON.stringify(f0));
+  ok(f1 && f1.kind === 'finish' && f1.href === 'index.html#s/math/short-division-word' && f1.title === '挑戰〈五上 短除法：應用題〉', 'lock: finish on a locked unit → next harder ' + JSON.stringify(f1));
+  // ⑤ 還沒開始、🧭 下一步：指到的單元被鎖（例如舊紀錄判不出完成）也換成下一個
+  const n1 = KA.analyze(snap({ ctx: { done: withN({}, ['math:balance']) } }));
+  ok((n1.next.find(x => x.k === 'math') || {}).href === 'index.html#s/math/short-division' && (n1._.cand.find(t => t.k === 'math') || {}).href === 'index.html#s/math/short-division', 'lock: start task + next list skip locked first unit ' + JSON.stringify(n1.next.find(x => x.k === 'math')));
+  // 社會：單元一鎖住 → ③／⑤ 指單元二；比較弱的地方（錯題 ≥3）不再叫你「去看重點」（會被擋），只留錯題庫
+  const mk = { social: { a: mkE(NOW - 1000, { u: 'u1' }), b: mkE(NOW - 2000, { u: 'u1' }), c: mkE(NOW - 3000, { u: 'u1' }) } };
+  Object.keys(mk.social).forEach(id => { mk.social[id].due = LATER; });
+  const w0 = KA.analyze(snap({ mk })).weak.find(w => w.k === 'social'), w1 = KA.analyze(snap({ mk, ctx: { done: withN({}, ['mm:social:u1']) } })).weak.find(w => w.k === 'social');
+  ok(w0 && w0.sol === 'mm' && w0.href === 'index.html#s/social/u1', 'lock: control — weak mm points at the unit ' + JSON.stringify(w0 && [w0.sol, w0.href]));
+  ok(w1 && w1.sol === 'mmLocked' && w1.href === 'index.html#s/social/mistakes-u1' && !w1.href2 && routeOk(w1.href), 'lock: weak on a locked unit → mistakes only ' + JSON.stringify(w1 && [w1.sol, w1.href, w1.href2]));
+  const sn = KA.analyze(snap({ ctx: { done: withN({}, ['mm:social:u1']) } }))._.cand.find(x => x.k === 'social');
+  ok(sn && sn.href === 'index.html#s/social/u2' && sn.kind === 'start', 'lock: social start task skips locked u1 → u2 ' + JSON.stringify(sn));
+  // 不鎖的：乘法快算（每日清單指定的，EXEMPT）、最後一個單元；沒有 kids-lock 紀錄的照舊
+  ok(KL.lookup(DATA, { done: withN({}, ['math:mx']) }).of('math:mx').locked === false, 'lock: math:mx exempt (judged by kids-lock)');
+  const all = KA.analyze(snap({ ctx: { done: withN({ bal }, ['math:balance', 'math:sd', 'mm:social:u1']) } }));
+  const lockedHref = ['index.html#s/math/balance', 'index.html#s/math/short-division', 'index.html#s/social/u1'];
+  ok(allLinks(all).every(routeOk) && all.tasks.concat(all.next).every(t => !lockedHref.includes(t.href)), 'lock: all links valid, no task / next points at a locked unit ' + JSON.stringify(all.tasks.concat(all.next).map(t => t.href)));
+}
+
 console.log(`assistant: ${pass} passed, ${fail} failed`);
 if (fail) process.exitCode = 1;

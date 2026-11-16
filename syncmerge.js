@@ -1,4 +1,8 @@
 /* syncmerge.js — 裝置同步的合併規則（純函式，不碰 DOM／網路以外的東西；瀏覽器與 Node 共用）
+   2026-11-17 瘦身（不升版、上限都沒動；舊版↔新版雙向合併見 test/sync-compat.test.js，舊版＝test/fixtures/syncmerge-old-v9.js）：
+    - mmBlanks.a（背架構節點）的 key 省掉單元名：'u1-l1-c' → '-l1-c'（normA／expandBl）。舊版把它當成不認得的節點照樣留著、不會刪；新版兩種都吃。
+    - eq.del（天平刪除墓碑）留最新 50 筆（原 100）。舊版留 100 筆也不衝突。
+    最壞情況（smoke，dd 用上限算）127,544 → 124,016 B（上限 MAX_BYTES/4＝128,000 B，沒放寬）。
    文件格式 v9（2026-11-02 起；v8 欄位完全不變，只多一個 dd 欄位，舊文件少了它就當空的）：
     dd:{'<裝置id>':'261103e30,5m18,3;261104c5'}   ← kids_daily（每日學習統計；畫面在 kids-daily.js）。每台裝置一個字串，分號隔開每一天：YYMMDD（台北）＋科目代碼＋題數,答錯數（答錯 0 不寫）
     - G-counter：每台裝置只加自己的計數；合併時同一台、同一天、同一科的題數、答錯數各取大；顯示時才加總各裝置（ddSum）→ 重複同步不會重複算，交換、結合、冪等。
@@ -69,7 +73,8 @@
    - ctr：每台裝置各記自己的星星／回數（各欄取大），本機總數＝全部裝置加總，所以兩台不會互相蓋掉也不會重複算。 */
 (function (root) {
   'use strict';
-  const MAX_BYTES = 500 * 1024, VERSION = 9, MAX_EQ = 30, MAX_EQ_DEL = 100, BL_CAP = 99;
+  // MAX_EQ_DEL：天平刪除墓碑留最新幾筆（2026-11-17 瘦身 100 → 50，仍是清單上限 30 題的 1.6 倍；舊版裝置留 100 筆也不衝突，新版整理時砍回 50）
+  const MAX_BYTES = 500 * 1024, VERSION = 9, MAX_EQ = 30, MAX_EQ_DEL = 50, BL_CAP = 99;
 
   function h53(str) {
     let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
@@ -106,7 +111,7 @@
   const num = (x, d) => (x !== null && x !== '' && isFinite(+x) ? +x : d);
   const int0 = x => Math.max(0, Math.floor(num(x, 0)));
   // 物件型欄位：依 key 排序、逐筆整理（回 null 的丟掉）；'_' 開頭的 key 不同步
-  function section(x, one) { const o = {}; Object.keys(obj(x)).sort().forEach(k => { if (!k || k.charAt(0) === '_') return; const v = one(x[k]); if (v) o[k] = v; }); return o; }
+  function section(x, one) { const o = {}; Object.keys(obj(x)).sort().forEach(k => { if (!k || k.charAt(0) === '_') return; const v = one(x[k], k); if (v) o[k] = v; }); return o; }
   function mergeSection(a, b, fn) { const o = {}; Object.keys(Object.assign({}, a, b)).sort().forEach(k => { const v = a[k] && b[k] ? fn(a[k], b[k]) : (a[k] || b[k]); if (v) o[k] = v; }); return o; }
   const maxMap = (a, b) => { const o = {}; Object.keys(Object.assign({}, a, b)).sort().forEach(k => { o[k] = Math.max(a[k] == null ? -Infinity : a[k], b[k] == null ? -Infinity : b[k]); }); return o; };
 
@@ -140,7 +145,17 @@
     const ls = num(r.lastShown, null), L = ls == null ? '' : ls;
     return st >= 3 ? 'm' + (ok + wrong) + ',' + L : [ok, wrong, st, L].join(',');
   }
-  const normA = x => { const o = section(x, normRec); Object.keys(o).forEach(k => { if (k.indexOf('rel:') === 0) delete o[k]; }); return o; };
+  // 背架構節點 id（a 的 key）短寫（2026-11-17 瘦身，不升版）：節點 id 都是「<單元>-…」→ 文件裡省掉單元名、留「-」開頭（例 social:u1 的 'u1-l1-c' 寫 '-l1-c'）。
+  //   舊版裝置看不懂也不會丟：舊版 section 只丟 '_' 開頭的 key，'-…' 照樣留著、合併、PUT 回去（只是舊版自己用不到那幾筆）；
+  //   新版兩種寫法都吃，同一個節點取答得多的那份（pickRec）。本機 kids_mm_blanks 照舊存完整 id（expandBl 還原）。
+  const aUnit = k => { const i = String(k || '').indexOf(':'); return i >= 0 ? String(k).slice(i + 1) : ''; };
+  const aFull = (k, uid) => (uid && k.charAt(0) === '-' ? uid + k : k);
+  const aShort = (k, uid) => (uid && k.indexOf(uid + '-') === 0 && k.length > uid.length + 1 ? k.slice(uid.length) : k);
+  const normA = (x, uid) => {
+    const o = {}, d = obj(x);
+    Object.keys(d).sort().forEach(k => { if (!k || k.charAt(0) === '_') return; const f = aFull(k, uid), v = normRec(d[k]); if (!v || f.indexOf('rel:') === 0) return; const s = aShort(f, uid); o[s] = o[s] ? pickRec(o[s], v) : v; });
+    const out = {}; Object.keys(o).sort().forEach(k => { out[k] = o[k]; }); return out;
+  };
   // q：v8 存成排序過、空格分隔的字串；舊的 {雜湊:1} 也吃。'_' 開頭的不同步；空的回 ''
   const normQ = x => { const s = new Set(); (typeof x === 'string' ? x.split(/\s+/) : Object.keys(obj(x)).filter(k => x[k] && !/\s/.test(k))).forEach(k => { if (k && k.charAt(0) !== '_') s.add(k); }); return [...s].sort().join(' '); };
   function pickRec(a, b) {
@@ -150,15 +165,16 @@
   }
   // q：練習題答對過的題（題目雜湊，2026-10-29）；聯集。空的不寫出來（舊文件、舊測試的形狀不變）
   const withQ = (o, q) => { if (q && (typeof q === 'string' || Object.keys(q).length)) o.q = q; return o; };
-  function normBl(s) { if (!s || typeof s !== 'object' || Array.isArray(s)) return null; return withQ({ sess: int0(s.sess), w: section(s.w, normRec), a: normA(s.a) }, normQ(s.q)); }
+  function normBl(s, key) { if (!s || typeof s !== 'object' || Array.isArray(s)) return null; return withQ({ sess: int0(s.sess), w: section(s.w, normRec), a: normA(s.a, aUnit(key)) }, normQ(s.q)); }
   const mergeBl = (a, b) => withQ({ sess: Math.max(a.sess, b.sess), w: mergeSection(a.w, b.w, pickRec), a: mergeSection(a.a, b.a, pickRec) }, normQ((a.q || '') + ' ' + (b.q || '')));
   // 同步結果寫回本機 kids_mm_blanks 用：字串紀錄還原成物件（形狀跟 blanks.js 寫的一樣）。
   // local＝本機原本的 kids_mm_blanks：文件裡那筆＝本機那筆壓縮後的樣子 → 留本機原本的（沒被封頂／旗標化）；本機有、文件沒有的（沒作答的）也留
   function expandBl(x, local) {
     const L = obj(local), qo = q => { const o = {}; (q ? q.split(' ') : []).forEach(h => { o[h] = 1; }); return o; };
-    const m = (r, lb) => { const lo = obj(lb), o = {}; Object.keys(lo).forEach(k => { if (lo[k] && typeof lo[k] === 'object') o[k] = lo[k]; }); Object.keys(r).forEach(k => { if (normRec(lo[k]) !== r[k]) o[k] = unRec(r[k]); }); return o; };
+    // uid：a 的短寫 key 還原成完整節點 id；本機裡舊版留下的短寫 key（'-' 開頭）不留（文件裡那筆已經用完整 id 寫回）
+    const m = (r, lb, uid) => { const lo = obj(lb), o = {}; Object.keys(lo).forEach(k => { if (lo[k] && typeof lo[k] === 'object' && !(uid && k.charAt(0) === '-')) o[k] = lo[k]; }); Object.keys(r).forEach(k0 => { const k = aFull(k0, uid); if (normRec(lo[k]) !== r[k0]) o[k] = unRec(r[k0]); }); return o; };
     const d = section(x, normBl), o = {};
-    Object.keys(d).forEach(k => { const u = d[k], l = obj(L[k]); o[k] = withQ({ sess: u.sess, w: m(u.w, l.w), a: m(u.a, l.a) }, qo(u.q)); });
+    Object.keys(d).forEach(k => { const u = d[k], l = obj(L[k]); o[k] = withQ({ sess: u.sess, w: m(u.w, l.w, ''), a: m(u.a, l.a, aUnit(k)) }, qo(u.q)); });
     return o;
   }
   // ---- eq：數學天平題目清單（聯集＋刪除墓碑）----
@@ -415,7 +431,7 @@
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function normCode(s) { const c = String(s || '').toUpperCase().replace(/[\s-]/g, ''); return c.length === 8 && [...c].every(ch => ALPHA.includes(ch)) ? c.slice(0, 4) + '-' + c.slice(4) : null; }
 
-  const SM = { MAX_BYTES, VERSION, MAX_EQ, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, N_ABC, normN, mergeN, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg };
+  const SM = { MAX_BYTES, VERSION, MAX_EQ, MAX_EQ_DEL, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, N_ABC, normN, mergeN, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg };
   if (typeof module !== 'undefined' && module.exports) module.exports = SM;
   root.KESyncMerge = SM;
 })(typeof window !== 'undefined' ? window : globalThis);

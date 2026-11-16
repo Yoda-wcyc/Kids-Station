@@ -2,6 +2,7 @@
    畫面在 assistant-ui.js（首頁卡片、assistant.html、家長頁「本週學習摘要」）；這支只把「各科紀錄的快照」算成：
      subjects 各科進度、tasks 今日任務（最多 3 項）、weak 比較弱的地方（最多 5 項）、next 還沒開始的下一步、progress 本週 vs 上週、cheer 鼓勵語、town 小朋友鎮（今天／這 7 天在遊戲裡答了幾題、哪些職業和任務）。
    只讀不寫學習紀錄。單元完成的判定一律問 completion.js（KidsCompletion），這裡不另外訂規則。
+   單元鎖住（做滿 2 次）的判定一律問 kids-lock.js（KidsLock.lookup）：任務、🧭 下一步跳過已鎖的單元、改指「下一個更難的」；比較弱的地方只留錯題庫（lockOf）。
 
    快照 snap（全部可省略；新帳號就是全部空的）：
      now           現在（毫秒）
@@ -21,6 +22,7 @@
 (function (root) {
   'use strict';
   const KC = root.KidsCompletion || (typeof require === 'function' ? require('./completion.js') : null);
+  const KLx = () => root.KidsLock || (typeof require === 'function' ? (() => { try { return require('./kids-lock.js'); } catch (e) { return null; } })() : null);
 
   // ================= 可調常數（優先順序規則） =================
   const RULES = {
@@ -81,6 +83,8 @@
       href: '{unit}', btn: '📜 去讀成語故事', href2: '{mk}', btn2: '📕 只練國語錯題' },
     mmExam: { steps: ['📖 進單元先按「看重點」，把重點讀一遍', '📕 到錯題庫按「只練錯題」，把考錯的題練回來', '📄 再考一次「單元測驗」（會換題），看看進步了多少'],
       href: '{unit}', btn: '📖 去看重點', href2: '{mk}', btn2: '📕 只練錯題' },
+    mmLocked: { steps: ['🔒 這個單元已經練 2 次了（要再進單元請爸爸媽媽到「家長」頁解鎖）', '📕 先到錯題庫按「只練錯題」，把錯的題練回來', '🔁 之後每天按「🔁 今天要複習」，隔 1、3、7 天都答對就畢業 🎓'],
+      href: '{mk}', btn: '📕 只練錯題' },
     ai: { steps: ['🤖 到 AI 錯題庫按「只練錯題」', '💬 每題答完都有說明，讀一遍再按下一題'],
       href: '{mk}', btn: '🤖 只練錯題' }
   };
@@ -190,6 +194,17 @@
     SK.forEach(k => { if (!out[k]) out[k] = []; });
     return out;
   }
+  // 做過幾次（kids-lock.js，2026-11-17）：建議指到已鎖的單元 → 換成 kids-lock 算的「下一個更難的」（判斷全在 kids-lock，這裡只套用）
+  // 回 u 本身（沒鎖、不在鎖的路徑上）｜{key,title,href,from:原單元,n}（鎖住、換成下一個）｜null（鎖住又沒有下一個：不建議）
+  function lockOf(snap) {
+    const KL = KLx(); let L = null;
+    try { L = KL && KL.lookup ? KL.lookup(obj(snap.data), obj(snap.ctx)) : null; } catch (e) { L = null; }
+    return u => {
+      let st = null; try { st = u && L ? L.of(u.key) : null; } catch (e) { st = null; }
+      if (!st || !st.locked) return u;
+      return st.next ? { key: st.next.key, title: st.next.title, href: st.next.href, from: u, n: st.n } : null;
+    };
+  }
   // 社會／自然單元名（錯題用）
   const mmTitle = (k, u) => { const x = ((KC && KC.MM_UNITS[k]) || []).find(r => r[0] === u); return x ? x[1] : u; };
   const mmIdx = (k, u) => ((KC && KC.MM_UNITS[k]) || []).findIndex(r => r[0] === u);
@@ -242,7 +257,7 @@
   function analyze(snap) {
     snap = snap || {};
     const now = +snap.now || Date.now(), today = dayIdx(now), ctx = obj(snap.ctx), mk = obj(snap.mk), keMk = obj(snap.keMk);
-    const A = activity(snap), U = units(snap);
+    const A = activity(snap), U = units(snap), LK = lockOf(snap);
     const allDays = new Set(); SK.forEach(k => A[k].days.forEach(d => allDays.add(d)));
     const isNew = !allDays.size && SK.every(k => U[k].every(u => u.status === 'todo')) && !live(keMk).length && SK.every(k => !live(mk[k]).length);
 
@@ -311,16 +326,20 @@
       else if (unitG) list.push({ kind: 'mistakes', icon: '📕', title: `只練〈${mmTitle(s.k, unitG.unit)}〉的錯題（${unitG.n} 題）`, why: `這個單元錯了 ${unitG.n} 題，${grad}`, href: unitG.mkHref, n: unitG.n });
       else if (S.mistakes >= RULES.MK_SUBJ) list.push({ kind: 'mistakes', icon: '📕', title: `只練${s.name}錯題（${S.mistakes} 題）`, why: `${s.name}錯題庫有 ${S.mistakes} 題，${grad}`, href: s.mk, n: S.mistakes });
       // ③ 很久沒碰：回到最近在做（或最後完成）的單元
+      // 單元鎖住了（做滿 2 次）→ 改去挑戰下一個（lockOf）
+      const lockWhy = x => `〈${x.from.title}〉已經練 ${x.n} 次了，去挑戰更難的下一個`;
+      const toNext = (t, x) => (x && x.from ? Object.assign(t, { title: `挑戰〈${x.title}〉`, why: lockWhy(x), href: x.href }) : t);
       if (S.days != null && S.days > RULES.STALE_DAYS) {
-        const u = us.filter(x => x.status === 'doing').sort((x, y) => y.pct - x.pct)[0] || us.filter(x => x.status === 'done').slice(-1)[0];
-        list.push({ kind: 'stale', icon: '🔁', title: `複習${s.name}${u ? '：' + u.title : ''}`, why: `上次練${s.name}是 ${S.days} 天前，複習一輪會記得更牢`, href: u ? u.href : s.home });
+        const u = LK(us.filter(x => x.status === 'doing').sort((x, y) => y.pct - x.pct)[0] || us.filter(x => x.status === 'done').slice(-1)[0]);
+        list.push(u && u.from ? { kind: 'stale', icon: '🔁', title: `${s.name}好久沒練了：挑戰〈${u.title}〉`, why: `上次練${s.name}是 ${S.days} 天前；${lockWhy(u)}`, href: u.href }
+          : { kind: 'stale', icon: '🔁', title: `複習${s.name}${u ? '：' + u.title : ''}`, why: `上次練${s.name}是 ${S.days} 天前，複習一輪會記得更牢`, href: u ? u.href : s.home });
       }
       // ④ 進行到一半：最接近完成的那個
-      const doing = us.filter(x => x.status === 'doing').sort((x, y) => y.pct - x.pct)[0];
-      if (doing) { const miss = (doing.checklist || []).find(c => !c.ok); list.push({ kind: 'finish', icon: '🏁', title: `把〈${doing.title}〉完成`, why: `已經完成 ${doing.pct}%${miss ? '，還差：' + miss.label : ''}`, href: doing.href }); }
+      const doing = LK(us.filter(x => x.status === 'doing').sort((x, y) => y.pct - x.pct)[0]);
+      if (doing) { const miss = (doing.checklist || []).find(c => !c.ok); list.push(toNext({ kind: 'finish', icon: '🏁', title: `把〈${doing.title}〉完成`, why: `已經完成 ${doing.pct}%${miss ? '，還差：' + miss.label : ''}`, href: doing.href }, doing)); }
       // ⑤ 還沒開始：照順序的下一個
-      const todo = us.find(x => x.status === 'todo') || (U._all[s.k] || []).find(x => x.status === 'todo');
-      if (todo && !doing) list.push({ kind: 'start', icon: '🚀', title: `${isNew || !us.some(x => x.status !== 'todo') ? '從' : '開始'}〈${todo.title}〉${isNew || !us.some(x => x.status !== 'todo') ? '開始' : ''}`, why: isNew || !us.some(x => x.status !== 'todo') ? `${s.name}的第一個單元，從這裡出發` : `照順序，${s.name}的下一步是這個單元`, href: todo.href });
+      const todo = LK(us.find(x => x.status === 'todo') || (U._all[s.k] || []).find(x => x.status === 'todo'));
+      if (todo && !doing) list.push(toNext({ kind: 'start', icon: '🚀', title: `${isNew || !us.some(x => x.status !== 'todo') ? '從' : '開始'}〈${todo.title}〉${isNew || !us.some(x => x.status !== 'todo') ? '開始' : ''}`, why: isNew || !us.some(x => x.status !== 'todo') ? `${s.name}的第一個單元，從這裡出發` : `照順序，${s.name}的下一步是這個單元`, href: todo.href }, todo));
       list.forEach(t => { t.pri = PRI[t.kind]; t.k = s.k; t.subj = s.name; t.min = t.kind === 'mistakes' || t.kind === 'review' ? clamp(Math.ceil(t.n * MINUTES.mkEach), MINUTES.mkMin, MINUTES.mkMax) : MINUTES[t.kind]; });
       list.sort((x, y) => x.pri - y.pri);
       if (list[0]) cand.push(list[0]);   // 同一科一天最多 1 項
@@ -340,7 +359,8 @@
     groups.filter(g => g.n >= RULES.WEAK_MIN || g.exam != null).sort((x, y) => (isEx(y) - isEx(x)) || (y.n - x.n) || (SK.indexOf(x.k) - SK.indexOf(y.k))).forEach(g => {
       if (weak.length >= RULES.MAX_WEAK || (per[g.k] || 0) >= RULES.WEAK_PER_SUBJ) return;
       per[g.k] = (per[g.k] || 0) + 1;
-      const kind = g.exam != null ? 'mmExam' : g.kind, sol = SOLUTIONS[kind], v = { unit: g.unitHref, mk: g.mkHref, how: g.calc ? MATH_KIND[g.calc][2] : '' };
+      // 單元鎖住了（做滿 2 次）：「去看重點」會被擋 → 只留錯題庫（錯題庫重練不鎖）
+      const probe = { key: `mm:${g.k}:${g.unit}` }, kind = g.kind === 'mm' && g.unit && LK(probe) !== probe ? 'mmLocked' : g.exam != null ? 'mmExam' : g.kind, sol = SOLUTIONS[kind], v = { unit: g.unitHref, mk: g.mkHref, how: g.calc ? MATH_KIND[g.calc][2] : '' };
       const text = g.exam != null ? `單元測驗 ${g.exam} 分` + (g.n ? `・錯題 ${g.n} 題` : '') : `錯題 ${g.n} 題`;
       weak.push({ k: g.k, icon: SBY[g.k].icon, title: g.title, text, n: g.n, extra: g.extra, sol: kind, steps: sol.steps.map(x => fill(x, v)),
         href: fill(sol.href, v), btn: sol.btn, href2: sol.href2 ? fill(sol.href2, v) : '', btn2: sol.btn2 || '' });
@@ -349,7 +369,7 @@
     // ---------- 還沒開始的：每科只列下一步 ----------
     const next = [];
     SUBJ.slice().sort((x, y) => ord(x.k) - ord(y.k)).forEach(s => {
-      const us = U[s.k], t = us.find(x => x.status === 'todo') || (us.every(x => x.status === 'done') ? (U._all[s.k] || []).find(x => x.status === 'todo') : null);
+      const us = U[s.k], t = LK(us.find(x => x.status === 'todo') || (us.every(x => x.status === 'done') ? (U._all[s.k] || []).find(x => x.status === 'todo') : null));
       if (t && next.length < RULES.NEXT_MAX) next.push({ k: s.k, icon: s.icon, subj: s.name, title: t.title, href: t.href, first: !us.some(x => x.status !== 'todo') });
     });
 

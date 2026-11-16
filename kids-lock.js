@@ -183,6 +183,14 @@
     if (locked) for (let j = i + 1; j < items.length; j++) if (!lockedAt(j)) { next = items[j]; break; }
     return { key, n, locked, next, title: i >= 0 ? items[i].title : key, back: path ? path.back : null };
   }
+  // 一份紀錄的查表：key → view(…)（不在任何路徑上回 null）。瀏覽器 snap() 和小助理（assistant-core.js）共用
+  function lookup(data, ctx) {
+    ctx = ctx || {}; const ps = paths(data), byKey = {}, memo = {};
+    ps.forEach(p => p.items.forEach(u => { if (!byKey[u.key]) byKey[u.key] = p; }));
+    const timesOf = k => (k in memo ? memo[k] : (memo[k] = times(ctx.done, k, floorOf(k, data, ctx))));
+    const state = (key, path) => { key = alias(key); return view(path || byKey[key] || null, key, timesOf); };
+    return { ps, byKey, timesOf, state, of: key => { key = alias(key); return slot(key) && byKey[key] ? state(key) : null; } };
+  }
   // 標示文字：沒做＝空、做 1 次 ✓1、做 2 次 ✓2（鎖住的 ✓2 🔒）
   const badgeText = st => (!st || !st.n ? '' : st.locked ? '✓' + st.n + ' 🔒' : '✓' + st.n);
   // 單元頁網址 → 單元 id（直接打網址、深層連結也擋；錯題、複習、段考模擬、預覽不擋）
@@ -218,7 +226,7 @@
     return key;
   }
 
-  const KL = { MAX, PASS, EXEMPT, MXL, MX_NAME, PAT_LV, PH_LV, alias, slot, keyOf, getV, setV, times, evOf, step, unlock, floorOf, onRecord, paths, view, badgeText, keyFromUrl, nameOf };
+  const KL = { MAX, PASS, EXEMPT, MXL, MX_NAME, PAT_LV, PH_LV, alias, slot, keyOf, getV, setV, times, evOf, step, unlock, floorOf, onRecord, paths, view, lookup, badgeText, keyFromUrl, nameOf };
   if (typeof module !== 'undefined' && module.exports) module.exports = KL;
   root.KidsLock = KL;
   if (typeof document === 'undefined' || typeof window === 'undefined') return;
@@ -238,16 +246,13 @@
     const W = window, KD = W.KidsDone, base = KD ? KD.data() : {};
     const data = Object.assign({}, base, { zhArts: W.DATA_ZH || null, zhCatalog: base.zhCatalog && base.zhCatalog.length ? base.zhCatalog : (W.DATA_ZH_CATALOG || []), cyCatalog: base.cyCatalog || W.DATA_CY_CATALOG || null, comics: W.COMIC_CATALOG || null, gept: W.GEPT_CATALOG || null });
     const ctx = Object.assign(KD ? KD.ctx() : { done: ld('kids_done', {}) }, { comic: ld('kids_comic', {}), gept: ld('kids_gept', {}) });
-    const ps = paths(data), byKey = {};
-    ps.forEach(p => p.items.forEach(u => { if (!byKey[u.key]) byKey[u.key] = p; }));
-    const memo = {}, timesOf = k => (k in memo ? memo[k] : (memo[k] = times(ctx.done, k, floorOf(k, data, ctx))));
-    snapC = { data, ctx, ps, byKey, timesOf, raw: rawDone() };
+    snapC = Object.assign(lookup(data, ctx), { data, ctx, raw: rawDone() });
     setTimeout(() => { snapC = null; }, 0);
     return snapC;
   }
   const fresh = () => { snapC = null; };
   // 單元狀態；path 可以自己給（同一頁有更完整的清單時）
-  function state(key, path) { const S = snap(); key = alias(key); return view(path || S.byKey[key] || null, key, S.timesOf); }
+  function state(key, path) { return snap().state(key, path); }
   // 清單上的標示：<span class="kl-b">✓1</span>／✓2 🔒（灰）；沒做回空字串
   function badge(key, path) { try { if (!slot(key)) return ''; css(); const st = state(key, path), t = badgeText(st); return t ? `<span class="kl-b${st.locked ? ' kl-lk' : ''}" title="${st.locked ? '做過 ' + st.n + ' 次，鎖住了：去挑戰下一個' : '做過 ' + st.n + ' 次'}">${esc(t)}</span>` : ''; } catch (e) { return ''; } }
   const isLocked = (key, path) => { try { return state(key, path).locked; } catch (e) { return false; } };

@@ -264,12 +264,12 @@
       // 拉近 2.3 倍後半徑 14 ≈ 直徑 50px（iPad 直式），觸控 ≥44px
       return `<a href="${esc(hrefOf(k, a))}" aria-label="${i + 1}. ${esc(a.title)}"><circle cx="${f1(x)}" cy="${f1(y)}" r="14" fill="transparent"/><circle cx="${f1(x)}" cy="${f1(y)}" r="11.5" fill="#ff8a3d" stroke="#fff" stroke-width="2.5"/>${txt(x, y + 4.5, String(i + 1), 12, '#fff', ' font-weight="800"')}</a>`; }).join('');
   }
+  // 做過幾次（kids-lock.js）：有單元 id（dk）的活動標 ✓1／✓2 🔒，鎖住的變灰（說明卡、右側清單共用；點進去由單元頁自己蓋「去挑戰」的卡）
+  const lock = a => { try { const KL = G.KidsLock; return a.dk && KL ? { tag: KL.badge(a.dk), off: KL.isLocked(a.dk) } : { tag: '', off: false }; } catch (e) { return { tag: '', off: false }; } };
   function cardHtml(k) {
     const S = SUBJ[k] || { i: '', n: k }, I = BY[k], xs = actsOf(k), r = D.T && D.T.rows ? D.T.rows.find(x => x.k === k) : null;
     const icon = a => (/^</.test(a.icon || '') ? `<span class="isl-ai isl-svgi">${a.icon}</span>` : `<span class="isl-ai">${a.icon || '•'}</span>`);
     const desc = a => { try { return typeof a.desc === 'function' ? a.desc() : a.desc || ''; } catch (e) { return ''; } };
-    // 做過幾次（kids-lock.js）：有單元 id（dk）的活動標 ✓1／✓2 🔒，鎖住的變灰
-    const lock = a => { try { const KL = G.KidsLock; return a.dk && KL ? { tag: KL.badge(a.dk), off: KL.isLocked(a.dk) } : { tag: '', off: false }; } catch (e) { return { tag: '', off: false }; } };
     const quest = r ? `<a class="isl-quest ${r.done ? 'done' : ''}" href="${esc(strip(((r.subs || []).find(x => !x.done) || r).href))}">${r.done ? '✓ 今天的任務完成了' : '！ 今天的任務'}：${esc(r.name)} ${r.n} / ${r.goal} ${esc(r.unit)}${r.done ? '' : ' ▶'}</a>` : '';
     card.innerHTML = `<div class="isl-ch"><span class="isl-ci" aria-hidden="true">${S.i}</span><div><h2>${esc(S.n)}・${esc(I.b)}</h2><p>${esc(I.line)}</p></div></div>${quest}`
       + `<ol class="isl-acts">${xs.map((a, i) => { const d = desc(a), pin = i < 6 && !PORTALS.some(p => p[0] === a.id), lk = lock(a); return `<li><a href="${esc(hrefOf(k, a))}"${lk.off ? ' class="kl-off"' : ''}><span class="isl-n${pin ? '' : ' off'}">${pin ? i + 1 : ''}</span>${icon(a)}<span class="isl-at"><b>${esc(a.title)}${lk.tag}</b>${d ? `<small>${esc(d)}</small>` : ''}</span></a></li>`; }).join('')}</ol>`
@@ -281,7 +281,7 @@
   let listDone = false;
   function listHtml() {
     listDone = true;
-    $('isl-items').innerHTML = G.KidsSubjects.map(s => { const xs = actsOf(s.k); return xs.length ? `<section class="isl-lg" data-k="${s.k}"><h3>${s.i} ${esc(s.n)}</h3><ul>${xs.map(a => `<li data-q="${esc((s.n + ' ' + a.title + ' ' + (typeof a.desc === 'string' ? a.desc : '')).toLowerCase())}"><a href="${esc(hrefOf(s.k, a))}">${/^</.test(a.icon || '') ? '🎮' : a.icon || '•'} ${esc(a.title)}</a></li>`).join('')}</ul></section>` : ''; }).join('') + '<p class="isl-none" id="isl-none" hidden>找不到，換個字試試看 🔍</p>';
+    $('isl-items').innerHTML = G.KidsSubjects.map(s => { const xs = actsOf(s.k); return xs.length ? `<section class="isl-lg" data-k="${s.k}"><h3>${s.i} ${esc(s.n)}</h3><ul>${xs.map(a => { const lk = lock(a); return `<li data-q="${esc((s.n + ' ' + a.title + ' ' + (typeof a.desc === 'string' ? a.desc : '')).toLowerCase())}"><a href="${esc(hrefOf(s.k, a))}"${lk.off ? ' class="kl-off"' : ''}>${/^</.test(a.icon || '') ? '🎮' : a.icon || '•'} ${esc(a.title)}${lk.tag}</a></li>`; }).join('')}</ul></section>` : ''; }).join('') + '<p class="isl-none" id="isl-none" hidden>找不到，換個字試試看 🔍</p>';
     filter();
   }
   function filter() {
@@ -359,7 +359,7 @@
   // 資料變了（同步合併、完成紀錄、別的分頁）→ 閒下來重算重畫；不在首頁就不畫
   let tm = null;
   const onHome = () => document.body.classList.contains('home-page');
-  function refresh() { if (!onHome()) return; D = gather(); draw(); coins(); party(); }
+  function refresh() { if (!onHome()) return; D = gather(); draw(); coins(); party(); if (listDone) listHtml(); }   // 清單上的 ✓1／✓2 🔒 也跟著重畫（搜尋字保留）
   function later(ms) { clearTimeout(tm); tm = setTimeout(() => { if (G.requestIdleCallback) G.requestIdleCallback(refresh, { timeout: 800 }); else refresh(); }, ms); }
   // 從活動按上一頁回來：還停在剛才那座島（地圖藏起來時量不到大小，回來再對位一次）
   G.addEventListener('hashchange', () => { if (onHome()) { applyTime(); place(); later(40); } });
