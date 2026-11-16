@@ -287,7 +287,7 @@
   // ---------- 學習 ----------
   const LF = { lv: '', tag: '', src: '', q: '', page: 0 };
   const PAGE = 40; // 單字卡一頁 40 張（1200 字一次全畫，iPad 會卡）
-  function pLearn(sub) {
+  function pLearn(sub, sub2) {
     if (sub === 'words') return pWords(sub2);   // #learn/words/<來源>：從全民英檢準備區直接開某個來源（moe1200、moe800、gept1）
     if (sub === 'roots') return pRoots();
     if (sub === 'grammar') return pGrammar();

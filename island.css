@@ -1,0 +1,91 @@
+/* island.css — 首頁學習島（island.js）。只在 #home 顯示（subjects.js 給 body 加 home-page）；顏色寫死＋時段用 CSS 變數，深淺色系統設定都看得清楚 */
+#island{display:none}
+body.home-page #island{display:block}
+.isl{--sea:#74cbe0;--shal:#b5ebee;--tint:#000;--tint-a:0;--lit:0;max-width:1240px;margin:0 auto;padding:10px 16px 0;box-sizing:border-box;color:#1f2a37}
+.isl[data-time=dawn]{--sea:#80c4d8;--shal:#c4e8ea;--tint:#ff9e7a;--tint-a:.16;--lit:.3}
+.isl[data-time=dusk]{--sea:#5aa5c2;--shal:#9fd3dd;--tint:#ff6a45;--tint-a:.24;--lit:.8}
+.isl[data-time=night]{--sea:#2c6a90;--shal:#4c8db0;--tint:#081634;--tint-a:.46;--lit:1}
+.isl-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:0 0 10px}
+.isl-top h1{flex:1 1 auto;margin:0;font-size:1.45rem;line-height:1.2}
+.isl-b{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;min-width:44px;padding:6px 14px;box-sizing:border-box;border-radius:14px;border:2px solid #e6d6b8;background:#fff;color:#1f2a37;font:inherit;font-size:1rem;font-weight:700;text-decoration:none;cursor:pointer;touch-action:manipulation;white-space:nowrap}
+.isl-b:active{transform:translateY(1px)}
+.isl-b:focus-visible,.isl-lb:focus-visible,.isl a:focus-visible{outline:3px solid #2b6cb0;outline-offset:2px}
+.isl-b[hidden]{display:none}
+.isl-coin{font-variant-numeric:tabular-nums;background:#fff8ec}
+.isl-body{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+@media (min-width:1000px){.isl-list-open .isl-body{grid-template-columns:minmax(0,1fr) 300px}}
+.isl-stage{position:relative;min-width:0}
+.isl-map{position:relative;overflow:hidden;border-radius:24px;background:var(--sea);border:3px solid #fff;box-shadow:0 4px 0 rgba(38,52,69,.08),0 8px 20px rgba(38,52,69,.08);transition:background .6s}
+.isl-map::before{content:'';display:block;padding-top:64%}
+.isl-map svg{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;transition:transform .7s cubic-bezier(.3,.7,.2,1);touch-action:manipulation;font-family:inherit;-webkit-user-select:none;user-select:none}
+.isl-sea{fill:var(--sea);transition:fill .6s}
+.isl-shal{fill:var(--shal);opacity:.75}
+.isl-tint{fill:var(--tint);opacity:var(--tint-a);pointer-events:none;transition:opacity .6s}
+.isl-lights{opacity:var(--lit);pointer-events:none;transition:opacity .6s}
+.isl-beam{display:none;pointer-events:none}.isl-beam.on{display:inline}
+.isl-i,.isl-lb{cursor:pointer}
+.isl-lb:focus{outline:none}.isl-lb:focus-visible rect{stroke:#2b6cb0;stroke-width:4;stroke-opacity:1}
+.isl-pl{cursor:pointer}
+.isl-portals{opacity:0;pointer-events:none;transition:opacity .4s}
+svg[data-z=game] .isl-portals{opacity:1;pointer-events:auto}
+/* 拉近時：別的島淡一點，看得出鏡頭在哪 */
+svg[data-z]:not([data-z=""]) .isl-i{transition:opacity .5s}
+svg[data-z=chinese] .isl-i:not([data-k=chinese]),svg[data-z=math] .isl-i:not([data-k=math]),svg[data-z=social] .isl-i:not([data-k=social]),svg[data-z=history] .isl-i:not([data-k=history]),svg[data-z=geo] .isl-i:not([data-k=geo]),svg[data-z=science] .isl-i:not([data-k=science]),svg[data-z=english] .isl-i:not([data-k=english]),svg[data-z=ai] .isl-i:not([data-k=ai]),svg[data-z=game] .isl-i:not([data-k=game]){opacity:.55}
+/* 生活感：都是 CSS 動畫（頁面隱藏時 .isl-pause 暫停；減少動態效果時全部關掉） */
+.isl-p{animation:isl-walk 12s ease-in-out infinite alternate}
+@keyframes isl-walk{from{transform:translate(0,0)}to{transform:translate(var(--dx),var(--dy))}}
+.isl-boat{animation:isl-bob 3.2s ease-in-out infinite alternate}
+.isl-bob{animation:isl-bob 1.8s ease-in-out infinite alternate}
+@keyframes isl-bob{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+.isl-wheel{animation:isl-spin 24s linear infinite}
+@keyframes isl-spin{to{transform:rotate(360deg)}}
+.isl-flag.todo{animation:isl-wave 1.6s ease-in-out infinite alternate}
+@keyframes isl-wave{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+.isl-fwb{transform:scale(0);opacity:0;animation:isl-fw 1.5s ease-out 2 both}
+@keyframes isl-fw{0%{transform:scale(.2);opacity:1}70%{opacity:1}100%{transform:scale(1.25);opacity:0}}
+.isl-pause *{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){.isl *{animation:none!important;transition:none!important}}
+/* 說明卡：直式在地圖下面；寬螢幕疊在地圖右邊 */
+.isl-card{margin-top:12px;background:#fff;border:3px solid #e6d6b8;border-radius:22px;padding:14px 16px;box-sizing:border-box;color:#1f2a37}
+.isl-card[hidden]{display:none}
+@media (min-width:1000px){.isl-card{position:absolute;top:12px;right:12px;bottom:12px;width:min(44%,360px);margin:0;overflow:auto;-webkit-overflow-scrolling:touch;box-shadow:0 6px 24px rgba(20,40,60,.22)}}
+.isl-ch{display:flex;gap:12px;align-items:flex-start}
+.isl-ci{font-size:2.4rem;line-height:1}
+.isl-ch h2{margin:0;font-size:1.35rem}
+.isl-ch p{margin:4px 0 0;font-size:1.02rem;line-height:1.5;color:#3c4a5a}
+.isl-quest{display:flex;align-items:center;min-height:48px;margin:10px 0 0;padding:6px 14px;border-radius:14px;background:#fff1e4;border:2px solid #ff8a3d;color:#7a3300;font-weight:800;text-decoration:none;line-height:1.35}
+.isl-quest.done{background:#e6f8ee;border-color:#2fb36d;color:#145c38}
+.isl-acts{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.isl-acts a{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 10px;border:2px solid #efe2c8;border-radius:14px;background:#fffdf8;color:#1f2a37;text-decoration:none}
+.isl-acts a:active{background:#fff4e2}
+.isl-n{flex:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#ff8a3d;color:#fff;font-weight:800;font-size:.9rem}
+.isl-n.off{background:transparent}
+.isl-ai{flex:none;font-size:1.5rem;width:34px;text-align:center}
+.isl-svgi svg{width:32px;height:32px}
+.isl-at{min-width:0}.isl-at b{display:block;font-size:1.02rem;line-height:1.35}
+.isl-at small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:#56616f;font-size:.86rem;line-height:1.4}
+.isl-cf{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin-top:12px}
+/* 全部活動清單：寬螢幕在右邊；直式收成「☰ 清單」打開的側欄 */
+.isl-list{display:none;flex-direction:column;background:#fff;border:3px solid #e6d6b8;border-radius:22px;padding:12px;box-sizing:border-box;color:#1f2a37}
+.isl-list-open .isl-list{display:flex}
+.isl-lh{display:flex;align-items:center;justify-content:space-between;margin:0 0 8px;font-size:1.1rem}
+.isl-q{min-height:48px;width:100%;box-sizing:border-box;padding:8px 12px;border:2px solid #e6d6b8;border-radius:14px;font:inherit;font-size:1rem;background:#fffdf8;color:#1f2a37}
+#isl-items{overflow:auto;-webkit-overflow-scrolling:touch;margin-top:8px;flex:1 1 auto;min-height:0}
+.isl-lg h3{margin:10px 2px 4px;font-size:1rem;color:#3c4a5a}
+.isl-lg ul{list-style:none;margin:0;padding:0}
+.isl-lg a{display:flex;align-items:center;min-height:44px;padding:4px 8px;border-radius:10px;color:#1f2a37;text-decoration:none;line-height:1.3}
+.isl-lg a:active{background:#fff4e2}
+.isl-none{color:#56616f;text-align:center}
+@media (min-width:1000px){.isl-list{max-height:620px;position:sticky;top:calc(var(--subj-h) + 8px)}.isl-x{display:none}}
+@media (max-width:999.98px){.isl-list{position:fixed;top:0;right:0;bottom:0;width:min(88vw,380px);z-index:120;border-radius:22px 0 0 22px;border-right:0;box-shadow:-8px 0 30px rgba(20,40,60,.25);padding-top:calc(12px + env(safe-area-inset-top))}}
+/* 導覽卡 */
+.isl-tour{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,30,50,.35);z-index:5}
+.isl-tour[hidden]{display:none}
+.isl-tc{background:#fff;border-radius:22px;padding:18px 20px;max-width:440px;width:100%;box-sizing:border-box;text-align:center;color:#1f2a37;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.isl-ti{font-size:2.6rem;line-height:1.1}
+.isl-tc h2{margin:6px 0;font-size:1.3rem}
+.isl-tc p{margin:0;font-size:1.05rem;line-height:1.6;text-align:left}
+.isl-td{display:flex;gap:6px;justify-content:center;margin:12px 0 0}
+.isl-td i{width:10px;height:10px;border-radius:50%;background:#e6d6b8}.isl-td i.on{background:#ff8a3d}
+.isl-go{background:#ff8a3d;border-color:#ff8a3d;color:#fff}
+@media (max-width:600px){.isl{padding:8px 8px 0}.isl-top h1{font-size:1.2rem;flex-basis:100%}.isl-map{border-radius:16px}}

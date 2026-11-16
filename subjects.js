@@ -5,6 +5,13 @@
   const SUBJ = [{ k: 'chinese', n: '國語', i: '📝' }, { k: 'math', n: '數學', i: '🔢' }, { k: 'social', n: '社會', i: '🌏' }, { k: 'history', n: '歷史', i: '🏛️' }, { k: 'geo', n: '地理', i: '🌍' }, { k: 'science', n: '自然', i: '🔬' }, { k: 'english', n: '英文', i: '🔤' }, { k: 'ai', n: 'AI', i: '🤖' }, { k: 'game', n: '遊戲', i: '🎮' }];
   // 有活動卡片的科目：點卡片 → iframe 開正本頁面（有 href 的卡片改成整頁開，例如勇者島；icon 可放小 SVG）
   const ACTS = {
+    // 2026-11-16：英文（港口）的入口清單，只給首頁學習島的說明卡和清單面板用（island.js）；英文頁面本身在 app.js，route() 遇到英文直接交給 app.js
+    english: [{ id: 'learn', title: '學習', desc: '單字・片語・字根・文法・句型', icon: '📖', href: '#learn' },
+      { id: 'practice', title: '練習', desc: '自己選題目來挑戰', icon: '🎯', href: '#practice' },
+      { id: 'tb', title: '課本進度', desc: '翰林五年級課本單元', icon: '📘', href: '#tb' },
+      { id: 'mistakes', title: '錯題庫', desc: '答錯的題目再練一次', icon: '🩹', href: '#mistakes' },
+      { id: 'bank', title: '例題庫', desc: '全部的英文題目', icon: '🗂️', href: '#bank' },
+      { id: 'gept', title: '全民英檢考場', desc: '初級・中級・高級 題型練習與模擬考', icon: '🏅', href: 'gept/index.html' }],
     // 2026-11-01：國語〈閱讀素養 100 篇〉（chinese/reading.html；L1～L4 循序解鎖，規格 kids-member/docs/CHINESE_READING_SPEC.md）
     // 2026-11-01：國語〈成語故事 100〉（chinese/idioms/idioms.html；規格 kids-member/docs/CHINESE_IDIOM_SPEC.md）
     chinese: [{ id: 'reading', title: '閱讀素養 100 篇', desc: () => zhDesc(), icon: '📚', src: 'chinese/reading.html' },
@@ -136,6 +143,7 @@
   const parse = () => { const m = (location.hash || '').match(/^#s\/([a-z]+)(?:\/([a-z0-9-]+))?/); return m ? { k: m[1], sub: m[2] || '' } : { k: 'english', sub: '' }; };
 
   window.KidsSubjects = SUBJ;   // 首頁的全部科目卡（app.js）
+  window.KidsActs = ACTS;   // 首頁學習島（island.js）：說明卡、圖釘、清單面板都用這份活動清單
   document.body.classList.add('has-subjects');
   bar.innerHTML = `<div class="subj-in"><a class="brand" href="#home" aria-label="回首頁">🏠 小朋友學習站</a><div class="stabs" role="tablist">${SUBJ.map(s => `<a class="stab" role="tab" data-k="${s.k}" href="${s.k === 'english' ? '#en' : '#s/' + s.k}"><span>${s.i}</span><b>${s.n}</b></a>`).join('')}</div></div>`;
   const setH = () => document.documentElement.style.setProperty('--subj-h', bar.offsetHeight + 'px');

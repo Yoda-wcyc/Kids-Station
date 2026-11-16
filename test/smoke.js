@@ -1238,6 +1238,11 @@ require('./interactive.test.js');
 // 社會、自然〈🃏 名詞閃卡〉＋〈🔁 隔天複習〉（2026-11-01）：卡片 ref 指得到、沒有籠統詞、id 唯一 → test/flashcards.test.js；1 → 3 → 7 天、答錯回 1 天、畢業、舊錯題當今天到期、台北時間 → test/spaced-review.test.js
 require('./flashcards.test.js');
 require('./spaced-review.test.js');
+// 首頁學習島（2026-11-16，island.js／island.css）：時段、任務對應島、成長階段、連續天數、首頁接線 → test/island.test.js；
+// 首頁結構：#island 在 #assist 上面、island.js 在 app.js 後面；原本的 9 張科目方塊（#app .hs-c）、課程地圖、家長、分享照留在地圖下面（全部清單、測試與無障礙用）
+require('./island.test.js');
+{ const ap = fs.readFileSync(path.join(root, 'app.js'), 'utf8'); ok(ap.includes('class="tile hs-c"') && ap.includes('id="tile-map" href="map.html"') && ap.includes('id="hs-parent" href="#parent"') && ap.includes('${shareRow()}'), 'home keeps 9 subject tiles + 課程地圖／家長／分享 under the island map');
+  ok(ap.includes('function pLearn(sub, sub2)'), 'app.js pLearn 收 sub2（#learn/words/<來源>；2026-11-15 少了這個參數，單字卡頁 ReferenceError）'); }
 ['social', 'science'].forEach(k => { const h = fs.readFileSync(path.join(root, 'mindmap', k + '.html'), 'utf8'); ok(h.includes(`<script src="data/${k}/cards.js`) && h.indexOf('kids-mistakes.js') < h.indexOf('<script src="mindmap.js'), `mindmap/${k}.html loads cards.js (flashcards) and kids-mistakes.js before mindmap.js`); });
 
 ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 6 && E.get('w:may-month:zh2en').answer === 'May' && E.get('w:may:zh2en').answer === 'may', 'May / may keep separate ids');
