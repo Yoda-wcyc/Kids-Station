@@ -59,6 +59,9 @@
     return '<header class="zr-top">' + b + '<h1>' + title + '</h1></header>';
   }
 
+  // 做過幾次（../kids-lock.js；這支比 reading.js 晚載入，列表在 load 之後重畫一次）：✓1／✓2 🔒，鎖住的變灰、點進去帶去下一篇
+  function lockTag(id) { try { return window.KidsLock ? KidsLock.badge(id) : ''; } catch (e) { return ''; } }
+  function lockOff(id) { try { return window.KidsLock ? KidsLock.offCls(id) : ''; } catch (e) { return ''; } }
   // ---------- 文章列表 ----------
   function listView() {
     document.title = '閱讀素養 100 篇｜小朋友學習站';
@@ -69,8 +72,8 @@
       if (!open) { var n = ZR.need(lv, ARTS) - ZR.doneIn(lv - 1, ARTS, isDone); h += '<p class="zr-lock">再完成 ' + n + ' 篇 L' + (lv - 1) + '，這一級就會打開喔！</p>'; }
       if (!arts.length) h += '<p class="zr-empty">✍️ 文章準備中</p>';
       else h += '<div class="zr-grid">' + arts.map(function (a) {
-        var s = statusOf(a), inner = '<b>' + esc(a.title) + '</b><span class="zr-tags">' + tags(a) + '</span><span class="zr-st">' + (open ? s.t : '🔒 還沒打開') + '</span>';
-        return open ? '<a class="zr-card ' + s.c + '" href="reading.html?a=' + a.id + '" data-id="' + a.id + '">' + inner + '</a>'
+        var s = statusOf(a), inner = '<b>' + esc(a.title) + lockTag(a.id) + '</b><span class="zr-tags">' + tags(a) + '</span><span class="zr-st">' + (open ? s.t : '🔒 還沒打開') + '</span>';
+        return open ? '<a class="zr-card ' + s.c + lockOff(a.id) + '" href="reading.html?a=' + a.id + '" data-id="' + a.id + '">' + inner + '</a>'
           : '<div class="zr-card locked" aria-disabled="true" data-id="' + a.id + '">' + inner + '</div>';
       }).join('') + '</div>';
       h += '</section>';
@@ -249,6 +252,7 @@
   function onSynced() { if (!AID && !MK) listView(); }
   window.addEventListener('kids-sync-updated', onSynced);
   window.addEventListener('storage', function (e) { if (e.key === 'kids_done' || e.key === K || e.key === null) onSynced(); });
+  window.addEventListener('load', onSynced);   // ../kids-lock.js 載入後補畫 ✓1／✓2 🔒
 
   window.ZRPage = { state: function () { return R; }, list: listView, arts: ARTS };
   if (MK) mkView(); else if (AID) artView(ZR.find(ARTS, AID)); else listView();

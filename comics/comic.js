@@ -104,6 +104,8 @@
       if (quiz.fin || !/^v\d+e\d+$/.test(ep.id)) return;
       quiz.fin = 1;
       if (window.KidsDaily && KidsDaily.finish) KidsDaily.finish('comic');
+      // 做過幾次（../kids-lock.js，同步在 kids_done.n）：看完一話＝1 次；「再測一次」不重複算，「從頭再看一次」才算。要在寫 kids_comic 之前記（才分得出第一次）
+      if (!quiz.counted) { quiz.counted = 1; try { if (window.KidsLock) KidsLock.bump(ep.id); } catch (e) { } }
       try {
         const s = JSON.parse(localStorage.getItem('kids_comic') || '{}') || {}, seen = Object.assign({}, s.seen); seen[ep.id] = Date.now();
         const all = window.COMIC_CATALOG ? COMIC_CATALOG.vols.flatMap(v => v.eps).filter(e => e.ready) : [], nx = all.find(e => !seen[e.id]);
@@ -132,7 +134,7 @@
       const t = e.target.closest('[data-qk],[data-c]'); if (!t) return;
       if (t.dataset.c === 'nextq') { quiz.i++; renderSheet(); return; }
       if (t.dataset.c === 'retry') { quizStart(); renderSheet(); return; }
-      if (t.dataset.c === 'again') { quiz.items = []; go(0); return; }
+      if (t.dataset.c === 'again') { quiz.items = []; quiz.counted = 0; go(0); return; }
       const r = QK.act(quiz.items[quiz.i], t.dataset.qk, t.dataset.v) || {};
       if (r.result != null && window.KidsDaily) KidsDaily.rec('history', r.result);   // 家長頁每日學習紀錄
       if (r.msg) { const m = el('cm-msg'); if (m) m.textContent = r.msg; }

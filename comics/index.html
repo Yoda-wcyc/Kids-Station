@@ -13,6 +13,8 @@
 <header class="cm-top"><a href="../index.html#s/history">← 回歷史</a><span id="cm-ep">時光搖搖車・世界史漫畫</span></header>
 <main class="cm-sh" id="cat"></main>
 <script src="catalog.js?v=8418e7f2d1"></script>
+<script src="../syncmerge.js?v=2a477ba3b3"></script>
+<script src="../kids-lock.js?v=d684041860"></script>
 <script>
 /* 目錄頁：7 冊可收合；ready 的話是連結，還沒做的灰色「製作中」（不給連結，不會有壞連結）。收合狀態記在本機。 */
 (function () {
@@ -25,8 +27,10 @@
       const ready = v.eps.some(e => e.ready), open = st[v.no] != null ? st[v.no] : ready;
       return `<details class="cm-vol-box" data-v="${v.no}"${open ? ' open' : ''}><summary><b>第 ${v.no} 冊　${esc(v.t)}</b><small>${esc(v.span)}${ready ? '' : '・製作中'}</small></summary><ol class="cm-eps">`
         + v.eps.map((e, i) => {
-          const body = `<span class="cm-no">${i + 1}</span><span class="cm-et"><b>${esc(e.t)}</b><small>${esc(e.when)}・${esc(e.where)}</small></span>`;
-          return `<li>${e.ready ? `<a class="cm-ep-card" href="${esc(e.id)}.html">${body}<i>▶</i></a>` : `<div class="cm-ep-card wip">${body}<i>製作中</i></div>`}</li>`;
+          // 做過幾次（../kids-lock.js）：✓1／✓2 🔒（鎖住的變灰，點進去會帶去下一話）
+          const KL = window.KidsLock, bd = e.ready && KL ? KL.badge(e.id) : '', off = e.ready && KL ? KL.offCls(e.id) : '';
+          const body = `<span class="cm-no">${i + 1}</span><span class="cm-et"><b>${esc(e.t)}${bd}</b><small>${esc(e.when)}・${esc(e.where)}</small></span>`;
+          return `<li>${e.ready ? `<a class="cm-ep-card${off}" href="${esc(e.id)}.html">${body}<i>▶</i></a>` : `<div class="cm-ep-card wip">${body}<i>製作中</i></div>`}</li>`;
         }).join('') + `</ol></details>`;
     }).join('');
   document.querySelectorAll('details.cm-vol-box').forEach(d => d.addEventListener('toggle', () => { st[d.dataset.v] = d.open ? 1 : 0; try { localStorage.setItem('kids_comic_cat', JSON.stringify(st)); } catch (e) { /* 私密模式 */ } }));

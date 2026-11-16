@@ -841,6 +841,15 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 2026-11-08 🌍 地理 done.geo：18 單元 × 練習 3 組＋測驗，全部 100（最壞情況）
   { const geo = {}; require(path.join(root, 'completion.js')).GEO_UNITS.forEach(([id]) => ['p1', 'p2', 'p3', 't'].forEach(k => { geo[id + k] = 100; }));
     projDoc.done = Object.assign({}, projDoc.done, { geo }); ok(Object.keys(SM.normDone({ geo }).geo).length === 72, 'done.geo worst case: 18 單元×4 = 72 keys kept'); }
+  // 2026-11-16 單元做過幾次 done.n（kids-lock.js）：全部單元（課本、社會自然、數學、地理、AI、國語 100 篇、成語、漫畫、英檢每一組、乘法題型、句型片語等級）每格都是最大值
+  //   （＝每個單元都做滿 2 次、而且解鎖過 20 輪）；一格一個字，所以整個 n 只有 1KB 多
+  { const KLk = require(path.join(root, 'kids-lock.js')), Wn = { window: {} }; vm.createContext(Wn);
+    ['data/textbook.js', 'comics/catalog.js', 'gept/data/catalog.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), Wn));
+    const Dn = { textbook: Wn.window.DATA_TEXTBOOK, zhCatalog: require(path.join(root, 'chinese', 'data', 'catalog.js')), cyCatalog: require(path.join(root, 'chinese', 'idioms', 'data', 'catalog.js')), comics: Wn.window.COMIC_CATALOG, gept: Wn.window.GEPT_CATALOG };
+    const nk = [...new Set(KLk.paths(Dn).flatMap(p => p.items.map(u => u.key)).concat(['mx:d22t']))].filter(k => KLk.slot(k));
+    let nd = {}; nk.forEach(k => { nd = KLk.setV(nd, k, 61); });
+    projDoc.done = Object.assign({}, projDoc.done, { n: SM.normDone(nd).n });
+    ok(nk.length > 550 && SM.bytes(SM.normDone(nd).n) < 1500, 'done.n worst case: ' + nk.length + ' 個單元每格最大值 = ' + SM.bytes(SM.normDone(nd).n) + ' B'); }
   ok(SM.bytes(SM.normDg(dg6)) <= SM.DG_MAX_BYTES && SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX <= SM.MAX_BYTES / 4, 'daily stats + goals at their caps fit the budget: ' + (SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX));
   const projBytes = SM.bytes(SM.normalize(projDoc));
   ok(g6a.length === 9 && projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats) after 六下 (9 units, sized like 六上) still ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes (六下已上線 ' + g6bHave + ' 單元)');
@@ -1172,6 +1181,8 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
   const syncJs = fs.readFileSync(path.join(root, 'sync.js'), 'utf8');
   ok(syncJs.includes("K_DONE = 'kids_done'") && syncJs.includes('done: ld(K_DONE, {})') && /WATCH = \[[^\]]*K_DONE\]/.test(syncJs), 'sync.js: kids_done synced (read, write, watch)');
   require('./completion.test.js');
+  // 單元做過幾次＋做滿 2 次上鎖（2026-11-16，kids-lock.js）：計數、鎖、安全閥、找下一個、合併、解鎖、回推、網址、頁面接線 → test/kids-lock.test.js
+  require('./kids-lock.test.js');
 }
 
 // ---- 國語〈閱讀素養 100 篇〉（2026-11-01）：資料格式、四層次、題數、d 遞增、單選唯一正解、開放題要點、id 唯一 → test/chinese-reading.test.js；

@@ -30,7 +30,9 @@
   function record(sec, key, val) {
     let changed = false;
     try {
-      const cur = ld(K, {}), next = KC.record(cur, sec, key, val, Date.now());
+      const cur = ld(K, {}); let next = KC.record(cur, sec, key, val, Date.now());
+      // 做過幾次（kids-lock.js；kids_done.n）：沒載入 kids-lock.js 的頁面不記次數
+      try { const KL = window.KidsLock; if (KL && KL.onRecord) next = KL.onRecord(cur, next, sec, key, val, data(), ctx()); } catch (e) { }
       if (SM.canon(next) !== SM.canon(SM.normDone(cur))) { localStorage.setItem(K, JSON.stringify(next)); changed = true; }
     } catch (e) { /* 私密模式／空間不足：照樣顯示，只是記不住 */ }
     if (changed) { try { const S = window.KESync; if (S && S.touch) S.touch(); } catch (e) { } }

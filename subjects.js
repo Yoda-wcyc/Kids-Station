@@ -135,6 +135,9 @@
   MK_SUBJ.forEach(k => { if (ACTS[k]) ACTS[k].push({ id: 'mistakes', title: '錯題庫', desc: () => mkDesc(k), icon: '📕', href: `#s/${k}/mistakes` }); });
   // 單元卡上的完成狀態（kids-done.js／completion.js；沒載入就不顯示）
   const doneTag = dk => { try { const r = dk && window.KidsDone && KidsDone.result(dk); return r ? `<small class="tb-st tb-st-${r.status}">${KidsCompletion.statusText(r)}</small>` : ''; } catch (e) { return ''; } };
+  // 做過幾次（kids-lock.js）：✓1／✓2 🔒；鎖住的卡變灰（點進去是「去挑戰下一個」的卡）
+  const lockTag = dk => { try { return dk && window.KidsLock ? KidsLock.badge(dk) : ''; } catch (e) { return ''; } };
+  const lockOff = dk => { try { return dk && window.KidsLock ? KidsLock.offCls(dk) : ''; } catch (e) { return ''; } };
   const COLORS = ['c2', 'c4', 'c1', 'c5', 'c3'], bookOpen = {};
   const bar = document.getElementById('subjects'), box = document.getElementById('subject'), app = document.getElementById('app');
   if (!bar || !box || !app) return;
@@ -177,7 +180,7 @@
       // 連續同一冊（grp：五上／五下）的卡片放一區、上面標冊別；沒有 grp 的（段考模擬、錯題庫）自成一區不加標題
       let ci = 0;
       const secs = acts.filter(x => !x.hidden).reduce((a, x) => { const g = x.grp || ''; if (!a.length || a[a.length - 1].g !== g) a.push({ g, xs: [] }); a[a.length - 1].xs.push(x); return a; }, []);
-      const tilesOf = xs => `<div class="tiles tiles-even">${xs.map(x => { const d = typeof x.desc === 'function' ? x.desc() : x.desc; return `<a class="tile ${COLORS[ci++ % COLORS.length]}" href="${x.href || `#s/${k}/${x.id}`}"><span class="ti">${x.icon}</span><b>${x.title}</b>${d ? `<small>${d}</small>` : ''}${doneTag(x.dk)}</a>`; }).join('')}</div>`;
+      const tilesOf = xs => `<div class="tiles tiles-even">${xs.map(x => { const d = typeof x.desc === 'function' ? x.desc() : x.desc; return `<a class="tile ${COLORS[ci++ % COLORS.length]}${lockOff(x.dk)}" href="${x.href || `#s/${k}/${x.id}`}"><span class="ti">${x.icon}</span><b>${x.title}${lockTag(x.dk)}</b>${d ? `<small>${d}</small>` : ''}${doneTag(x.dk)}</a>`; }).join('')}</div>`;
       // 冊別收合：預設打開第一冊還沒學完的（使用者開關過就照他的）
       const unfinished = sec => sec.xs.some(x => { try { const r = x.dk && window.KidsDone && KidsDone.result(x.dk); return !r || r.status !== 'done'; } catch (e) { return true; } });
       const firstOpen = (secs.find(sec => sec.g && unfinished(sec)) || secs.find(sec => sec.g) || {}).g;

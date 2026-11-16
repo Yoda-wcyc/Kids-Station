@@ -22,7 +22,9 @@
   function sv(x) { try { localStorage.setItem(KEY, JSON.stringify(x)); } catch (e) { } }
   function saveBest(id, c, n) { var x = ld(), p = n ? Math.round(c / n * 100) : 0; x.best = x.best || {}; if (!x.best[id] || p >= x.best[id].p) x.best[id] = { p: p, c: c, n: n, t: Date.now() }; sv(x); }
   function saveMock(r) { var x = ld(); x.mock = (x.mock || []).concat([r]).slice(-60); sv(x); }
-  function saveTask(id, o) { var x = ld(); x.task = x.task || {}; x.task[id] = Object.assign({ t: Date.now() }, o); sv(x); }
+  // 寫作、口說：家長每按一次分數就存一次 → 做過幾次只在這一頁第一次存的時候記（../kids-lock.js；要在寫 task 之前記）
+  var TASK_N = {};
+  function saveTask(id, o) { if (!TASK_N[id]) { TASK_N[id] = 1; try { if (W.KidsLock) KidsLock.bump(id); } catch (e) { } } var x = ld(); x.task = x.task || {}; x.task[id] = Object.assign({ t: Date.now() }, o); sv(x); }
   function uiLv(v) { try { if (v) localStorage.setItem('kids_gept_ui', v); return localStorage.getItem('kids_gept_ui') || 'e'; } catch (e) { return v || 'e'; } }
 
   // ---------- 登入、紀錄 ----------
@@ -153,7 +155,7 @@
       // 模擬考
       var mocks = cat.M || [], hist = (rec0.mock || []).filter(function (r) { return lvOf(r.id) === lv; }).slice(-8).reverse();
       h += '<section class="card"><h2>📝 模擬考（完整初試）</h2><p class="gp-note">題數、順序、時間照官方；聽力自動播放、不能重播；交卷後換算 120 分制，標出有沒有達到通過標準（模擬換算，非官方成績）。</p><div class="gp-sets">' +
-        (mocks.length ? mocks.map(function (m) { return '<a class="btn primary" href="mock.html?set=' + m.id + '">' + esc(m.t || m.id) + '（' + m.n + ' 題）</a>'; }).join('') : '<span class="muted">準備中</span>') + '</div>';
+        (mocks.length ? mocks.map(function (m) { return '<a class="btn primary' + lockOff(m.id) + '" href="mock.html?set=' + m.id + '">' + esc(m.t || m.id) + '（' + m.n + ' 題）' + lockTag(m.id) + '</a>'; }).join('') : '<span class="muted">準備中</span>') + '</div>';
       if (hist.length) h += '<div class="gp-wrap"><table class="gp-t"><tr><th>日期</th><th>模擬考</th><th>聽力</th><th>閱讀</th><th>結果</th></tr>' + hist.map(function (r) { return '<tr><td>' + new Date(r.t).toLocaleDateString('zh-TW') + '</td><td>' + esc(r.id) + '</td><td>' + r.L + '（' + r.lc + '/' + r.ln + '）</td><td>' + r.R + '（' + r.rc + '/' + r.rn + '）</td><td>' + (r.pass ? '<span class="gp-tag ok">達標</span>' : '<span class="gp-tag no">未達</span>') + '</td></tr>'; }).join('') + '</table></div>';
       h += '</section>';
       // 複試
@@ -175,8 +177,11 @@
       sets = sets || [];
       var best = rec0.best || {}, task = rec0.task || {};
       return '<div class="gp-part"><h3>' + esc(p.n0) + '<span class="gp-tag">' + p.n + ' 題</span></h3><p>' + esc(p.how) + '</p><div class="gp-sets">' +
-        (sets.length ? sets.map(function (s, i) { var b = best[s.id], t = task[s.id]; return '<a class="btn" href="' + href + s.id + '">第 ' + (i + 1) + ' 組' + (b ? ' <span class="gp-tag ' + (b.p >= 80 ? 'ok' : '') + '">' + b.p + '%</span>' : t ? ' <span class="gp-tag ok">✓</span>' : '') + '</a>'; }).join('') : '<span class="muted">準備中</span>') + '</div></div>';
+        (sets.length ? sets.map(function (s, i) { var b = best[s.id], t = task[s.id]; return '<a class="btn' + lockOff(s.id) + '" href="' + href + s.id + '">第 ' + (i + 1) + ' 組' + (b ? ' <span class="gp-tag ' + (b.p >= 80 ? 'ok' : '') + '">' + b.p + '%</span>' : t ? ' <span class="gp-tag ok">✓</span>' : '') + lockTag(s.id) + '</a>'; }).join('') : '<span class="muted">準備中</span>') + '</div></div>';
     }
+    // 做過幾次（../kids-lock.js）：✓1／✓2 🔒（鎖住的變灰，點進去會帶去下一組）
+    function lockTag(id) { try { return W.KidsLock ? KidsLock.badge(id) : ''; } catch (e) { return ''; } }
+    function lockOff(id) { try { return W.KidsLock ? KidsLock.offCls(id) : ''; } catch (e) { return ''; } }
     root.addEventListener('click', function (e) { var t = e.target.closest('[data-lv]'); if (!t) return; lv = uiLv(t.getAttribute('data-lv')); try { history.replaceState(null, '', '?lv=' + lv); } catch (x) { } draw(); });
     draw();
   }
@@ -225,7 +230,8 @@
     }
     function end() {
       TTS.stop();
-      if (R.setId) { saveBest(R.setId, R.ok, R.n); coinRound(R.ok, R.n); }
+      // 做過幾次（../kids-lock.js）：一組答對 ≥80% 算做完 1 次；要在 saveBest 之前記（才分得出第一次）
+      if (R.setId) { if (R.n && R.ok / R.n >= 0.8 && W.KidsLock) KidsLock.bump(R.setId); saveBest(R.setId, R.ok, R.n); coinRound(R.ok, R.n); }
       var p = R.n ? Math.round(R.ok / R.n * 100) : 0;
       root.innerHTML = head(esc(R.title), R.back) + '<section class="card center"><p class="gp-big">' + (p >= 80 ? '🏆' : '💪') + '</p><p class="gp-big" id="gp-res">' + R.ok + ' / ' + R.n + '</p>' +
         (MK ? '<p>' + (R.grad ? '🎓 有 ' + R.grad + ' 題錯題畢業了！' : '同一題連續答對 3 次就會畢業喔！') + '</p>' : '<p>' + (p >= 80 ? '很棒！' : '再練一次會更好！') + (R.wrong.length ? '答錯的題收進 📕 錯題了。' : '') + '</p>') +
@@ -334,7 +340,7 @@
       var all = G.questions(R.set).filter(G.auto), lq = all.filter(function (Q) { return M.L.indexOf(Q.part) >= 0; }), rq = all.filter(function (Q) { return M.L.indexOf(Q.part) < 0; });
       var res = {}; all.forEach(function (Q) { res[Q.id] = G.gradeQ(Q, R.ans[Q.id]); rec(Q, res[Q.id]); });
       var lc = lq.filter(function (Q) { return res[Q.id]; }).length, rc = rq.filter(function (Q) { return res[Q.id]; }).length, Ls = G.scale(lc, lq.length), Rs = G.scale(rc, rq.length), pass = G.passLR(lv, Ls, Rs), L = G.LV[lv];
-      saveMock({ id: R.set.id, t: Date.now(), lc: lc, ln: lq.length, rc: rc, rn: rq.length, L: Ls, R: Rs, pass: pass }); coinRound(lc + rc, all.length);
+      if (W.KidsLock) KidsLock.bump(R.set.id); saveMock({ id: R.set.id, t: Date.now(), lc: lc, ln: lq.length, rc: rc, rn: rq.length, L: Ls, R: Rs, pass: pass }); coinRound(lc + rc, all.length);
       var parts = M.L.concat.apply(M.L, M.R.map(function (r) { return r.parts; }));
       var rev = parts.map(function (p) {
         var qs = all.filter(function (Q) { return Q.part === p; }), c = qs.filter(function (Q) { return res[Q.id]; }).length, isL = M.L.indexOf(p) >= 0;

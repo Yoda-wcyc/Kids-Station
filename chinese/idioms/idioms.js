@@ -56,6 +56,9 @@
   var BACK = '<a class="btn" href="idioms.html">← 成語列表</a>';
   function q2(k, v) { return 'idioms.html?' + k + '=' + v + (PREVIEW ? '&preview=1' : ''); }
 
+  // 做過幾次（../../kids-lock.js；比這支晚載入，列表在 load 之後重畫一次）：✓1／✓2 🔒，鎖住的變灰、點進去帶去下一個
+  function lockTag(id) { try { return window.KidsLock ? KidsLock.badge(id) : ''; } catch (e) { return ''; } }
+  function lockOff(id) { try { return window.KidsLock ? KidsLock.offCls(id) : ''; } catch (e) { return ''; } }
   // ---------- 列表 ----------
   function card(href, open, inner, cls) {
     return open ? '<a class="zr-card ' + (cls || '') + '" href="' + href + '">' + inner + '</a>' : '<div class="zr-card locked" aria-disabled="true">' + inner + '</div>';
@@ -69,8 +72,8 @@
       h += '<section class="zr-lv" id="lv' + lv + '"><h2>' + (open ? '' : '🔒 ') + lvName(lv) + '<small>已完成 ' + done + ' / ' + rows.length + ' 個</small></h2>';
       if (!open) h += '<p class="zr-lock">再完成 ' + (ZR.need(lv, IDS) - ZR.doneIn(lv - 1, IDS, isDone)) + ' 個 L' + (lv - 1) + ' 成語，這一級就會打開喔！</p>';
       h += '<div class="zr-grid cy-grid">' + rows.map(function (c) {
-        var it = find(IDS, c.id), s = statusOf(c.id), inner = '<b>' + c.n + '．' + esc(c.word) + '</b><span class="zr-tags"><span class="zr-tag d">' + esc(c.src) + '</span></span><span class="zr-st">' + (!it ? '✍️ 準備中' : open ? s.t : '🔒 還沒打開') + '</span>';
-        return card(q2('i', c.id), open && it, inner, s.c);
+        var it = find(IDS, c.id), s = statusOf(c.id), inner = '<b>' + c.n + '．' + esc(c.word) + lockTag(c.id) + '</b><span class="zr-tags"><span class="zr-tag d">' + esc(c.src) + '</span></span><span class="zr-st">' + (!it ? '✍️ 準備中' : open ? s.t : '🔒 還沒打開') + '</span>';
+        return card(q2('i', c.id), open && it, inner, s.c + lockOff(c.id));
       }).join('') + '</div></section>';
     });
     h += '<section class="zr-lv" id="units"><h2>📝 單元：素養閱讀＋單元測驗<small>每 10 個成語一個單元</small></h2><div class="zr-grid cy-grid">';
@@ -78,12 +81,12 @@
       var rc = CAT.readings[k - 1], art = rc && find(READS, rc.id), L = CY.unitIdioms(k, CAT, IDS), uOpen = PREVIEW || CY.unitOpen(k, CAT, IDS, isDone), rOpen = art && (PREVIEW || CY.readingOpen(art, IDS, isDone));
       var uid = 'cyu' + ('0' + k).slice(-2), us = statusOf(uid), rs = art ? statusOf(art.id) : null;
       h += '<div class="zr-card cy-unit"><b>第 ' + k + ' 單元</b><span class="zr-tags"><span class="zr-tag">成語 ' + ((k - 1) * 10 + 1) + '～' + k * 10 + '</span></span>' +
-        (art ? '<a class="btn' + (rOpen ? '' : ' disabled') + '"' + (rOpen ? ' href="' + q2('r', art.id) + '"' : ' aria-disabled="true"') + '>📖 ' + esc(art.title) + '</a><small>' + (rOpen ? rs.t : '🔒 先學完文中的成語') + '</small>' : '<small>📖 素養閱讀準備中</small>') +
-        (L.length ? '<a class="btn' + (uOpen ? '' : ' disabled') + '"' + (uOpen ? ' href="' + q2('u', k) + '"' : ' aria-disabled="true"') + '>📝 單元測驗（' + L.length * CY.XQ + ' 題）</a><small>' + (uOpen ? us.t : '🔒 先學完這個單元的成語') + '</small>' : '<small>📝 單元測驗準備中</small>') + '</div>';
+        (art ? '<a class="btn' + (rOpen ? lockOff(art.id) : ' disabled') + '"' + (rOpen ? ' href="' + q2('r', art.id) + '"' : ' aria-disabled="true"') + '>📖 ' + esc(art.title) + lockTag(art.id) + '</a><small>' + (rOpen ? rs.t : '🔒 先學完文中的成語') + '</small>' : '<small>📖 素養閱讀準備中</small>') +
+        (L.length ? '<a class="btn' + (uOpen ? lockOff(uid) : ' disabled') + '"' + (uOpen ? ' href="' + q2('u', k) + '"' : ' aria-disabled="true"') + '>📝 單元測驗（' + L.length * CY.XQ + ' 題）' + lockTag(uid) + '</a><small>' + (uOpen ? us.t : '🔒 先學完這個單元的成語') + '</small>' : '<small>📝 單元測驗準備中</small>') + '</div>';
     }
     var anyUnit = PREVIEW || Object.keys(store()).concat(Object.keys(syncedDone())).some(function (id) { return /^cyu/.test(id) && isDone(id); });
     h += '</div></section><section class="zr-lv"><h2>🏆 總測驗<small>從全部考題隨機抽 ' + CY.FINAL + ' 題，由易到難</small></h2>' +
-      (anyUnit ? '<p><a class="btn primary" href="' + q2('u', 'all') + '">開始總測驗</a>　<span class="zr-st">' + statusOf('cyall').t + '</span></p>' : '<p class="zr-lock">通過任何一份單元測驗，就能挑戰總測驗！</p>') + '</section>';
+      (anyUnit ? '<p><a class="btn primary" href="' + q2('u', 'all') + '">開始總測驗' + lockTag('cyall') + '</a>　<span class="zr-st">' + statusOf('cyall').t + '</span></p>' : '<p class="zr-lock">通過任何一份單元測驗，就能挑戰總測驗！</p>') + '</section>';
     box.innerHTML = '<div class="zr-wrap">' + h + '<p class="center"><a class="btn" href="../../map.html" target="_top">🗺️ 課程地圖</a></p></div>';
   }
 
@@ -296,6 +299,7 @@
   function onSynced() { if (!IID && !RID && !UID) listView(); }
   window.addEventListener('kids-sync-updated', onSynced);
   window.addEventListener('storage', function (e) { if (e.key === 'kids_done' || e.key === K || e.key === null) onSynced(); });
+  window.addEventListener('load', onSynced);   // ../../kids-lock.js 載入後補畫 ✓1／✓2 🔒
 
   window.CYPage = { state: function () { return R; }, idioms: IDS, reads: READS };
   if (IID) idiomView(find(IDS, IID)); else if (RID) readView(find(READS, RID)); else if (UID) testView(UID); else listView();

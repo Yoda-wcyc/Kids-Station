@@ -131,8 +131,27 @@ function msg(t, kind) { var m = $('msg'); m.innerHTML = t || ''; m.className = '
 
 /* ---------- 題型、分頁 ---------- */
 $('lv').insertAdjacentHTML('beforeend', LVS.map(function (k) { return '<button type="button" class="btn sm" data-lv="' + k + '" aria-pressed="' + (k === S.lv) + '">' + X.LV_NAME[k] + '<small style="opacity:.75">　' + X.LV_EG[k] + '</small>' + (X.DAILY_LV[k] ? '' : '<small class="lv-nd" style="display:block;opacity:.75">' + (k === 'word' ? '兩位×兩位的題才算今日題數' : '不算今日題數') + '</small>') + '</button>'; }).join(''));
+/* 做過幾次（../kids-lock.js）：每個題型「挑戰達標一輪」算 1 次；較簡單的題型做滿 2 次就鎖、帶去更難的（二位×整十、二位×二位是每日清單的題、三位×一位最難：都不鎖；應用題、錯題重練不算） */
+function lvLocked(k) { try { return k !== 'word' && window.KidsLock && KidsLock.state('mx:' + k).locked; } catch (e) { return false; } }
+function lvGate(k) { return lvLocked(k) && KidsLock.gate('mx:' + k, { go: function (nx) { pickLv(nx.key.split(':')[1]); }, back: { href: 'index.html#s/math', label: '← 回數學' } }); }
+function paintLvLock() {
+  if (!window.KidsLock) return;
+  Array.prototype.forEach.call($('lv').querySelectorAll('[data-lv]'), function (b) {
+    var k = b.getAttribute('data-lv'), s = b.querySelector('.kl-slot'); if (k === 'word') return;
+    if (!s) { s = document.createElement('span'); s.className = 'kl-slot'; b.insertBefore(s, b.querySelector('small')); }
+    s.innerHTML = KidsLock.badge('mx:' + k); b.classList.toggle('kl-off', lvLocked(k));
+  });
+}
+window.addEventListener('load', paintLvLock);
+window.addEventListener('kids-done-changed', paintLvLock);
+function pickLv(k) {
+  S.lv = k; saveUI();
+  Array.prototype.forEach.call($('lv').querySelectorAll('[data-lv]'), function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-lv') === k)); });
+  if (!R || R.mode !== 'mk') home();
+}
 $('lv').addEventListener('click', function (e) {
   var b = e.target.closest('[data-lv]'); if (!b) return;
+  if (lvGate(b.getAttribute('data-lv'))) return;
   S.lv = b.getAttribute('data-lv'); saveUI();
   Array.prototype.forEach.call($('lv').querySelectorAll('[data-lv]'), function (x) { x.setAttribute('aria-pressed', String(x === b)); });
   if (!R || R.mode !== 'mk') home();
@@ -163,6 +182,7 @@ function home() {
   $('start').innerHTML = h;
 }
 function go() {
+  if (S.mode !== 'mk' && lvGate(S.lv)) return;
   if (!authOK()) return;
   if (S.mode !== 'mk' && !startAct(go)) return;
   var n = S.mode === 'chal' ? N_CHAL : N_PRAC, items = S.mode === 'mk' ? mkList() : S.lv === 'word' ? X.wordRound(n, null, wlLevel()) : X.round(S.lv, n);
@@ -345,10 +365,11 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=8a5c449e88"></script>
-<script src="../syncmerge.js?v=aeb75b2324"></script>
+<script src="../syncmerge.js?v=2a477ba3b3"></script>
 <script src="../kids-daily.js?v=79c5f7d15c"></script>
 <script src="../completion.js?v=39bc9551b3"></script>
-<script src="../kids-done.js?v=de42d7120a"></script>
+<script src="../kids-done.js?v=6c3dfa8aeb"></script>
+<script src="../kids-lock.js?v=d684041860"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
 <script src="../sync.js?v=12631d8738"></script>
 <script>if (window.MXPage && MXPage.paintDone) MXPage.paintDone();</script>

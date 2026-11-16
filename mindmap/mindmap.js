@@ -147,7 +147,9 @@ function recordResult(uid, level, pct, isReview){
 }
 /* 單元完成（../completion.js 判定、../kids-done.js 補存＋頁首橫幅）：考考自己、練習題一輪的答對率（跟結果畫面上的 % 一樣）存進 kids_done */
 function doneRec(sec, pct){ try{ if(window.KidsDone && !MKMODE) window.KidsDone.record(sec, pk(unit().id), pct); }catch(e){} }
-function paintDone(){ try{ var el = $('#kdone'); if(!el || !window.KidsDone) return; if(MKMODE || MOCK || !unit()){ el.hidden = true; return; } var u = unit(); window.KidsDone.mount(el, 'mm:' + pk(u.id), {compact:true, title:D.units.length > 1 ? unitLabel(u) + '・' + u.title : ''}); }catch(e){} }
+function paintDone(){ try{ if(!MKMODE && !MOCK && unit() && window.KidsLock) window.KidsLock.gate('mm:' + pk(unit().id)); }catch(e){}   /* 做過 2 次就鎖（../kids-lock.js）：換單元也要問；錯題、今天要複習、段考模擬不鎖 */
+  try{ var el = $('#kdone'); if(!el || !window.KidsDone) return; if(MKMODE || MOCK || !unit()){ el.hidden = true; return; } var u = unit(); window.KidsDone.mount(el, 'mm:' + pk(u.id), {compact:true, title:D.units.length > 1 ? unitLabel(u) + '・' + u.title : ''}); }catch(e){} }
+function lockTag(uid){ try{ return window.KidsLock ? window.KidsLock.badge('mm:' + pk(uid)) : ''; }catch(e){ return ''; } }
 /* 帳號同步（sync.js；在首頁 iframe 裡借用首頁的 KESync）：一關結束馬上同步，挖空紀錄 3 秒後 */
 function syncTouch(now){ try{ var K = window.KESync; if(K) (now ? K.now : K.touch)(); }catch(e){} }
 /* 別台的紀錄合併進來（storage／kesync-data）：停在關卡首頁才重畫，正在玩的不打斷 */
@@ -628,7 +630,7 @@ function renderArchHome(){
   var icons = {1:'🧩', 2:'🔘', 3:'✍️', 4:'🧠'}, desc = {1:'空白的架構圖，把打散的標題卡片放回去。', 2:'一格一格選出正確的標題（3～4 選 1）。', 3:'一格一格自己寫出標題。', 4:CFG.lesson ? '只給單元名稱和課數，整張架構全部寫出來。' : '只給單元名稱和大分支的數量，兩層主分支全部寫出來（關係詞和「應用」這類泛用詞不考）。'};
   var html = '<div class="mm-wrap">';
   html += '<h2>🧠 背架構</h2><div class="home-units"' + (D.units.length < 2 ? ' hidden' : '') + '>' + D.units.map(function(x, i){ var dd = reviewDue(x.id), pu = p[pk(x.id)]; var passed = pu ? Object.keys(pu.passedAt || {}).length : 0;
-    return '<button class="hu' + (i === UI.unit ? ' on' : '') + '" data-act="unit" data-v="' + i + '"><small>' + esc(unitLabel(x)) + '　過了 ' + passed + '/4 關</small><b>' + esc(x.title) + '</b>' + (dd ? '<br><span class="due2">⏰ 該複習架構囉</span>' : '') + '</button>'; }).join('') + '</div>';
+    return '<button class="hu' + (i === UI.unit ? ' on' : '') + '" data-act="unit" data-v="' + i + '"><small>' + esc(unitLabel(x)) + '　過了 ' + passed + '/4 關</small><b>' + esc(x.title) + lockTag(x.id) + '</b>' + (dd ? '<br><span class="due2">⏰ 該複習架構囉</span>' : '') + '</button>'; }).join('') + '</div>';
   if(due) html += '<div class="rv">⏰ 上次過關已經 ' + due + ' 天了，該複習架構囉！<button class="mm-b on" data-act="archReview">開始複習（第 4 關）</button></div>';
   html += '<div class="lv-grid">';
   [1,2,3,4].forEach(function(lv){
@@ -1103,7 +1105,7 @@ function updateChrome(){
   $('#layoutSeg').style.visibility = mapOn ? 'visible' : 'hidden';
   document.querySelectorAll('[data-act=layout]').forEach(function(b){ b.classList.toggle('on', b.dataset.v === UI.layout); });
   document.querySelectorAll('[data-act=mode]').forEach(function(b){ if(b.closest('#modes')) b.classList.toggle('on', b.dataset.v === UI.mode); });
-  $('#units').innerHTML = D.units.map(function(u, i){ var due = reviewDue(u.id); return '<button class="mm-b' + (i === UI.unit ? ' on' : '') + '" data-act="unit" data-v="' + i + '" title="' + esc(u.title) + '">' + esc(unitLabel(u)) + (due ? '<span class="due">⏰ 該複習架構囉</span>' : '') + '</button>'; }).join('');
+  $('#units').innerHTML = D.units.map(function(u, i){ var due = reviewDue(u.id); return '<button class="mm-b' + (i === UI.unit ? ' on' : '') + '" data-act="unit" data-v="' + i + '" title="' + esc(u.title) + '">' + esc(unitLabel(u)) + lockTag(u.id) + (due ? '<span class="due">⏰ 該複習架構囉</span>' : '') + '</button>'; }).join('');
   var showTools = mapOn && (UI.mode === 'read' || UI.mode === 'cloze');
   document.querySelectorAll('#tools [data-act]').forEach(function(b){ b.hidden = !showTools || (b.id === 'btnShuffle' && UI.mode !== 'cloze'); });
   if(!mapOn){ $('#trayTop').hidden = true; $('#trayBot').hidden = true; }

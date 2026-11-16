@@ -263,9 +263,21 @@
     return o;
   }
   function normMmD(e) { if (!e || typeof e !== 'object') return null; const o = {}; MM_F.forEach(k => { const v = pct(e[k]); if (v != null) o[k] = v; }); return Object.keys(o).length ? o : null; }
+  // n：單元做過幾次（kids-lock.js，2026-11-16，跟 fr 一樣不升版；舊版裝置的 normDone 會丟掉 n → 新版下次同步從本機補回）。
+  //   大小預算只剩 ~1.8KB（smoke 最壞情況），所以一格一個字：{組:'字串'}，組＋位置由 kids-lock.js slot() 從單元 id 算（例 'z1' 第 4 格＝zh1-05）。
+  //   一個字＝N_ABC 裡的值 v（0～61）：v＝3×解鎖次數＋這一輪做過幾次（0～2）。做一次 +1、家長解鎖跳到下一輪的 1 → 只會變大，合併＝每格取大（交換、結合、冪等）。
+  const N_ABC = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', N_GRP = /^[a-z][a-zA-Z0-9]{0,3}$/, N_STR = /^[0-9a-zA-Z]{1,128}$/, N_MAXG = 100;
+  function normN(x) { const d = obj(x), o = {}; Object.keys(d).filter(g => N_GRP.test(g)).sort().slice(0, N_MAXG).forEach(g => { const s = typeof d[g] === 'string' && N_STR.test(d[g]) ? d[g].replace(/0+$/, '') : ''; if (s) o[g] = s; }); return o; }
+  function mergeN(a, b) {
+    a = normN(a); b = normN(b); const o = {};
+    Object.keys(Object.assign({}, a, b)).forEach(g => { const x = a[g] || '', y = b[g] || ''; let s = ''; for (let i = 0; i < Math.max(x.length, y.length); i++) s += N_ABC[Math.max(N_ABC.indexOf(x[i] || '0'), N_ABC.indexOf(y[i] || '0'))]; o[g] = s; });
+    return normN(o);
+  }
   function normDone(x) {
-    const d = obj(x), once = v => ms(v) || null;
-    return { tb: dsec(d.tb, normTb), mm: dsec(d.mm, normMmD), bal: dsec(d.bal, once), sd: dsec(d.sd, pct, SD_K), gw: dsec(d.gw, pct, GW_K), ai: dsec(d.ai, once), mp: dsec(d.mp, pct, MP_K), mx: dsec(d.mx, normMx, MX_K), fr: dsec(d.fr, pct, FR_K), zh: dsec(d.zh, once), cy: dsec(d.cy, once), mg: dsec(d.mg, pct, MG_RE), geo: dsec(d.geo, pct, GEO_RE) };
+    const d = obj(x), once = v => ms(v) || null, n = normN(d.n);
+    const o = { tb: dsec(d.tb, normTb), mm: dsec(d.mm, normMmD), bal: dsec(d.bal, once), sd: dsec(d.sd, pct, SD_K), gw: dsec(d.gw, pct, GW_K), ai: dsec(d.ai, once), mp: dsec(d.mp, pct, MP_K), mx: dsec(d.mx, normMx, MX_K), fr: dsec(d.fr, pct, FR_K), zh: dsec(d.zh, once), cy: dsec(d.cy, once), mg: dsec(d.mg, pct, MG_RE), geo: dsec(d.geo, pct, GEO_RE) };
+    if (Object.keys(n).length) o.n = n;   // 沒有就不放（舊文件、舊測試的形狀不變）
+    return o;
   }
   const maxOf = (a, b) => Math.max(a == null ? -Infinity : a, b == null ? -Infinity : b);
   function mergeDone(a, b) {
@@ -277,7 +289,7 @@
     const first = (x, y) => Math.min(x, y), best = (x, y) => Math.max(x, y);
     const lo = (x, y) => (x == null ? y : y == null ? x : Math.min(x, y));
     const mx = mergeSection(a.mx, b.mx, (x, y) => { const o = { acc: Math.max(x.acc, y.acc) }, sp = lo(x.sp, y.sp), ok = lo(x.ok, y.ok); if (sp != null) o.sp = sp; if (ok != null) o.ok = ok; return o; });
-    return normDone({ tb, mm, bal: nums(a.bal, b.bal, first), sd: nums(a.sd, b.sd, best), gw: nums(a.gw, b.gw, best), ai: nums(a.ai, b.ai, first), mp: nums(a.mp, b.mp, best), mx, fr: nums(a.fr, b.fr, best), zh: nums(a.zh, b.zh, first), cy: nums(a.cy, b.cy, first), mg: nums(a.mg, b.mg, best), geo: nums(a.geo, b.geo, best) });
+    return normDone({ tb, mm, bal: nums(a.bal, b.bal, first), sd: nums(a.sd, b.sd, best), gw: nums(a.gw, b.gw, best), ai: nums(a.ai, b.ai, first), mp: nums(a.mp, b.mp, best), mx, fr: nums(a.fr, b.fr, best), zh: nums(a.zh, b.zh, first), cy: nums(a.cy, b.cy, first), mg: nums(a.mg, b.mg, best), geo: nums(a.geo, b.geo, best), n: mergeN(a.n, b.n) });
   }
 
   // ---- dd：每日學習統計（kids_daily；格式見檔頭 v9）----
@@ -403,7 +415,7 @@
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function normCode(s) { const c = String(s || '').toUpperCase().replace(/[\s-]/g, ''); return c.length === 8 && [...c].every(ch => ALPHA.includes(ch)) ? c.slice(0, 4) + '-' + c.slice(4) : null; }
 
-  const SM = { MAX_BYTES, VERSION, MAX_EQ, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg };
+  const SM = { MAX_BYTES, VERSION, MAX_EQ, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, N_ABC, normN, mergeN, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg };
   if (typeof module !== 'undefined' && module.exports) module.exports = SM;
   root.KESyncMerge = SM;
 })(typeof window !== 'undefined' ? window : globalThis);

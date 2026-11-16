@@ -255,8 +255,20 @@
     Q = { list, i: 0, answers: [], answered: false, cfg: null, graduated: 0, result: null, drill: { itemId, back: back || '#learn' } };
     go('#quiz');
   }
+  // 做過幾次（kids-lock.js）：句型／片語「隨機練 10 題」各等級做滿 2 回（≥80%）就鎖，帶去下一個等級（進階不鎖）
+  const lvMark = k => { try { const t = window.KidsLock ? KidsLock.badgeText(KidsLock.state(k)) : ''; return t ? ' ' + t : ''; } catch (e) { return ''; } };
+  function tierLocked(cfg) {
+    const KL = window.KidsLock; if (!cfg || !cfg.lk || !KL) return false;
+    const st = KL.state(cfg.lk); if (!st.locked) return false;
+    const pat = /^pat:/.test(cfg.lk), back = pat ? '#learn/patterns' : '#learn/phrases';
+    app.innerHTML = top(pat ? '句型' : '片語', '#learn') + `<div class="kl-inline">${KL.cardHtml(st, { go: 1, noBack: 1, local: 1 })}</div>`;
+    KL.bindGo(app, st, { go: nx => { const lv = nx.key.split(':')[1]; if (pat) PLV.lv = lv; else PHF.lv = lv; go(back); } });
+    window.scrollTo(0, 0);
+    return true;
+  }
   function startQuiz(cfg) {
     if (cfg && cfg.tb) return startTb(cfg.tb, cfg.mode, cfg.back, cfg.oral); // 課本專屬題／考試「再一次」：重新隨機組題
+    if (tierLocked(cfg)) return;
     if (!authOK('practice')) return;
     const list = E.round(cfg); // 抽題＋打字保底（每回最後至少 3 題打字、含 2 題中翻英；2026-10-25）
     if (!list.length) { alert('沒有符合條件的題目，換個選擇試試看！'); return; }
@@ -342,12 +354,13 @@
   const PHF = { lv: '', tag: '' };
   function pPhrases() {
     const tags = [...new Set(D.phrases.map(p => p.tag))];
-    app.innerHTML = top('片語', '#learn') + `${radios('phlv', [['', '全部等級'], ['1', '必會'], ['2', '基本'], ['3', '進階']], PHF.lv)}
+    app.innerHTML = top('片語', '#learn') + `${radios('phlv', [['', '全部等級'], ['1', '必會' + lvMark('ph:1')], ['2', '基本' + lvMark('ph:2')], ['3', '進階' + lvMark('ph:3')]], PHF.lv)}
       <div class="filters"><select id="phtag" aria-label="類別"><option value="">全部類別</option>${tags.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}</select></div>
       <button class="btn primary big" id="phgo">🎯 隨機練 10 題片語</button><p class="muted">今日清單的片語題：照上面選的等級、類別出題</p>
       ${lfBar('phrases')}<p class="muted" id="phn"></p><div class="cards" id="phl"></div>`;
     // 今日清單「片語」的入口：一回 10 題（mode practice＝學習幣白名單裡的一般練習；不出 🎤，iPad 上比較順）
-    $('#phgo').onclick = () => startQuiz({ modules: ['phrases'], topics: [...new Set(D.phrases.filter(p => (!PHF.lv || String(p.lv) === PHF.lv) && (!PHF.tag || p.tag === PHF.tag)).map(p => 'phrases:' + p.lv + '|' + p.tag))], count: 10, allowSpeak: false, mode: 'practice' });
+    // lk＝做過幾次的等級（kids-lock.js；選「全部等級」不算、不鎖）
+    $('#phgo').onclick = () => startQuiz({ modules: ['phrases'], topics: [...new Set(D.phrases.filter(p => (!PHF.lv || String(p.lv) === PHF.lv) && (!PHF.tag || p.tag === PHF.tag)).map(p => 'phrases:' + p.lv + '|' + p.tag))], count: 10, allowSpeak: false, mode: 'practice', lk: PHF.lv ? 'ph:' + PHF.lv : '' });
     const draw = () => {
       const L = D.phrases.filter(p => (!PHF.lv || String(p.lv) === PHF.lv) && (!PHF.tag || p.tag === PHF.tag) && lfPass('phrases', KE.phraseItemId(p)));
       $('#phn').textContent = `這裡有 ${L.length} 個片語，點英文就會唸`;
@@ -366,10 +379,10 @@
   }
   const PLV = { lv: '' };
   function pPatterns() {
-    app.innerHTML = top('句型', '#learn') + `${radios('plv', [['', '全部等級'], ['1', '簡單'], ['2', '基本'], ['3', '進階']], PLV.lv)}<button class="btn primary big" id="pgo">🎯 隨機練 10 題句型</button><p class="muted">今日清單的句型題：照上面選的等級出題</p>${lfBar('patterns')}<div class="cards" id="pl"></div>`;
+    app.innerHTML = top('句型', '#learn') + `${radios('plv', [['', '全部等級'], ['1', '簡單' + lvMark('pat:1')], ['2', '基本' + lvMark('pat:2')], ['3', '進階' + lvMark('pat:3')]], PLV.lv)}<button class="btn primary big" id="pgo">🎯 隨機練 10 題句型</button><p class="muted">今日清單的句型題：照上面選的等級出題</p>${lfBar('patterns')}<div class="cards" id="pl"></div>`;
     const lvOf = p => p.lv || 2;
     // 今日清單「句型」的入口：一回 10 題（不出 🎤）
-    $('#pgo').onclick = () => startQuiz({ modules: ['patterns'], topics: D.patterns.filter(p => !PLV.lv || String(lvOf(p)) === PLV.lv).map(p => 'patterns:' + p.id), count: 10, allowSpeak: false, mode: 'patterns' });
+    $('#pgo').onclick = () => startQuiz({ modules: ['patterns'], topics: D.patterns.filter(p => !PLV.lv || String(lvOf(p)) === PLV.lv).map(p => 'patterns:' + p.id), count: 10, allowSpeak: false, mode: 'patterns', lk: PLV.lv ? 'pat:' + PLV.lv : '' });
     const draw = () => {
       $('#pl').innerHTML = D.patterns.slice().sort((a, b) => lvOf(a) - lvOf(b)).filter(p => (!PLV.lv || String(lvOf(p)) === PLV.lv) && lfPass('patterns', KE.patternItemId(p))).map(p => `<div class="card pat ${isL(KE.patternItemId(p)) ? 'is-learned' : ''}"><span class="lvb lv${lvOf(p)}">${KE.PATTERN_LV[lvOf(p)]}</span><div class="ph en say">${esc(p.pattern)}</div><div class="zh">${esc(p.zh)}</div><div class="exs">${p.ex.map(e => `<div><span class="en say">${esc(e.en)}</span><small>${esc(e.zh)}</small></div>`).join('')}</div><div class="row wrap"><button class="btn primary" data-p="${esc(p.id)}">🎯 練這個句型</button>${learnUI(KE.patternItemId(p))}</div></div>`).join('');
       $$('[data-p]').forEach(b => b.onclick = () => startQuiz({ modules: ['patterns'], topics: ['patterns:' + b.dataset.p], count: 10, allowSpeak: canSpeak, mode: 'patterns' }));
@@ -396,10 +409,13 @@
     if (!u) {
       // 單元卡依冊別分組（五上、五下…）；draft＝依學校課程計畫整理、還沒拿課本核對
       const books = [...new Set(D.textbook.map(x => x.book || ''))];
-      app.innerHTML = top('📘 課本進度') + `<p class="muted">翰林 Here We Go!：每一課都有 📖 教學、✏️ 練習、📝 考試。</p>` + (books.map(b => `<h2 class="tb-book">${esc(b || '課本')}</h2><div class="tiles">${D.textbook.filter(x => (x.book || '') === b).map(x => `<button class="tile c2 tb-unit" data-go="#tb/${esc(x.id)}/learn"><span class="ti">📘</span><b>${esc(x.title.replace(/^[五六][上下] /, ''))}</b><small class="en">${esc(x.theme)}</small>${x.draft ? '<small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}${tbBadge(x.id)}</button>`).join('')}</div>`).join('') || '<p class="muted">準備中</p>');
+      app.innerHTML = top('📘 課本進度') + `<p class="muted">翰林 Here We Go!：每一課都有 📖 教學、✏️ 練習、📝 考試。</p>` + (books.map(b => `<h2 class="tb-book">${esc(b || '課本')}</h2><div class="tiles">${D.textbook.filter(x => (x.book || '') === b).map(x => `<button class="tile c2 tb-unit${window.KidsLock ? KidsLock.offCls('tb:' + x.id) : ''}" data-go="#tb/${esc(x.id)}/learn"><span class="ti">📘</span><b>${esc(x.title.replace(/^[五六][上下] /, ''))}</b><small class="en">${esc(x.theme)}</small>${x.draft ? '<small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}${tbBadge(x.id)}</button>`).join('')}</div>`).join('') || '<p class="muted">準備中</p>');
       return;
     }
     if (!TB_TABS.some(t => t[0] === tab)) tab = 'learn';
+    // 做過幾次（kids-lock.js）：這一課做滿 2 次就鎖（教學、練習、考試都不進），帶去下一課；直接打網址（#tb/<單元>/…）也一樣
+    const lk = window.KidsLock && KidsLock.state('tb:' + u.id);
+    if (lk && lk.locked) { app.innerHTML = top(esc(u.title), '#tb') + `<div class="kl-inline">${KidsLock.cardHtml(lk, { local: 1, noBack: 1 })}</div>`; return; }
     app.innerHTML = top(esc(u.title), '#tb') + `<div id="kdb" hidden></div><p class="tb-theme"><span class="en say">${esc(u.theme)}</span> <small>${esc(u.themeZh || '')}</small>${u.draft ? '<br><small class="tb-draft">依學校課程計畫整理，待課本核對</small>' : ''}</p>
       <nav class="tb-tabs" role="tablist">${TB_TABS.map(([k, t]) => `<button type="button" role="tab" class="tb-tab${k === tab ? ' on' : ''}" aria-selected="${k === tab}" data-go="#tb/${esc(u.id)}/${k}">${t}</button>`).join('')}</nav><div id="tbbody"></div>`;
     if (window.KidsDone) KidsDone.mount($('#kdb'), 'tb:' + u.id, { title: '' });   // 頁首：這個單元學完了沒（completion.js 判定）
@@ -409,7 +425,7 @@
     return tbTest(u, body);
   }
   // 單元卡上的小字：✅ 已完成／🟡 進行中 xx%／⚪ 還沒開始
-  function tbBadge(id) { try { const r = window.KidsDone && KidsDone.result('tb:' + id); return r ? `<small class="tb-st tb-st-${r.status}">${esc(KidsCompletion.statusText(r))}</small>` : ''; } catch (e) { return ''; } }
+  function tbBadge(id) { try { const r = window.KidsDone && KidsDone.result('tb:' + id); return (r ? `<small class="tb-st tb-st-${r.status}">${esc(KidsCompletion.statusText(r))}</small>` : '') + (window.KidsLock ? KidsLock.badge('tb:' + id) : ''); } catch (e) { return ''; } }
   function tbLearn(u, body) {
     const it = E.tbItems(u.id), wBy = new Map(it.words.map(w => [KE.wordKey(w), w])), phBy = new Map(it.phrases.map(p => [p.id, p]));
     const card = (en, ipa, zh, pl) => `<div class="card tbw"><div class="tbw-h"><span class="w en say">${esc(en)}</span>${sayBtn(en)}</div><div class="ipa">${esc(ipa || '')}</div><div class="zh">${esc(zh)}</div>${pl ? `<div class="tbw-pl">複數：<span class="en say">${esc(pl)}</span></div>` : ''}</div>`;
@@ -670,6 +686,7 @@
     S.progress.stars += stars; S.progress.quizzes++; save('ke_progress', S.progress);
     Q.result = { ok, tot, stars, wrong: Q.answers.filter(a => !a.ok && !a.skip).map(a => a.q) };
     if (Q.exam && Q.cfg && Q.cfg.tb && !Q.cfg.oral && tot && window.KidsDone) KidsDone.record('tb', Q.cfg.tb, Math.round(ok / tot * 100)); // 單元完成：考試最高分＋最近一次
+    if (Q.cfg && Q.cfg.lk && tot && ok / tot >= 0.8 && window.KidsDone) KidsDone.record('n', Q.cfg.lk, 1); // 做過幾次：句型／片語隨機 10 題某一等級答對 ≥80%（kids-lock.js）
     if (window.KESync) KESync.now(); // 一回合結束 → 馬上同步
     // 學習幣：一回練習結束就回報（給幾枚、門檻、少於 5 題不給，都由後端決定）
     if (window.KidsCoins && !Q.gate) KidsCoins.report({ type: 'practice_round', item: 'english:' + (Q.drill ? 'drill' : (Q.cfg && Q.cfg.mode) || 'practice'), correct: ok, total: tot });
@@ -833,6 +850,7 @@
         <p class="muted">累計 ${S.log.length} 題・完成 ${S.progress.quizzes} 回練習・⭐ ${S.progress.stars}・錯題庫 ${mistakeIds().length} 題</p></section>
       ${window.KidsAssistantUI ? KidsAssistantUI.parentHtml() : ''}
       ${window.KidsDaily ? KidsDaily.html() : ''}
+      ${window.KidsLock ? KidsLock.parentHtml() : ''}
       <section class="card"><h2>最需要加強的 5 個主題</h2>${weak.length ? `<ol>${weak.map(r => `<li>${esc(r.label)}（${esc(r.mod)}）— 正確率 ${pct(r.acc)}，做了 ${r.n} 題</li>`).join('')}</ol>` : '<p class="muted">每個主題做滿 3 題後就會出現。</p>'}</section>
       <section class="card"><h2>各主題正確率（點標題排序）</h2><div class="tblwrap"><table class="tbl" id="tt"></table></div></section>
       <section class="card"><h2>學會紀錄（${E.learnedRows(S.learned).length} 項，點標題排序）</h2><div class="tblwrap"><table class="tbl" id="lt"></table></div></section>
@@ -841,7 +859,7 @@
       ${speakCard()}
       ${voiceCard()}
       <section class="card"><h2>備份與重設</h2><div class="row wrap"><button class="btn" id="exp">📤 匯出備份</button><label class="btn">📥 匯入備份<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn danger" id="rst">🗑️ 清除全部紀錄</button></div><p class="muted">紀錄只存在這台裝置的瀏覽器裡；換裝置前先匯出備份。</p></section>`;
-    bindVoice(); bindSync(); if (window.KSParentPin) KSParentPin.bindCard(render); if (window.KidsDaily) KidsDaily.bind(app, render);
+    bindVoice(); bindSync(); if (window.KSParentPin) KSParentPin.bindCard(render); if (window.KidsDaily) KidsDaily.bind(app, render); if (window.KidsLock) KidsLock.bindParent(app, render);
     sortTable($('#tt'), [{ k: 'label', t: '主題' }, { k: 'mod', t: '單元' }, { k: 'n', t: '題數' }, { k: 'ok', t: '答對' }, { k: 'acc', t: '正確率', f: pct }], rows, PS);
     sortTable($('#lt'), [{ k: 'item', t: '項目' }, { k: 'type', t: '類型' }, { k: 'at', t: '學會時間（台北）', f: x => KE.fmtTaipei(x, true) }, { k: 'score', t: '分數' }], E.learnedRows(S.learned), PL);
     $('#exp').onclick = () => {

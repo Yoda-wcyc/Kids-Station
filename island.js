@@ -268,9 +268,11 @@
     const S = SUBJ[k] || { i: '', n: k }, I = BY[k], xs = actsOf(k), r = D.T && D.T.rows ? D.T.rows.find(x => x.k === k) : null;
     const icon = a => (/^</.test(a.icon || '') ? `<span class="isl-ai isl-svgi">${a.icon}</span>` : `<span class="isl-ai">${a.icon || '•'}</span>`);
     const desc = a => { try { return typeof a.desc === 'function' ? a.desc() : a.desc || ''; } catch (e) { return ''; } };
+    // 做過幾次（kids-lock.js）：有單元 id（dk）的活動標 ✓1／✓2 🔒，鎖住的變灰
+    const lock = a => { try { const KL = G.KidsLock; return a.dk && KL ? { tag: KL.badge(a.dk), off: KL.isLocked(a.dk) } : { tag: '', off: false }; } catch (e) { return { tag: '', off: false }; } };
     const quest = r ? `<a class="isl-quest ${r.done ? 'done' : ''}" href="${esc(strip(((r.subs || []).find(x => !x.done) || r).href))}">${r.done ? '✓ 今天的任務完成了' : '！ 今天的任務'}：${esc(r.name)} ${r.n} / ${r.goal} ${esc(r.unit)}${r.done ? '' : ' ▶'}</a>` : '';
     card.innerHTML = `<div class="isl-ch"><span class="isl-ci" aria-hidden="true">${S.i}</span><div><h2>${esc(S.n)}・${esc(I.b)}</h2><p>${esc(I.line)}</p></div></div>${quest}`
-      + `<ol class="isl-acts">${xs.map((a, i) => { const d = desc(a), pin = i < 6 && !PORTALS.some(p => p[0] === a.id); return `<li><a href="${esc(hrefOf(k, a))}"><span class="isl-n${pin ? '' : ' off'}">${pin ? i + 1 : ''}</span>${icon(a)}<span class="isl-at"><b>${esc(a.title)}</b>${d ? `<small>${esc(d)}</small>` : ''}</span></a></li>`; }).join('')}</ol>`
+      + `<ol class="isl-acts">${xs.map((a, i) => { const d = desc(a), pin = i < 6 && !PORTALS.some(p => p[0] === a.id), lk = lock(a); return `<li><a href="${esc(hrefOf(k, a))}"${lk.off ? ' class="kl-off"' : ''}><span class="isl-n${pin ? '' : ' off'}">${pin ? i + 1 : ''}</span>${icon(a)}<span class="isl-at"><b>${esc(a.title)}${lk.tag}</b>${d ? `<small>${esc(d)}</small>` : ''}</span></a></li>`; }).join('')}</ol>`
       + `<div class="isl-cf"><a class="isl-b" href="${k === 'english' ? '#en' : '#s/' + k}">${S.i} 打開${esc(S.n)}頁</a><button type="button" class="isl-b" id="isl-back">← 回到全島</button></div>`;
     card.setAttribute('aria-label', S.n + '島說明');
   }
