@@ -455,11 +455,23 @@
     if (!p || p.type !== 'paper') return null;
     return (SETS[p.set] || PAPER).filter(function (q) { return q.id === p.pid; })[0] || null;
   }
+  /* 紙本錯題・異分母加減（2026-11-19）：家長拍照、批改後在這裡加一行，錯題庫自動補進去、走 math/fracadd.html?mistakes=1 重練（連對 3 次畢業）。
+     一行＝{id, d, src}：id＝fracadd 錯題 id（'fa:' 兩個數夾 + 或 -，一個數＝[整數.]分子_分母，例 3又5/7＋5又11/12＝'fa:3.5_7+5.11_12'、33/14－5/3＝'fa:33_14-5_3'）；
+       d＝登錄日（台北，'YYYY-MM-DD'；登錄超過 14 天就不再自動補）；src＝出處（只寫講義／考卷的回數、頁、題號，不寫孩子的任何資料）。
+     只有兩個數；三個數連算的題收「沒做對的那一步」。哪些帳號會補、怎麼不重複，見 kids-mistakes.js seedPaper。test/fracadd.test.js 逐行驗 id 和答案。 */
+  var FA_ROWS = [
+    { id: 'fa:3.5_7+5.11_12', d: '2026-11-19', src: '講義第 11 回 p.21 第 (4) 題' },
+    { id: 'fa:3.15_27-11_18', d: '2026-11-19', src: '講義第 11 回 p.21 第 (9) 題' },
+    { id: 'fa:33_14-5_3', d: '2026-11-19', src: '講義第 11 回 p.21 第 (10) 題' },
+    { id: 'fa:3.2_3+1.4_5', d: '2026-11-19', src: '講義第 11 回 p.22 第 (2) 題' },
+    { id: 'fa:4.3_10-3.2_3', d: '2026-11-19', src: '講義第 11 回 p.22 第 (4) 題' },   // 原題 2又1/2＋1又4/5－3又2/3（三個數）→ 收後半那一步 4又3/10－3又2/3
+    { id: 'fa:4.16_45+8_9', d: '2026-11-19', src: '講義第 11 回 p.23 第 (3) 題' }   // 原題 8/9＋3又7/15＋8/9（三個數）→ 收最後一步：前兩個的和 4又16/45 再加 8/9（要進位成 5又11/45）
+  ];
   function unitOfMistake(p) { return unitOf(fromMistake(p)); }
   function animOfMistake(p) { return animOf(fromMistake(p)); }
 
   var API = { PAPER: PAPER, VARIANTS: VARIANTS, FRACTIONS: FRACTIONS, MIDTERM: MIDTERM, EXAM: EXAM, SECTOR: SECTOR, EXAM1517: EXAM1517, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
-    unitOf: unitOf, unitOfMistake: unitOfMistake, animOf: animOf, animOfMistake: animOfMistake, ADD_HASH: 'uwj3ic' };
+    unitOf: unitOf, unitOfMistake: unitOfMistake, animOf: animOf, animOfMistake: animOfMistake, ADD_HASH: 'uwj3ic', FA_ROWS: FA_ROWS };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
-  else G.PAPER = API;
+  else { G.PAPER = API; try { if (G.KidsMistakes && G.KidsMistakes.seedPaper) G.KidsMistakes.seedPaper(); } catch (e) { } }
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -51,7 +51,13 @@ ok(rt === 2000, 'round-tripped 2000 random questions');
 ok(FA.mkId({ op: '+', a: { w: 0, n: 1, d: 3 }, b: { w: 0, n: 3, d: 4 } }) === 'fa:1_3+3_4' && FA.mkId({ op: '-', a: { w: 2, n: 1, d: 3 }, b: { w: 0, n: 1, d: 4 } }) === 'fa:2.1_3-1_4', 'id format examples');
 const m1 = FA.fromId('fa:2.1_3-1_4');
 ok(m1 && m1.kind === 'msub' && m1.a.w === 2 && m1.b.w === 0 && FA.txt(m1.ans) === '2 又 1/12', 'mixed minus proper restores: ' + (m1 && FA.txt(m1.ans)));
-ok(['fa:1_3+3_4x', 'fa:1_3*3_4', 'fa:0_3+1_4', 'fa:3_3+1_4', 'fa:1_1+1_4', 'fa:1_13+1_4', 'fa:1_4-3_4', 'fa:1_4-1_4', 'frc:1_3+3_4', 'fa:', '', null].every(x => FA.fromId(x) === null), 'bad ids rejected (format, 0/improper numerator, denominator range, negative/zero difference)');
+ok(['fa:1_3+3_4x', 'fa:1_3*3_4', 'fa:0_3+1_4', 'fa:2.3_3+1_4', 'fa:1.5_4+1_4', 'fa:1_1+1_4', 'fa:1_0+1_4', 'fa:1_100+1_4', 'fa:1_4-3_4', 'fa:1_4-1_4', 'fa:12.1_2+1_3', 'frc:1_3+3_4', 'fa:', '', null].every(x => FA.fromId(x) === null), 'bad ids rejected (format, 0 numerator, improper part of a mixed number, denominator < 2 or 3 digits, negative/zero difference)');
+// 紙本錯題用的寬格式（2026-11-19）：分母到 99、沒約分的分數、沒有整數的假分數
+{ const x = FA.fromId('fa:33_14-5_3'), y = FA.fromId('fa:3.15_27-11_18');
+  ok(x && x.kind === 'fsub' && FA.KIND_NAME[x.kind] === '分數相減' && FA.txt(x.ans) === '29/42' && y && y.kind === 'msub' && FA.txt(y.ans) === '2 又 17/18' && y.ans.reduce, 'wide ids: improper 33/14, unreduced 15/27, denominators 14/27');
+  ok(FA.grade(y, { w: 2, n: 51, d: 54 }).st === 'fix' && FA.grade(y, { w: 2, n: 17, d: 18 }).st === 'ok' && FA.grade(y, { n: 53, d: 18 }).st === 'fix', '2又51/54 → 約分提醒、2又17/18 ok、53/18 → 化帶分數提醒');
+  ok(FA.steps(x).join('|').includes('最小公倍數是 42') && FA.steps(x).join('|').includes('99/42') && !FA.steps(x).some(s => /帶分數先化成假分數/.test(s)), 'steps for an improper operand');
+  ok(FA.fromId('fa:1_3+3_4').kind === 'add' && FA.fromId('fa:2.1_3-1_4').kind === 'msub', 'old ids keep their kind'); }
 // 分組：五上單元六（異分母分數的加減）
 ok(KM.unitOf('math', 'fa:1_3+3_4', { type: 'fracadd' }) === 'g5a6', 'unitOf → g5a6');
 // 未畢業最多 50 題：第 51 題進來 → 最舊答錯的蓋墓碑；畢業規則照舊（連對 3 次）
@@ -73,6 +79,52 @@ ok(KM.unitOf('math', 'fa:1_3+3_4', { type: 'fracadd' }) === 'g5a6', 'unitOf → 
   const big = {}; for (let i = 0; i < 50; i++) { const e = FA.mkEntry(FA.gen('madd', rnd)); big[e.id + i] = { c: 2, w: 99, t: 1.8e12, u: 1.8e12, p: e.p }; } for (let i = 0; i < 300; i++) big['fa:' + i + '_1+1_2'] = { d: 1, w: 99, t: 1.8e12, u: 1.8e12 };
   const n = SM.bytes(SM.normMk({ math: big }));
   ok(n < 30 * 1024 && n <= SM.MAX_BYTES / 4, 'mk.math with 50 fa + 300 tombstones = ' + n + ' B (≤ MAX_BYTES/4, 上限不放寬)');
+}
+// 📝 家長登錄的紙本錯題（math/paper.js FA_ROWS → kids-mistakes seed，2026-11-19）
+{
+  const P = require(path.join(root, 'math', 'paper.js')), DAY = 864e5;
+  // 每一行：id 是 fracadd 標準格式、fromId 還原得出來、答案＝家長批改的正解（這裡手寫，跟 fracadd 的算法互相對）、src 只有講義回數頁題號
+  const WANT = { 'fa:3.5_7+5.11_12': '9 又 53/84', 'fa:3.15_27-11_18': '2 又 17/18', 'fa:33_14-5_3': '29/42', 'fa:3.2_3+1.4_5': '5 又 7/15', 'fa:4.3_10-3.2_3': '19/30', 'fa:4.16_45+8_9': '5 又 11/45' };
+  ok(P.FA_ROWS.length === 6 && P.FA_ROWS.map(r => r.id).join() === Object.keys(WANT).join(), 'FA_ROWS: the 6 registered questions: ' + P.FA_ROWS.map(r => r.id).join(' '));
+  P.FA_ROWS.forEach(r => {
+    const q = FA.fromId(r.id), e = q && FA.mkEntry(q);
+    ok(q && e.id === r.id && FA.txt(q.ans) === WANT[r.id], 'row ' + r.id + ' → ' + (q && FA.txt(q.ans)));
+    ok(q && FA.grade(q, { w: q.ans.w || '', n: q.ans.n || '', d: q.ans.n ? q.ans.d : '' }).st === 'ok', 'row ' + r.id + ' : simplest answer graded ok');
+    ok(/^\d{4}-\d\d-\d\d$/.test(r.d) && !isNaN(Date.parse(r.d + 'T00:00:00+08:00')) && /^講義第 \d+ 回 p\.\d+ 第 \(\d+\) 題$/.test(r.src) && Object.keys(r).sort().join() === 'd,id,src', 'row ' + r.id + ' : date + source only (no child info)');
+    ok(KM.unitOf('math', e.id, e.p) === 'g5a6', 'row ' + r.id + ' : 五上單元六');
+  });
+  // 4又22/15（帶分數裡還是假分數）：照 fracadd 既有規則只提醒要化成帶分數，不算對
+  ok(FA.grade(FA.fromId('fa:3.2_3+1.4_5'), { w: 4, n: 22, d: 15 }).st === 'fix', '4又22/15 → fix (not accepted as correct)');
+  const T = Date.parse('2026-11-19T00:00:00+08:00'), NOW = T + 3600e3;
+  const rows = () => P.FA_ROWS.map(r => { const e = FA.mkEntry(FA.fromId(r.id)); return { id: e.id, t: Date.parse(r.d + 'T00:00:00+08:00'), p: e.p }; });
+  const PP = { 'pp:A': { d: 1, w: 1, t: 5, u: 5 } };   // 加過紙本錯題的帳號（墓碑也算）
+  // 會併入：空的（只有 pp: 標記）→ 5 題，c=0、w=1、t=u=登錄日、p 跟 fracadd 自己記的一樣
+  const b1 = JSON.parse(JSON.stringify(PP));
+  const N = P.FA_ROWS.length;
+  ok(KM.seed(b1, rows(), NOW) === N && Object.keys(WANT).every(id => b1[id] && b1[id].c === 0 && b1[id].w === 1 && b1[id].t === T && b1[id].u === T && b1[id].p.type === 'fracadd'), 'seed: all ' + N + ' added with t=u=registration day');
+  const fl = KM.liveList(b1).filter(e => e.p.type === 'fracadd');
+  ok(fl.length === N && fl.every(e => KM.unitOf('math', e.id, e.p) === 'g5a6'), 'seed: listed as live fracadd mistakes under 五上單元六');
+  // 不會重複加：再跑一次 0 題；已經在練（c=2）的不被重設
+  b1['fa:33_14-5_3'].c = 2; b1['fa:33_14-5_3'].u = NOW + 5;
+  ok(KM.seed(b1, rows(), NOW + 10) === 0 && b1['fa:33_14-5_3'].c === 2 && Object.keys(b1).length === N + 1, 'seed: second run adds nothing, progress kept');
+  // 能重練、照舊連對 3 次畢業：用 fracadd 的 record 路徑（mark）
+  const id = 'fa:3.15_27-11_18', p = FA.mkEntry(FA.fromId(id)).p, rr = [];
+  for (let k = 0; k < 3; k++) rr.push(KM.mark(b1, id, true, p, NOW + 100 + k));
+  ok(rr.join() === 'counted,counted,graduated' && b1[id].d === 1, 'seeded item graduates after 3 correct in a row: ' + rr);
+  // 有墓碑就不加（畢業了不會被加回來）
+  ok(KM.seed(b1, rows(), NOW + 200) === 0 && b1[id].d === 1, 'seed: tombstone → not re-added');
+  // 別台還沒收到墓碑就先補：補的 u＝登錄日 → 同步時墓碑勝
+  const other = JSON.parse(JSON.stringify(PP)); KM.seed(other, rows(), NOW + 300);
+  ok(SM.mergeMk({ math: b1 }, { math: other }).math[id].d === 1 && SM.mergeMk({ math: other }, { math: b1 }).math[id].d === 1, 'seed on a stale device cannot resurrect a graduated item via sync');
+  // 沒加過紙本錯題的帳號（其他會員）不補；登錄超過 14 天不補
+  ok(KM.seed({}, rows(), NOW) === 0 && KM.seed({ 'fa:1_3+3_4': { c: 0, w: 1, t: 1, u: 1, p: {} } }, rows(), NOW) === 0 && !KM.hasPaper({ 'pa:x': {} }), 'seed: accounts without pp: get nothing');
+  ok(KM.seed(JSON.parse(JSON.stringify(PP)), rows(), T + KM.SEED_DAYS * DAY + 1) === 0 && KM.seed(JSON.parse(JSON.stringify(PP)), rows(), T + KM.SEED_DAYS * DAY - 1) === N, 'seed: only within ' + KM.SEED_DAYS + ' days of registration');
+  ok(KM.seed(JSON.parse(JSON.stringify(PP)), [null, { id: '', t: T }, { id: 'fa:1_3+3_4' }, { id: '_x', t: T, p: {} }], NOW) === 0, 'seed: bad rows ignored');
+  // 大小（同步上限不放寬）：寬格式最長的 id／p 50 題未畢業＋300 墓碑仍 ≤ MAX_BYTES/4、跟舊格式同一個量級
+  const big = {}; for (let i = 0; i < 50; i++) { const q = FA.fromId('fa:9.' + (49 + i) + '_99+9.98_99'), e = FA.mkEntry(q); big[e.id] = { c: 2, w: 99, t: 1.8e12, u: 1.8e12, p: e.p }; }
+  for (let i = 0; i < 300; i++) big['fa:9.' + (10 + i % 89) + '_99-' + (1 + (i >> 4)) + '_' + (60 + (i % 16)) ] = { d: 1, w: 99, t: 1.8e12 + i, u: 1.8e12 + i };
+  const nb = SM.bytes(SM.normMk({ math: big }));
+  ok(Object.keys(big).filter(k => !big[k].d).length === 50 && Object.keys(big).every(k => k.length <= 18) && nb < 30 * 1024 && nb <= SM.MAX_BYTES / 4, 'wide-format worst case 50 live + 300 tombstones = ' + nb + ' B (≤ MAX_BYTES/4, id ≤ 18 chars)');
 }
 // 頁面接線：?mistakes=1 重練、每題進錯題庫、做完送 math:mistakes；錯題庫的路由／徽章／接著練
 {

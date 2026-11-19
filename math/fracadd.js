@@ -11,7 +11,7 @@
   const lcm = (a, b) => a / gcd(a, b) * b;
   const ri = (rnd, a, b) => a + Math.floor(rnd() * (b - a + 1));
   const KINDS = ['add', 'sub', 'madd', 'msub'];
-  const KIND_NAME = { add: '真分數相加', sub: '真分數相減', madd: '帶分數相加', msub: '帶分數相減' };
+  const KIND_NAME = { add: '真分數相加', sub: '真分數相減', madd: '帶分數相加', msub: '帶分數相減', fadd: '分數相加', fsub: '分數相減' };   // fadd／fsub＝有假分數（只有紙本錯題 fromId 會出現，隨機出題不出）
 
   // 一個數 {w 整數, n 分子, d 分母} → 假分數的分子（分母 d）
   const imp = x => x.w * x.d + x.n;
@@ -36,15 +36,17 @@
     return null;
   }
   /* 錯題庫（2026-11-09）：id 就是題目本身＝'fa:' 兩個數夾運算符，一個數＝[整數.]分子_分母（真分數不寫整數）：
-     'fa:1_3+3_4'＝1/3＋3/4、'fa:2.1_3-1_4'＝2又1/3－1/4。題型由「有沒有整數＋運算符」推回來，fromId 用 id 原題重出。 */
+     'fa:1_3+3_4'＝1/3＋3/4、'fa:2.1_3-1_4'＝2又1/3－1/4。題型由「有沒有整數＋運算符」推回來，fromId 用 id 原題重出。
+     fromId 比隨機出題寬（2026-11-19，紙本錯題 math/paper.js FA_ROWS 照原卷收）：分母 2～99、分數可以沒約分（3又15/27）、沒有整數時可以是假分數（33/14）；帶分數的分數部分仍要比 1 小。
+     判分規則不變：答案一樣要最簡、假分數要化成帶分數（4又22/15 只提醒）。 */
   const tok = x => (x.w ? x.w + '.' : '') + x.n + '_' + x.d;
   const mkId = q => 'fa:' + tok(q.a) + q.op + tok(q.b);
   function fromId(id) {
     const m = /^fa:(?:(\d)\.)?(\d{1,2})_(\d{1,2})([+-])(?:(\d)\.)?(\d{1,2})_(\d{1,2})$/.exec(String(id));
     if (!m) return null;
     const a = { w: +(m[1] || 0), n: +m[2], d: +m[3] }, b = { w: +(m[5] || 0), n: +m[6], d: +m[7] }, op = m[4];
-    if (![a, b].every(x => x.d >= 2 && x.d <= 12 && x.n >= 1 && x.n < x.d) || (op === '-' && imp(a) * b.d <= imp(b) * a.d)) return null;
-    const mixed = a.w || b.w, q = { kind: mixed ? (op === '+' ? 'madd' : 'msub') : (op === '+' ? 'add' : 'sub'), op, a, b };
+    if (![a, b].every(x => x.d >= 2 && x.n >= 1 && (!x.w || x.n < x.d)) || (op === '-' && imp(a) * b.d <= imp(b) * a.d)) return null;
+    const mixed = a.w || b.w, big = a.n >= a.d || b.n >= b.d, q = { kind: mixed ? (op === '+' ? 'madd' : 'msub') : big ? (op === '+' ? 'fadd' : 'fsub') : (op === '+' ? 'add' : 'sub'), op, a, b };
     return Object.assign(q, { id: mkId(q), ans: answer(q) });
   }
   // 錯題庫的一筆：p 只放清單要畫的（v＝兩個數的整數、分子、分母，op），不放答案、不放畫面

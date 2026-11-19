@@ -54,8 +54,9 @@ body{background:var(--bg)}
   <div class="card center end" id="end" hidden></div>
 </main>
 
-<script src="../kids-mistakes.js?v=eb3c0d11f4"></script>
-<script src="paper.js?v=50ca938ab3"></script>
+<script src="../kids-mistakes.js?v=c6761f9e74"></script>
+<script src="fracadd.js?v=3ee3b3b12a"></script>
+<script src="paper.js?v=168450d634"></script>
 <script>
 (function () {
 'use strict';
@@ -188,6 +189,7 @@ if (ADD) {
   else if (authOK()) {
     var book = KidsMistakes.loadAll().math || {}, added = 0;
     [['p', P.PAPER], ['m', P.MIDTERM], ['s', P.SECTOR]].forEach(function (s) { s[1].forEach(function (Q) { var m = P.mkEntry(Q, s[0]); if (book[m.id]) return; if (KidsMistakes.record('math', m.id, false, m.p)) added++; }); });
+    added += KidsMistakes.seedPaper();   // 紙本錯題・異分母（paper.js FA_ROWS）：上面加完 pp: 這個帳號就開了
     empty(added ? '已經把 ' + added + ' 題紙本錯題加進這個帳號。' : '這個帳號已經加過了。');
   } else $('lede').textContent = '請先登入要加入的帳號，再打開一次這個連結。';
 } else if (!authOK()) {

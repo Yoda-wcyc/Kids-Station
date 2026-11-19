@@ -15,7 +15,7 @@
        'frc:<題型>:<數字>'，p＝{type:'fraction', k:題型, v:[aw,an,ad,bw,bn,bd], q:顯示文字}（分數比較大小，math/fraction.js 用 k＋v 原題重做；清單用 v 畫上下排的分數，2026-10-27）
        'mg:<題目id>'，p＝{type:'grade', qid, b:'五下 單元一', q:題目純文字}（五下～六下 math/grade.js 用 qid 找回原題，2026-11-06）；
        'fa:<數>±<數>'（數＝[整數.]分子_分母，例 'fa:1_3+3_4'、'fa:2.1_3-1_4'），p＝{type:'fracadd', v:[aw,an,ad,bw,bn,bd], op, q:顯示文字}（異分母分數加減，
-         math/fracadd.js FA.fromId 用 id 原題重做；歸五上單元六；隨機題會一直冒新的 → 未畢業最多留 MAX_FA＝50 題，超過把最舊答錯的蓋墓碑擠掉，2026-11-09）；
+         math/fracadd.js FA.fromId 用 id 原題重做；歸五上單元六；隨機題會一直冒新的 → 未畢業最多留 MAX_FA＝50 題，超過把最舊答錯的蓋墓碑擠掉，2026-11-09；紙本上錯的異分母題由家長登錄在 math/paper.js FA_ROWS、seedPaper 補進來，2026-11-19）；
        'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯）、'pf:<題>'（約分通分 15 題答錯，2026-11-05）、'pm:'／'pe:'（期中錯題／期中類題）、'ps:'（扇形小考錯題，2026-11-06）、'pc:'（期中第 15、17 題類題 5 題，2026-11-06），p＝{type:'paper', set:'p'|'v'|'f'|'m'|'e'|'s'|'c', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
      全民英檢 gept id＝gept/data 的題目 id（'e-L1-01-03'、'i-M-01-R3-12'；級別＝id 第一個字），p＝{u:級 e|i|a, pt:部分 L1…R3, s:題目短句（≤ 60 字）}（gept/gept.js；gept/practice.html?mistakes=1&lv=<級> 用 id 找回原題重做，
@@ -144,7 +144,25 @@
     return '';
   }
 
-  var core = { SUBJ: SUBJ, GRAD: GRAD, MAX_DEL: MAX_DEL, MAX_FA: MAX_FA, MAX_GEPT: MAX_GEPT, ROUND: ROUND, SPACED: SPACED, IV: IV, canon: canon, normBook: normBook, normAll: normAll, mergeBook: mergeBook, mergeAll: mergeAll, mark: mark, cap: cap, liveList: liveList, dueList: dueList, isDue: isDue, dayIdx: dayIdx, hash: hash, plain: plain, unitOf: unitOf, LCM_T: LCM_T };
+  /* 📝 家長登錄的紙本錯題（2026-11-19，資料在 math/paper.js FA_ROWS）：seed(數學錯題本, [{id, t, p}], now) 回補進幾題。
+     - 只開在加過紙本錯題的帳號（錯題本有 pp: 開頭的題，墓碑也算＝同「📝 紙本錯題」區的開關）；別的帳號（其他會員）不補。
+     - 本機已經有這題（還在、或畢業留墓碑）就不動 → 不重複、畢業了不會被加回來。
+     - 補進去的 t＝u＝登錄日（比之後的作答、畢業都舊）→ 另一台還沒收到墓碑就先補，同步時墓碑照樣勝。
+     - 登錄超過 SEED_DAYS 天的不補：墓碑每科只留最新 300 筆，太久以後墓碑可能被擠掉，不補才不會讓畢業的題復活。 */
+  var SEED_DAYS = 14;
+  function hasPaper(b) { return Object.keys(obj(b) || {}).some(function (id) { return id.indexOf('pp:') === 0; }); }
+  function seed(book, rows, now) {
+    if (!hasPaper(book)) return 0;
+    var n = 0;
+    (rows || []).forEach(function (r) {
+      var t = r && nat(r.t);
+      if (!t || !okId(r.id) || book[r.id] || now - t > SEED_DAYS * DAY) return;
+      book[r.id] = { c: 0, w: 1, t: t, u: t, p: normP(r.p) }; n++;
+    });
+    return n;
+  }
+
+  var core = { SUBJ: SUBJ, GRAD: GRAD, MAX_DEL: MAX_DEL, MAX_FA: MAX_FA, MAX_GEPT: MAX_GEPT, ROUND: ROUND, SPACED: SPACED, IV: IV, SEED_DAYS: SEED_DAYS, canon: canon, normBook: normBook, normAll: normAll, mergeBook: mergeBook, mergeAll: mergeAll, mark: mark, cap: cap, liveList: liveList, dueList: dueList, isDue: isDue, dayIdx: dayIdx, hash: hash, plain: plain, unitOf: unitOf, LCM_T: LCM_T, hasPaper: hasPaper, seed: seed };
   if (typeof module !== 'undefined' && module.exports) { module.exports = { _core: core }; return; }
 
   // ================= 瀏覽器：存取 =================
@@ -163,6 +181,16 @@
     if (r === 'added' && subj === 'gept') cap(b, '', MAX_GEPT, now());   // 全民英檢：未畢業最多 100 題
     if (r) saveAll(a);
     return r;
+  }
+  // 紙本錯題・異分母（math/paper.js FA_ROWS → fracadd 錯題，規則見 _core seed）：要 PAPER＋FA 都載入（首頁、paper.html）；paper.js 載入時和打開數學錯題庫時各跑一次
+  function seedPaper() {
+    try {
+      var P = G.PAPER, F = G.FA; if (!P || !P.FA_ROWS || !F) return 0;
+      var rows = P.FA_ROWS.map(function (r) { var q = F.fromId(r.id), e = q && F.mkEntry(q); return e ? { id: e.id, t: Date.parse(r.d + 'T00:00:00+08:00'), p: e.p } : null; });
+      var a = loadAll(), b = a.math || {}, n = seed(b, rows, now());
+      if (n) { a.math = b; cap(b, 'fa:', MAX_FA, now()); saveAll(a); }
+      return n;
+    } catch (e) { return 0; }
   }
   function list(subj, unit) { return liveList(loadAll()[subj], unit); }
   function count(subj, unit) { return list(subj, unit).length; }
@@ -195,8 +223,7 @@
   /* 📝 紙本錯題區（2026-11-03）：只有這個帳號加過紙本錯題（錯題本有 pp: 開頭的題，墓碑也算，跟著同步走）才出現；別的帳號看不到 */
   function paperOf(k) {
     if (k !== 'math') return null;
-    var b = loadAll().math || {};
-    if (!Object.keys(b).some(function (id) { return id.indexOf('pp:') === 0; })) return null;
+    if (!hasPaper(loadAll().math)) return null;
     return list('math').filter(function (e) { return e.p.type === 'paper'; });
   }
   function paperBox(items, ulist) {
@@ -237,6 +264,7 @@
   /* page(box, {k, n, i, units:[[id,標題]], unit, ulist, back}) — 錯題清單（免登入）；按「只練錯題」才要登入＋練習額度，通過就 location.hash＝'#s/<k>/mistakes-go[-<單元>]'
      units＝上方的單元篩選鈕（社會、自然）；清單依「冊 → 單元」分組（ulist，沒給就用 units；數學由 subjects.js 給 MATH_UNITS） */
   function page(box, o) {
+    if (o.k === 'math') seedPaper();   // 同步剛把 pp: 帶進來的裝置，不用重開首頁
     var k = o.k, unit = o.unit || '', paper = paperOf(k), all = list(k).filter(function (e) { return e.p.type !== 'paper'; }), items = unit ? all.filter(function (e) { return e.p.u === unit; }) : all;
     var nums = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'], ulab = {};
     (o.units || []).forEach(function (x, i) { ulab[x[0]] = x[2] || '單元' + nums[i]; });   // x[2]＝資料的 label（五下「五下 單元一」、六上「六上 單元一」）
@@ -327,5 +355,5 @@
     draw();
   }
 
-  G.KidsMistakes = { _core: core, KEY: KEY, SUBJ: SUBJ, GRAD: GRAD, ROUND: ROUND, SPACED: SPACED, now: now, record: record, list: list, count: count, due: due, loadAll: loadAll, page: page, aiPlay: aiPlay, hash: hash, plain: plain, mathType: mathType, mathCount: mathCount, mathMore: mathMore };
+  G.KidsMistakes = { _core: core, KEY: KEY, SUBJ: SUBJ, GRAD: GRAD, ROUND: ROUND, SPACED: SPACED, now: now, record: record, seedPaper: seedPaper, list: list, count: count, due: due, loadAll: loadAll, page: page, aiPlay: aiPlay, hash: hash, plain: plain, mathType: mathType, mathCount: mathCount, mathMore: mathMore };
 })(typeof window !== 'undefined' ? window : globalThis);
