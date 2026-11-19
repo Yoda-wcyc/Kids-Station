@@ -5,7 +5,7 @@
      答錯進錯題庫 KidsMistakes.record('gept', 題目id, ok, {u:級, pt:部分, s:短句})，在錯題庫裡連對 3 次畢業（kids-mistakes.js 未畢業最多 100 題）。
    - 寫作、口說（不自動給分）：每完成一題 KidsDaily.rec('english', null)＋KidsCoins.activity('english')。
    - 一組題型練習（聽、讀）或一份模擬考做完：送 practice_round 'english:gept'（correct／total＝自動判分題；錯題練習不送）。後端白名單 kids-2026-11-16-a 加的。
-   - 成績存本機 kids_gept＝{best:{組id:{p,c,n,t}}, mock:[{id,t,lc,ln,rc,rn,L,R,pass}], task:{組id:{t,sc,b}}}（不同步）。 */
+   - 成績存本機 kids_gept＝{best:{組id:{p,c,n,t}}, mock:[{id,t,lc,ln,rc,rn,L,R,pass}], task:{組id:{t,sc,b}}}（2026-11-19 起 best 的 %、task 做過、最新 8 筆 mock 跟著同步：sync.js／syncmerge.js pg）。 */
 (function (W) {
   'use strict';
   var G = W.GeptCore, TTS = W.GeptTTS, D = document, AB = 'ABCDEFGHIJK';
@@ -183,6 +183,8 @@
     function lockTag(id) { try { return W.KidsLock ? KidsLock.badge(id) : ''; } catch (e) { return ''; } }
     function lockOff(id) { try { return W.KidsLock ? KidsLock.offCls(id) : ''; } catch (e) { return ''; } }
     root.addEventListener('click', function (e) { var t = e.target.closest('[data-lv]'); if (!t) return; lv = uiLv(t.getAttribute('data-lv')); try { history.replaceState(null, '', '?lv=' + lv); } catch (x) { } draw(); });
+    // 別台的成績同步進來（2026-11-19 起 kids_gept 跟著同步）：重讀、重畫
+    W.addEventListener('kids-sync-updated', function () { rec0 = ld(); draw(); });
     draw();
   }
 

@@ -95,10 +95,16 @@
       <dl class="info">
         <dt>同步狀態</dt><dd class="sync-status" id="s-status">…</dd>
         <dt>最後同步</dt><dd id="s-last">—</dd>
+        <dt>上次上傳成功</dt><dd id="s-up">—</dd>
+        <dt>上次下載成功</dt><dd id="s-down">—</dd>
+        <dt>還沒送出的紀錄</dt><dd id="s-pend">—</dd>
+        <dt>同步碼後兩碼</dt><dd id="s-tail">—</dd>
+        <dt>這台怎麼開的</dt><dd id="s-app">—</dd>
         <dt>這台的紀錄</dt><dd id="s-count">…</dd>
+        <dt>只在這台的資料</dt><dd id="s-local">—</dd>
       </dl>
       <button class="btn primary big wide" type="button" id="s-now" style="margin-top:14px">☁️ 立刻上傳並同步</button>
-      <p class="muted" style="margin:10px 0 0">會同步英文（作答、學會、錯題、星星、課本考試分數）、社會和自然心智圖（過關、複習時間、挖空紀錄、考考自己／練習題最佳成績）、數學（天平題目、換你算與應用題最佳成績）、AI 玩完紀錄、Scratch 完成紀錄；上傳舊紀錄不會補發學習幣。</p>
+      <p class="muted" style="margin:10px 0 0">三台要一樣：「同步碼後兩碼」要相同；按「立刻上傳並同步」後「還沒送出的紀錄」要是「沒有」。會同步英文（作答、學會、錯題、星星、課本考試分數）、社會和自然心智圖（過關、複習時間、挖空紀錄、單元測驗、段考模擬、素養題組、閃卡看過）、數學（天平題目、各單元成績、動畫教學看過、應用題難度）、國語（閱讀、成語、作文完成幾題）、漫畫看到哪、全民英檢成績、每日清單、AI、Scratch；遊戲存檔只在玩的那台。上傳舊紀錄不會補發學習幣。</p>
     </section>
 
     <form class="card" id="f-pw" novalidate>
@@ -119,9 +125,9 @@
 </main>
 <script src="kids-auth.js?v=42d7c72a13"></script>
 <script src="kids-coins.js?v=8a5c449e88"></script>
-<script src="syncmerge.js?v=5624190b1e"></script>
+<script src="syncmerge.js?v=e89be3de7e"></script>
 <script src="syncauto.js?v=d7ed49f73e"></script>
-<script src="sync.js?v=12631d8738"></script>
+<script src="sync.js?v=25f6e03c9f"></script>
 <script>
 (function () {
   'use strict';
@@ -216,6 +222,12 @@
     $('#s-status').textContent = KS.statusText();
     $('#s-last').textContent = fmtIso(i.lastAt);
     $('#s-count').textContent = '學會了 ' + c.learned + ' 項・作答 ' + c.answered + ' 筆・錯題 ' + c.mistakes + ' 題・社會過了 ' + (c.social || 0) + ' 關・自然過了 ' + (c.science || 0) + ' 關';
+    $('#s-up').textContent = i.lastUp ? fmtIso(i.lastUp) : '還沒上傳過（或一直沒有新紀錄要傳）';
+    $('#s-down').textContent = i.lastDown ? fmtIso(i.lastDown) : '還沒有';
+    $('#s-pend').textContent = i.pending || i.dirty ? '有，還沒送到雲端' + (i.err ? '（' + i.err + '）' : '（等一下會自動送）') : '沒有';
+    $('#s-tail').textContent = i.tail ? '…' + i.tail : '還沒有同步碼';
+    $('#s-app').textContent = i.app === 'home' ? '主畫面 App（從主畫面圖示開）' : 'Safari／瀏覽器分頁';
+    $('#s-local').textContent = (i.localOnly && i.localOnly.length ? i.localOnly.join('、') : '沒有') + '（不會同步到別台）';
   }
   if (KS) {
     window.addEventListener('kesync', function () { drawSync(); });

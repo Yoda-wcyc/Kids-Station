@@ -784,7 +784,7 @@ function quizDone(right){ var it = QZ.items[QZ.i], card = it.q.type === 'card'; 
    題目元件＝../quizkit.js（mc／tf／order／match）；開放題 type 'open'＝寫完（≥ ZR.OPEN_MIN 字）看參考答案＋評分要點自己對照；判分 ZR.grade（同國語閱讀）。
    學習幣：每題 KidsCoins.answer(ok, 科)；一組只有 3～4 題自動判分（後端一輪要 ≥ 5 題），所以不送 practice_round。
    錯題庫 id＝'<單元>|L|<題組id>:<題id>'（p.k 'L'），只練錯題時連同資料原題重做（mkQ）。不算進單元完成（不呼叫 doneRec）。
-   本機紀錄（不同步）：localStorage kids_mm_lit＝{'<科>:<題組id>':{best:最佳 %, n:做了幾輪, at, open:{題id:開放題寫的內容}}}。 */
+   本機紀錄（best／n 2026-11-19 起跟著同步，開放題寫的內容不同步）：localStorage kids_mm_lit＝{'<科>:<題組id>':{best:最佳 %, n:做了幾輪, at, open:{題id:開放題寫的內容}}}。 */
 var LKEY = 'kids_mm_lit', LT = null;
 var LSTEP = ['讀出資料', '比較・找規律', '推論・預測', '應用・評估'];
 function ZRx(){ return window.ZhReading; }
@@ -850,7 +850,7 @@ document.addEventListener('input', function(e){ var t = e.target; if(LT && t.cla
 /* ---------- 🃏 閃卡（2026-11-01）----------
    卡片在 data/<科>/cards.js（<資料>.cards[單元id] = [{id, f:名詞, b:說明, ref}]）。一輪 FCN 張：沒看過 → 記不得的（錯題庫裡、還在第 1 天那一關）→ 到期該複習的 → 其他看過的（最久沒看的先）。
    點卡片翻面（🔊 朗讀 zh-TW），左右滑動或 ◀ ▶ 換卡；翻面後按「我記得 ✓」「再想想 ✗」→ 錯題庫 '<單元>|F|<卡id>'（社會、自然走 1 → 3 → 7 天的間隔，規則在 ../kids-mistakes.js）。
-   自己判斷記不記得，所以不算學習幣、不算單元完成。本機紀錄（不同步）：localStorage kids_mm_cards＝{'<科>:<卡id>': 最後翻面時間}（＝看過了）。 */
+   自己判斷記不記得，所以不算學習幣、不算單元完成。本機紀錄（2026-11-19 起「看過哪幾張」跟著同步，別台同步進來的時間記 1）：localStorage kids_mm_cards＝{'<科>:<卡id>': 最後翻面時間}（＝看過了）。 */
 var CKEY = 'kids_mm_cards', FCN = 15, FC = null;
 var FCTAG = ['🆕 沒看過', '🤔 記不得的', '🔁 該複習了', '👀 再看一次'];
 function cardsOf(u){ u = u || unit(); return (u && D.cards && D.cards[u.id]) || []; }
@@ -981,7 +981,7 @@ function mkBackLab(){ return RVMODE ? '← 回' + CFG.name : '📕 回錯題庫'
    作答時不說對錯，交卷才一起看：分數、每題解析、錯題標紅；錯題進錯題庫（題庫題 '<單元>|q|<雜湊>'，跟練習題同一筆；新題 '<單元>|X|<題id>'）；
    依答錯的題建議回去複習哪個重點（連到 ?u=<單元>&focus=<節點>）。段考可選 40 分鐘限時（預設關，時間到自動交卷）。
    學習幣：交卷時每題 KidsCoins.answer；一份送 practice_round '<科>:quiz'（沿用練習題的事件，不另開新事件）。不算單元完成（不呼叫 doneRec）。
-   本機紀錄（不同步，同素養題組）：localStorage kids_mm_exam＝{'<科>:<卷id>':{best:最高分, last:最近一次, n:考了幾次, at}, _seen:{'<科>':{題key:最後作答時間}}}
+   本機紀錄（best／last 2026-11-19 起跟著同步，_seen 不同步）：localStorage kids_mm_exam＝{'<科>:<卷id>':{best:最高分, last:最近一次, n:考了幾次, at}, _seen:{'<科>':{題key:最後作答時間}}}
    卷id＝單元id 或 'mock-<單元>-<單元>'；題key 見 exam.js（練習題作答也會記，7 天後清掉）。 */
 var XKEY = 'kids_mm_exam', EXM = null, MOCK = /[?&]mock=1/.test(location.search), MOCK_MIN = 40, exTimerId = 0;
 var EXTYPE = {mc:'選擇題', tf:'是非題', order:'排順序', match:'配對題'};

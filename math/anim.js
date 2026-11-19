@@ -3,7 +3,7 @@
      {id, title, icon, H:SVG 高, v0:{變數初值}, steps:[{t:說明文字, v:{這一步要變到的值}, ms?:毫秒, lin?:[線性變化的變數]}], draw(v, h) → SVG 內容字串, prac:[練習題 2～3 題]}
    畫面＝某一步的變數值（前面每一步的 v 疊上去），切換步時數字變數用補間動畫過渡（移動、伸長、旋轉、淡入都是變數），字串直接換。
    練習題 {q, calc, ans, why, fields:[{lab?, suf?, t:'num'|'dec'}] 或 opts:[選項]}；calc 給 test/anim.test.js 用暴力法重算。文字裡 [[n/d]]＝上下排的分數。
-   「看完了」＝練習答對，記在本機 kids_anim（不同步）：{seen:{段:時間}, rot:{段:輪到第幾題}}。 */
+   「看完了」＝練習答對，記在本機 kids_anim（2026-11-19 起 seen 跟著同步：sync.js／syncmerge.js pg；rot 只在這台）：{seen:{段:時間}, rot:{段:輪到第幾題}}。 */
 (function (G) {
   'use strict';
   const A = G.ANIM = G.ANIM || {};
@@ -61,7 +61,7 @@
   }
   A.check = check;
 
-  // 本機紀錄（不同步）
+  // 本機紀錄（seen 跟著同步，見檔頭）
   const KEY = 'kids_anim';
   function load() { try { const o = JSON.parse(localStorage.getItem(KEY)) || {}; return { seen: o.seen || {}, rot: o.rot || {} }; } catch (e) { return { seen: {}, rot: {} }; } }
   function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* 私密模式 */ } }

@@ -850,18 +850,47 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     let nd = {}; nk.forEach(k => { nd = KLk.setV(nd, k, 61); });
     projDoc.done = Object.assign({}, projDoc.done, { n: SM.normDone(nd).n });
     ok(nk.length > 550 && SM.bytes(SM.normDone(nd).n) < 1500, 'done.n worst case: ' + nk.length + ' 個單元每格最大值 = ' + SM.bytes(SM.normDone(nd).n) + ' B'); }
+  // 2026-11-19 pg（只在各頁本機存的進度，syncmerge.js pgFromLocal）最壞情況：照真的目錄全部做過、分數 100、次數封頂、模擬考 8 筆三位數，
+  //   段考模擬每個單元都當成一份三單元卷的開頭（約 28 份，實際約 13 份）；上限一個都沒放寬，要擠進 2026-11-17 瘦身空出的 3,984 B
+  let pgBytes = 0;
+  { const Wp = { window: {} }; vm.createContext(Wp);
+    ['comics/catalog.js', 'gept/data/catalog.js', 'chinese/writing/data/catalog.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), Wp));
+    ['social', 'science'].forEach(k => { const dir = path.join(root, 'mindmap', 'data', k); fs.readdirSync(dir).filter(f => /^(unit|cards|lit)[\w-]*\.js$/.test(f)).sort((a, b) => (a.startsWith('unit') ? -1 : 0) - (b.startsWith('unit') ? -1 : 0)).forEach(f => vm.runInContext(fs.readFileSync(path.join(dir, f), 'utf8'), Wp)); });
+    const t = 1.8e12, L = { comic: { seen: {} }, anim: { seen: {} }, writing: { t: {}, l: {} }, gept: { best: {}, task: {}, mock: [] }, exam: {}, lit: {}, cards: {}, wordLv: {}, zhRead: {}, zhIdiom: {} };
+    Wp.window.COMIC_CATALOG.vols.forEach(v => v.eps.forEach(e => { L.comic.seen[e.id] = t; }));
+    'ABCDEFG'.split('').forEach(c => { L.anim.seen[c] = t; });
+    Wp.window.WR_CAT.topics.forEach(c => { L.writing.t[c.id] = { done: t }; }); Wp.window.WR_CAT.lessons.forEach(c => { L.writing.l[c.id] = { best: 100, n: 99, done: t }; });
+    const G = Wp.window.GEPT_CATALOG; Object.keys(G).forEach(lv => Object.keys(G[lv]).forEach(pt => G[lv][pt].forEach(s => { if (/^[LR]/.test(pt)) L.gept.best[s.id] = { p: 100 }; else if (/^[SW]/.test(pt)) L.gept.task[s.id] = { t }; else for (let i = 0; i < 2; i++) L.gept.mock.push({ id: s.id, t: t + i * 1e6 + s.id.length, lc: 999, ln: 999, rc: 999, rn: 999, L: 120, R: 120, pass: true }); })));
+    const MMD = { social: Wp.window.DATA_SOCIAL, science: Wp.window.DATA_SCIENCE };
+    Object.keys(MMD).forEach(k => { const D = MMD[k], us = D.units.map(u => u.id);
+      us.forEach((u, i) => { L.exam[k + ':' + u] = { best: 100, last: 100, n: 9, at: t }; if (i + 2 < us.length) L.exam[k + ':mock-' + us.slice(i, i + 3).join('-')] = { best: 100, last: 100, n: 9, at: t }; });
+      Object.keys(D.lit || {}).forEach(u => (Array.isArray(D.lit[u]) ? D.lit[u] : []).forEach(s => { L.lit[k + ':' + s.id] = { best: 100, n: 9 }; }));
+      Object.keys(D.cards || {}).forEach(u => D.cards[u].forEach(c => { L.cards[k + ':' + c.id] = t; })); });
+    ['gw', 'mul', 'frc', 'mx', 'bal'].forEach(u => { L.wordLv[u] = { 1: 999, 2: 999, 3: 999 }; });
+    require(path.join(root, 'chinese', 'data', 'catalog.js')).forEach(c => { L.zhRead[c.id] = { best: 100, n: 99 }; });
+    const CY = require(path.join(root, 'chinese', 'idioms', 'data', 'catalog.js'));
+    CY.idioms.map(c => c.id).concat((CY.readings || []).map(r => r.id), Array.from({ length: 10 }, (_, i) => 'cyu' + String(i + 1).padStart(2, '0')), ['cyall']).forEach(id => { L.zhIdiom[id] = { best: 100, n: 99 }; });
+    const pg = SM.pgFromLocal(L), back = SM.pgApply(pg, {});
+    pgBytes = SM.bytes({ pg }) - 2;   // ,"pg":{…} 在整份文件裡的大小
+    const cnt = { comic: Object.keys(back.comic.seen).length, writing: Object.keys(back.writing.t).length + Object.keys(back.writing.l).length, best: Object.keys(back.gept.best).length, task: Object.keys(back.gept.task).length, mock: back.gept.mock.length,
+      exam: Object.keys(back.exam).length, lit: Object.keys(back.lit).length, cards: Object.keys(back.cards).length, zh: Object.keys(back.zhRead).length, cy: Object.keys(back.zhIdiom).length };
+    ok(cnt.comic === 42 && cnt.writing === 172 && cnt.best === Object.keys(L.gept.best).length && cnt.best >= 120 && cnt.task === Object.keys(L.gept.task).length && cnt.task >= 75 && cnt.mock === SM.PG_MOCK && cnt.exam === Object.keys(L.exam).length && cnt.exam >= 60 && cnt.lit === Object.keys(L.lit).length && cnt.lit >= 160 && cnt.cards === Object.keys(L.cards).length && cnt.cards >= 1000 && cnt.zh === 100 && cnt.cy === 121,
+      'pg worst case keeps every item (only the newest ' + SM.PG_MOCK + ' mock exams): ' + JSON.stringify(cnt));
+    ok(same(SM.pgFromLocal(back), pg), 'pg worst case: local → doc → local → doc is stable');
+    projDoc.pg = pg; }
   ok(SM.bytes(SM.normDg(dg6)) <= SM.DG_MAX_BYTES && SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX <= SM.MAX_BYTES / 4, 'daily stats + goals at their caps fit the budget: ' + (SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX));
   const projBytes = SM.bytes(SM.normalize(projDoc));
   ok(g6a.length === 9 && projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats) after 六下 (9 units, sized like 六上) still ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes (六下已上線 ' + g6bHave + ' 單元)');
   // 2026-11-17 瘦身（背架構節點 id 省掉單元名、天平刪除墓碑 100 → 50；上限一個都沒放寬）：dd 用上限 DD_MAX 算，最壞情況 127,544 → 124,016 B，空出約 4KB 給以後的新功能
   const worstCap = SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX;
-  ok(worstCap <= 124100 && SM.MAX_BYTES / 4 - worstCap >= 3900, 'worst case at caps after the 2026-11-17 trim: ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (was 127,544 B / 456 B)');
+  // 2026-11-19 加 pg 之後：124,016 B ＋ pg 最壞（約 2.7KB）；仍 ≤ MAX_BYTES/4，留至少 1KB 給以後
+  ok(worstCap - pgBytes <= 124100 && worstCap <= SM.MAX_BYTES / 4 - 1000, 'worst case at caps (2026-11-17 trim + 2026-11-19 pg ' + pgBytes + ' B): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (124,016 B / 3,984 B before pg)');
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
   // 2026-11-02 五下上線塞滿約 156KB 超過 1/4 → v7 壓成字串（114,868 B，六下必超）→ v8 只同步答過的、封頂、熟練旗標
   ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === SM.MAX_EQ_DEL && SM.MAX_EQ_DEL === 50 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,9999')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
   const bigAll = SM.compact(Object.assign({}, maxDoc, { log: big.log.concat(big.log.map(e => Object.assign({}, e, { t: e.t + 1e7, a: e.a + '-again' }))) }));
   ok(SM.bytes(bigAll) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq) && same(bigAll.dd, sec.dd) && SM.bytes(sec.dd) <= SM.DD_MAX, 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(bigAll));
-  console.log('sync v9 doc size: sections max ' + secBytes + ' B (六下全上線估 ' + projBytes + ' B；dd 用上限算 ' + worstCap + ' B，剩 ' + (SM.MAX_BYTES / 4 - worstCap) + ' B); 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
+  console.log('sync v9 doc size: sections max ' + secBytes + ' B (六下全上線估 ' + projBytes + ' B；dd 用上限算 ' + worstCap + ' B，其中 pg ' + pgBytes + ' B，剩 ' + (SM.MAX_BYTES / 4 - worstCap) + ' B); 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
 }
 
 // ---- 📕 錯題庫（kids-mistakes.js；社會／自然／數學／AI）＋ 同步 v4 的 mk 欄位 ----

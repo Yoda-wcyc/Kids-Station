@@ -4,7 +4,7 @@
    - ?t=t01 一題：①審題 → ②發想 → ③選材 → ④架構 → ⑤心智圖（可列印，另附「段落提示＋自我檢查清單」一頁）。
    - ?lessons=1 課程清單（4 階段 22 課）；?l=L01 一課：重點卡 → 好壞對照 → 小練習（自動判分，答對 ≥ 70% 算完成）。
    整篇作文寫在紙上、大人批改：不接任何 AI、不做線上評分、不連外。
-   本機紀錄 localStorage kids_writing＝{t:{題id: normState 格式}, l:{課id:{best, n, done}}}；不同步（不在 sync.js 的 WATCH）、不報學習幣、不寫錯題庫。 */
+   本機紀錄 localStorage kids_writing＝{t:{題id: normState 格式}, l:{課id:{best, n, done}}}；2026-11-19 起「哪幾題／哪幾課完成、課的最佳 % 與次數」跟著同步（sync.js pg），寫的內容只在這台；不報學習幣、不寫錯題庫。 */
 (function () {
   'use strict';
   var W = window.ZhWriting, QK = window.QuizKit, CAT = window.WR_CAT || { topics: [], lessons: [] }, D = window.WR_DATA || { T: {}, L: {} };

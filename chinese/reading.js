@@ -10,7 +10,7 @@
      錯題一輪 'chinese:mistakes'。
    - 錯題庫：KidsMistakes.record('chinese', '<篇id>:<題id>', ok, p)（開放題不收）；p＝{a:篇id, q:題id, t:篇名, s:題目, ans:正解文字}。
    - 完成：KidsDone.record('zh', 篇id, %)（kids_done.zh＝第一次完成的時間，跟著同步；課程地圖 zh:L1～L4 讀它）。
-   - 本機細節（不同步）：localStorage kids_zh_reading＝{篇id:{best:最佳 %, n:做了幾輪, at:最近一次, done:第一次完成的時間, open:{題id:開放題寫的內容}}}。 */
+   - 本機細節（best、n 2026-11-19 起跟著同步，開放題內容不同步）：localStorage kids_zh_reading＝{篇id:{best:最佳 %, n:做了幾輪, at:最近一次, done:第一次完成的時間, open:{題id:開放題寫的內容}}}。 */
 (function () {
   'use strict';
   var ZR = window.ZhReading, QK = window.QuizKit;

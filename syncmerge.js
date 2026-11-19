@@ -370,6 +370,132 @@
   function normDg(x) { const d = obj(x), o = {}; Object.keys(d).filter(k => /^\d{6}$/.test(k) && typeof d[k] === 'string' && DG_VAL.test(d[k])).sort().slice(-DG_KEEP).forEach(k => { o[k] = d[k]; }); return o; }
   function mergeDg(a, b) { a = normDg(a); b = normDg(b); const o = {}; Object.keys(Object.assign({}, a, b)).forEach(k => { o[k] = pickDg(a[k], b[k]); }); return normDg(o); }
 
+  // ---- pg：只在本機頁面存的進度（2026-11-19，跟 dd 一樣不升版；格式見檔頭 pg 段）----
+  // 三種壓縮寫法（全部是字串，群組之間逗號隔開、照群組名排序）：
+  //   f 旗標：'群組=位元圖'，位元圖 base32（一個字 5 格，第 i 格＝第 i 個單元做過）；合併＝聯集
+  //   v 數值：'群組=每格兩個字'，base36 的（值＋1），'00'＝沒有；合併＝每格取大。Z／I／W 開頭的群組一格是（最佳 %, 次數）一對：值＝次數×101＋最佳，兩個各自取大
+  //   e 段考／單元測驗：'卷代碼＋8 個字;…'（見 exOpen）；最高取大、最近跟著小時較新的（一樣新取大）
+  //   m 英檢模擬考：最新 PG_MOCK 筆 '級組.秒.聽對.聽題.讀對.讀題.聽分.讀分.過'；依（卷, 秒）聯集
+  const B32 = '0123456789abcdefghijklmnopqrstuv', PG_GRP = /^[A-Za-z][A-Za-z0-9]{0,4}$/, PG_FSLOT = 320, PG_VSLOT = 200, PG_NGRP = 120, PG_EX = 80, PG_MOCK = 8, PG_PAIR = /^[ZIW]/, PG_NCAP = 11;
+  const pgSplit = s => { const o = {}; (typeof s === 'string' ? s : '').split(',').forEach(x => { const i = x.indexOf('='), g = x.slice(0, i), v = x.slice(i + 1); if (i > 0 && PG_GRP.test(g) && v) o[g] = v; }); return o; };
+  const pgJoin = o => Object.keys(o).filter(g => o[g]).sort().slice(0, PG_NGRP).map(g => g + '=' + o[g]).join(',');
+  const bitsOf = s => { const o = []; String(s || '').slice(0, PG_FSLOT / 5).split('').forEach((c, i) => { const v = B32.indexOf(c); for (let b = 0; v > 0 && b < 5; b++) if (v >> b & 1) o.push(i * 5 + b); }); return o; };
+  const bitStr = idx => { const a = []; idx.forEach(i => { if (i >= 0 && i < PG_FSLOT) { const k = Math.floor(i / 5); a[k] = (a[k] || 0) | (1 << (i % 5)); } }); let s = ''; for (let k = 0; k < a.length; k++) s += B32[a[k] || 0]; return s.replace(/0+$/, ''); };
+  const cellsOf = s => { const o = []; String(s || '').slice(0, PG_VSLOT * 2).replace(/[^0-9a-z]/g, '0').replace(/(..)/g, (_, c) => { const v = parseInt(c, 36); o.push(v > 0 ? v - 1 : null); return ''; }); return o; };
+  const cellStr = a => a.map(v => (v == null || !(v >= 0) ? '00' : (Math.min(1294, Math.floor(v)) + 1).toString(36).padStart(2, '0'))).join('').replace(/(00)+$/, '');
+  const pairOf = v => (v == null ? null : [v % 101, Math.floor(v / 101)]);   // [最佳 %, 次數]
+  const pairV = (best, n) => Math.max(0, Math.min(100, Math.round(+best || 0))) + 101 * Math.max(1, Math.min(PG_NCAP, Math.floor(+n || 0)));
+  // 閃卡（F）、素養題組（L）是每個單元一組，「組名=」太多：同一科的單元收成一組（'Fu'、'Ln'），單元之間用 '.' 隔開（第 i 段＝第 i 單元）。
+  //   文件裡只有收好的寫法；程式裡一律先拆開（unpack）成 'Fu1'、'Ln10' 再處理
+  const PACK = /^([FL])([un])(\d{1,2})$/;
+  function unpack(s) { const o = pgSplit(s); Object.keys(o).forEach(g => { if (!/^[FL][un]$/.test(g)) return; o[g].split('.').slice(0, 99).forEach((v, i) => { if (v && !o[g + (i + 1)]) o[g + (i + 1)] = v; }); delete o[g]; }); return o; }
+  function pack(o) {
+    const out = {}, seg = {};
+    Object.keys(o).forEach(g => { const m = PACK.exec(g); if (!m) out[g] = o[g]; else if (o[g]) (seg[m[1] + m[2]] = seg[m[1] + m[2]] || [])[m[3] - 1] = o[g]; });
+    Object.keys(seg).forEach(P => { out[P] = Array.from(seg[P], v => v || '').join('.').replace(/\.+$/, ''); });
+    return pgJoin(out);
+  }
+  const normF = s => { const o = unpack(s); Object.keys(o).forEach(g => { o[g] = bitStr(bitsOf(o[g])); }); return pack(o); };
+  const normV = s => { const o = unpack(s); Object.keys(o).forEach(g => { const c = cellsOf(o[g]); o[g] = cellStr(PG_PAIR.test(g) ? c.map(v => (v == null || v < 101 ? null : pairV(v % 101, v / 101))) : c); }); return pack(o); };
+  const mergeF = (a, b) => { const x = unpack(normF(a)), y = unpack(normF(b)), o = {}; Object.keys(Object.assign({}, x, y)).forEach(g => { o[g] = bitStr(bitsOf(x[g]).concat(bitsOf(y[g]))); }); return pack(o); };
+  const mergeV = (a, b) => {
+    const x = unpack(normV(a)), y = unpack(normV(b)), o = {};
+    Object.keys(Object.assign({}, x, y)).forEach(g => { const p = cellsOf(x[g]), q = cellsOf(y[g]), r = [];
+      for (let i = 0; i < Math.max(p.length, q.length); i++) { const u = p[i], w = q[i]; r[i] = u == null ? w : w == null ? u : PG_PAIR.test(g) ? pairV(Math.max(u % 101, w % 101), Math.max(Math.floor(u / 101), Math.floor(w / 101))) : Math.max(u, w); }
+      o[g] = cellStr(r); });
+    return pack(o);
+  };
+  // e：{卷代碼:[最高, 最近, 小時]}。卷代碼＝單元 id（'u1'）；段考＝'*'＋第一個單元＋'~'＋幾個單元（'mock-u7-u8-u9'→'*u7~3'），單元不連續就照寫（'*u7-u9'）
+  //    一筆＝卷代碼＋固定 8 個字：最高 2、最近 2、小時 4（都是 base36）
+  const EX_CODE = /^([un]\d{1,2}|\*[un]\d{1,2}(~[2-4]|(-[un]\d{1,2}){1,3}))$/, EX_LOCAL = /^([un]\d{1,2}|mock-[un]\d{1,2}(-[un]\d{1,2}){1,3})$/;
+  const sc = x => Math.max(0, Math.min(100, Math.round(num(x, 0))));
+  const b36 = (v, w) => Math.max(0, Math.floor(+v || 0)).toString(36).padStart(w, '0').slice(-w);
+  function exCode(id) { const m = /^mock-(.+)$/.exec(id); if (!m) return id; const us = m[1].split('-'), n = us.map(u => +u.slice(1)); return '*' + (us.every((u, i) => u.charAt(0) === us[0].charAt(0) && n[i] === n[0] + i) ? us[0] + '~' + us.length : us.join('-')); }
+  function exFull(c) { if (c.charAt(0) !== '*') return c; const m = /^\*([un])(\d{1,2})~([2-4])$/.exec(c); return 'mock-' + (m ? Array.from({ length: +m[3] }, (_, i) => m[1] + (+m[2] + i)).join('-') : c.slice(1)); }
+  function exOpen(s) { const o = {}; (typeof s === 'string' ? s : '').split(';').forEach(e => { const id = e.slice(0, -8), t = e.slice(-8); if (!EX_CODE.test(id) || !/^[0-9a-z]{8}$/.test(t)) return; o[id] = [sc(parseInt(t.slice(0, 2), 36)), sc(parseInt(t.slice(2, 4), 36)), parseInt(t.slice(4), 36)]; }); return o; }
+  const exClose = o => Object.keys(o).sort().slice(0, PG_EX).map(id => id + b36(o[id][0], 2) + b36(o[id][1], 2) + b36(o[id][2], 4)).join(';');
+  const normE = s => exClose(exOpen(s));
+  function mergeE(a, b) { const x = exOpen(a), y = exOpen(b), o = {}; Object.keys(Object.assign({}, x, y)).forEach(id => { const p = x[id], q = y[id]; if (!p || !q) { o[id] = p || q; return; } const n = p[2] !== q[2] ? (p[2] > q[2] ? p : q) : (p[1] >= q[1] ? p : q); o[id] = [Math.max(p[0], q[0]), n[1], n[2]]; }); return exClose(o); }
+  // m：[級組, 秒, 聽對, 聽題, 讀對, 讀題, 聽分, 讀分, 過]；最新 PG_MOCK 筆
+  const GM_ID = /^[eia]\d\d$/, i3 = x => Math.max(0, Math.min(999, Math.floor(num(x, 0))));
+  function mockOpen(s) { const o = {}; (typeof s === 'string' ? s : '').split(';').forEach(e => { const p = e.split('.'); if (p.length !== 9 || !GM_ID.test(p[0])) return; const t = parseInt(p[1], 36); if (!(t > 0)) return; o[p[0] + '.' + t] = [p[0], t].concat(p.slice(2, 8).map(i3), [p[8] === '1' ? 1 : 0]); }); return o; }
+  const mockClose = o => Object.keys(o).map(k => o[k]).sort((a, b) => (a[1] - b[1]) || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).slice(-PG_MOCK).map(r => [r[0], r[1].toString(36)].concat(r.slice(2)).join('.')).join(';');
+  const normMock = s => mockClose(mockOpen(s));
+  const mergeMock = (a, b) => mockClose(Object.assign(mockOpen(a), mockOpen(b)));   // 同一筆（卷＋秒）兩邊內容一樣（同一次考試），誰蓋誰都一樣
+  function normPg(x) { const d = obj(x), o = {}; [['f', normF], ['v', normV], ['e', normE], ['m', normMock]].forEach(([k, fn]) => { const s = fn(d[k]); if (s) o[k] = s; }); return o; }
+  function mergePg(a, b) { a = obj(a); b = obj(b); return normPg({ f: mergeF(a.f, b.f), v: mergeV(a.v, b.v), e: mergeE(a.e, b.e), m: mergeMock(a.m, b.m) }); }
+
+  // ---- 本機 key ↔ pg（sync.js readLocal／writeLocal 用；L＝{comic, anim, writing, gept, exam, lit, cards, wordLv, zhRead, zhIdiom} 各 key 的原始物件）----
+  const COMIC_EPS = 7 * 6;   // 世界史漫畫 7 冊 × 6 話（comics/catalog.js；test 會對）。沒載入目錄的頁面照這個順序找「下一話」
+  const comicSlot = id => { const m = /^v([1-9])e([1-9])$/.exec(id); return m ? (m[1] - 1) * 9 + (m[2] - 1) : -1; };
+  const comicId = i => 'v' + (Math.floor(i / 9) + 1) + 'e' + (i % 9 + 1);
+  const ld2 = n => String(n).padStart(2, '0');
+  const SUBJ_OF = { u: 'social', n: 'science' };
+  // 'social:u1-L1' 這種 key：科目要跟單元字頭對得上
+  const mmKey = (k, re) => { const m = /^(social|science):([un])(\d{1,2})-(.+)$/.exec(k); if (!m || SUBJ_OF[m[2]] !== m[1]) return null; const r = re.exec(m[4]); return r ? { u: m[2] + m[3], n: +r[1] } : null; };
+  function pgFromLocal(L) {
+    L = obj(L); const F = {}, V = {}, setF = (g, i) => { if (i >= 0 && PG_GRP.test(g)) (F[g] = F[g] || []).push(i); }, setV = (g, i, v) => { if (i >= 0 && i < PG_VSLOT && PG_GRP.test(g)) (V[g] = V[g] || [])[i] = v; };
+    Object.keys(obj(obj(L.comic).seen)).forEach(id => setF('C', comicSlot(id)));
+    Object.keys(obj(obj(L.anim).seen)).forEach(c => { if (/^[A-Z]$/.test(c) && L.anim.seen[c]) setF('A', c.charCodeAt(0) - 65); });
+    const wr = obj(L.writing);
+    Object.keys(obj(wr.t)).forEach(id => { const m = /^t(\d{2,3})$/.exec(id); if (m && obj(wr.t[id]).done) setF('T', m[1] - 1); });
+    Object.keys(obj(wr.l)).forEach(id => { const m = /^L(\d\d)$/.exec(id), r = obj(wr.l[id]); if (!m) return; if (r.done) setF('K', m[1] - 1); if (+r.n > 0) setV('W', m[1] - 1, pairV(r.best, r.n)); });
+    const gp = obj(L.gept);
+    Object.keys(obj(gp.best)).forEach(id => { const m = /^([eia])-([LR]\d)-(\d\d)$/.exec(id), p = num(obj(gp.best[id]).p, null); if (m && p != null) setV('G' + m[1] + m[2], m[3] - 1, sc(p)); });
+    Object.keys(obj(gp.task)).forEach(id => { const m = /^([eia])-([SW]\d)-(\d\d)$/.exec(id); if (m && gp.task[id]) setF('S' + m[1] + m[2], m[3] - 1); });
+    const mocks = {}; (Array.isArray(gp.mock) ? gp.mock : []).forEach(r => { const m = /^([eia])-M-(\d\d)$/.exec(r && r.id), t = Math.floor(num(r && r.t, 0) / 1000); if (m && t > 0) mocks[m[1] + m[2] + '.' + t] = [m[1] + m[2], t, r.lc, r.ln, r.rc, r.rn, r.L, r.R].map((v, i) => (i < 2 ? v : i3(v))).concat([r.pass ? 1 : 0]); });
+    const E = {}, ex = obj(L.exam);
+    Object.keys(ex).forEach(k => { const m = /^(social|science):(.+)$/.exec(k), r = obj(ex[k]); if (!m || !EX_LOCAL.test(m[2]) || SUBJ_OF[m[2].replace(/^mock-/, '').charAt(0)] !== m[1] || !(+r.n > 0)) return; E[exCode(m[2])] = [sc(r.best), sc(r.last), Math.floor(num(r.at, 0) / 3600e3)]; });
+    Object.keys(obj(L.lit)).forEach(k => { const x = mmKey(k, /^L(\d)$/), r = obj(L.lit[k]); if (x && +r.n > 0) setV('L' + x.u, x.n - 1, sc(r.best)); });
+    Object.keys(obj(L.cards)).forEach(k => { const x = mmKey(k, /^(\d{2})$/); if (x && L.cards[k]) setF('F' + x.u, x.n - 1); });
+    const wl = obj(L.wordLv); Object.keys(wl).forEach(u => { if (/^[a-z]{2,4}$/.test(u)) [1, 2, 3].forEach(d => { const n = Math.floor(num(obj(wl[u])[d], 0)); if (n > 0) setV('V' + u, d - 1, Math.min(99, n)); }); });
+    const zp = (g, i, r) => { r = obj(r); if (+r.n > 0) setV(g, i, pairV(r.best, r.n)); };
+    Object.keys(obj(L.zhRead)).forEach(id => { const m = /^zh([1-4])-(\d\d)$/.exec(id); if (m) zp('Z' + m[1], m[2] - 1, L.zhRead[id]); });
+    Object.keys(obj(L.zhIdiom)).forEach(id => { let m; if ((m = /^cy(\d{3})$/.exec(id))) zp('I', m[1] - 1, L.zhIdiom[id]); else if ((m = /^cy([ru])(\d\d)$/.exec(id))) zp('I' + m[1], m[2] - 1, L.zhIdiom[id]); else if (id === 'cyall') zp('Ia', 0, L.zhIdiom[id]); });
+    const f = {}, v = {}; Object.keys(F).forEach(g => { f[g] = bitStr(F[g]); }); Object.keys(V).forEach(g => { v[g] = cellStr(Array.from(V[g])); });
+    return normPg({ f: pgJoin(f), v: pgJoin(v), e: exClose(E), m: mockClose(mocks) });
+  }
+  // 合併結果 → 本機：只會補上、變大，不刪本機任何東西（作文內容、開放題、時間、_seen 都留著）。回 {key 名: 新物件}（沒變的不回）
+  function pgApply(pg, L) {
+    pg = normPg(pg); L = obj(L); const out = {}, cl = x => JSON.parse(JSON.stringify(obj(x)));
+    const F = {}, V = {}; Object.entries(unpack(pg.f)).forEach(([g, s]) => { F[g] = bitsOf(s); }); Object.entries(unpack(pg.v)).forEach(([g, s]) => { V[g] = cellsOf(s); });
+    // 沒東西補進去的空節就不建（本機原本沒有 task:{} 就不要多寫一個）
+    const up = (r, best, n) => { if (!(num(r.best, -1) >= best)) r.best = best; if (n != null && !(+r.n >= n)) r.n = n; return r; };   // 只往上補（本機已經比較大就不動）
+    const put = (k, before, after) => { Object.keys(after).forEach(f => { const v = after[f]; if (v && typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length && !(f in before)) delete after[f]; }); if (canon(before) !== canon(after)) out[k] = after; };
+    // 漫畫：看過的話；「下一話」被別台看掉了就往後找（目錄順序＝v1e1…v7e6）
+    { const c = cl(L.comic), seen = obj(c.seen); c.seen = seen; (F.C || []).forEach(i => { const id = comicId(i); if (!seen[id]) seen[id] = 1; });
+      if (Object.keys(seen).length && (c.next == null || seen[c.next])) { let nx = ''; for (let i = 0; i < COMIC_EPS; i++) { const id = comicId(Math.floor(i / 6) * 9 + i % 6); if (!seen[id]) { nx = id; break; } } c.next = nx; }
+      put('comic', obj(L.comic), c); }
+    { const a = cl(L.anim); a.seen = obj(a.seen); (F.A || []).forEach(i => { const ch = String.fromCharCode(65 + i); if (i < 26 && !a.seen[ch]) a.seen[ch] = 1; }); put('anim', obj(L.anim), a); }
+    { const w = cl(L.writing); w.t = obj(w.t); w.l = obj(w.l);
+      (F.T || []).forEach(i => { const id = 't' + ld2(i + 1); if (!obj(w.t[id]).done) w.t[id] = Object.assign(obj(w.t[id]), { done: 1 }); });
+      (F.K || []).forEach(i => { const id = 'L' + ld2(i + 1); if (i < 99 && !obj(w.l[id]).done) w.l[id] = Object.assign(obj(w.l[id]), { done: 1 }); });
+      (V.W || []).forEach((v, i) => { const p = pairOf(v), id = 'L' + ld2(i + 1); if (!p || i > 98) return; w.l[id] = up(obj(w.l[id]), p[0], p[1]); });
+      put('writing', obj(L.writing), w); }
+    { const g = cl(L.gept); g.best = obj(g.best); g.task = obj(g.task);
+      Object.keys(V).forEach(k => { const m = /^G([eia])([LR]\d)$/.exec(k); if (m) V[k].forEach((v, i) => { const id = m[1] + '-' + m[2] + '-' + ld2(i + 1); if (v != null && i < 99 && !(num(obj(g.best[id]).p, -1) >= v)) g.best[id] = { p: v }; }); });
+      Object.keys(F).forEach(k => { const m = /^S([eia])([SW]\d)$/.exec(k); if (m) F[k].forEach(i => { const id = m[1] + '-' + m[2] + '-' + ld2(i + 1); if (i < 99 && !g.task[id]) g.task[id] = { t: 0 }; }); });
+      const have = new Set((Array.isArray(g.mock) ? g.mock : []).map(r => r && r.id + '.' + Math.floor(num(r.t, 0) / 1000)));
+      const add = Object.values(mockOpen(pg.m)).filter(r => !have.has(r[0].charAt(0) + '-M-' + r[0].slice(1) + '.' + r[1])).map(r => ({ id: r[0].charAt(0) + '-M-' + r[0].slice(1), t: r[1] * 1000, lc: r[2], ln: r[3], rc: r[4], rn: r[5], L: r[6], R: r[7], pass: !!r[8] }));
+      if (add.length) g.mock = (Array.isArray(g.mock) ? g.mock : []).concat(add).sort((a, b) => num(a && a.t, 0) - num(b && b.t, 0)).slice(-60);
+      put('gept', obj(L.gept), g); }
+    { const x = cl(L.exam), E = exOpen(pg.e);
+      Object.keys(E).forEach(id0 => { const id = exFull(id0), k = SUBJ_OF[id.replace(/^mock-/, '').charAt(0)] + ':' + id, s = E[id0], r = obj(x[k]), lh = Math.floor(num(r.at, 0) / 3600e3);
+        if (!(+r.n > 0)) { x[k] = { best: s[0], last: s[1], n: 1, at: s[2] * 3600e3 }; return; }
+        const o = Object.assign({}, r, { best: Math.max(sc(r.best), s[0]) });
+        if (s[2] > lh) Object.assign(o, { last: s[1], at: s[2] * 3600e3 }); else if (s[2] === lh && s[1] > sc(r.last)) o.last = s[1];
+        x[k] = o; });
+      if (Object.keys(E).length) put('exam', obj(L.exam), x); }
+    { const x = cl(L.lit); Object.keys(V).forEach(k => { const m = /^L([un]\d{1,2})$/.exec(k); if (m) V[k].forEach((v, i) => { if (v == null || i > 8) return; const id = SUBJ_OF[m[1].charAt(0)] + ':' + m[1] + '-L' + (i + 1), r = obj(x[id]); x[id] = +r.n > 0 ? up(r, v) : Object.assign(r, { best: v, n: 1, at: 0 }); }); });
+      put('lit', obj(L.lit), x); }
+    { const x = cl(L.cards); Object.keys(F).forEach(k => { const m = /^F([un]\d{1,2})$/.exec(k); if (m) F[k].forEach(i => { const id = SUBJ_OF[m[1].charAt(0)] + ':' + m[1] + '-' + ld2(i + 1); if (i < 99 && !x[id]) x[id] = 1; }); }); put('cards', obj(L.cards), x); }
+    { const x = cl(L.wordLv); Object.keys(V).forEach(k => { const m = /^V([a-z]{2,4})$/.exec(k); if (m) V[k].slice(0, 3).forEach((v, i) => { if (v == null) return; const c = x[m[1]] = obj(x[m[1]]); if (!(num(c[i + 1], 0) >= v)) c[i + 1] = v; }); }); put('wordLv', obj(L.wordLv), x); }
+    const zApply = (key, grpId) => { const x = cl(L[key]); Object.keys(V).forEach(k => { const toId = grpId(k); if (toId) V[k].forEach((v, i) => { const p = pairOf(v), id = toId(i); if (!p || !id) return; const r = x[id]; if (r && typeof r === 'object') up(r, p[0], p[1]); else x[id] = { best: p[0], n: p[1], at: 0 }; }); }); put(key, obj(L[key]), x); };
+    zApply('zhRead', k => { const m = /^Z([1-4])$/.exec(k); return m && (i => 'zh' + m[1] + '-' + ld2(i + 1)); });
+    zApply('zhIdiom', k => (k === 'I' ? i => 'cy' + String(i + 1).padStart(3, '0') : /^I[ru]$/.test(k) ? i => 'cy' + k.charAt(1) + ld2(i + 1) : k === 'Ia' ? i => (i ? null : 'cyall') : null));
+    return out;
+  }
+
   // 整理成 v7：補 r、去重、排序；t ≤ cut 的舊紀錄只保留「答對過」到 agg；新欄位缺了就是空的（讀舊文件不會壞）
   function normalize(doc) {
     const d = obj(doc), cut = +d.cut || 0, agg = mergeAgg(obj(d.agg), {}), seen = new Map();
@@ -379,15 +505,17 @@
       if (e.t <= cut) { addFc(agg, e); return; }
       const p = seen.get(e.r); if (!p || canon(e) > canon(p)) seen.set(e.r, e);
     });
-    return { v: VERSION, cut, log: [...seen.values()].sort(cmpLog), agg, learned: mergeMap(obj(d.learned), {}, evL), mistakes: mergeMap(obj(d.mistakes), {}, evM),
+    const o = { v: VERSION, cut, log: [...seen.values()].sort(cmpLog), agg, learned: mergeMap(obj(d.learned), {}, evL), mistakes: mergeMap(obj(d.mistakes), {}, evM),
       mm: section(d.mm, normProg), mmBlanks: section(d.mmBlanks, normBl), eq: normEq(d.eq), scratch: normScr(d.scratch), ctr: normCtr(d.ctr), mk: normMk(d.mk), done: normDone(d.done), dd: normDd(d.dd), dg: normDg(d.dg) };
+    const pg = normPg(d.pg); if (Object.keys(pg).length) o.pg = pg;   // 沒有就不放（舊文件、舊測試的形狀不變）
+    return o;
   }
   function merge(a, b) {
     a = normalize(a); b = normalize(b);
     const cut = Math.max(a.cut, b.cut);
     return normalize({ cut, log: a.log.concat(b.log), agg: mergeAgg(a.agg, b.agg), learned: mergeMap(a.learned, b.learned, evL), mistakes: mergeMap(a.mistakes, b.mistakes, evM),
       mm: mergeSection(a.mm, b.mm, mergeProg), mmBlanks: mergeSection(a.mmBlanks, b.mmBlanks, mergeBl), eq: mergeEq(a.eq, b.eq),
-      scratch: mergeSection(a.scratch, b.scratch, earliest), ctr: mergeSection(a.ctr, b.ctr, mergeCtr), mk: mergeMk(a.mk, b.mk), done: mergeDone(a.done, b.done), dd: mergeDd(a.dd, b.dd), dg: mergeDg(a.dg, b.dg) });
+      scratch: mergeSection(a.scratch, b.scratch, earliest), ctr: mergeSection(a.ctr, b.ctr, mergeCtr), mk: mergeMk(a.mk, b.mk), done: mergeDone(a.done, b.done), dd: mergeDd(a.dd, b.dd), dg: mergeDg(a.dg, b.dg), pg: mergePg(a.pg, b.pg) });
   }
   // 太大就把最舊的 1/4 壓進 agg（保留每題第一次答對的時間），重複到夠小
   function compact(doc, maxBytes) {
@@ -431,7 +559,7 @@
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function normCode(s) { const c = String(s || '').toUpperCase().replace(/[\s-]/g, ''); return c.length === 8 && [...c].every(ch => ALPHA.includes(ch)) ? c.slice(0, 4) + '-' + c.slice(4) : null; }
 
-  const SM = { MAX_BYTES, VERSION, MAX_EQ, MAX_EQ_DEL, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, N_ABC, normN, mergeN, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg };
+  const SM = { MAX_BYTES, VERSION, MAX_EQ, MAX_EQ_DEL, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, N_ABC, normN, mergeN, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg, normPg, mergePg, pgFromLocal, pgApply, COMIC_EPS, PG_MOCK };
   if (typeof module !== 'undefined' && module.exports) module.exports = SM;
   root.KESyncMerge = SM;
 })(typeof window !== 'undefined' ? window : globalThis);

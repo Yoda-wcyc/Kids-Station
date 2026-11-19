@@ -21,7 +21,17 @@
      頁面藏起來就停；連續失敗 40 秒、80 秒、最多 2 分鐘再試。
    - 合併到新資料：馬上重讀資料（KEApp.reloadData、'kesync-data' 事件），畫面重畫的 'kids-sync-updated' 事件（首頁＋同網域子框）
      作答中先不發（KESync.hold／release；英文作答頁由 app.js 掛），這一輪結束才發。
-   - 頁角（登入小元件旁）小雲朵：☁️ 已同步・剛剛／x 分鐘前、⏳ 上傳中、📴 離線（恢復後自動補傳）；點一下看最後同步時間。 */
+   - 頁角（登入小元件旁）小雲朵：☁️ 已同步・剛剛／x 分鐘前、⏳ 上傳中、📴 離線（恢復後自動補傳）；點一下看最後同步時間。
+   2026-11-19 跨裝置進度對不上（家長：三台都按「立刻上傳並同步」還是不一樣；兩台 iPad 都是主畫面 App）：
+   - 同步範圍加 pg（syncmerge.js：漫畫看過的話、動畫教學、作文完成、英檢成績／模擬考／寫作口說、社會自然單元測驗與段考模擬、
+     素養題組、閃卡、應用題分級、國語閱讀／成語的最佳％與次數），本機 key 照舊、只是讀寫時轉成 pg；舊版會丟掉 pg，新版下次同步從本機補回。
+   - 回前景（visibilitychange）、focus、pageshow（bfcache 還原）、online 一律完整同步（GET＋合併＋需要才 PUT），不再只問「伺服器有沒有變」；
+     別頁（整頁開的漫畫、帳號頁）趁這頁凍結時改了本機紀錄 → 回來時發 'kids-sync-updated'，畫面重畫。輪詢時本機有變（rawSnap 跟上次同步後不同）也改完整同步。
+   - 藏起來／關掉：本機有變就立刻送（keepalive）；剛好有一次在送，送完不等 300ms 馬上接著送、也帶 keepalive。超過 keepalive 上限的大文件照常送，
+     沒送到就留「待上傳」，回到前景完整同步時補送。
+   - 雲朵多一種 ⚠️ 沒同步（附原因：伺服器錯誤、紀錄太大、找不到同步碼、一直跟別台衝突、帳號綁定失敗）；帳號頁列上次上傳／下載成功時間、待送、同步碼後兩碼、主畫面 App／Safari、只在這台的資料。
+   - 帳號綁定失敗：輪詢也會重試（40 秒起倍增、最多 10 分鐘，不一直打 GAS）；綁定時保留「待上傳」。
+   - 沒載 kids-auth.js 的頁面（漫畫）：照 kids-daily.js 的規則讀本機的票確認還是同一個帳號，只跟已綁定的碼同步、不綁定也不解除綁定。 */
 (function () {
   'use strict';
   // 子框（首頁裡的心智圖、天平）：首頁已經有 KESync 就借用它，不再自己跑一份
@@ -70,7 +80,12 @@
   const svIf = (k, v) => { try { const s = JSON.stringify(v); if (localStorage.getItem(k) !== s) localStorage.setItem(k, s); } catch (e) { } };
   const K_MM = 'kids_mm_progress', K_MMB = 'kids_mm_blanks', K_EQ = 'tianping-eq-list-v2', K_EQS = 'ke_sync_eq', K_SCR = 'kids_scratch_done', K_PROG = 'ke_progress', K_CTR = 'ke_sync_ctr', K_MK = 'kids_mistakes', K_DONE = 'kids_done', K_DD = 'kids_daily', K_DG = 'kids_daily_goal';
   // 同步範圍裡的 localStorage：別的分頁／子框（Scratch 講義、心智圖、天平）寫進來 → 也算變動，排一次上傳
-  const WATCH = ['ke_log', 'ke_agg', 'ke_learned', 'ke_mistakes', K_PROG, K_MM, K_MMB, K_EQ, K_SCR, K_MK, K_DD, K_DG, K_DONE];
+  // pg（2026-11-19）：各頁自己存的進度 key → syncmerge.js pgFromLocal／pgApply 的名字
+  const PG_KEYS = { comic: 'kids_comic', anim: 'kids_anim', writing: 'kids_writing', gept: 'kids_gept', exam: 'kids_mm_exam', lit: 'kids_mm_lit', cards: 'kids_mm_cards', wordLv: 'kids_word_lv', zhRead: 'kids_zh_reading', zhIdiom: 'kids_zh_idioms' };
+  const WATCH = ['ke_log', 'ke_agg', 'ke_learned', 'ke_mistakes', K_PROG, K_MM, K_MMB, K_EQ, K_SCR, K_MK, K_DD, K_DG, K_DONE].concat(Object.values(PG_KEYS));
+  const readPg = () => { const o = {}; Object.keys(PG_KEYS).forEach(n => { o[n] = ld(PG_KEYS[n], {}); }); return o; };
+  // 同步範圍的原始字串：跟上次同步後不同＝這台有還沒送出的變動（別頁趁這頁凍結時寫的也抓得到）
+  const rawSnap = () => { try { return WATCH.map(k => localStorage.getItem(k) || '').join('\u0001'); } catch (e) { return ''; } };
   const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
   // 英文星星／回數：每台裝置一個 id，ke_sync_ctr＝{dev, ctr:上次同步後全部裝置的數字}；這台自己的＝本機總數－別台的
   function ctrMeta() { let m = ld(K_CTR, null); if (!isObj(m) || typeof m.dev !== 'string' || !m.dev) { m = { dev: 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), ctr: {} }; sv(K_CTR, m); } if (!isObj(m.ctr)) m.ctr = {}; return m; }
@@ -89,7 +104,7 @@
   const readLocal = () => {
     const a = ld('ke_agg', {}) || {};
     return { log: ld('ke_log', []), cut: a.cut || 0, agg: a.agg || {}, learned: ld('ke_learned', {}), mistakes: ld('ke_mistakes', {}),
-      mm: ld(K_MM, {}), mmBlanks: ld(K_MMB, {}), eq: localEq(), scratch: ld(K_SCR, {}), ctr: localCtr(), mk: ld(K_MK, {}), done: ld(K_DONE, {}), dd: ld(K_DD, {}), dg: ld(K_DG, {}) };
+      mm: ld(K_MM, {}), mmBlanks: ld(K_MMB, {}), eq: localEq(), scratch: ld(K_SCR, {}), ctr: localCtr(), mk: ld(K_MK, {}), done: ld(K_DONE, {}), dd: ld(K_DD, {}), dg: ld(K_DG, {}), pg: SM.pgFromLocal(readPg()) };
   };
   function writeLocal(d) {
     sv('ke_log', d.log); sv('ke_agg', { cut: d.cut, agg: d.agg }); sv('ke_learned', d.learned); sv('ke_mistakes', d.mistakes);
@@ -113,6 +128,8 @@
     // 每日學習統計：合併結果已含本機全部（各欄取大），整份換掉
     if (Object.keys(d.dd || {}).length || has(K_DD)) svIf(K_DD, d.dd || {});
     if (Object.keys(d.dg || {}).length || has(K_DG)) svIf(K_DG, d.dg || {});
+    // 各頁自己的進度（pg）：只補上、變大，本機的細節（作文內容、開放題、時間）都留著
+    const pp = SM.pgApply(d.pg, readPg()); Object.keys(pp).forEach(n => svIf(PG_KEYS[n], pp[n]));
     // 星星／回數：本機總數＝全部裝置加總
     const m = ctrMeta(); m.ctr = d.ctr || {}; sv(K_CTR, m);
     const tot = SM.ctrSum(m.ctr), P0 = ld(K_PROG, null), P = isObj(P0) ? P0 : {};
@@ -131,7 +148,17 @@
   const KA = () => window.KidsAuth;
   function tokenSub(t) { try { let p = String(t || '').split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); while (p.length % 4) p += '='; return String(JSON.parse(atob(p)).sub || ''); } catch (e) { return ''; } }
   // 現在登入的帳號（票的 sub）；沒登入或會員後端沒上線＝''
-  function acctId() { const a = KA(); try { return a && a.configured() && a.isLoggedIn() ? tokenSub(a.token()) || 'me' : ''; } catch (e) { return ''; } }
+  function acctId() {
+    const a = KA();
+    if (a) { try { return a.configured() && a.isLoggedIn() ? tokenSub(a.token()) || 'me' : ''; } catch (e) { return ''; } }
+    // 沒載 kids-auth.js 的頁面（漫畫）：照 kids-daily.js loggedIn() 的規則看本機的票有沒有過期（只讀不驗簽）；只拿來確認還是同一個帳號
+    try {
+      const t = localStorage.getItem('kids_jwt'); if (!t) return '';
+      let e = +((ld('kids_member', null) || {}).exp) || 0;
+      if (!e) { try { let p = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); while (p.length % 4) p += '='; e = +JSON.parse(atob(p)).exp || 0; } catch (x) { e = 0; } }
+      return !e || e > Date.now() / 1000 ? tokenSub(t) || 'me' : '';
+    } catch (e) { return ''; }
+  }
 
   // ---------- 狀態 ----------
   let st = ld('ke_sync', {}) || {}, running = false, status = '', chain = Promise.resolve(), binding = null;
@@ -139,6 +166,11 @@
   let want = null;           // 同步進行中又被叫：做完再跑一次（取最強的那種）
   let touchGen = 0;          // 變動計數：同步途中又有新變動，就不清「待上傳」
   let fails = 0, netDown = false, lastOk = 0, lastCheck = 0, pollT = null, nowT = null, keepNext = false;
+  let lastErr = '';          // 沒同步的原因（雲朵 ⚠️、帳號頁）；成功一次就清掉
+  let lastRaw = null;        // 上次同步成功後本機同步範圍的原始字串（dirty 用）
+  let seenRaw = rawSnap();   // 這一頁上次畫畫面時的本機字串：回到前景發現被別頁改過 → 通知重畫
+  const BIND_MAX = 10 * 60 * 1000;   // 帳號綁定失敗後重試最久隔 10 分鐘（GAS 有配額，不要一直打）
+  const dirty = () => !!st.pending || pusher.pending() || (lastRaw != null && rawSnap() !== lastRaw);
   const RANK = { poll: 1, push: 2, full: 3 };
   const fmt = iso => {
     if (window.KE && KE.fmtTaipei) return KE.fmtTaipei(iso);
@@ -151,7 +183,7 @@
     try { window.dispatchEvent(new CustomEvent('kesync', { detail: { status: s } })); } catch (e) { }
     paintCloud();
   }
-  function statusText() { if (!st.code) return binding ? '同步中…' : '尚未開啟同步'; if (status) return status; return lastMs() ? '已同步 ' + fmt(lastIso()) : '尚未同步'; }
+  function statusText() { if (!st.code) return binding ? '同步中…' : lastErr ? '沒同步：' + lastErr : '尚未開啟同步'; if (status) return status; return lastMs() ? '已同步 ' + fmt(lastIso()) : '尚未同步'; }
   const saveSt = () => sv('ke_sync', st);
   const app = () => window.KEApp || {};
   const bound = () => { const m = acctId(); return !!(m && st.code && st.acct === m); };
@@ -167,6 +199,7 @@
   }
   const gate = SA.gate({ deliver: () => setTimeout(announce, 0) });
   function dataChanged() {
+    seenRaw = rawSnap();
     try { const A = app(); if (A.reloadData) A.reloadData(); else if (A.reload) A.reload(); } catch (e) { }   // 資料層馬上重讀（作答中寫回本機才不會蓋掉別台的）
     try { window.dispatchEvent(new CustomEvent('kesync-data')); } catch (e) { }
     gate.offer();
@@ -179,14 +212,16 @@
       get: async c => {
         const k = cache && cache.code === c && cache.etag ? cache : null;
         let r = await backend.get(c, k && k.etag);
-        if (r && r.notModified) { if (k) return { doc: k.doc, etag: k.etag, notModified: true }; r = await backend.get(c); }
+        if (r && r.notModified) { if (c === st.code) st.lastDown = new Date().toISOString(); if (k) return { doc: k.doc, etag: k.etag, notModified: true }; r = await backend.get(c); }
         if (!r) { if (cache && cache.code === c) cache = null; return null; }
+        if (c === st.code) st.lastDown = new Date().toISOString();
         cache = r.etag ? { code: c, etag: r.etag, doc: r.doc } : null;
         return r;
       },
+      // 藏起來時送的一律 keepalive（iOS 切走 App／鎖螢幕：頁面凍結前送得出去）
       put: async (c, d, et) => {
-        const r = await backend.put(c, d, et, keepNext);
-        if (r && !r.conflict) cache = r.etag ? { code: c, etag: r.etag, doc: d } : null;
+        const r = await backend.put(c, d, et, keepNext || !visible());
+        if (r && !r.conflict) { cache = r.etag ? { code: c, etag: r.etag, doc: d } : null; if (c === st.code) st.lastUp = new Date().toISOString(); }
         return r;
       },
       readLocal, writeLocal
@@ -196,12 +231,14 @@
     const r = await SM.syncOnce(io, code, opts);
     if (r.changedLocal) dataChanged();
     if (code === st.code) {
-      if (r.notFound) { cache = null; setStatus('找不到這個同步碼，請重新配對'); }
-      else if (!r.ok) { st.pending = true; saveSt(); setStatus('同步衝突，稍後再試'); }
+      if (r.notFound) { cache = null; lastErr = '找不到這台的同步碼，要重新登入或配對'; setStatus('找不到這個同步碼，請重新配對'); }
+      else if (!r.ok) { st.pending = true; saveSt(); lastErr = '一直跟別台的上傳撞在一起，稍後會再試'; setStatus('同步衝突，稍後再試'); }
       else {
-        lastOk = Date.now();
+        lastOk = Date.now(); lastErr = '';
         const clear = gen == null || gen === touchGen;   // 同步途中又有新變動：還是「待上傳」
-        if (!r.notModified || (clear && st.pending) || !st.lastAt) { st.lastAt = new Date().toISOString(); if (clear) st.pending = false; saveSt(); }
+        if (clear) lastRaw = rawSnap();
+        if (!r.notModified || (clear && st.pending) || !st.lastAt) { st.lastAt = new Date().toISOString(); if (clear) st.pending = false; }
+        saveSt();   // lastUp／lastDown 也存起來（帳號頁看）
         setStatus('已同步 ' + fmt(lastIso()));
       }
     }
@@ -209,10 +246,13 @@
   }
   const isNet = e => navigator.onLine === false || !e || !e.status;
   const failText = e => (isNet(e) ? '離線，稍後再同步' : '同步失敗，稍後再試');
+  // 雲朵 ⚠️ 的原因（網路斷了不算：那是 📴）
+  const errWhy = e => (isNet(e) ? '' : e.status === 413 ? '紀錄太大，雲端不收（413）' : e.status === 404 ? '找不到這台的同步碼（404）' : '雲端伺服器出錯（' + e.status + '），會自動再試');
 
   async function syncNow(mode) {
     mode = RANK[mode] ? mode : 'full';
-    if (acctId() && (st.acct !== acctId() || !st.code)) return bindAccount();
+    // 帳號跟這台的碼對不上：有 kids-auth.js 才綁定；沒有（漫畫頁）就先不同步，回到有登入元件的頁面再綁
+    if (acctId() && (st.acct !== acctId() || !st.code)) return KA() ? bindAccount() : undefined;
     if (!st.code) return;
     if (running) { if (!want || RANK[mode] > RANK[want]) want = mode; return; }
     running = true; pusher.cancel(); clearTimeout(pollT); pollT = null; lastCheck = Date.now();
@@ -222,38 +262,49 @@
       const r = await exclusive(() => syncCore(code, mode, gen));
       if (r && !r.ok && !r.notFound) fails++; else { fails = 0; netDown = false; }
     } catch (e) {
-      fails++; netDown = isNet(e);
+      fails++; netDown = isNet(e); lastErr = errWhy(e);
       if (mode !== 'poll' || st.pending) { st.pending = true; saveSt(); }
       setStatus(failText(e));
     } finally {
-      running = false; keepNext = false;
-      if (want) { const m = want; want = null; setTimeout(() => syncNow(m), 300); } else schedule();
+      running = false;
+      // 同步途中又被叫：頁面藏起來了就馬上接著送（iOS 凍結前送得出去，keepNext 留著＝也帶 keepalive）；看得到才等 300ms
+      if (want) { const m = want; want = null; if (keepNext || !visible()) syncNow(m); else setTimeout(() => syncNow(m), 300); } else schedule();
       paintCloud();
     }
   }
   // 下一次輪詢：頁面看得到才排；連續失敗就退避（40 秒、80 秒、最多 2 分鐘）
+  // 登入了卻還沒綁到碼（開頁時會員後端忙）：照樣排重試綁定，40 秒起倍增、最多 10 分鐘
   function schedule() {
     clearTimeout(pollT); pollT = null;
-    if (!st.code || !visible()) return;
+    if (!visible()) return;
+    if (!st.code) { if (acctId() && KA() && !binding) pollT = setTimeout(() => { pollT = null; syncNow('full'); }, SA.backoff(Math.max(1, fails), SA.POLL_MS, BIND_MAX)); return; }
     pollT = setTimeout(() => { pollT = null; check('poll'); }, fails ? SA.backoff(fails, SA.POLL_MS, SA.BACKOFF_MAX) : SA.POLL_MS);
   }
-  // 輪詢／回到前景／focus／重新連上網路：有待上傳的就完整同步一次，沒有就只問伺服器有沒有變
+  // 回到前景／focus／pageshow／重新連上網路：一律完整同步（GET＋跟本機合併＋需要才 PUT）——別頁趁這頁凍結時改的本機紀錄才推得上去。
+  // 輪詢：本機沒變就只問伺服器有沒有變（204 就結束）；本機有變（待上傳或別頁寫的）就完整同步
   function check(why) {
     if (!st.code) { if (acctId() && why !== 'poll') syncNow('full'); return; }
-    // visibilitychange＋focus 會連發；online 不擋：剛失敗的上傳（1.5 秒內）會排 40 秒退避，擋掉就要等退避才補傳（同步中則 syncNow 排 want 接著跑）
-    if (why !== 'poll' && why !== 'online' && (running || Date.now() - lastCheck < 1500)) return;
+    // visibilitychange＋focus＋pageshow 會連發；online 不擋：剛失敗的上傳（1.5 秒內）會排 40 秒退避，擋掉就要等退避才補傳（同步中則 syncNow 排 want 接著跑）
+    if (why !== 'poll' && why !== 'online' && Date.now() - lastCheck < 1500) return;
     if (navigator.onLine === false) { netDown = true; paintCloud(); schedule(); return; }
-    return syncNow(st.pending ? 'full' : 'poll');
+    return syncNow(why === 'poll' && !dirty() ? 'poll' : 'full');
+  }
+  // 回到這一頁（前景、bfcache 還原）：別頁改過本機紀錄 → 先讓畫面重畫，再完整同步
+  function onShow(why) {
+    keepNext = false;
+    if (rawSnap() !== seenRaw) dataChanged();
+    check(why); if (!pollT && !running) schedule();
   }
   // 有變動：1.5 秒內沒有新變動就上傳，最晚 3 秒；結束一回合／學會了：馬上上傳
   const pusher = SA.debouncer(() => syncNow('push'), { wait: SA.PUSH_WAIT, maxWait: SA.PUSH_MAX });
-  function touch() { if (!st.code) return; touchGen++; if (!st.pending) { st.pending = true; saveSt(); } pusher.trigger(); paintCloud(); }
+  function touch() { seenRaw = rawSnap(); if (!st.code) return; touchGen++; if (!st.pending) { st.pending = true; saveSt(); } pusher.trigger(); paintCloud(); }
   function now() { if (!st.code && !acctId()) return; pusher.cancel(); clearTimeout(nowT); nowT = setTimeout(() => syncNow('push'), 200); }
-  // 頁面藏起來／關掉：有沒送出的就立刻送（PUT 用 keepalive）
+  // 頁面藏起來／關掉：本機有沒送出的（待上傳、排著的、別頁寫的）就立刻送（PUT 用 keepalive）
   function flush() {
     if (!st.code) return;
     const had = pusher.pending(); pusher.cancel();
-    if (!had && !st.pending) return;
+    if (!had && !dirty()) return;
+    if (!st.pending) { st.pending = true; saveSt(); }
     keepNext = true; syncNow('push');
   }
 
@@ -277,7 +328,8 @@
     }
     if (dev && dev !== acct && !done.has(dev)) await syncCore(dev);   // 先確保本機已含舊碼 B 的資料
     if (!still()) return { ok: false, changed: true };
-    st = { code: acct, acct: mid }; saveSt();
+    // 「待上傳」留著（以前這裡整個換掉：綁定後的同步一失敗，本機沒送出的就要等下一次變動才會再送）；換了碼就不沿用舊碼的時間
+    st = Object.assign(st.code === acct ? st : { pending: st.pending }, { code: acct, acct: mid }); saveSt();
     const r = await syncCore(acct);                           // 拉帳號的碼、合併本機、推回
     return { ok: !!r.ok, notFound: !!r.notFound };
   }
@@ -287,8 +339,8 @@
     pusher.cancel(); setStatus('同步中…');
     binding = exclusive(() => bindCore(mid)).catch(e => {
       fails++; netDown = !!(e && e.code === 'network') || (!(e && e.code) && isNet(e));
-      if (e && e.code) setStatus(e.code === 'network' ? '離線，稍後再同步' : '同步失敗，稍後再試');   // 會員後端的錯誤（kids-auth api）
-      else setStatus(failText(e));
+      if (e && e.code) { lastErr = e.code === 'network' ? '' : '帳號綁定失敗（會員系統忙：' + e.code + '），會自動再試'; setStatus(e.code === 'network' ? '離線，稍後再同步' : '同步失敗，稍後再試'); }   // 會員後端的錯誤（kids-auth api）
+      else { lastErr = e && e.status === 409 ? '帳號綁定時一直跟別台撞在一起，會自動再試' : errWhy(e); setStatus(failText(e)); }
       return { ok: false, error: (e && (e.code || e.message)) || 'error' };
     }).then(r => { binding = null; if (r && r.ok) { fails = 0; netDown = false; } schedule(); paintCloud(); return r; });
     paintCloud();
@@ -307,7 +359,24 @@
   }
   async function pair(code) { const c = await check1(code); st = { code: c }; saveSt(); await syncNow('full'); return c; }
   function unpair() { pusher.cancel(); clearTimeout(pollT); pollT = null; cache = null; st = {}; saveSt(); setStatus(''); }
-  function info() { return { on: !!st.code, bound: bound(), lastAt: lastIso(), pending: !!st.pending, busy: running || !!binding, offline: netDown, fails, polling: !!pollT }; }
+  // 只存在這台、不同步的資料（帳號頁列給家長看；遊戲存檔不同步）
+  function localOnly() {
+    const out = [], ks = [];
+    try { for (let i = 0; i < localStorage.length; i++) ks.push(localStorage.key(i)); } catch (e) { }
+    const any = re => ks.some(k => re.test(k || ''));
+    if (any(/^hi_(?!timer$|parent$|cfg$)/)) out.push('勇者島遊戲存檔');
+    if (any(/^hw_/)) out.push('方塊世界遊戲存檔');
+    if (any(/^kids_town/)) out.push('小朋友鎮遊戲存檔');
+    if (any(/^kids_writing$/)) out.push('作文寫的內容（完成幾題有同步）');
+    if (any(/^kids_zh_(reading|idioms)$|^kids_mm_lit$/)) out.push('閱讀、成語、素養題組的開放題寫的字（分數有同步）');
+    if (any(/^ke_settings$/)) out.push('這台的設定（聲音、字體、科目）');
+    return out;
+  }
+  const standalone = () => { try { return navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches); } catch (e) { return false; } };
+  function info() {
+    return { on: !!st.code, bound: bound(), lastAt: lastIso(), pending: !!st.pending, busy: running || !!binding, offline: netDown, fails, polling: !!pollT,
+      err: lastErr, dirty: dirty(), lastUp: st.lastUp || null, lastDown: st.lastDown || null, tail: st.code ? String(st.code).slice(-2) : '', app: standalone() ? 'home' : 'browser', localOnly: localOnly() };
+  }
 
   // ---------- 頁角小雲朵（登入小元件旁）：☁️ 已同步・剛剛／⏳ 上傳中／📴 離線；點一下看最後同步時間 ----------
   let cloud = null, bubble = null, bubbleT = null, cssDone = false;
@@ -315,7 +384,7 @@
     if (cssDone) return; cssDone = true;
     const s = document.createElement('style');
     s.textContent = '.ks-cloud{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:4px 12px;margin-left:6px;border-radius:999px;border:2px solid #f0e2c8;background:#fff;color:#263445;font:600 .9rem/1.2 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;white-space:nowrap;cursor:pointer;box-shadow:0 2px 0 #f0e2c8;touch-action:manipulation;-webkit-tap-highlight-color:transparent}'
-      + '.ks-cloud .ks-t{font-size:.8rem;font-weight:600;color:#6b7785}.ks-cloud.ks-busy .ks-t{color:#d96a22}.ks-cloud.ks-off{background:#f3f4f6}'
+      + '.ks-cloud .ks-t{font-size:.8rem;font-weight:600;color:#6b7785}.ks-cloud.ks-busy .ks-t{color:#d96a22}.ks-cloud.ks-off{background:#f3f4f6}.ks-cloud.ks-err{border-color:#e8a33c;background:#fff6e0}.ks-cloud.ks-err .ks-t{color:#8a4b00}'
       + '.ks-cloud.ks-float{position:fixed;top:calc(8px + env(safe-area-inset-top));z-index:2147482000;margin:0}'
       + '#subjects .ks-cloud{order:1;flex:0 0 auto}'
       + '.ks-bub{position:fixed;z-index:2147482001;max-width:min(280px,calc(100vw - 16px));padding:8px 12px;border-radius:12px;background:#263445;color:#fff;font:500 .9rem/1.45 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;box-shadow:0 6px 18px rgba(38,52,69,.25)}'
@@ -324,14 +393,16 @@
   }
   function cloudState() {
     if (netDown || navigator.onLine === false) return { i: '📴', t: '離線', cls: 'ks-off', long: '離線中' + (st.pending ? '：有紀錄還沒上傳，網路恢復後會自動補傳' : '：網路恢復後會自動同步') };
-    if (binding || st.pending || pusher.pending() || (running && status === '同步中…')) return { i: '⏳', t: '上傳中', cls: 'ks-busy', long: '正在上傳學習紀錄…' };
+    if (binding || (running && status === '同步中…')) return { i: '⏳', t: '上傳中', cls: 'ks-busy', long: '正在上傳學習紀錄…' };
+    if (lastErr) return { i: '⚠️', t: '沒同步', cls: 'ks-err', long: '沒同步：' + lastErr + (st.pending ? '。這台有紀錄還沒送出，不會不見' : '') };
+    if (st.pending || pusher.pending()) return { i: '⏳', t: '上傳中', cls: 'ks-busy', long: '正在上傳學習紀錄…' };
     const ms = lastMs();
     return { i: '☁️', t: ms ? SA.ago(ms) : '同步', cls: '', long: ms ? '已同步・' + SA.ago(ms) : '還沒有同步過' };
   }
   function paintCloud() {
     if (!document.body) return;
     const chip = document.querySelector('.ka-chip');
-    if (!st.code || !chip) { if (cloud) { cloud.remove(); cloud = null; } hideBubble(); return; }   // 沒開同步、或這頁沒有登入小元件：不放
+    if (!(st.code || (lastErr && acctId())) || !chip) { if (cloud) { cloud.remove(); cloud = null; } hideBubble(); return; }   // 沒開同步（登入了但綁定失敗例外：要看得到 ⚠️）、或這頁沒有登入小元件：不放
     cloudCss();
     if (!cloud) { cloud = document.createElement('button'); cloud.type = 'button'; cloud.className = 'ks-cloud'; cloud.addEventListener('click', toggleBubble); }
     if (chip.classList.contains('ka-float')) {
@@ -370,9 +441,11 @@
     bindAccount, uploadNow, accountBound: bound, info, counts,
     hold: tag => gate.hold(tag), release: tag => gate.release(tag), held: () => gate.held(), _check: check };
 
-  // 回到這個分頁 → 馬上問；藏起來 → 停輪詢、沒送出的立刻送
-  document.addEventListener('visibilitychange', () => { if (visible()) { check('visible'); if (!pollT && !running) schedule(); } else { clearTimeout(pollT); pollT = null; flush(); } });
+  // 回到這個分頁 → 完整同步；藏起來 → 停輪詢、沒送出的立刻送
+  document.addEventListener('visibilitychange', () => { if (visible()) onShow('visible'); else { clearTimeout(pollT); pollT = null; flush(); } });
   window.addEventListener('pagehide', flush);
+  // 從整頁（漫畫、帳號頁）按上一頁回來：iOS 從 bfcache 還原，不會重新載入、也收不到那段期間的 storage 事件
+  window.addEventListener('pageshow', e => { if (e && e.persisted) { lastCheck = 0; onShow('pageshow'); } });
   window.addEventListener('focus', () => check('focus'));
   window.addEventListener('online', () => { netDown = false; fails = 0; paintCloud(); check('online'); });
   window.addEventListener('offline', () => { netDown = true; paintCloud(); });

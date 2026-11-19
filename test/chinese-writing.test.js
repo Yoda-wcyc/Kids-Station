@@ -128,7 +128,9 @@ readyL.forEach(c => {
   ok(C.topics.every(t => at('topics/' + t.id + '.js') > 0) && C.lessons.every(l => at('lessons/' + l.id + '.js') > at('topics/' + C.topics[C.topics.length - 1].id + '.js')) && at('writing.js') > at('lessons/L22.js'), 'writing.html loads all ' + C.topics.length + ' topics + 22 lessons, then writing.js');
   ok(html.includes('href="../../style.css"') && html.includes('href="../reading.css"') && html.includes('href="writing.css"'), 'writing.html stylesheets');
   ok(!/fetch\(|XMLHttpRequest|sendBeacon|KidsCoins|KidsMistakes|api\./i.test(js.replace(/\/\*[\s\S]*?\*\//g, '')), 'writing.js: no network, no AI, no coins/mistakes');
-  ok(js.includes("K = 'kids_writing'") && !fs.readFileSync(path.join(root, 'sync.js'), 'utf8').includes('kids_writing'), 'kids_writing is local only (not in sync.js)');
+  // 2026-11-19：完成了哪幾題／哪幾課跟著同步（sync.js pg），寫的內容不同步
+  { const SMw = require(path.join(root, 'syncmerge.js')), back = SMw.pgApply(SMw.pgFromLocal({ writing: { t: { t01: { main: ['我家的狗', '', '', ''], ideas: [{ t: '秘密', c: 0 }], done: 1 } } } }), {});
+    ok(js.includes("K = 'kids_writing'") && fs.readFileSync(path.join(root, 'sync.js'), 'utf8').includes("writing: 'kids_writing'") && back.writing.t.t01.done && !JSON.stringify(back).includes('我家的狗') && !JSON.stringify(back).includes('秘密'), 'kids_writing: only which topics are done is synced, never what the child wrote'); }
   const css = fs.readFileSync(path.join(dir, 'writing.css'), 'utf8');
   ok(/@page\{size:A4 portrait/.test(css) && /@media print\{/.test(css) && css.includes('.wr-map{break-after:page'), 'writing.css: A4 portrait print, map page then checklist page');
   const sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
