@@ -860,7 +860,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     Wp.window.COMIC_CATALOG.vols.forEach(v => v.eps.forEach(e => { L.comic.seen[e.id] = t; }));
     'ABCDEFG'.split('').forEach(c => { L.anim.seen[c] = t; });
     Wp.window.WR_CAT.topics.forEach(c => { L.writing.t[c.id] = { done: t }; }); Wp.window.WR_CAT.lessons.forEach(c => { L.writing.l[c.id] = { best: 100, n: 99, done: t }; });
-    const G = Wp.window.GEPT_CATALOG; Object.keys(G).forEach(lv => Object.keys(G[lv]).forEach(pt => G[lv][pt].forEach(s => { if (/^[LR]/.test(pt)) L.gept.best[s.id] = { p: 100 }; else if (/^[SW]/.test(pt)) L.gept.task[s.id] = { t }; else for (let i = 0; i < 2; i++) L.gept.mock.push({ id: s.id, t: t + i * 1e6 + s.id.length, lc: 999, ln: 999, rc: 999, rn: 999, L: 120, R: 120, pass: true }); })));
+    // shortcut: 中高級（u，2026-11-21）的進度不進同步（pg、done.n 最壞約多 200 B，同步預算只剩 799 B、要留 700 B）；syncmerge.js／kids-lock.js 只認 e|i|a，等同步瘦身有空間再加
+    const G = Wp.window.GEPT_CATALOG; Object.keys(G).filter(lv => lv !== 'u').forEach(lv => Object.keys(G[lv]).forEach(pt => G[lv][pt].forEach(s => { if (/^[LR]/.test(pt)) L.gept.best[s.id] = { p: 100 }; else if (/^[SW]/.test(pt)) L.gept.task[s.id] = { t }; else for (let i = 0; i < 2; i++) L.gept.mock.push({ id: s.id, t: t + i * 1e6 + s.id.length, lc: 999, ln: 999, rc: 999, rn: 999, L: 120, R: 120, pass: true }); })));
     const MMD = { social: Wp.window.DATA_SOCIAL, science: Wp.window.DATA_SCIENCE };
     Object.keys(MMD).forEach(k => { const D = MMD[k], us = D.units.map(u => u.id);
       us.forEach((u, i) => { L.exam[k + ':' + u] = { best: 100, last: 100, n: 9, at: t }; if (i + 2 < us.length) L.exam[k + ':mock-' + us.slice(i, i + 3).join('-')] = { best: 100, last: 100, n: 9, at: t }; });

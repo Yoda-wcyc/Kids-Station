@@ -19,13 +19,14 @@ function loadSet(file) {
 }
 function listFiles() {
   const out = [];
-  ['e', 'i', 'a'].forEach(lv => { const d = path.join(DATA, lv); if (fs.existsSync(d)) fs.readdirSync(d).filter(f => /\.js$/.test(f)).sort().forEach(f => out.push(path.join(d, f))); });
+  ['e', 'i', 'u', 'a'].forEach(lv => { const d = path.join(DATA, lv); if (fs.existsSync(d)) fs.readdirSync(d).filter(f => /\.js$/.test(f)).sort().forEach(f => out.push(path.join(d, f))); });
   return out;
 }
 // 題目清單（頁面用）：{e:{L1:[{id,t,n,h}], …, M:[…]}, …}；t＝標題、n＝題數、h＝檔案內容雜湊（頁面載題目檔時加 ?v=h，iPad 才不會吃到快取的舊題）
 function catalogOf(sets, hash) {
-  const cat = { e: {}, i: {}, a: {} };
+  const cat = { e: {}, i: {}, u: {}, a: {} };
   sets.slice().sort((a, b) => a.id < b.id ? -1 : 1).forEach(s => { const m = C.ID_RE.exec(s.id); (cat[m[1]][m[2]] = cat[m[1]][m[2]] || []).push({ id: s.id, t: s.title || '', n: C.questions(s).length, h: (hash || {})[s.id] || '' }); });
+  Object.keys(cat).forEach(k => { if (!Object.keys(cat[k]).length) delete cat[k]; });   // 還沒有題目的級別不列（頁面用 C[lv] || {}）
   return '/* gept/data/catalog.js — 由 node gept/tools/check.js --write 產生，不要手改（CONTRACT.md §6） */\nwindow.GEPT_CATALOG = ' + JSON.stringify(cat) + ';\n';
 }
 // 撞題偵測（CONTRACT §2：模擬考跟練習組不能出同一題、同一篇；練習組之間也不要重複）：同一級、不同組之間比對每一題（題組＝整篇）的文字——
@@ -34,7 +35,8 @@ function unitsOf(s) {
   const out = [], seen = {};
   C.questions(s).forEach(Q => {
     const q = Q.q, g = Q.group;
-    if (Q.kind === 'sint') return;   // 高級面談題目本來就是固定說法（You have one minute to prepare…）
+    if (Q.kind === 'sint' && s.id[0] === 'a') return;   // 高級面談題目本來就是固定說法（You have one minute to prepare…）；中高級申述照比
+    if (Q.kind === 'grp' && g && !seen[g.id]) { seen[g.id] = 1; out.push({ id: g.id, t: [g.say, (g.lines || []).map(l => l[1]).join(' '), g.qs.map(x => x.q).join(' ')].filter(Boolean).join(' ') }); return; }
     if (g) { if (seen[g.id]) return; seen[g.id] = 1; out.push({ id: g.id, t: [g.text, g.say, (g.lines || []).map(l => l[1]).join(' '), (g.texts || []).map(x => x.body || '').join(' '), (g.paras || []).join(' ')].filter(Boolean).join(' ') }); return; }
     out.push({ id: q.id, t: [q.s, [].concat(q.say || []).join(' '), (q.lines || []).map(l => l[1]).join(' '), q.passage, (q.sents || []).join(' '), q.s1, q.s2, q.model, q.sample].filter(Boolean).join(' ') });
   });
@@ -48,7 +50,7 @@ function dups(sets) {
   }));
   const out = [];
   for (let i = 0; i < U.length; i++) for (let j = i + 1; j < U.length; j++) {
-    const a = U[i], b = U[j]; if (a.lv !== b.lv || a.set === b.set) continue;
+    const a = U[i], b = U[j]; if ((a.lv !== b.lv && a.lv !== 'u' && b.lv !== 'u') || a.set === b.set) continue;   // 中高級（u）跟全部級別都比（新級別不能抄舊級別的題）
     const same = [...a.sen].filter(x => b.sen.has(x))[0];
     const [sm, lg] = a.g.size < b.g.size ? [a.g, b.g] : [b.g, a.g]; let k = 0; sm.forEach(x => { if (lg.has(x)) k++; });
     if (same || (sm.size && k >= 3 && k / sm.size >= 0.5)) out.push('撞題：' + a.id + ' ↔ ' + b.id + '（' + (same ? '同一句「' + same + '」' : '5-gram 重疊 ' + Math.round(k / sm.size * 100) + '%') + '）');
@@ -59,7 +61,7 @@ function run(argv) {
   argv = argv || [];
   const only = argv.filter(a => !a.startsWith('--')), write = argv.includes('--write'), lttc = argv.includes('--lttc');
   const files = only.length ? only.map(f => path.join(DATA, f.replace(/\.js$/, '') + '.js')) : listFiles();
-  const lex = { e: C.lexOf('e', V), i: C.lexOf('i', V), a: C.lexOf('a', V) };
+  const lex = { e: C.lexOf('e', V), i: C.lexOf('i', V), u: C.lexOf('u', V), a: C.lexOf('a', V) };
   const errors = [], warns = [], sets = [], ids = {}, names = {}, hash = {};
   files.forEach(f => {
     const rel = path.relative(DATA, f).replace(/\\/g, '/');
@@ -68,7 +70,7 @@ function run(argv) {
     if (got.length !== 1) { errors.push(rel + ': 一個檔只能放一組（GEPT_SETS.push 一次），現在 ' + got.length); return; }
     const s = got[0], m = C.ID_RE.exec(s && s.id || '');
     if (!m || C.fileOf(s.id) !== 'data/' + rel) { errors.push(rel + ': 檔名要跟 id 一致（id ' + (s && s.id) + ' → ' + (m ? C.fileOf(s.id) : '?') + '）'); return; }
-    const r = C.validateSet(s, V, { lex: lex[m[1]] });
+    const r = C.validateSet(s, V, { lex: lex[m[1]], lexB1: lex.i });
     r.errors.forEach(e => errors.push(rel + ': ' + e)); r.warns.forEach(w => warns.push(rel + ': ' + w));
     r.names.forEach(n => { names[n] = (names[n] || 0) + 1; });
     C.questions(s).forEach(q => { if (q.id && ids[q.id]) errors.push(rel + ': 題目 id 重複 ' + q.id + '（也在 ' + ids[q.id] + '）'); ids[q.id] = rel; });
@@ -85,7 +87,7 @@ function run(argv) {
   }
   let lttcReport = '';
   if (lttc) {
-    const dir = path.join(GEPT, '..', 'scratchpad', 'gept-local'), map = { e: 'lttc_e.txt', i: 'lttc_i.txt', a: 'lttc_hi.txt' };
+    const dir = path.join(GEPT, '..', 'scratchpad', 'gept-local'), map = { e: 'lttc_e.txt', i: 'lttc_i.txt', u: 'lttc_hi.txt', a: 'lttc_hi.txt' };
     Object.keys(map).forEach(lv => {
       const f = path.join(dir, map[lv]); if (!fs.existsSync(f)) return;
       const L = {}; fs.readFileSync(f, 'utf8').split('\n').forEach(w => w.split(/[\s\/()-]+/).forEach(t => { if (t) L[t.toLowerCase()] = 1; }));

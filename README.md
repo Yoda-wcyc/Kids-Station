@@ -219,10 +219,11 @@ nocopy.js         全站禁止複製／剪下／貼上（2026-11-13 家長指令
 
 ## 🏅 全民英檢準備區（gept/，2026-11-15）
 
-- 入口：英文頁（#en）「🏅 全民英檢」卡片 → `gept/index.html`（選級別：初級／中級「進階挑戰」／高級「超級挑戰」）。規格查證 `gept/SPEC.md`（官方來源、未確認項），寫題契約 `gept/CONTRACT.md`（作者只看這兩份）。
+- 入口：英文頁（#en）「🏅 全民英檢」卡片 → `gept/index.html`（選級別：初級／中級「進階挑戰」／中高級「高階挑戰」／高級「超級挑戰」）。規格查證 `gept/SPEC.md`（官方來源、未確認項），寫題契約 `gept/CONTRACT.md`（作者只看這兩份）。
 - 頁面：`practice.html?set=<組>`（題型練習一組，聽力照官方次數播、答完才看文字稿）、`practice.html?mistakes=1&lv=<級>`（錯題重練）、`mock.html?set=<級>-M-nn`（完整初試，聽力自動播不能重播、閱讀計時，交卷後模擬換算 120 分制＋通過判斷）、`task.html?set=<組>`（複試寫作、口說：TTS 出題＋計時＋範文／範例＋家長評分）。
 - 題目：`gept/data/<級>/<部分>-<nn>.js` 一檔一組；改完跑 `node gept/tools/check.js --write`（用字、句長、題數、選項、答案分布、id；更新 data/catalog.js）。詞表 `gept/vocab/`（教育部 2000 字、CEFR-J、Octanove C1；LTTC 字表只在本機 scratchpad\gept-local\）。
 - 紀錄：每題學習幣算英文、每日清單算英文總數（不算句型、片語）；聽讀答錯進 `kids_mistakes.gept`（連對 3 次畢業、未畢業最多 100 題）；成績 `kids_gept`（本機；2026-11-19 起各組最佳 %、寫作口說做過、最新 8 筆模擬考跟著同步）。不送 practice_round。
+- 中高級 `u`（B2，2026-11-21 第一階段：每部分 1 組樣本＋模擬考 1 份，92 題＋80 題）：聽力 問答 10／對話 15／談話 15（對話、談話是題組 `grp`，問題用念的、不印）、閱讀 10／10／20、寫作 中譯英＋引導寫作 150～180 字、口說 回答問題 8（只播一次）／看圖敘述／申述。詞表＝教育部 2000＋CEFR-J A1～B2（不含 C1），`check.js` 把 u 跟其他三級全部比撞題。**u 的成績只存本機、也還不記「做過幾次」（不會鎖）**（同步預算只剩 799 B，u 最壞約多 200 B；syncmerge.js pg、kids-lock.js done.n 只認 e|i|a）；每題「學過 2 次不算」照樣用本機 `kids_gept.ok`。第二階段分工：`gept/CONTRACT.md` §8.5。
 - 測試：`node test/gept.test.js`、瀏覽器 `node test/gept-browser.js`。
 
 ## 🃏 名詞閃卡＋🔁 隔天複習（社會、自然，2026-11-01）

@@ -1,6 +1,6 @@
 // test/gept-browser.js — 全民英檢準備區 headless Chrome 實測（CDP；本機靜態伺服器、擋掉所有外連）。改自 test/fracadd-browser.js。
 // 用法：node test/gept-browser.js；環境變數 GP_PS／GP_PD 換 port、GP_SHOTS＝截圖資料夾
-// 820 寬（iPad 直放）＋觸控模擬：首頁三級分頁 → 初級「問答」一組（真的點選項，第 1 題故意答錯）→ 錯題庫收進 'e-L2-01-01'（p 只有 u/pt/s）、學習幣算英文、每日清單英文總數＋10
+// 820 寬（iPad 直放）＋觸控模擬：首頁四級分頁（2026-11-21 加中高級 u：對話題組、模擬考、口說、單字頁） → 初級「問答」一組（真的點選項，第 1 題故意答錯）→ 錯題庫收進 'e-L2-01-01'（p 只有 u/pt/s）、學習幣算英文、每日清單英文總數＋10
 //   → 段落填空一組（題組畫面）→ 錯題重練 3 輪畢業（墓碑）→ 初級模擬考整份跑完（聽力自動播、閱讀計時）到計分（模擬換算、達標判斷、成績存 kids_gept）
 //   → 寫作單句（家長評分 0～2）、口說回答問題（計時跑完到自評）；375 寬不左右捲；全程 JS 例外、console.error 要 0。
 //   → 每組練習／每份模擬考做完送一次 practice_round 'english:gept'（錯題練習不送）；中級、高級各一組練習＋一份模擬考全對；中高級單字頁（清單、篩選、聽寫 10 題）。
@@ -84,9 +84,12 @@ async function run() {
   await go('/gept/index.html'); await ev(`['kids_mistakes', 'kids_daily', 'kids_gept', 'kids_gept_ui'].forEach(k => localStorage.removeItem(k)); return 1`);
   // 1. 首頁
   await go('/gept/index.html?lv=e');
-  assert(await ev(`return document.querySelectorAll('[data-lv]').length === 3 && /初級是什麼/.test(document.body.textContent) && !!document.querySelector('a[href="practice.html?set=e-L1-01"]') && !!document.querySelector('a[href="mock.html?set=e-M-01"]') && !!document.querySelector('a[href="task.html?set=e-W1-01"]') && !!document.querySelector('a[href="../index.html#learn/words/moe800"]')`), 'home (初級): parts, mock, writing, vocab links');
+  assert(await ev(`return document.querySelectorAll('[data-lv]').length === 4 && /初級是什麼/.test(document.body.textContent) && !!document.querySelector('a[href="practice.html?set=e-L1-01"]') && !!document.querySelector('a[href="mock.html?set=e-M-01"]') && !!document.querySelector('a[href="task.html?set=e-W1-01"]') && !!document.querySelector('a[href="../index.html#learn/words/moe800"]')`), 'home (初級): parts, mock, writing, vocab links');
   await press('[data-lv="i"]');
   assert(await ev(`return /進階挑戰/.test(document.querySelector('.gp-warn').textContent) && !!document.querySelector('a[href="mock.html?set=i-M-01"]')`), 'home: 中級 tab shows the 進階挑戰 warning and its mock');
+  await press('[data-lv="u"]');
+  assert(await ev(`return /高階挑戰/.test(document.querySelector('.gp-warn').textContent) && !!document.querySelector('a[href="mock.html?set=u-M-01"]') && !!document.querySelector('a[href="practice.html?set=u-L2-01"]') && !!document.querySelector('a[href="task.html?set=u-S3-01"]') && !!document.querySelector('a[href="words.html?lv=u"]') && /聽力 40 題約 35 分鐘＋閱讀 40 題 50 分鐘/.test(document.body.textContent)`), 'home: 中高級 tab shows 高階挑戰, 40 + 40 questions (35 / 50 min), its practice, mock, writing/speaking and words links');
+  await shot('gp-home-u-820.png');
   await press('[data-lv="a"]');
   assert(await ev(`return /超級挑戰/.test(document.querySelector('.gp-warn').textContent) && !!document.querySelector('a[href="practice.html?set=a-R1-01"]')`), 'home: 高級 tab shows 超級挑戰');
   await press('[data-lv="e"]'); await shot('gp-home-820.png');
@@ -137,20 +140,37 @@ async function run() {
   await press('[data-band="b1"][data-v="4"]'); await press('[data-band="b2"][data-v="4"]');
   assert(/80 分/.test(await ev(`return document.getElementById('gp-sl').textContent`)), 'S3: self-score (4+4)×10 = 80');
   // 7b. 其他題型畫面畫得出來（看圖、整合聽讀表格、略讀標題、長篇聽力短答）
-  for (const [s, sel] of [['e-L1-01', '.gp-pic'], ['e-L4-01', '.gp-pics'], ['i-L3-01', '.gp-num'], ['a-R1-01', '.gp-heads'], ['a-L2-01', '.gp-sub']]) {
+  for (const [s, sel] of [['e-L1-01', '.gp-pic'], ['e-L4-01', '.gp-pics'], ['i-L3-01', '.gp-num'], ['a-R1-01', '.gp-heads'], ['a-L2-01', '.gp-sub'], ['u-L2-01', '.gp-t'], ['u-R3-01', '.gp-text']]) {
     await go('/gept/practice.html?set=' + s); await ev(HOOK); await press('#gp-go');
     assert(await ev(`return !!document.querySelector('${sel}') && document.querySelectorAll('[data-q]').length > 0`), s + ' first screen renders (' + sel + ')');
     await shot('gp-' + s + '.png');
   }
   // 7c. 中級、高級：各一組練習全對、一份模擬考全對（計分、通過）
-  for (const s of ['i-L3-01', 'a-L2-01']) { const r = await practiceRun('/gept/practice.html?set=' + s, []); const m = /^(\d+) \/ (\d+)$/.exec(r || ''); assert(m && m[1] === m[2] && (await ev(`return __round.length === 1 && __round[0].item === 'english:gept' && __round[0].correct === __round[0].total`)), s + ' practice all right: ' + r + ', one round event'); }
-  for (const [m, ln, rn] of [['i-M-01', 35, 35], ['a-M-01', 40, 40]]) { const r = await mockRun(m, ''); assert(r && r.lc === ln && r.rc === rn && r.L === 120 && r.R === 120 && r.pass === true, m + ' mock all right: ' + JSON.stringify(r)); }
+  // 中高級對話：一段＋2 個問題一個畫面，問題用念的（不印）、念完一段才念問題（Question 1. / 2.）、文字稿列出問題
+  await go('/gept/practice.html?set=u-L2-01'); await ev(HOOK);
+  await ev(`window.__tts = []; const p = GeptTTS.play; GeptTTS.play = function (parts) { __tts.push(parts.map(x => x.t)); return p.apply(this, arguments); }; return 1`);
+  await press('#gp-go'); await sleep(200);
+  const u1 = await ev(`const R = GeptPractice.R(), S = R.sc[0]; return { n: S.qs.length, printed: document.getElementById('gp-scr').textContent.includes(S.qs[0].q.q), tts: __tts[0] || [], q: S.qs.map(Q => Q.q.q) }`);
+  assert(u1.n === 2 && !u1.printed && u1.tts.slice(-2).join('|') === 'Question 1. ' + u1.q[0] + '|Question 2. ' + u1.q[1], 'u-L2-01 first screen: one dialogue with 2 spoken (not printed) questions after the dialogue');
+  await answerScreen('GeptPractice.R()', []);
+  assert(await ev(`return document.querySelector('.gp-script').textContent.includes(GeptPractice.R().sc[0].qs[1].q.q)`), 'u-L2-01: transcript lists the spoken questions');
+  await shot('gp-u-L2-01-820.png');
+  for (const s of ['i-L3-01', 'a-L2-01', 'u-L2-01', 'u-L3-01', 'u-R3-01']) { const r = await practiceRun('/gept/practice.html?set=' + s, []); const m = /^(\d+) \/ (\d+)$/.exec(r || ''); assert(m && m[1] === m[2] && (await ev(`return __round.length === 1 && __round[0].item === 'english:gept' && __round[0].correct === __round[0].total`)), s + ' practice all right: ' + r + ', one round event'); }
+  for (const [m, ln, rn] of [['i-M-01', 35, 35], ['a-M-01', 40, 40], ['u-M-01', 40, 40]]) { const r = await mockRun(m, ''); assert(r && r.lc === ln && r.rc === rn && r.L === 120 && r.R === 120 && r.pass === true, m + ' mock all right: ' + JSON.stringify(r)); }
+  await shot('gp-u-mock-result-820.png');
+  // 中高級口說回答問題：8 題、只播一次、15／30 秒，跑完到自評（×20）
+  await go('/gept/task.html?set=u-S1-01'); await ev(HOOK); await press('#gp-go');
+  for (let i = 0; i < 80 && !(await ev(`return !document.getElementById('gp-check').hidden`)); i++) await sleep(150);
+  assert(await ev(`return document.querySelectorAll('#gp-check .gp-ri').length === 8 && /（15 秒）/.test(document.getElementById('gp-check').textContent) && /（30 秒）/.test(document.getElementById('gp-check').textContent)`), 'u-S1: 8 questions (15 s / 30 s) spoken + timed → sample answers shown');
+  await press('[data-band="b1"][data-v="4"]'); assert(/80 分/.test(await ev(`return document.getElementById('gp-sl').textContent`)), 'u-S1: self-score 4 × 20 = 80');
+  await go('/gept/task.html?set=u-W2-01'); assert(await ev(`return /150～180 字/.test(document.body.textContent) && /寫作共 50 分鐘/.test(document.body.textContent)`), 'u-W2: 150～180 字, writing 50 minutes');
   // 7d. 中高級單字頁：首頁連結、清單、點字唸、聽寫 10 題
   await go('/gept/index.html?lv=i'); assert(await ev(`return !!document.querySelector('a[href="words.html?lv=i"]')`), 'home 中級: words link'); await go('/gept/index.html?lv=a'); assert(await ev(`return !!document.querySelector('a[href="words.html?lv=a"]') && !!document.querySelector('a[href="words.html?lv=i"]')`), 'home 高級: words links');
-  for (const [lv, lo, hi] of [['i', 1800, 2600], ['a', 2500, 3600]]) {
+  await go('/gept/index.html?lv=u'); assert(await ev(`return !!document.querySelector('a[href="words.html?lv=u"]') && !!document.querySelector('a[href="words.html?lv=i"]')`), 'home 中高級: words links');
+  for (const [lv, lo, hi] of [['i', 1800, 2600], ['u', 1800, 2600], ['a', 2500, 3600]]) {
     await go('/gept/words.html?lv=' + lv); await ev(HOOK);
     const n = await ev(`return GeptWords.all().length`); assert(n > lo && n < hi && (await ev(`return document.querySelectorAll('#gp-wl [data-say]').length === 80 && !GeptWords.all().some(x => x.w === 'apple')`)), lv + ' words: ' + n + ' words, 80 per page, no 2000-list words');
-    await press('#gp-wl [data-say]'); await press('[data-c="' + (lv === 'a' ? 'C1' : 'B1') + '"]'); assert(await ev(`return /這裡有 \\d+ 個字/.test(document.getElementById('gp-wn').textContent) && [...document.querySelectorAll('#gp-wl small')].every(x => x.textContent === '${lv === 'a' ? 'C1' : 'B1'}')`), lv + ' words: level filter');
+    await press('#gp-wl [data-say]'); const cf = lv === 'a' ? 'C1' : lv === 'u' ? 'B2' : 'B1'; await press('[data-c="' + cf + '"]'); assert(await ev(`return /這裡有 \\d+ 個字/.test(document.getElementById('gp-wn').textContent) && [...document.querySelectorAll('#gp-wl small')].every(x => x.textContent === '${cf}')`), lv + ' words: level filter');
     await press('#gp-wgo');
     for (let k = 0; k < 10; k++) { const w = await ev(`return GeptWords.Z().qs[GeptWords.Z().i].w`); await ev(`document.getElementById('gp-wi').value = ${JSON.stringify(w)}; return 1`); await press('#gp-wok'); await press('#gp-wnx'); }
     assert(await ev(`return document.getElementById('gp-wres').textContent`) === '10 / 10', lv + ' words: dictation 10 / 10');
@@ -159,7 +179,7 @@ async function run() {
   await shot('gp-words-a.png');
   // 8. 375 寬
   await width(375);
-  for (const u of ['/gept/index.html?lv=a', '/gept/practice.html?set=a-R1-01', '/gept/task.html?set=a-W2-01']) { await go(u); assert(await ev(`return document.documentElement.scrollWidth <= innerWidth + 1`), '375: no horizontal scroll ' + u); }
+  for (const u of ['/gept/index.html?lv=a', '/gept/practice.html?set=a-R1-01', '/gept/task.html?set=a-W2-01', '/gept/index.html?lv=u', '/gept/practice.html?set=u-L2-01']) { await go(u); assert(await ev(`return document.documentElement.scrollWidth <= innerWidth + 1`), '375: no horizontal scroll ' + u); }
   await shot('gp-a-w2-375.png');
   await go('/gept/index.html'); await ev(`['kids_mistakes', 'kids_daily', 'kids_gept', 'kids_gept_ui'].forEach(k => localStorage.removeItem(k)); return 1`);
 }

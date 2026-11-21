@@ -1,6 +1,6 @@
 /* gept/gept-core.js — 全民英檢（GEPT）準備區的規格與規則（純函式：不碰 DOM／localStorage；瀏覽器 window.GeptCore 與 Node 共用）。
    規格正本：gept/SPEC.md（官方規格＋來源）、gept/CONTRACT.md（題目資料格式＝作者看這兩份就能寫題）。
-   - LV／PARTS／MOCK：三級（e 初級、i 中級、a 高級）各題型的題數、選項數、播放次數、作答時間、長度上限（數字照 SPEC.md；官方沒公布的標「本站訂」）。
+   - LV／PARTS／MOCK：四級（e 初級、i 中級、u 中高級、a 高級）各題型的題數、選項數、播放次數、作答時間、長度上限（數字照 SPEC.md；官方沒公布的標「本站訂」）。
    - validateSet(set, V)：一組題目的格式、用字（V＝gept/vocab/*.js）、句長、選項、答案分布檢查 → {errors, warns, offList, names}（gept/tools/check.js、test/gept.test.js 用）。
    - questions(set)：攤平成「一題一題」（錯題庫、計分都用這個）；scale／passLR：模擬換算 120 分制與通過標準；writeScore／speakScore：複試換算公式。 */
 (function (root) {
@@ -10,6 +10,7 @@
   var LV = {
     e: { n: '初級', en: 'Elementary', cefr: 'A2', tag: '', who: '國中畢業程度（國小高年級可以挑戰）', pass: { sum: 160, min: 72 }, wpass: 70, spass: 80 },
     i: { n: '中級', en: 'Intermediate', cefr: 'B1', tag: '進階挑戰', who: '高中畢業程度', pass: { sum: 160, min: 72 }, wpass: 80, spass: 80 },
+    u: { n: '中高級', en: 'High-Intermediate', cefr: 'B2', tag: '高階挑戰', who: '工作、時事用的英文（官方參考職業：商務、企劃、祕書、工程師、研究助理）', pass: { sum: 160, min: 72 }, wpass: 80, spass: 80, wmin: 50 },
     a: { n: '高級', en: 'Advanced', cefr: 'C1', tag: '超級挑戰', who: '大學英文系畢業程度', pass: { sum: 150, min: 64 }, wpass: 3, spass: 3 }
   };
   // ================= 題型 =================
@@ -44,6 +45,20 @@
       S2: { s: 'S', n0: '回答問題', kind: 'sanswer', n: 10, play: 2, sec: 15, how: '10 題，題目播兩次、不印出來；第 1～5 題每題 15 秒、第 6～10 題每題 30 秒。' },
       S3: { s: 'S', n0: '看圖敘述', kind: 'spic', n: 1, prep: 30, sec: 90, how: '先用 30 秒看圖和問題，再在 1 分半內回答（直接回答，不用唸題號或題目）。' }
     },
+    // 中高級（SPEC.md §4）：L2、L3 每段之後聽 1～2／2～3 題（qs＝每段題數範圍）；官方只公布聽力共 40 題，L2／L3 各 15 題是本站暫定
+    u: {
+      L1: { s: 'L', n0: '問答', kind: 'resp', n: 10, o: 4, play: 1, wait: 12, how: '聽一句英文（問句或直述句），從印出來的四個回應選一個最適合的。每題只播一遍。' },
+      L2: { s: 'L', n0: '對話', kind: 'grp', n: 15, qs: [1, 2], o: 4, play: 1, wait: 12, how: '聽一段男女對話，對話後面聽 1～2 個問題（問題不印出來），從印出來的四個選項選答案；有些題要配合印出來的圖表。只播一遍。' },
+      L3: { s: 'L', n0: '談話', kind: 'grp', n: 15, qs: [2, 3], o: 4, play: 1, wait: 12, how: '聽一段談話（廣播、簡報、報導、留言…），後面聽 2～3 個問題（問題不印出來），從印出來的四個選項選答案；有些題要配合圖表。只播一遍。' },
+      R1: { s: 'R', n0: '詞彙', kind: 'vocab', n: 10, o: 4, how: '每題一個空格，從四個選項選出最適合的字或詞。' },
+      R2: { s: 'R', n0: '段落填空', kind: 'cloze', n: 10, groups: 2, o: 4, how: '兩篇短文、各 5 個空格；選項可能是字、詞、片語或整句。' },
+      R3: { s: 'R', n0: '閱讀理解', kind: 'read', n: 20, groups: 4, o: 4, how: '幾個題組，每組 1～2 篇文章或圖表，後面 2～6 題四選一。' },
+      W1: { s: 'W', n0: '中譯英', kind: 'write', n: 1, how: '把一段中文（約 4 句）翻成通順、達意、前後連貫的英文（40%，0～5 級分）。' },
+      W2: { s: 'W', n0: '引導寫作', kind: 'write', n: 1, words: 165, wtxt: '150～180 字', how: '依題目寫一篇 150～180 字的文章，題目會列出要寫的重點（60%，0～5 級分）。' },
+      S1: { s: 'S', n0: '回答問題', kind: 'sanswer', n: 8, play: 1, sec: 15, split: 4, how: '8 題，題目只播一次、不印出來；第 1～4 題每題 15 秒、第 5～8 題每題 30 秒。' },
+      S2: { s: 'S', n0: '看圖敘述', kind: 'spic', n: 1, prep: 30, sec: 90, how: '先用 30 秒看圖和幾個問題，再在 1 分半內回答（直接回答，不用唸題號或題目）。' },
+      S3: { s: 'S', n0: '申述', kind: 'sint', n: 1, prep: 90, sec: 90, how: '讀題目、想 1 分半（可以在紙上做筆記），再用 1 分半說出你的看法和理由。' }
+    },
     a: {
       L1: { s: 'L', n0: '短篇對話及談話', kind: 'short', n: 15, o: 4, play: 1, wait: 12, how: '15 段短對話或短談話，每段後面一個問題，從印出來的四個選項選答案。只播一遍，可以在試題本上做筆記。' },
       L2: { s: 'L', n0: '長篇對話', kind: 'long', n: 13, groups: 2, o: 4, play: 1, preview: 40, after: 180, how: '兩段長對話，只播一遍、可做筆記。聽之前有 30～45 秒看題目，聽完有 2～4 分鐘作答；答案可能是選擇，也可能要寫一個字、片語或短句。' },
@@ -61,6 +76,7 @@
   var MOCK = {
     e: { L: ['L1', 'L2', 'L3', 'L4'], R: [{ parts: ['R1', 'R2', 'R3'], min: 35 }], lmin: 20 },
     i: { L: ['L1', 'L2', 'L3', 'L4'], R: [{ parts: ['R1', 'R2', 'R3'], min: 45 }], lmin: 30 },
+    u: { L: ['L1', 'L2', 'L3'], R: [{ parts: ['R1', 'R2', 'R3'], min: 50 }], lmin: 35 },
     a: { L: ['L1', 'L2', 'L3'], R: [{ parts: ['R1'], min: 20 }, { parts: ['R2'], min: 50 }], lmin: 55 }
   };
   // 長度上限（字數；官方未公布，本站依官方練習題實測訂，見 SPEC.md §5）：sent＝一句最多幾字、say＝問答題那句、dlg＝一段對話、talk＝一段短文／談話、
@@ -68,10 +84,11 @@
   var LIM = {
     e: { sent: 20, say: 15, dlg: 50, turns: [2, 4], talk: 70, cloze: [70, 150], text: 170, opt: 12, vocab: 20, pic: 12, extra: 0 },
     i: { sent: 30, say: 22, dlg: 90, turns: [2, 6], talk: 120, cloze: [100, 220], text: 260, opt: 25, vocab: 28, pic: 18, extra: 6 },
+    u: { sent: 36, say: 26, dlg: 130, turns: [2, 8], talk: 170, cloze: [120, 260], text: 420, opt: 25, vocab: 32, pic: 20, extra: 6 },
     a: { sent: 45, say: 35, dlg: 140, turns: [2, 8], talk: 160, long: [250, 650], text: 800, skim: 950, opt: 30, vocab: 40, pic: 25, extraPct: 3 }
   };
   var SPK = ['M', 'F', 'N'];   // 男聲、女聲、旁白（題號、問題）
-  var ID_RE = /^([eia])-(L[1-4]|R[1-3]|W[12]|S[1-3]|M)-(\d{2})$/;
+  var ID_RE = /^([eiua])-(L[1-4]|R[1-3]|W[12]|S[1-3]|M)-(\d{2})$/;
 
   // ================= 詞表 =================
   // 不規則變化 → 原形（規則變化在 stems() 自動處理）
@@ -106,12 +123,12 @@
       ps.forEach(function (t) { if (/[^s]s$/.test(t) && t.length > 3) S[t.slice(0, -1)] = 1; });   // 表上寫複數（socks、chopsticks）→ 單數也算
     });
   }
-  // lexOf(lv, V)：該級允許的字（小寫原形）。e＝教育部 2000＋初級補充字（e-extra）；i＝教育部 2000＋CEFR-J A1～B1；a＝教育部 2000＋CEFR-J A1～B2＋Octanove C1
+  // lexOf(lv, V)：該級允許的字（小寫原形）。e＝教育部 2000＋初級補充字（e-extra）；i＝教育部 2000＋CEFR-J A1～B1；u＝教育部 2000＋CEFR-J A1～B2；a＝u＋Octanove C1
   function lexOf(lv, V) {
     var S = {};
     ALWAYS.forEach(function (w) { S[w] = 1; });
     var m = V.moe || {}; (m.t1 || []).concat(m.t2 || [], V.eextra || []).forEach(function (s) { addEntry(S, s); });   // eextra＝初級補充字（vocab/e-extra.js，LTTC 初級字表裡的常用字）
-    var cj = V.cefrj || {}, lvls = lv === 'i' ? ['A1', 'A2', 'B1'] : lv === 'a' ? ['A1', 'A2', 'B1', 'B2'] : [];
+    var cj = V.cefrj || {}, lvls = lv === 'i' ? ['A1', 'A2', 'B1'] : lv === 'u' || lv === 'a' ? ['A1', 'A2', 'B1', 'B2'] : [];
     lvls.forEach(function (k) { (cj[k] || []).forEach(function (s) { addEntry(S, s); }); });
     if (lv === 'a') (V.c1 || []).forEach(function (s) { addEntry(S, s); });
     return S;
@@ -167,7 +184,7 @@
     partItems(set).forEach(function (pi) {
       var P = (PARTS[lv] || {})[pi.part] || {};
       pi.items.forEach(function (it) {
-        if (it && Array.isArray(it.qs) && (P.kind === 'cloze' || P.kind === 'read' || P.kind === 'long' || P.kind === 'skim')) it.qs.forEach(function (q) { out.push({ id: q.id, part: pi.part, kind: P.kind, sub: it.type || '', q: q, group: it }); });
+        if (it && Array.isArray(it.qs) && (P.kind === 'cloze' || P.kind === 'read' || P.kind === 'long' || P.kind === 'skim' || P.kind === 'grp')) it.qs.forEach(function (q) { out.push({ id: q.id, part: pi.part, kind: P.kind, sub: it.type || '', q: q, group: it }); });
         else if (P.kind !== 'sread' && P.kind !== 'spic' && P.kind !== 'sint' && P.kind !== 'write') out.push({ id: it && it.id, part: pi.part, kind: P.kind, q: it, group: null });
         else out.push({ id: it && it.id, part: pi.part, kind: P.kind, q: it, group: null, open: true });
       });
@@ -183,7 +200,7 @@
     return s.length > 60 ? s.slice(0, 59) + '…' : s;
   }
   function mkP(Q) { return { u: Q.id.charAt(0), pt: Q.part, s: stemOf(Q) }; }
-  function setIdOf(qid) { var m = /^([eia]-(?:L[1-4]|R[1-3]|W[12]|S[1-3]|M)-\d{2})-/.exec(String(qid || '')); return m ? m[1] : ''; }
+  function setIdOf(qid) { var m = /^([eiua]-(?:L[1-4]|R[1-3]|W[12]|S[1-3]|M)-\d{2})-/.exec(String(qid || '')); return m ? m[1] : ''; }
   function fileOf(setId) { var m = ID_RE.exec(setId || ''); return m ? 'data/' + m[1] + '/' + m[2] + '-' + m[3] + '.js' : ''; }
 
   // ================= 判分與換算 =================
@@ -197,14 +214,14 @@
   }
   function scale(c, n) { return n ? Math.round(c / n * 120) : 0; }   // 模擬換算（官方是量尺分數，算法不公開）
   function passLR(lv, L, R) { var p = LV[lv].pass; return L + R >= p.sum && L >= p.min && R >= p.min; }
-  // 寫作換算：e＝{(第一部分得分/30)+(第二部分級分/5)}×50；i＝第一部分平均級分×20×40%＋第二部分×20×60%；a＝各部分 0～5 級分、3 級通過（沒有百分制）
+  // 寫作換算：e＝{(第一部分得分/30)+(第二部分級分/5)}×50；i、u＝第一部分平均級分×20×40%＋第二部分×20×60%；a＝各部分 0～5 級分、3 級通過（沒有百分制）
   function writeScore(lv, s1, s2) {
     if (lv === 'e') return Math.round(((+s1 || 0) / 30 + (+s2 || 0) / 5) * 50);
-    if (lv === 'i') return Math.round((+s1 || 0) * 20 * 0.4 + (+s2 || 0) * 20 * 0.6);
+    if (lv === 'i' || lv === 'u') return Math.round((+s1 || 0) * 20 * 0.4 + (+s2 || 0) * 20 * 0.6);
     return null;
   }
-  // 口說換算：e＝（發音語調流利度級分＋文法字彙級分）×10；i＝級分×20；a＝級分（3 級通過）
-  function speakScore(lv, b1, b2) { if (lv === 'e') return ((+b1 || 0) + (+b2 || 0)) * 10; if (lv === 'i') return (+b1 || 0) * 20; return +b1 || 0; }
+  // 口說換算：e＝（發音語調流利度級分＋文法字彙級分）×10；i、u＝級分×20；a＝級分（3 級通過）
+  function speakScore(lv, b1, b2) { if (lv === 'e') return ((+b1 || 0) + (+b2 || 0)) * 10; if (lv === 'i' || lv === 'u') return (+b1 || 0) * 20; return +b1 || 0; }
 
   // ================= 檢查 =================
   function validateSet(set, V, opt) {
@@ -281,6 +298,18 @@
             if (PP.pics) { need(Array.isArray(it.pics) && it.pics.length === PP.o, w + ': 要有 ' + PP.o + ' 張圖選項 pics'); (it.pics || []).forEach(function (p, pi2) { pic(p, w + '.pics[' + pi2 + ']'); }); if (it.opts) err(w + ': 這個題型的選項是圖（pics），不要 opts'); ans(it, PP.o, w); }
             else { opts(it.opts, PP.o, w, L.opt); ans(it, PP.o, w); }
             chart(it.chart, w + '.chart'); ansSeq.push(it.a); break;
+          case 'grp':   // 中高級對話／談話：一段（L2 lines、L3 say）＋聽到的問題 qs（問題不印、選項印）
+            need(it.id === base + '-g' + (ii + 1), w + ': 題組 id 要是 ' + base + '-g' + (ii + 1)); T(it.intro, w + '.intro');
+            if (pt === 'L2') {
+              if (need(Array.isArray(it.lines) && it.lines.length >= L.turns[0] && it.lines.length <= L.turns[1], w + ': 對話要 ' + L.turns.join('～') + ' 句（lines）')) {
+                var gw = 0, gs = {}; it.lines.forEach(function (l, li) { if (!Array.isArray(l) || l.length !== 2) return err(w + '.lines[' + li + ']: 要寫 ["M"|"F", "句子"]'); speaker(l[0], w + '.lines[' + li + ']'); T(l[1], w + '.lines[' + li + ']'); gw += words(l[1]); gs[l[0]] = 1; });
+                if (gw > L.dlg) err(w + ': 對話太長（' + gw + ' 字 > ' + L.dlg + '）'); if (!gs.M || !gs.F) err(w + ': 官方是男女對話（要有 M 和 F）');
+              }
+            } else { need(it.say && !it.lines, w + ': 談話用 say＋spk（不用 lines）'); speaker(it.spk, w); T(it.say, w + '.say'); lenMax(it.say || '', L.talk, w, '談話'); }
+            chart(it.chart, w + '.chart');
+            need(Array.isArray(it.qs) && it.qs.length >= PP.qs[0] && it.qs.length <= PP.qs[1], w + ': 每段後面 ' + PP.qs.join('～') + ' 題');
+            (it.qs || []).forEach(function (q, qi) { var qw = w + '.qs[' + qi + ']'; qid(q, qw); nQ++; need(q.q, qw + ': 要有 q（播出來的問題）'); T(q.q, qw + '.q'); lenMax(q.q || '', L.say, qw, '問題'); opts(q.opts, PP.o, qw, L.opt); ans(q, PP.o, qw); ansSeq.push(q.a); });
+            break;
           case 'long':
             need(typeof it.id === 'string', w + ': 題組要有 id'); T(it.intro, w + '.intro'); need(it.intro, w + ': 要有 intro（Listen to a conversation between …）');
             var lw = 0;
@@ -353,7 +382,7 @@
             need(it.model, w + ': 要有 model（範文）'); T(it.model, w + '.model');
             need(Array.isArray(it.points) && it.points.length >= 3, w + ': points＝家長評分要點（至少 3 條，中文）');
             if (PP.words && it.model) { var mw2 = words(it.model); if (mw2 < PP.words * 0.8 || mw2 > PP.words * 1.4) err(w + ': 範文 ' + mw2 + ' 字，要接近 ' + PP.words + ' 字'); }
-            if (lv === 'i' && pt === 'W1') need(it.zh, w + ': 中譯英要有 zh（中文原文）');
+            if ((lv === 'i' || lv === 'u') && pt === 'W1') need(it.zh, w + ': 中譯英要有 zh（中文原文）');
             if (lv === 'e') need(Array.isArray(it.pics) && it.pics.length >= 1, w + ': 初級段落寫作要有 pics');
             if (lv === 'a' && pt === 'W1') need(Array.isArray(it.sources) && it.sources.length === 2, w + ': 摘要寫作要 2 篇 sources');
             if (lv === 'a' && pt === 'W2') need(Array.isArray(it.charts) && it.charts.length === 2, w + ': 圖表寫作要 2 個 charts');
@@ -366,9 +395,9 @@
           case 'sanswer':
             qid(it, w); nQ++; T(it.say, w + '.say'); need(it.say, w + ': 要有 say（問題）'); need(it.sample, w + ': 要有 sample（範例回答）'); T(it.sample, w + '.sample');
             need(it.sec === 15 || it.sec === 30, w + ': sec 要是 15 或 30'); lenMax(it.say || '', L.say, w, '問題');
-            if (lv === 'e' && it.sec !== 15) err(w + ': 初級每題 15 秒'); if (lv === 'i') { var want3 = ii < 5 ? 15 : 30; if (it.sec !== want3) err(w + ': 中級第 1～5 題 15 秒、第 6～10 題 30 秒'); } break;
+            if (lv === 'e' && it.sec !== 15) err(w + ': 初級每題 15 秒'); if (lv === 'i' || lv === 'u') { var sp3 = PP.split || 5, want3 = ii < sp3 ? 15 : 30; if (it.sec !== want3) err(w + ': 第 1～' + sp3 + ' 題 15 秒、第 ' + (sp3 + 1) + '～' + PP.n + ' 題 30 秒'); } break;
           case 'spic':
-            qid(it, w); nQ++; pic(it.pic, w); need(Array.isArray(it.qs) && it.qs.length >= 2 && it.qs.length <= 4, w + ': qs＝2～4 個印出來的問題'); (it.qs || []).forEach(function (q, qi) { T(q, w + '.qs[' + qi + ']'); });
+            var spMax = lv === 'u' ? 5 : 4; qid(it, w); nQ++; pic(it.pic, w); need(Array.isArray(it.qs) && it.qs.length >= 2 && it.qs.length <= spMax, w + ': qs＝2～' + spMax + ' 個印出來的問題'); (it.qs || []).forEach(function (q, qi) { T(q, w + '.qs[' + qi + ']'); });
             need(it.sample, w + ': 要有 sample'); T(it.sample, w + '.sample'); break;
           case 'sint':
             qid(it, w); nQ++; need(it.prompt, w + ': 要有 prompt'); T(/[一-鿿]/.test(it.prompt || '') ? '' : it.prompt, w + '.prompt'); (it.say || []).forEach(function (q, qi) { T(q, w + '.say[' + qi + ']'); });
@@ -388,11 +417,12 @@
       for (var j2 = 3; j2 < ansSeq.length; j2++) if (ansSeq[j2] === ansSeq[j2 - 1] && ansSeq[j2] === ansSeq[j2 - 2] && ansSeq[j2] === ansSeq[j2 - 3]) { err(set.id + ': 連續 4 題答案都是 ' + 'ABCD'.charAt(ansSeq[j2])); break; }
     }
     // 用字＋句長
-    var nTok = 0, nExtra = 0;
+    var nTok = 0, nExtra = 0, nB2 = 0, lexB1 = lv === 'u' ? opt.lexB1 || lexOf('i', V) : null;
     texts.forEach(function (x) {
       if (x.kind === 'sent') sentences(x.t).forEach(function (s) { var n = words(s); if (n > L.sent) err(x.where + ': 句子太長（' + n + ' 字 > ' + L.sent + '）「' + s.slice(0, 50) + '…」'); });
       tokens(x.t).forEach(function (t) {
         nTok++;
+        if (lexB1 && !stems(t.k, lv).some(function (s) { return lexB1[s]; }) && !names[t.w]) nB2++;   // 中級（B1）詞表以外的字＝B2 程度的字
         if (stems(t.k, lv).some(function (s) { return lex[s]; })) return;
         if (names[t.w] || (/^[A-Z]/.test(t.w) && names[t.k])) { used[t.w] = 1; return; }
         if (extra[t.k] || stems(t.k, lv).some(function (s) { return extra[s]; })) { nExtra++; return; }
@@ -400,10 +430,12 @@
       });
     });
     Object.keys(off).forEach(function (k) { err(set.id + ': 表外字「' + k + '」（' + off[k][0] + (off[k].length > 1 ? ' 等 ' + off[k].length + ' 處' : '') + '）'); });
-    if (lv === 'i' && (set.extra || []).length > L.extra * (part === 'M' ? 3 : 1)) err(set.id + ': extra 表外字最多 ' + L.extra * (part === 'M' ? 3 : 1) + ' 個');
+    if ((lv === 'i' || lv === 'u') && (set.extra || []).length > L.extra * (part === 'M' ? 3 : 1)) err(set.id + ': extra 表外字最多 ' + L.extra * (part === 'M' ? 3 : 1) + ' 個');
     if (lv === 'a' && nTok && nExtra / nTok * 100 > L.extraPct) err(set.id + ': extra 表外字占 ' + (nExtra / nTok * 100).toFixed(1) + '%（> ' + L.extraPct + '%）');
+    // 下限 1.5%：實測中級題目約 0.1%、高級（B2＋C1）約 2.8%，取中間（2026-11-21）
+    if (lexB1 && nTok >= 150 && nB2 / nTok < 0.015) warn(set.id + ': B2 程度的字只占 ' + (nB2 / nTok * 100).toFixed(1) + '%（< 1.5%），寫得像中級了（CONTRACT §8.3）');
     (set.extra || []).forEach(function (x) { if (stems(String(x).toLowerCase(), lv).some(function (s) { return lex[s]; })) warn(set.id + ': extra「' + x + '」其實在詞表裡，可以拿掉'); });
-    return { errors: E, warns: W, offList: Object.keys(off), names: Object.keys(used), questions: qnum, tokens: nTok };
+    return { errors: E, warns: W, offList: Object.keys(off), names: Object.keys(used), questions: qnum, tokens: nTok, b2: nB2 };
   }
 
   var core = { LV: LV, PARTS: PARTS, MOCK: MOCK, LIM: LIM, SPK: SPK, ID_RE: ID_RE, IRR: IRR, lexOf: lexOf, stems: stems, tokens: tokens, words: words, sentences: sentences,

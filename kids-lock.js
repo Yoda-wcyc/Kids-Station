@@ -163,7 +163,8 @@
     const cm = data.comics;
     if (cm && cm.vols) out.push({ id: 'comic', back: back('comics/index.html', '📚 回漫畫目錄'), items: cm.vols.flatMap(v => v.eps.filter(e => e.ready).map(e => ({ key: e.id, title: '第 ' + v.no + ' 冊第 ' + e.id.split('e')[1] + ' 話〈' + e.t + '〉', href: 'comics/' + e.id + '.html' }))) });
     const gp = data.gept;
-    if (gp) Object.keys(gp).forEach(lv => Object.keys(obj(gp[lv])).forEach(pt => {
+    // shortcut: 中高級 u（2026-11-21）不進做過幾次／鎖：done.n 會同步，u 最壞約多 120 B，同步預算只剩 799 B（要留 700 B）；有空間時 slot()／keyOf() 的 [eia] 加 u、拿掉這個 filter
+    if (gp) Object.keys(gp).filter(lv => lv !== 'u').forEach(lv => Object.keys(obj(gp[lv])).forEach(pt => {
       const pg = pt === 'M' ? 'mock' : /^[SW]/.test(pt) ? 'task' : 'practice';
       out.push({ id: 'gp:' + lv + pt, back: back('gept/index.html?lv=' + lv, '← 回英檢準備區'), items: gp[lv][pt].map(s => ({ key: s.id, title: s.t || s.id, href: 'gept/' + pg + '.html?set=' + s.id })) });
     }));

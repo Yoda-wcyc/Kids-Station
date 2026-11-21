@@ -5,6 +5,7 @@
      答錯進錯題庫 KidsMistakes.record('gept', 題目id, ok, {u:級, pt:部分, s:短句})，在錯題庫裡連對 3 次畢業（kids-mistakes.js 未畢業最多 100 題）。
    - 寫作、口說（不自動給分）：每完成一題 KidsDaily.rec('english', null)＋KidsCoins.activity('english')。
    - 一組題型練習（聽、讀）或一份模擬考做完：送 practice_round 'english:gept'（correct／total＝自動判分題；錯題練習不送）。後端白名單 kids-2026-11-16-a 加的。
+   - shortcut: 中高級 u（2026-11-21）只存本機：syncmerge.js pg 和 kids-lock.js done.n 只認 e|i|a（u 最壞約多 200 B，同步預算只剩 799 B／要留 700 B），所以 u 的最佳成績、模擬考不跨裝置，也還不記做過幾次（KidsLock.bump 對 u 不動作、不鎖）；每題「學過 2 次」照樣用本機 kids_gept.ok。同步有空間時再把 u 加進那兩支的 regex。
    - 成績存本機 kids_gept＝{best:{組id:{p,c,n,t}}, mock:[{id,t,lc,ln,rc,rn,L,R,pass}], task:{組id:{t,sc,b}}}（2026-11-19 起 best 的 %、task 做過、最新 8 筆 mock 跟著同步：sync.js／syncmerge.js pg）。 */
 (function (W) {
   'use strict';
@@ -71,12 +72,13 @@
     var hd = [x.from ? 'From: ' + x.from : '', x.to ? 'To: ' + x.to : ''].filter(Boolean).join('　');
     return '<div class="gp-text en">' + (label ? '<b>' + esc(label) + '</b> ' : '') + (x.title ? '<h4>' + esc(x.title) + '</h4>' : '') + (hd ? '<p class="hd">' + esc(hd) + '</p>' : '') + paras(x.body) + tableHTML(x.table) + '</div>';
   }
-  function scriptHTML(q) {   // 文字稿（聽力作答後才看）
+  function scriptHTML(q, spokenQs) {   // 文字稿（聽力作答後才看）；spokenQs＝中高級對話／談話：問題是播出來的，也列進文字稿
     var o = [];
     if (q.intro) o.push('<i>' + esc(q.intro) + '</i>');
     (q.lines || []).forEach(function (l) { o.push('<b>' + (l[0] === 'M' ? '男' : l[0] === 'F' ? '女' : '') + '：</b>' + esc(l[1])); });
     if (q.say) o.push(esc(q.say));
     if (q.q && !q.qs) o.push('<b>Q：</b>' + esc(q.q));
+    if (spokenQs) q.qs.forEach(function (x) { o.push('<b>Q：</b>' + esc(x.q)); });
     if (q.opts && q.pic) q.opts.forEach(function (t, i) { o.push('(' + AB[i] + ') ' + esc(t)); });
     return '<div class="gp-script en">' + o.join('<br>') + '</div>';
   }
@@ -121,6 +123,7 @@
       return h;
     }
     if (k === 'skim') { g.texts.forEach(function (x, i) { h += textHTML(x, AB[i]); }); S.qs.forEach(function (Q) { h += '<div class="gp-sub"><p class="gp-q en">' + n(Q) + esc(Q.q.q) + '</p>' + optsHTML(Q) + '</div>'; }); return h; }
+    if (k === 'grp') { h += '<p class="gp-q">請聽' + (g.lines ? '對話' : '談話') + '和 ' + S.qs.length + ' 個問題（問題不印出來），選出最適合的答案</p>' + tableHTML(g.chart); S.qs.forEach(function (Q) { h += '<div class="gp-sub">' + n(Q) + optsHTML(Q) + '</div>'; }); return h; }
     if (k === 'long') { h += '<p class="gp-q en"><i>' + esc(g.intro) + '</i></p>'; S.qs.forEach(function (Q) { h += '<div class="gp-sub"><p class="gp-q en">' + n(Q) + esc(Q.q.q) + '</p>' + optsHTML(Q) + '</div>'; }); return h; }
     return h + sub.join(',');
   }
@@ -131,8 +134,9 @@
     out.forEach(function (S) { S.all = all; S.L = G.PARTS[lvOf(S.qs[0].id)][S.qs[0].part].s === 'L'; });
     return out;
   }
-  function audioOf(S, num) {   // 一個畫面的語音 parts
+  function audioOf(S, num, numf) {   // 一個畫面的語音 parts；中高級對話／談話（grp）念完一段再念問題（numf＝題號函式）
     var Q = S.qs[0];
+    if (S.group && Q.kind === 'grp') { var g = TTS.partsOf(S.group); S.qs.forEach(function (x, i) { g.push({ t: 'Question ' + ((numf && numf(x)) || i + 1) + '. ' + x.q.q, spk: 'N' }); }); return g; }
     if (S.group) return TTS.partsOf(S.group);
     var p = TTS.partsOf(Q.q, num);
     if (Q.kind === 'pic') Q.q.opts.forEach(function (t, i) { p.push({ t: AB[i] + '. ' + t, spk: 'N' }); });
@@ -149,15 +153,16 @@
   // 首頁 index.html
   // =====================================================================
   function home() {
-    var root = $('gp'), lv = /^[eia]$/.test(arg('lv')) ? uiLv(arg('lv')) : uiLv(), C = W.GEPT_CATALOG || { e: {}, i: {}, a: {} }, rec0 = ld();
+    var root = $('gp'), lv = /^[eiua]$/.test(arg('lv')) ? uiLv(arg('lv')) : uiLv(), C = W.GEPT_CATALOG || {}, rec0 = ld();
     function draw() {
       var L = G.LV[lv], P = G.PARTS[lv], cat = C[lv] || {}, M = G.MOCK[lv];
       var ln = M.L.reduce(function (a, p) { return a + P[p].n; }, 0), rn = M.R.reduce(function (a, r) { return a + r.parts.reduce(function (b, p) { return b + P[p].n; }, 0); }, 0), rmin = M.R.reduce(function (a, r) { return a + r.min; }, 0);
       var h = head('🏅 全民英檢準備區', '../index.html#en');
-      h += '<nav class="gp-lv" role="tablist">' + ['e', 'i', 'a'].map(function (k) { var x = G.LV[k]; return '<button type="button" class="btn" role="tab" data-lv="' + k + '" aria-selected="' + (k === lv) + '">' + x.n + '<small>' + (x.tag ? '⭐ ' + x.tag : '推薦目標') + '・' + x.cefr + '</small></button>'; }).join('') + '</nav>';
+      h += '<nav class="gp-lv" role="tablist">' + ['e', 'i', 'u', 'a'].map(function (k) { var x = G.LV[k]; return '<button type="button" class="btn" role="tab" data-lv="' + k + '" aria-selected="' + (k === lv) + '">' + x.n + '<small>' + (x.tag ? '⭐ ' + x.tag : '推薦目標') + '・' + x.cefr + '</small></button>'; }).join('') + '</nav>';
       h += '<section class="card"><h2>' + L.n + '是什麼？</h2><p>' + L.n + '＝' + L.who + '（CEFR ' + L.cefr + '）。先考初試：聽力 ' + ln + ' 題約 ' + M.lmin + ' 分鐘＋閱讀 ' + rn + ' 題 ' + rmin + ' 分鐘，各 120 分，' +
         '兩項合計 ' + L.pass.sum + ' 分以上、而且每一項都有 ' + L.pass.min + ' 分才通過；通過才可以考複試（寫作＋口說）。</p>' +
         (lv === 'i' ? '<p class="gp-warn">⭐ 進階挑戰：中級是高中畢業程度，文章長、要推論，比五年級的課本難很多。先把初級練熟再來挑戰！</p>' : '') +
+        (lv === 'u' ? '<p class="gp-warn">🧗 高階挑戰：中高級是工作、時事用的英文（簡報、會議、報導、150～180 字作文），問題用聽的、要推論。這裡給家長看考試長什麼樣子，或好奇時體驗一下，不用現在就會。</p>' : '') +
         (lv === 'a' ? '<p class="gp-warn">🚀 超級挑戰：高級是大學英文系以上的程度（學術文章、250 字論說文、多人面談）。這裡給家長看考試長什麼樣子，或好奇時體驗一下，不用現在就會。</p>' : '') + '</section>';
       // 初試題型練習
       h += '<section class="card"><h2>🎧📖 初試題型練習</h2><p class="gp-note">每次練一組（題數＝官方那一部分的題數），作答方式照官方：聽力只播官方規定的次數，答完才看得到文字稿。</p><div class="gp-grid">';
@@ -176,8 +181,8 @@
       // 單字
       h += '<section class="card"><h2>🔤 單字</h2>' + (lv === 'e' ? '<p>初級的出題範圍＝教育部國中小基本 2000 字（1,200 基本字＋800 國中進階字）。用英文區的單字卡練（可以篩選來源）：</p><div class="gp-sets">' +
         '<a class="btn" href="../index.html#learn/words/moe1200">教育部 1200 字</a><a class="btn" href="../index.html#learn/words/moe800">教育部 800 字（國中進階）</a><a class="btn" href="../index.html#learn/words/gept1">全民英檢初級補充字</a></div>' :
-        '<p>' + L.n + '的單字範圍＝教育部 2000 字＋' + (lv === 'i' ? 'CEFR-J A1～B1（約 4,600 字）' : 'CEFR-J A1～B2＋Octanove C1（約 7,900 字）') + '。教育部 2000 字用英文區單字卡（有中文）；再往上的字在這裡聽發音、練聽寫：</p><div class="gp-sets">' +
-        '<a class="btn" href="../index.html#learn/words/moe1200">教育部 1200 字</a><a class="btn" href="../index.html#learn/words/moe800">教育部 800 字（國中進階）</a>' + (lv === 'a' ? '<a class="btn" href="words.html?lv=i">中級單字</a>' : '') + '<a class="btn primary" id="gp-wlink" href="words.html?lv=' + lv + '">' + L.n + '單字</a></div>') + '</section>';
+        '<p>' + L.n + '的單字範圍＝教育部 2000 字＋' + (lv === 'i' ? 'CEFR-J A1～B1（約 4,600 字）' : lv === 'u' ? 'CEFR-J A1～B2（約 6,900 字）' : 'CEFR-J A1～B2＋Octanove C1（約 7,900 字）') + '。教育部 2000 字用英文區單字卡（有中文）；再往上的字在這裡聽發音、練聽寫：</p><div class="gp-sets">' +
+        '<a class="btn" href="../index.html#learn/words/moe1200">教育部 1200 字</a><a class="btn" href="../index.html#learn/words/moe800">教育部 800 字（國中進階）</a>' + (lv === 'u' || lv === 'a' ? '<a class="btn" href="words.html?lv=i">中級單字</a>' : '') + (lv === 'a' ? '<a class="btn" href="words.html?lv=u">中高級單字</a>' : '') + '<a class="btn primary" id="gp-wlink" href="words.html?lv=' + lv + '">' + L.n + '單字</a></div>') + '</section>';
       // 錯題、紀錄
       var mk = []; try { mk = W.KidsMistakes ? KidsMistakes.list('gept', lv) : []; } catch (e) { }
       h += '<section class="card"><h2>📕 ' + L.n + '錯題（' + mk.length + ' 題）</h2>' + (mk.length ? '<p class="gp-note">聽力、閱讀答錯的題會收進來；同一題連續答對 3 次就畢業 🎓</p><ul class="gp-mk">' + mk.slice(0, 10).map(function (e) { return '<li><span class="gp-tag">' + esc((P[e.p.pt] || {}).n0 || e.p.pt) + '</span> <span class="en">' + esc(e.p.s) + '</span>' + (e.c ? '（已連對 ' + e.c + ' 次）' : '') + '</li>'; }).join('') + '</ul>' +
@@ -203,7 +208,7 @@
   // 題型練習 practice.html（?set=… 或 ?mistakes=1&lv=…）
   // =====================================================================
   function practice() {
-    var root = $('gp'), MK = arg('mistakes') === '1', lv = MK ? (/^[eia]$/.test(arg('lv')) ? arg('lv') : 'e') : lvOf(arg('set')), R = null;
+    var root = $('gp'), MK = arg('mistakes') === '1', lv = MK ? (/^[eiua]$/.test(arg('lv')) ? arg('lv') : 'e') : lvOf(arg('set')), R = null;
     W.GeptPractice = { R: function () { return R; } };   // 測試用
     function begin(list, title, back, setId) {
       R = { sc: screens(list), i: 0, ok: 0, n: list.length, done: {}, title: title, back: back, setId: setId, grad: 0, wrong: [] };
@@ -216,14 +221,14 @@
         (S.L ? '<div class="gp-row" style="justify-content:flex-start"><button type="button" class="btn" id="gp-play" disabled>🔊 播放中…</button><span class="gp-note" id="gp-pn">' + (P.play > 1 ? '播 ' + P.play + ' 次' : '只播一次，仔細聽') + '</span></div>' : '') +
         '<div id="gp-scr">' + screenHTML(S, R.num) + '</div><div id="gp-after"></div></section>';
       if (S.L) {
-        if (S.group) { $('gp-play').disabled = false; $('gp-play').textContent = '▶ 看完題目了，開始播放'; $('gp-pn').textContent = '先看題目（官方有 30～45 秒），準備好再按；只播一次，可以邊聽邊記'; }
+        if (S.group && S.qs[0].kind === 'long') { $('gp-play').disabled = false; $('gp-play').textContent = '▶ 看完題目了，開始播放'; $('gp-pn').textContent = '先看題目（官方有 30～45 秒），準備好再按；只播一次，可以邊聽邊記'; }
         else playNow();
       }
     }
     function playNow() {
       var S = R.sc[R.i], P = G.PARTS[lvOf(S.qs[0].id)][S.qs[0].part], b = $('gp-play'); rateOf(lv);
       if (b) { b.disabled = true; b.textContent = '🔊 播放中…'; }
-      TTS.play(audioOf(S), S.group ? 1 : P.play).then(function (fin) { if (fin && b && b.isConnected) { b.textContent = '🔊 播完了'; R.played = true; } });
+      TTS.play(audioOf(S, null, R.num), S.group ? 1 : P.play).then(function (fin) { if (fin && b && b.isConnected) { b.textContent = '🔊 播完了'; R.played = true; } });
     }
     function answer(qid, v) {
       var S = R.sc[R.i], Q = S.all[qid]; if (!Q || R.done[qid] != null) return;
@@ -238,7 +243,7 @@
     }
     function after(S) {
       var last = R.i + 1 >= R.sc.length;
-      $('gp-after').innerHTML = (S.L ? '<details class="gp-d" open><summary>📄 文字稿</summary>' + scriptHTML(S.group || S.qs[0].q) + '<button type="button" class="btn" id="gp-re">🔁 再聽一次</button></details>' : '') +
+      $('gp-after').innerHTML = (S.L ? '<details class="gp-d" open><summary>📄 文字稿</summary>' + scriptHTML(S.group || S.qs[0].q, S.qs[0].kind === 'grp') + '<button type="button" class="btn" id="gp-re">🔁 再聽一次</button></details>' : '') +
         '<div class="gp-row"><button type="button" class="btn primary big" id="gp-next">' + (last ? '看結果 🏁' : '下一' + (R.sc[R.i + 1].group ? '組' : '題') + ' ▶') + '</button></div>';
     }
     function end() {
@@ -255,7 +260,7 @@
       var t = e.target.closest('button'); if (!t || !R) return;
       if (t.id === 'gp-next') { R.i++; if (R.i >= R.sc.length) end(); else show(); return; }
       if (t.id === 'gp-play') return playNow();
-      if (t.id === 'gp-re') { rateOf(lv); var S = R.sc[R.i]; TTS.stop(); TTS.play(audioOf(S), 1); return; }
+      if (t.id === 'gp-re') { rateOf(lv); var S = R.sc[R.i]; TTS.stop(); TTS.play(audioOf(S, null, R.num), 1); return; }
       if (t.hasAttribute('data-qok')) { var id = t.getAttribute('data-qok'), inp = D.querySelector('[data-in="' + id + '"]'); if (inp && inp.value.trim()) answer(id, inp.value); return; }
       if (t.hasAttribute('data-q')) answer(t.getAttribute('data-q'), +t.getAttribute('data-v'));
     });
@@ -291,7 +296,7 @@
       var P = G.PARTS[lv], all = G.questions(set), L = G.LV[lv];
       var rows = M.L.map(function (p) { return '<tr><td>聽力</td><td>' + P[p].n0 + '</td><td>' + P[p].n + '</td></tr>'; }).concat(M.R.map(function (r) { return r.parts.map(function (p) { return '<tr><td>閱讀（' + r.min + ' 分鐘）</td><td>' + P[p].n0 + '</td><td>' + P[p].n + '</td></tr>'; }).join(''); })).join('');
       root.innerHTML = head('📝 ' + L.n + '模擬考', 'index.html?lv=' + lv) + '<section class="card"><h2>' + esc(set.title || set.id) + '（' + all.length + ' 題）</h2><div class="gp-wrap"><table class="gp-t"><tr><th>項目</th><th>部分</th><th>題數</th></tr>' + rows + '</table></div>' +
-        '<ul><li>聽力約 ' + M.lmin + ' 分鐘，<b>自動播放、每題只播' + (lv === 'a' ? '一次' : '官方規定的次數') + '、不能暫停或重播</b>，每題播完有幾秒作答。</li><li>閱讀計時，時間到自動交卷。</li><li>交卷後換算 120 分制：兩項合計 ' + L.pass.sum + ' 分、每項 ' + L.pass.min + ' 分以上算達標（<b>模擬換算，非官方成績</b>）。</li></ul>' +
+        '<ul><li>聽力約 ' + M.lmin + ' 分鐘，<b>自動播放、每題只播' + (lv === 'a' || lv === 'u' ? '一次' : '官方規定的次數') + '、不能暫停或重播</b>，每題播完有幾秒作答。</li><li>閱讀計時，時間到自動交卷。</li><li>交卷後換算 120 分制：兩項合計 ' + L.pass.sum + ' 分、每項 ' + L.pass.min + ' 分以上算達標（<b>模擬換算，非官方成績</b>）。</li></ul>' +
         '<p class="gp-note">🔊 請把聲音打開、找安靜的地方，中途離開這一頁就要重新考。</p><div class="gp-row"><button type="button" class="btn primary big" id="gp-go">開始考試 ▶</button></div></section>';
       $('gp-go').onclick = function go() {
         if (!authOK() || !startAct(go)) return;
@@ -317,7 +322,8 @@
       mark();
       function go(fn) { return function () { if (R && R.tok === my) fn(); }; }
       var nextS = go(function () { R.si++; if (R.si >= R.sc.length) { R.pi++; lpart(); } else lscreen(); });
-      if (S.group) {   // 長篇：先看題目 → 播一次 → 作答時間
+      if (S.group && S.qs[0].kind === 'grp') TTS.play(audioOf(S, null, R.num), 1).then(go(function () { count(fastMs(P.wait * 1000 * S.qs.length), '作答', nextS); }));   // 中高級：一段＋問題播一次，每題 12 秒
+      else if (S.group) {   // 長篇：先看題目 → 播一次 → 作答時間
         count(fastMs(P.preview * 1000), '先看題目', go(function () {
           $('gp-st').textContent = '🔊 播放中';
           TTS.play(audioOf(S), 1).then(go(function () { $('gp-skip').innerHTML = '<button type="button" class="btn" id="gp-done">我答完了 ▶</button>'; count(fastMs(P.after * 1000), '作答', nextS); }));
@@ -360,7 +366,7 @@
         return '<details class="gp-d"><summary>' + (isL ? '聽力' : '閱讀') + '・' + esc(G.PARTS[lv][p].n0) + '　' + c + ' / ' + qs.length + '</summary>' + qs.map(function (Q) {
           var ok = res[Q.id];
           return '<div class="gp-ri ' + (ok ? 'ok' : 'no') + '"><span class="mk">' + (ok ? '✓' : '✗') + ' ' + R.num(Q) + '.</span>' + (Q.q.q && Q.kind !== 'pic' ? '<span class="en">' + esc(Q.q.q) + '</span><br>' : '') + '你的答案：<span class="en">' + esc(answerText(Q, R.ans[Q.id])) + '</span>' + (ok ? '' : '　正確：<b class="en">' + esc(rightText(Q)) + '</b>') +
-            (isL && (!Q.group || Q.group.qs[0].id === Q.id) ? scriptHTML(Q.group || Q.q) : '') + '</div>';
+            (isL && (!Q.group || Q.group.qs[0].id === Q.id) ? scriptHTML(Q.group || Q.q, Q.kind === 'grp') : '') + '</div>';
         }).join('') + '</details>';
       }).join('');
       root.innerHTML = head('📝 ' + L.n + '模擬考結果', 'index.html?lv=' + lv) + '<section class="card center"><p class="gp-big" id="gp-pass">' + (pass ? '🎉 達到通過標準' : '💪 還沒達到通過標準') + '</p>' +
@@ -383,7 +389,7 @@
     });
     root.addEventListener('input', function (e) { var t = e.target; if (R && t.hasAttribute && t.hasAttribute('data-in')) { R.ans[t.getAttribute('data-in')] = t.value.trim(); rcount(); } });
     W.addEventListener('beforeunload', function (e) { if (R && !R.result) { e.preventDefault(); e.returnValue = ''; } });
-    if (!/^[eia]-M-\d\d$/.test(id)) return errBox(root, '沒有這份模擬考');
+    if (!/^[eiua]-M-\d\d$/.test(id)) return errBox(root, '沒有這份模擬考');
     loadSet(id).then(intro, function (e) { errBox(root, e); });
   }
 
@@ -431,7 +437,7 @@
       if (q.pics) x += '<div class="gp-pics">' + q.pics.map(function (p, i) { return '<div class="gp-pic"><b>' + (i + 1) + '</b>' + picHTML(p) + '</div>'; }).join('') + '</div>';
       (q.sources || []).forEach(function (s) { x += '<div class="gp-text en"><h4>' + esc(s.title) + '</h4>' + (s.author ? '<p class="hd">' + esc(s.author) + '</p>' : '') + paras(s.body) + '</div>'; });
       (q.charts || []).forEach(function (c) { x += tableHTML(c); });
-      return x + '<p class="gp-note">可以寫在紙上，也可以打在下面（' + (P.words ? '約 ' + P.words + ' 字；' : '') + (P.min ? '官方 ' + P.min + ' 分鐘' : '寫作共 40 分鐘') + '）。</p><textarea class="gp-in en" id="gp-ta" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Write here…"></textarea><p class="gp-note" id="gp-wc">0 字</p>' +
+      return x + '<p class="gp-note">可以寫在紙上，也可以打在下面（' + (P.wtxt ? P.wtxt + '；' : P.words ? '約 ' + P.words + ' 字；' : '') + (P.min ? '官方 ' + P.min + ' 分鐘' : '寫作共 ' + (L.wmin || 40) + ' 分鐘') + '）。</p><textarea class="gp-in en" id="gp-ta" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Write here…"></textarea><p class="gp-note" id="gp-wc">0 字</p>' +
         '<div class="gp-row"><button type="button" class="btn primary big" id="gp-wdone">寫完了，看範文 ▶</button></div>';
     }
     function bindWrite(set) {
@@ -505,13 +511,13 @@
         else if (P.kind === 'sanswer') h += items.map(function (q, i) { return '<div class="gp-ri"><span class="mk">' + (i + 1) + '.</span><span class="en">' + esc(q.say) + '</span><br>範例：<span class="en">' + esc(q.sample) + '</span>（' + q.sec + ' 秒）</div>'; }).join('');
         else { if (q0.sample) h += '<h3>範例回答</h3><div class="gp-text en">' + paras(q0.sample) + '</div>'; if (q0.say) h += '<p class="gp-note en">' + q0.say.map(esc).join('<br>') + '</p>'; if (q0.points) h += '<h3>評分要點</h3><ul>' + q0.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>'; }
         if (lv === 'e') h += '<p class="gp-note">初級口說：項目一（發音、語調、流利度，看全部三部分）＋項目二（文法、字彙，只看回答問題），各 0～5 級，(項目一＋項目二)×10，通過 80。</p>' + bandHTML('b1', 5, '項目一 發音語調流利度') + (part === 'S3' ? bandHTML('b2', 5, '項目二 文法字彙') : '');
-        else h += bandHTML('b1', 5, lv === 'i' ? '整體級分（0～5，×20＝分數，通過 80＝4 級）' : '整體級分（0～5，3 級＝通過）');
+        else h += bandHTML('b1', 5, lv === 'i' || lv === 'u' ? '整體級分（0～5，×20＝分數，通過 80＝4 級）' : '整體級分（0～5，3 級＝通過）');
         h += '<p id="gp-sl"></p><div class="gp-row"><a class="btn primary" href="' + back + '">回準備區</a><a class="btn" href="task.html?set=' + id + '">再做一次</a></div>';
         box.innerHTML = h; box.hidden = false; sp.hidden = true;
         var b = {};
         box.onclick = function (e) {
           var t = e.target.closest('[data-band]'); if (!t) return; b[t.getAttribute('data-band')] = pickBand(t); saveTask(id, { b: b.b1, b2: b.b2 });
-          $('gp-sl').innerHTML = lv === 'e' ? (b.b1 != null && b.b2 != null ? '換算：(' + b.b1 + '＋' + b.b2 + ')×10＝<b>' + G.speakScore('e', b.b1, b.b2) + ' 分</b>（通過 80）' : '') : lv === 'i' ? '換算：<b>' + G.speakScore('i', b.b1) + ' 分</b>（通過 80）' : (b.b1 >= 3 ? '3 級以上＝通過標準 🎉' : '要 3 級才通過');
+          $('gp-sl').innerHTML = lv === 'e' ? (b.b1 != null && b.b2 != null ? '換算：(' + b.b1 + '＋' + b.b2 + ')×10＝<b>' + G.speakScore('e', b.b1, b.b2) + ' 分</b>（通過 80）' : '') : lv === 'i' || lv === 'u' ? '換算：<b>' + G.speakScore(lv, b.b1) + ' 分</b>（通過 80）' : (b.b1 >= 3 ? '3 級以上＝通過標準 🎉' : '要 3 級才通過');
         };
       }
       $('gp-go').onclick = function go() { if (!authOK() || !startAct(go)) return; $('gp-go').disabled = true; si = 0; next(); };
@@ -525,8 +531,8 @@
   // =====================================================================
   function wordList(lv) {
     var V = W.GEPT_VOCAB || {}, cj = V.cefrj || {}, base = G.lexOf('e', V), seen = {}, out = [];
-    var lvls = lv === 'a' ? ['B2', 'C1'] : ['A1', 'A2', 'B1'];
-    if (lv === 'a') { ['A1', 'A2', 'B1'].forEach(function (k) { (cj[k] || []).forEach(function (w) { seen[w.toLowerCase()] = 1; }); }); }   // 高級頁不重列中級的字
+    var lvls = lv === 'a' ? ['B2', 'C1'] : lv === 'u' ? ['B2'] : ['A1', 'A2', 'B1'];
+    if (lv === 'a' || lv === 'u') { ['A1', 'A2', 'B1'].forEach(function (k) { (cj[k] || []).forEach(function (w) { seen[w.toLowerCase()] = 1; }); }); }   // 高級頁不重列中級的字
     lvls.forEach(function (k) {
       (k === 'C1' ? V.c1 || [] : cj[k] || []).forEach(function (raw) {
         var w = String(raw).split('/')[0].trim(), key = String(raw).toLowerCase();
@@ -538,7 +544,7 @@
     return out;
   }
   function words() {
-    var root = $('gp'), lv = arg('lv') === 'a' ? 'a' : 'i', L = G.LV[lv], all = wordList(lv), lvls = lv === 'a' ? ['B2', 'C1'] : ['A1', 'A2', 'B1'];
+    var root = $('gp'), lv = /^[ua]$/.test(arg('lv')) ? arg('lv') : 'i', L = G.LV[lv], all = wordList(lv), lvls = lv === 'a' ? ['B2', 'C1'] : lv === 'u' ? ['B2'] : ['A1', 'A2', 'B1'];
     var F = { c: '', q: '', page: 0 }, PAGE = 80, Z = null;
     W.GeptWords = { all: function () { return all; }, Z: function () { return Z; } };   // 測試用
     function pick() { var q = F.q.trim().toLowerCase(); return all.filter(function (x) { return (!F.c || x.c === F.c) && (!q || x.w.toLowerCase().indexOf(q) >= 0); }); }
@@ -552,7 +558,7 @@
     }
     function list0() {
       Z = null; TTS.stop();
-      root.innerHTML = head('🔤 ' + L.n + '單字', 'index.html?lv=' + lv) + '<section class="card"><p>' + L.n + '的單字範圍＝教育部 2000 字＋' + (lv === 'a' ? 'CEFR-J A1～B2＋Octanove C1' : 'CEFR-J A1～B1') + '。教育部 2000 字在英文區單字卡（有中文）；這裡列' + (lv === 'a' ? '中級單字頁以外、B2 和 C1' : '教育部 2000 字以外') + '的 ' + all.length + ' 個字。</p>' +
+      root.innerHTML = head('🔤 ' + L.n + '單字', 'index.html?lv=' + lv) + '<section class="card"><p>' + L.n + '的單字範圍＝教育部 2000 字＋' + (lv === 'a' ? 'CEFR-J A1～B2＋Octanove C1' : lv === 'u' ? 'CEFR-J A1～B2' : 'CEFR-J A1～B1') + '。教育部 2000 字在英文區單字卡（有中文）；這裡列' + (lv === 'a' ? '中級單字頁以外、B2 和 C1' : lv === 'u' ? '中級單字頁以外的 B2' : '教育部 2000 字以外') + '的 ' + all.length + ' 個字。</p>' +
         '<p class="gp-note">這份詞表只有英文（沒有中文意思和詞性），所以這裡練「聽發音＋聽寫拼字」；不知道意思的字可以查字典或問爸媽。</p>' +
         '<div class="gp-row" style="justify-content:flex-start"><input id="gp-wq" class="gp-in en" style="max-width:260px" type="search" placeholder="🔍 搜尋" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="搜尋單字">' +
         '<div class="gp-sets" role="group" aria-label="程度">' + [''].concat(lvls).map(function (k) { return '<button type="button" class="btn" data-c="' + k + '" aria-pressed="' + (F.c === k) + '">' + (k || '全部') + '</button>'; }).join('') + '</div>' +
