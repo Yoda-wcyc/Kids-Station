@@ -106,7 +106,8 @@ async function run() {
 
 // 📝 家長登錄的紙本錯題（math/paper.js FA_ROWS，2026-11-19）：時間固定在登錄日（__KIDS_TEST_DAYS），測試不會過了 14 天就失效
 async function paperSeed() {
-  const PAPER_IDS = ['fa:3.15_27-11_18', 'fa:3.2_3+1.4_5', 'fa:3.5_7+5.11_12', 'fa:33_14-5_3', 'fa:4.16_45+8_9', 'fa:4.3_10-3.2_3'];   // 清單排序：同一個 t → id 排
+  const PAPER_IDS = ['fa:12_15+3.4_5', 'fa:3.4_9+1.5_12', 'fa:5.1_12-3.4_6',   // 清單排序：新登錄的（11-21）在前，同一個 t → id 排
+    'fa:3.15_27-11_18', 'fa:3.2_3+1.4_5', 'fa:3.5_7+5.11_12', 'fa:33_14-5_3', 'fa:4.16_45+8_9', 'fa:4.3_10-3.2_3'];
   const T = Date.parse('2026-11-19T00:00:00+08:00') + 3600e3;
   await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `window.__KIDS_TEST_DAYS = (${T} - Date.now()) / 864e5;` });
   await width(820);
@@ -134,6 +135,11 @@ async function paperSeed() {
     if (q.id === 'fa:3.2_3+1.4_5') {
       await answer({ w: 4, n: 22, d: 15 });
       assert(await ev(`return /帶分數/.test(document.getElementById('msg').textContent) && !FAPage.R().done`), 'paper replay: 4又22/15 → reminder only (帶分數), not graded');
+      await ev(`FAPage.R().v = { w: '', n: '', d: '' }; return 1`);
+    }
+    if (q.id === 'fa:12_15+3.4_5') {   // 第 12 回：孩子答的 3又8/5（沒進位）
+      await answer({ w: 3, n: 8, d: 5 });
+      assert(await ev(`return /帶分數/.test(document.getElementById('msg').textContent) && !FAPage.R().done`), 'paper replay: 3又8/5 → reminder only (帶分數), not graded');
       await ev(`FAPage.R().v = { w: '', n: '', d: '' }; return 1`);
     }
     if (q.id === 'fa:3.15_27-11_18') {
