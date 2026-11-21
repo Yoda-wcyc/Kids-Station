@@ -467,7 +467,7 @@
         items.forEach(function (q, i) { var mine = (D.querySelector('[data-w="' + i + '"]') || {}).value || ''; if (q.ans.some(function (a) { return G.norm(a) === G.norm(mine) && /^[A-Z]/.test(mine.trim()) && /[.?!]$/.test(mine.trim()); })) box.querySelector('[data-band="s' + i + '"][data-v="2"]').click(); });
       } else {
         var q = items[0];
-        h += '<h3>範文</h3><div class="gp-text en">' + paras(q.model) + '</div><h3>評分要點</h3><ul>' + q.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' +
+        h += '<h3>範文</h3><div class="gp-text en">' + paras(q.model) + '</div><h3>評分要點</h3><ul>' + q.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + (lv === 'u' ? '<li>詞表外的字（例如 app、viral、reservoir）只要用對就不扣分</li>' : '') + '</ul>' +
           bandHTML('b', 5, '整體級分（0～5；' + (lv === 'a' ? '3 級＝通過' : '5 最好') + '）') + '<p id="gp-sl">' + scoreLine() + '</p>';
         box.innerHTML = h; box.hidden = false;
       }

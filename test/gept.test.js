@@ -33,6 +33,9 @@ ok(!C.IRR.data && inL('data', 'a') && C.stems('data', 'a').indexOf('datum') < 0,
 const sq = (ans, v) => C.gradeQ({ q: { ans } }, v);
 ok(sq(['2/3', 'two thirds'], 'Two-Thirds') && sq(['2/3'], '2 / 3') && sq(['the hospital'], 'Hospital.') && sq(['hospital'], 'a hospital') && !sq(['hospital'], 'school'), 'short answers: case, punctuation, hyphen, leading article ignored');
 ok(C.tokens('at 7:30 a.m. in the 1990s, NT$500, Room B').map(t => t.k).join(' ') === 'at am in the nt room', 'tokens skip numbers, decades, single letters');
+{ const w = {}; require('vm').runInNewContext(read('gept/gept-tts.js'), { window: w });
+  ok(w.GeptTTS.spoken('It costs NT$1,000, or NT$8.5 more than NT$ 300.') === 'It costs 1,000 NT dollars, or 8.5 NT dollars more than 300 NT dollars.', 'TTS reads NT$ amounts as "<number> NT dollars"');
+  ok(/lv === 'u' \? '<li>詞表外的字/.test(read('gept/gept.js')), 'u writing rubric: off-list words used correctly are not penalized'); }
 // ---- 檢查工具會擋的錯 ----
 const base = { id: 'e-L2-99', items: Array.from({ length: 10 }, (_, i) => ({ id: 'e-L2-99-' + String(i + 1).padStart(2, '0'), spk: 'F', say: 'Where is your bag?', opts: ['It is here.', 'Yes, I am.', 'At six.'], a: i % 3 })) };
 ok(!C.validateSet(base, V).errors.length, 'a valid e-L2 set passes');

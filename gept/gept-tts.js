@@ -22,8 +22,10 @@
   }
   var rate = 1;
   function fast() { return !!W.__GEPT_FAST; }
+  // 送語音前的念法：NT$1,000 → 1,000 NT dollars（各家聲音念 NT$ 不一致，台灣廣播的說法是數字＋NT dollars）
+  function spoken(t) { return String(t).replace(/NT\$\s?(\d+(?:,\d{3})*(?:\.\d+)?)/g, '$1 NT dollars'); }
   function speak(text, spk) {
-    var my = token;
+    var my = token; text = text && spoken(text);
     return new Promise(function (res) {
       if (!text) return res();
       if (fast() || !synth) return setTimeout(res, fast() ? 5 : 0);
@@ -60,5 +62,5 @@
     if (q.q && !q.qs) o.push({ t: (q.lines || q.say ? 'Question: ' : '') + q.q, spk: 'N' });
     return o;
   }
-  W.GeptTTS = { speak: speak, play: play, stop: stop, wait: wait, partsOf: partsOf, setRate: function (r) { rate = r; }, ok: function () { return !!synth; } };
+  W.GeptTTS = { speak: speak, spoken: spoken, play: play, stop: stop, wait: wait, partsOf: partsOf, setRate: function (r) { rate = r; }, ok: function () { return !!synth; } };
 })(window);
