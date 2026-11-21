@@ -46,6 +46,19 @@
     Object.keys(S.agg.agg || {}).forEach(id => { if (S.agg.agg[id].fc != null) S.correct.add(id); });
     (Array.isArray(kept) ? kept : []).forEach(id => S.correct.add(id));
     if (S.correct.size !== (Array.isArray(kept) ? kept.length : -1)) save('ke_correct', [...S.correct]);
+    // 2026-11-21 學過 2 次就不算：每題答對過幾次（ke_log＋agg，都跟著同步 → 換裝置一樣）；E.old＝已學過 2 次的題，抽題時排後面
+    const KDc = window.KidsDaily && KidsDaily._core;
+    S.okN = KDc ? KDc.okCounts(S.log, S.agg.agg) : new Map();
+    E.old = new Set([...S.okN].filter(x => x[1] >= 2).map(x => x[0]));
+    saveLeft();
+  }
+  // 英文還有幾題新題（學過不到 2 次）：e＝全部英文題、j＝句型、p＝片語 → kids_daily_left（本機快取；每日清單「🎉 這裡全部學會了」用，從同步過的紀錄算出來）
+  function saveLeft() {
+    const n = { e: 0, j: 0, p: 0 };
+    E.meta.forEach(m => { if (E.old.has(m.id)) return; n.e++; const k = KE.dailyKind(Object.assign({ oral: /:oral:/.test(m.id) }, m)); if (k === 'sentence') n.j++; else if (k === 'phrase') n.p++; });
+    // 只有某一類已經沒有新題（0）才需要記；都還有就不建這個 key（沒練過的訪客不多出本機資料）
+    const cur = load('kids_daily_left', null), need = !n.e || !n.j || !n.p;
+    try { if (!need) { if (cur) localStorage.removeItem('kids_daily_left'); } else if (!cur || cur.e !== n.e || cur.j !== n.j || cur.p !== n.p) localStorage.setItem('kids_daily_left', JSON.stringify(n)); } catch (e) { }
   }
   loadAll();
 
@@ -111,6 +124,7 @@
       S.log = d.log; S.agg = { cut: d.cut, agg: d.agg }; save('ke_agg', S.agg);
     }
     save('ke_log', S.log);
+    if (ok) { const c = (S.okN.get(q.id) || 0) + 1; S.okN.set(q.id, c); if (c === 2) { E.old.add(q.id); saveLeft(); } }
     if (ok && !S.correct.has(q.id)) { S.correct.add(q.id); save('ke_correct', [...S.correct]); }
     const m = S.mistakes, now = Date.now(), prev = m[q.id] && !m[q.id].d ? m[q.id] : null;
     if (!ok) m[q.id] = { c: 0, w: ((m[q.id] || {}).w || 0) + 1, t: now, u: now };
@@ -493,7 +507,7 @@
       const mine = a.skip ? '（沒有作答）' : String(a.input == null ? '' : a.input) || '（空白）';
       return head + `<li class="${a.ok ? 'ok' : 'no'}"><b>${i + 1}. ${a.ok ? '✓' : '✗'}</b> <span class="badge">${KE.TYPES[q.type]}</span> <span class="${q.en ? 'en' : ''}">${esc(q.prompt)}</span>${a.ok ? '' : `<div>你的答案：<span class="en">${esc(mine)}</span></div>`}<div>正確答案：<b class="say en" data-say="${esc(q.speakText || q.answer)}">${esc(q.answer)}</b> 🔊</div></li>`;
     }).join('');
-    app.innerHTML = top('📝 考試結果', Q.cfg.back) + `<div class="card center result"><div class="party">${score >= 90 ? '🎉🏅🎉' : '📝'}</div><div class="score">${score} 分</div><p>答對 ${r.ok} / ${r.tot} 題・${msg}</p>${r.wrong.length ? `<p class="muted">答錯的 ${r.wrong.length} 題已經收進 🩹 錯題庫</p>` : ''}</div>
+    app.innerHTML = top('📝 考試結果', Q.cfg.back) + `<div class="card center result"><div class="party">${score >= 90 ? '🎉🏅🎉' : '📝'}</div><div class="score">${score} 分</div><p>答對 ${r.ok} / ${r.tot} 題・${msg}</p>${r.wrong.length ? `<p class="muted">答錯的 ${r.wrong.length} 題已經收進 🩹 錯題庫</p>` : ''}${oldLine()}</div>
       <section class="card"><h2>每一題的對錯</h2><ul class="tb-res">${rows}</ul></section>
       <div class="row wrap"><button class="btn primary big" id="again">再考一次（換新題目）</button>${r.wrong.length ? '<button class="btn big" id="redo">練答錯的題目</button>' : ''}<button class="btn big" data-go="${esc(Q.cfg.back)}">回課本</button></div>`;
     $('#again').onclick = () => startQuiz(Q.cfg);
@@ -649,11 +663,13 @@
     if (Q.answered) return;
     Q.answered = true; stopRec();
     const res = skipped ? { ok: false } : E.check(q, input);
+    const prev = S.okN.get(q.id) || 0;   // 這次之前答對過幾次（≥ 2＝舊題：照樣判對錯，不算每日清單）
     // 說說看：紀錄（會跟著裝置同步）不留辨識出來的原文，只記題目答案（答對）或空白（答錯）
     if (!skipped) record(q, res.ok, q.input === 'mic' ? (res.ok ? q.answer : '') : input);
     // 學習幣（kids-coins.js）：每答一題記進「這一分鐘」；跳過不算作答
     if (window.KidsCoins) skipped ? KidsCoins.activity('english') : KidsCoins.answer(res.ok, 'english');
-    if (!skipped && window.KidsDaily) KidsDaily.rec('english', res.ok, KE.dailyKind(q));   // 家長頁每日學習紀錄；句型、片語另記子目標
+    const counted = !skipped && window.KidsDaily ? KidsDaily.rec('english', res.ok, KE.dailyKind(q), prev) : null;   // 家長頁每日學習紀錄；句型、片語另記子目標；學過 2 次的不算
+    if (counted === false) Q.oldN = (Q.oldN || 0) + 1;
     Q.answers.push({ q, ok: res.ok, skip: !!skipped, input });
     // 📝 考試：不給回饋、不唸答案，直接下一題；全部答完才看結果
     if (Q.exam) { Q.i++; Q.answered = false; if (Q.i >= Q.list.length) finish(); else { pQuiz(); window.scrollTo(0, 0); } return; }
@@ -674,6 +690,7 @@
       ${q.input === 'mic' && !skipped && !res.ok ? `<div class="muted">${Q.spk && Q.spk.id === q.id && Q.spk.tries.length >= SPEAK_TRIES ? `試了 ${SPEAK_TRIES} 次，下次再挑戰！` : '跳過算答錯，下次再挑戰！'}</div>` : ''}
       ${res.score != null ? `<div class="muted">唸對了 ${Math.round(res.score * 100)}% 的字（70% 就過關）</div>` : ''}
       ${q.why ? `<div class="why">💡 ${esc(q.why)}</div>` : ''}
+      ${counted === false ? KidsDaily.oldNote({ sentence: '#learn/patterns', phrase: '#learn/phrases' }[KE.dailyKind(q)] || '#practice') : ''}
       <button class="btn primary big wide" id="next">${last ? '看結果 🎉' : '下一題 ➜'}</button></div>`;
     if (q.speakText && q.type !== 'speak') speak(q.speakText);
     const sb = $('[data-say-btn]'); if (sb) sb.onclick = () => speak(q.speakText);
@@ -714,13 +731,15 @@
       <p>「<b>${esc(info.item)}</b>」${p.complete ? '每一題都答對過了！回去按「👍 學會了」吧' : `還差 ${p.total - p.done} 題`}</p></div>${wrongList(Q.result)}
       <div class="row wrap"><button class="btn primary big" data-go="${esc(d.back)}">${p.complete ? '回去按學會了' : '回去學習頁'}</button>${p.complete ? '' : `<button class="btn big" data-drill="${esc(d.itemId)}">繼續練習這組</button>`}</div>`;
   }
+  // 這一回有幾題是學過 2 次的舊題（不算今天的題數）：結果頁一行小字＋去學新的
+  const oldLine = () => (Q && Q.oldN && window.KidsDaily ? KidsDaily.oldNote('#practice', '這一回有 ' + Q.oldN + ' 題你已經會了（學過 2 次），不算今天的題數，去學新的吧') : '');
   function pResult() {
     if (!Q || !Q.result) return go('#home');
     if (Q.gate) return pGateResult();
     if (Q.exam) return pExamResult();
     if (Q.drill) return pDrillResult();
     const r = Q.result, msg = r.stars === 3 ? '超級厲害！🏆' : r.stars === 2 ? '做得很好！👍' : '多練幾次會更棒！💪';
-    app.innerHTML = top('練習結果') + `<div class="card center result"><div class="stars">${'⭐'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</div><div class="score">${r.ok} / ${r.tot}</div><p>${msg}</p>${Q.graduated ? `<p>🎓 有 ${Q.graduated} 題錯題畢業了！</p>` : ''}</div>
+    app.innerHTML = top('練習結果') + `<div class="card center result"><div class="stars">${'⭐'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}</div><div class="score">${r.ok} / ${r.tot}</div><p>${msg}</p>${Q.graduated ? `<p>🎓 有 ${Q.graduated} 題錯題畢業了！</p>` : ''}${oldLine()}</div>
       ${wrongList(r)}
       <div class="row wrap"><button class="btn primary big" id="again">再練一次</button>${r.wrong.length ? '<button class="btn big" id="redo">練答錯的題目</button>' : ''}${Q.cfg && Q.cfg.back ? `<button class="btn big" data-go="${esc(Q.cfg.back)}">回課本</button>` : '<button class="btn big" data-go="#home">回首頁</button>'}</div>`;
     $('#again').onclick = () => startQuiz(Q.cfg);

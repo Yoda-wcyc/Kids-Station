@@ -89,9 +89,10 @@
   // 一列一項（2026-11-09 五項）：✅ 做完的變灰、縮小；▶ 現在該做的那一列放大、下面才有「去哪裡做」的按鈕；其他沒做完的只在列裡寫一行小字
   const num = r => `${r.n} / ${r.goal}${r.unit === '題' ? '' : ' ' + r.unit}`;
   const SUBI = { sentence: '💬', phrase: '🔗', mul: '✖️', fracadd: '➕' };
-  const subLine = r => (r.subs || []).map(s => `${s.name} ${s.n}/${s.goal}${s.done ? ' ✓' : ''}`).join('・');
+  const subLine = r => (r.subs || []).map(s => `${s.name} ${s.n}/${s.goal}${s.full ? ' 🎉 全部學會了' : s.done ? ' ✓' : ''}`).join('・');
   function rowHtml(r, cur) {
-    const side = r.done ? (r.over ? '<span class="td-note">今天超標了 🎉</span>' : '') : `<span class="td-note">${cur && r.left ? `還差 ${r.left} ${r.unit}` : ''}</span><span class="btn td-go">${r.n ? '繼續' : '開始'}</span>`;
+    // full＝這一項全部學過 2 次、沒有新的可學（2026-11-21）：算達成
+    const side = r.full ? '<span class="td-note td-full">🎉 這裡全部學會了</span>' : r.done ? (r.over ? '<span class="td-note">今天超標了 🎉</span>' : '') : `<span class="td-note">${cur && r.left ? `還差 ${r.left} ${r.unit}` : ''}</span><span class="btn td-go">${r.n ? '繼續' : '開始'}</span>`;
     const hint = r.done ? '' : r.subs && r.subs.length ? `<small class="td-hint">${esc(subLine(r))}</small>` : r.key === 'm' && r.mx ? '<small class="td-hint">⚡ 快算 3 題算 1 題</small>' : r.key === 'r' ? '<small class="td-hint">閱讀文章或成語故事，讀完一篇都算</small>' : '';
     return `<a class="td-r ${r.done ? 'done' : cur ? 'cur' : ''}" data-key="${r.key}" href="${esc(link(r.href))}"><span class="td-i" aria-hidden="true">${r.done ? '✅' : cur ? '▶' : '○'}</span><b class="td-n">${esc(r.name)}</b><span class="td-v">${num(r)}</span>${hint}<span class="td-side">${side}</span></a>` + (cur ? subHtml(r) : '');
   }
@@ -101,7 +102,7 @@
     const go = (href, t, sub) => `<a class="td-s"${sub ? ` data-sub="${sub}"` : ''} href="${esc(link(href))}">${t}</a>`;
     if (r.key === 'r') return `<div class="td-subs" data-key="r">${go(r.href, '📚 閱讀文章 ▶')}${go(r.alt, '📜 成語故事 ▶')}</div>`;
     if (!r.subs || !r.subs.length) return '';
-    return `<div class="td-subs" data-key="${r.key}">${r.subs.map(s => s.done ? `<span class="td-s ok" data-sub="${s.key}">${esc(s.name)} ${s.n}/${s.goal} ✓</span>` : go(s.href, `${SUBI[s.key] || ''} ${esc(s.name)} ${s.n}/${s.goal} 去練 ▶`, s.key)).join('')}</div>`;
+    return `<div class="td-subs" data-key="${r.key}">${r.subs.map(s => s.done ? `<span class="td-s ok" data-sub="${s.key}">${esc(s.name)} ${s.full ? '🎉 全部學會了' : s.n + '/' + s.goal + ' ✓'}</span>` : go(s.href, `${SUBI[s.key] || ''} ${esc(s.name)} ${s.n}/${s.goal} 去練 ▶`, s.key)).join('')}</div>`;
   }
   function listHtml(T) {
     return `<section class="td" id="td" aria-label="今天的清單"><div class="td-h"><b>今天（${esc(T.label)}）</b><span id="td-count">${T.doneN} / ${T.total} 完成</span></div>${T.rows.map(r => rowHtml(r, T.next && r.key === T.next.key)).join('')}</section>`;

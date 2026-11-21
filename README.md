@@ -178,6 +178,7 @@ nocopy.js         全站禁止複製／剪下／貼上（2026-11-13 家長指令
 - 記錄：每個作答入口在「一題有結果」時呼叫 `KidsDaily.rec(科, 對錯)`（開放題傳 `null`），沒登入不記。多步驟、可重試的題記在第一次答錯或一路沒錯做完（跟錯題庫同一點），不是每次按確定。閃卡不算；遊戲算英文。**新增作答入口要接上**，`node test/daily-stats.test.js` 會擋。
 - 同步：文件 v9 的 `dd`（`syncmerge.js`）：每台裝置一個字串 `261103e30,5m18,3;…`（題數,答錯數），合併各欄取大、顯示才加總（G-counter）。整個 dd 上限 3800 位元組（smoke 的文件上限沒放寬），超過從最舊的一天丟。
 - 舊紀錄：英文顯示時從 `ke_log` 回算上線日（`kids-daily.js` START）以前；其他科只看得出「有練習（題數未記錄）」。
+- 學過 2 次就不算（2026-11-21 家長定）：`KidsDaily.rec(科, 對錯, kind, prev)`，prev＝這一題這次之前答對過幾次，≥ 2 記代碼 `r`（家長頁另列「舊題」），不算那一科和今日清單；`finish(kind, false)`＝舊的一話／一組不記。各入口的次數來源：英文 `ke_log`＋`ke_agg`、地理 `kids_geo_q`（同步在 pg 的 `Q` 旗標）、歷史 `done.n`、英檢 `kids_gept.ok`（只在本機）、乘法 `kids_mx_ok`（只在本機）、異分母錯題重練＝錯題庫 c。抽題先出新題；一整項都學過 2 次＝今天算達成、顯示「🎉 這裡全部學會了」。測試：`node test/norepeat.test.js`、`node test/norepeat-browser.js`。
 - 方塊世界、小朋友鎮的記錄點在 `game/hero-world/src`（`ui/quiz.js`、`town/main.js`），改了要重新 build。瀏覽器實測：kids-member `tests\daily-stats-browser.js`。
 
 ## 📋 首頁與每日進度清單（2026-11-03）

@@ -301,8 +301,8 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     ok(['words', 'grammar', 'roots'].every(m => dk({ module: m, type: 'reorder' }) === '') && dk(null) === '', 'words/grammar/roots → general');
     // 記錄點：漫畫做完測驗、地理一組做完才記（錯題重練不記）
     const cj = read('comics/comic.js'), gj = read('geo/geo.js');
-    ok(cj.includes("KidsDaily.finish('comic')") && /quiz\.i >= quiz\.items\.length\) \{\s*epDone\(\);/.test(cj) && cj.includes('if (quiz.fin ||'), 'comic: episode recorded once per finished quiz');
-    ok((gj.match(/KidsDaily\.finish\('geo'\)/g) || []).length === 1 && gj.indexOf("KidsDaily.finish('geo')") > gj.indexOf('function end()') && gj.indexOf("KidsDaily.finish('geo')") < gj.indexOf('function eHome()'), 'geo: one finish, inside end() of a practice set / test');
+    ok(cj.includes("KidsDaily.finish('comic', KidsDaily.isNew(prev))") && /quiz\.i >= quiz\.items\.length\) \{\s*epDone\(\);/.test(cj) && cj.includes('if (quiz.fin ||'), 'comic: episode recorded once per finished quiz');
+    ok((gj.match(/KidsDaily\.finish\('geo', setNew\)/g) || []).length === 1 && gj.indexOf("KidsDaily.finish('geo', setNew)") > gj.indexOf('function end()') && gj.indexOf("KidsDaily.finish('geo', setNew)") < gj.indexOf('function eHome()'), 'geo: one finish, inside end() of a practice set / test');
   }
   // ---------- 小助理看清單 ----------
   {
@@ -318,15 +318,15 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     const R = 'KidsDaily.rec(';
     const ENTRIES = [
       // 英文：題型、課本、口語考試、學會小測驗、練這組、錯題回合都走 app.js answer()
-      ['英文 全部題型（句型、片語另記子目標）', 'app.js', "if (!skipped && window.KidsDaily) KidsDaily.rec('english', res.ok, KE.dailyKind(q))"],
+      ['英文 全部題型（句型、片語另記子目標；學過 2 次的傳 prev）', 'app.js', "const counted = !skipped && window.KidsDaily ? KidsDaily.rec('english', res.ok, KE.dailyKind(q), prev) : null"],
       // 數學：一題記一次，掛在第一次答錯／一路沒錯做完（錯題庫同一點）；考卷每題也走 mkRec
       ['數學 天平換你算', 'math/balance.html', /function mkRec\(q, ok\)\{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
       ['數學 天平應用題', 'math/balance.html', "function bwRec(Q, ok){ if (window.KidsDaily) KidsDaily.rec('math', ok)"],
       ['數學 分數練習＋考試', 'math/fraction.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
       ['數學 倍數練習＋考試', 'math/multiples.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
-      ['數學 乘法練習＋挑戰（兩位×兩位以上才記，清單「乘法」）', 'math/multiply.html', /function mkRec\(q, ok\) \{\s*if \(window\.KidsDaily && X\.daily\(q\.a, q\.b\)\) KidsDaily\.rec\('math', ok, 'mul'\)/],
-      ['數學 異分母分數加減（清單「異分母加減」）', 'math/fracadd.html', "KidsDaily.rec('math', ok, 'fracadd')"],
-      ['英文 全民英檢準備區（題型練習、模擬考、錯題；只算英文總數）', 'gept/gept.js', "if (W.KidsDaily) KidsDaily.rec('english', !!ok);"],
+      ['數學 乘法練習＋挑戰（兩位×兩位以上才記，清單「乘法」）', 'math/multiply.html', /function mkRec\(q, ok\) \{\s*var prev = [^\n]*\n\s*if \(window\.KidsDaily && X\.daily\(q\.a, q\.b\)\) q\.old = KidsDaily\.rec\('math', ok, 'mul', prev\)/],
+      ['數學 異分母分數加減（清單「異分母加減」）', 'math/fracadd.html', "KidsDaily.rec('math', ok, 'fracadd', R && R.mk ? mkPrev(q) : null)"],
+      ['英文 全民英檢準備區（題型練習、模擬考、錯題；只算英文總數）', 'gept/gept.js', "KidsDaily.rec('english', !!ok, null, prev)"],
       ['數學 短除法換你算', 'math/short-division.html', /function mkRec\(Q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
       ['數學 紙本錯題＋類題 30 題', 'math/paper.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
       ['數學 短除法應用題', 'math/short-division.html', /function wRec\(Q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
@@ -350,7 +350,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       // 歷史
       ['歷史漫畫測驗', 'comics/comic.js', "KidsDaily.rec('history', r.result)"],
       // 地理（2026-11-08）：練習、測驗每題都記（geo/geo.js page → rec）
-      ['地理單元', 'geo/geo.js', "KidsDaily.rec('geo', !!ok)"],
+      ['地理單元', 'geo/geo.js', "KidsDaily.rec('geo', !!ok, null, prev)"],
       // 遊戲（算英文）：勇者島戰鬥／夜襲／競技場都走 askQ.finish；方塊世界石碑／錯題怪／任務都走 recordAnswer；小朋友鎮只有執照考試／工作任務（閒聊不算）
       ['勇者島', 'game/hero-island/game.js', "root.KidsDaily.rec('english', ok)"],
       ['方塊世界（打包檔）', 'game/hero-world/assets/hw.js', /KidsDaily\.rec\("english",/],

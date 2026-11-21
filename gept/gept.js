@@ -30,13 +30,24 @@
   // ---------- 登入、紀錄 ----------
   function authOK() { try { return !W.KidsAuth || KidsAuth.requireLogin('english'); } catch (e) { return true; } }
   function startAct(retry) { try { return !(W.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('english', retry); } catch (e) { return true; } }
+  // 2026-11-21 學過 2 次就不算（每日清單）：每題答對過幾次記在 kids_gept.ok（{題目 id: 0～2}；聽寫的字是 'w:<字>'）；那一組（或模擬考卷）做滿 2 次（done.n，已同步）＝組裡每題都當學過 2 次。
+  // shortcut: 每題的次數只在本機判斷，換裝置可繞過（只擋得住「整組做滿 2 次」那一層）；之後要擋就把 ok 壓成位元圖放進 syncmerge.js pg（2,292 題約 900 B，等同步預算有空間）
+  function setOf(id) { var m = /^([eiua]-(?:[LRSW]\d|M)-\d\d)/.exec(id || ''); return m ? m[1] : ''; }
+  function lockN(setId) { try { return setId && W.KidsLock ? KidsLock.getV(JSON.parse(localStorage.getItem('kids_done') || '{}'), setId) : 0; } catch (e) { return 0; } }
+  function okN(id) { var n = +((ld().ok || {})[id]) || 0; return lockN(setOf(id)) >= 2 ? Math.max(n, 2) : n; }
+  function okBump(id) { var x = ld(); x.ok = x.ok || {}; var n = +x.ok[id] || 0; if (n < 2) { x.ok[id] = n + 1; sv(x); } }
+  var lastOld = false;   // 最近一題是不是學過 2 次的舊題（rec 之後看，畫面上給小提示）
+  function dailyRec(id, ok) { var prev = okN(id); if (ok) okBump(id); var c = W.KidsDaily ? KidsDaily.rec('english', !!ok, null, prev) : null; lastOld = c === false; return lastOld; }
+  function oldNote(text) { return W.KidsDaily && KidsDaily.oldNote ? KidsDaily.oldNote('index.html?lv=' + lvOf(arg('set')) , text, '去挑一組還沒做過的 →') : ''; }
   function rec(Q, ok) {
     try { if (W.KidsCoins) KidsCoins.answer(!!ok, 'english'); } catch (e) { }
-    if (W.KidsDaily) KidsDaily.rec('english', !!ok);
+    dailyRec(Q.id, ok);
     try { return W.KidsMistakes ? KidsMistakes.record('gept', Q.id, !!ok, G.mkP(Q)) : null; } catch (e) { return null; }
   }
   function coinRound(c, n) { try { if (W.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: 'english:gept', correct: c, total: n }); } catch (e) { } }
-  function recOpen() { try { if (W.KidsCoins) KidsCoins.activity('english'); } catch (e) { } if (W.KidsDaily) KidsDaily.rec('english', null); }
+  // 寫作、口說：一組做過幾次＝done.n（kids-lock，已同步）；第一次評分前沒有紀錄＝看 kids_gept.task 有沒有這組。prev 在進頁時算好（評分會 +1）
+  function taskPrev(setId) { var v = lockN(setId); return v >= 2 ? 2 : Math.max(v, (ld().task || {})[setId] ? 1 : 0); }
+  function recOpen(prev) { try { if (W.KidsCoins) KidsCoins.activity('english'); } catch (e) { } var c = W.KidsDaily ? KidsDaily.rec('english', null, null, prev) : null; lastOld = c === false; }
 
   // ---------- 載入題目 ----------
   function catEntry(id) { var c = W.GEPT_CATALOG || {}, m = G.ID_RE.exec(id || ''); return m && ((c[m[1]] || {})[m[2]] || []).filter(function (x) { return x.id === id; })[0]; }
@@ -221,7 +232,7 @@
       D.querySelectorAll('[data-q="' + qid + '"]').forEach(function (b) { b.disabled = true; var x = +b.getAttribute('data-v'); if (x === Q.q.a) b.classList.add('right'); else if (x === v) b.classList.add('wrong'); });
       var inp = D.querySelector('[data-in="' + qid + '"]'); if (inp) { inp.disabled = true; var okb = D.querySelector('[data-qok="' + qid + '"]'); if (okb) okb.disabled = true; }
       var fb = D.createElement('div'); fb.className = 'gp-fb ' + (ok ? 'ok' : 'no'); fb.setAttribute('data-fb', qid);
-      fb.innerHTML = ok ? '✓ 答對了！' : '✗ 正確答案：<b class="en">' + esc(rightText(Q)) + '</b>';
+      fb.innerHTML = (ok ? '✓ 答對了！' : '✗ 正確答案：<b class="en">' + esc(rightText(Q)) + '</b>') + (lastOld ? oldNote() : '');
       var at = (inp || D.querySelector('[data-q="' + qid + '"]')); at = at && at.closest('.opts,.gp-pics,.gp-row'); if (at) at.insertAdjacentElement('afterend', fb); else $('gp-scr').appendChild(fb);
       if (S.qs.every(function (x) { return R.done[x.id] != null; })) after(S);
     }
@@ -340,7 +351,7 @@
     function finish() {
       TTS.stop(); R.tok++;
       var all = G.questions(R.set).filter(G.auto), lq = all.filter(function (Q) { return M.L.indexOf(Q.part) >= 0; }), rq = all.filter(function (Q) { return M.L.indexOf(Q.part) < 0; });
-      var res = {}; all.forEach(function (Q) { res[Q.id] = G.gradeQ(Q, R.ans[Q.id]); rec(Q, res[Q.id]); });
+      var res = {}, nOld = 0; all.forEach(function (Q) { res[Q.id] = G.gradeQ(Q, R.ans[Q.id]); rec(Q, res[Q.id]); if (lastOld) nOld++; });
       var lc = lq.filter(function (Q) { return res[Q.id]; }).length, rc = rq.filter(function (Q) { return res[Q.id]; }).length, Ls = G.scale(lc, lq.length), Rs = G.scale(rc, rq.length), pass = G.passLR(lv, Ls, Rs), L = G.LV[lv];
       if (W.KidsLock) KidsLock.bump(R.set.id); saveMock({ id: R.set.id, t: Date.now(), lc: lc, ln: lq.length, rc: rc, rn: rq.length, L: Ls, R: Rs, pass: pass }); coinRound(lc + rc, all.length);
       var parts = M.L.concat.apply(M.L, M.R.map(function (r) { return r.parts; }));
@@ -354,7 +365,7 @@
       }).join('');
       root.innerHTML = head('📝 ' + L.n + '模擬考結果', 'index.html?lv=' + lv) + '<section class="card center"><p class="gp-big" id="gp-pass">' + (pass ? '🎉 達到通過標準' : '💪 還沒達到通過標準') + '</p>' +
         '<div class="gp-score"><div>聽力<b id="gp-L">' + Ls + '</b>' + lc + ' / ' + lq.length + ' 題</div><div>閱讀<b id="gp-R">' + Rs + '</b>' + rc + ' / ' + rq.length + ' 題</div><div>合計<b>' + (Ls + Rs) + '</b>通過要 ' + L.pass.sum + '、各 ' + L.pass.min + '</div></div>' +
-        '<p class="gp-note">模擬換算，非官方成績：分數＝答對題數 ÷ 總題數 × 120。官方是量尺分數（換算方式不公開），實際分數可能不同。答錯的題收進 📕 錯題了。</p></section><section class="card"><h2>逐題檢討</h2>' + rev +
+        '<p class="gp-note">模擬換算，非官方成績：分數＝答對題數 ÷ 總題數 × 120。官方是量尺分數（換算方式不公開），實際分數可能不同。答錯的題收進 📕 錯題了。</p>' + (nOld ? oldNote('這份考卷有 ' + nOld + ' 題你已經會了（學過 2 次），不算今天的題數，去做新的一份吧') : '') + '</section><section class="card"><h2>逐題檢討</h2>' + rev +
         '<div class="gp-row"><a class="btn primary" href="index.html?lv=' + lv + '">回準備區</a><a class="btn" href="practice.html?mistakes=1&lv=' + lv + '">📕 練錯題</a></div></section>';
       R.result = { lc: lc, rc: rc, L: Ls, R: Rs, pass: pass };
     }
@@ -383,7 +394,7 @@
     var root = $('gp'), id = arg('set'), lv = lvOf(id), part = partOf(id), P = (G.PARTS[lv] || {})[part];
     W.GeptTask = {};
     if (!P || (P.s !== 'W' && P.s !== 'S')) return errBox(root, '沒有這組題目');
-    var back = 'index.html?lv=' + lv, L = G.LV[lv];
+    var back = 'index.html?lv=' + lv, L = G.LV[lv], tPrev = taskPrev(id);   // 這組這次之前做過幾次（≥ 2＝不算每日清單）
     function bandHTML(name, max, label) { var b = []; for (var i = 0; i <= max; i++) b.push('<button type="button" class="btn" data-band="' + name + '" data-v="' + i + '" aria-pressed="false">' + i + '</button>'); return '<p><b>' + label + '</b></p><div class="gp-band">' + b.join('') + '</div>'; }
     function pickBand(t) { var n = t.getAttribute('data-band'); D.querySelectorAll('[data-band="' + n + '"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === t)); }); return +t.getAttribute('data-v'); }
     function otherPart(p) { var x = (ld().task || {}), k = Object.keys(x).filter(function (s) { return lvOf(s) === lv && partOf(s) === p; }).sort(function (a, b) { return x[b].t - x[a].t; })[0]; return k ? x[k] : null; }
@@ -428,7 +439,7 @@
       if (ta) ta.addEventListener('input', function () { $('gp-wc').textContent = G.words(ta.value) + ' 字'; });
       root.addEventListener('click', function (e) {
         var t = e.target.closest('button'); if (!t) return;
-        if (t.id === 'gp-wdone') { if (!authOK()) return; t.disabled = true; items.forEach(function () { recOpen(); }); checkW(set); return; }
+        if (t.id === 'gp-wdone') { if (!authOK()) return; t.disabled = true; items.forEach(function () { recOpen(tPrev); }); checkW(set); if (lastOld && $('gp-check')) $('gp-check').insertAdjacentHTML('afterbegin', oldNote('這一組你已經做過 2 次了，不算今天的題數，去做新的一組吧')); return; }
         if (t.hasAttribute('data-band')) {
           var v = pickBand(t), n = t.getAttribute('data-band');
           if (P.kind === 'wsent') { W.GeptTask.s = W.GeptTask.s || {}; W.GeptTask.s[n] = v; var tot = 0, k = 0; items.forEach(function (_, i) { var x = W.GeptTask.s['s' + i]; if (x != null) { tot += x; k++; } }); $('gp-tot').textContent = tot + ' / 30' + (k < items.length ? '（還有 ' + (items.length - k) + ' 題沒評）' : ''); if (k === items.length) { saveTask(id, { sc: tot }); $('gp-sl').innerHTML = scoreLine(); } }
@@ -476,17 +487,17 @@
       });
       else if (P.kind === 'sread') {
         var txt = keep((q0.sents ? '<ol class="en">' + q0.sents.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol>' : '') + '<div class="gp-text en">' + paras(q0.passage) + '</div>');
-        steps.push(function () { stage(txt); cd(P.prep, '先默讀（不出聲）', next); }, function () { stage(txt); cd(P.sec, '開始朗讀！', function () { recOpen(); next(); }); });
+        steps.push(function () { stage(txt); cd(P.prep, '先默讀（不出聲）', next); }, function () { stage(txt); cd(P.sec, '開始朗讀！', function () { recOpen(tPrev); next(); }); });
       } else if (P.kind === 'spic') {
         var pv = keep('<div class="gp-pic">' + picHTML(q0.pic) + '</div><ol class="en">' + q0.qs.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol>');
-        steps.push(function () { stage(pv); cd(P.prep, '看圖和問題', next); }, function () { stage(pv); cd(P.sec, '開始回答（不用唸題號）', function () { recOpen(); next(); }); });
+        steps.push(function () { stage(pv); cd(P.prep, '看圖和問題', next); }, function () { stage(pv); cd(P.sec, '開始回答（不用唸題號）', function () { recOpen(tPrev); next(); }); });
       } else if (P.kind === 'sint') {
         var pr = keep('<div class="gp-text">' + esc(q0.prompt) + '</div>');
         if (P.prep) steps.push(function () { stage(pr); cd(P.prep, '準備', next); });
         (q0.say && q0.say.length ? q0.say : ['']).forEach(function (s, i) {
           steps.push(function () { stage(pr + (s ? '<p class="gp-note">🔊 考官問題 ' + (i + 1) + '</p>' : '')); (s ? TTS.play([{ t: s, spk: 'M' }], 1) : Promise.resolve()).then(function () { cd(P.sec, '換你說！', next); }); });
         });
-        steps.push(function () { recOpen(); next(); });
+        steps.push(function () { recOpen(tPrev); next(); });
       }
       function finishS() {
         TTS.stop(); var box = $('gp-check'), h = '<h2>看範例・自評</h2>';
@@ -553,8 +564,9 @@
     // 聽寫：從目前篩選的字（單一字、3 個字母以上）隨機 10 個
     function quiz() {
       if (!authOK() || !startAct(quiz)) return;
-      var pool = pick().filter(function (x) { return /^[A-Za-z]{3,}$/.test(x.w); }), qs = [];
-      while (pool.length && qs.length < 10) qs.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+      var all = pick().filter(function (x) { return /^[A-Za-z]{3,}$/.test(x.w); }), qs = [], isOld = function (x) { return okN('w:' + x.w.toLowerCase()) >= 2; };
+      // 先抽學過不到 2 次的字，不夠 10 個才用學過的（2026-11-21）
+      [all.filter(function (x) { return !isOld(x); }), all.filter(isOld)].forEach(function (pool) { while (pool.length && qs.length < 10) qs.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]); });
       if (!qs.length) return;
       Z = { qs: qs, i: 0, ok: 0 }; one();
     }
@@ -568,9 +580,9 @@
     function check() {
       var x = Z.qs[Z.i], inp = $('gp-wi'); if (!inp || inp.disabled || !inp.value.trim()) return;
       var ok = inp.value.trim().toLowerCase() === x.w.toLowerCase(); inp.disabled = true; $('gp-wok').disabled = true; if (ok) Z.ok++;
-      try { if (W.KidsCoins) KidsCoins.answer(ok, 'english'); } catch (e) { } if (W.KidsDaily) KidsDaily.rec('english', ok);
+      try { if (W.KidsCoins) KidsCoins.answer(ok, 'english'); } catch (e) { } dailyRec('w:' + x.w.toLowerCase(), ok);
       var last = Z.i + 1 >= Z.qs.length;
-      $('gp-wf').innerHTML = '<div class="gp-fb ' + (ok ? 'ok' : 'no') + '" id="gp-wr">' + (ok ? '✓ 答對了！' : '✗ 正確拼法：') + '<b class="en">' + esc(x.w) + '</b>（' + x.c + '）</div><div class="gp-row"><button type="button" class="btn primary big" id="gp-wnx">' + (last ? '看結果 🏁' : '下一題 ▶') + '</button></div>';
+      $('gp-wf').innerHTML = '<div class="gp-fb ' + (ok ? 'ok' : 'no') + '" id="gp-wr">' + (ok ? '✓ 答對了！' : '✗ 正確拼法：') + '<b class="en">' + esc(x.w) + '</b>（' + x.c + '）' + (lastOld ? oldNote() : '') + '</div><div class="gp-row"><button type="button" class="btn primary big" id="gp-wnx">' + (last ? '看結果 🏁' : '下一題 ▶') + '</button></div>';
     }
     root.addEventListener('click', function (e) {
       var t = e.target.closest('button'); if (!t) return;

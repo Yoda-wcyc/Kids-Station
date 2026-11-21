@@ -34,19 +34,22 @@
     else return null;
     return { a: a, b: b, lv: lv };
   }
-  // 一輪 n 題（同一輪不重複）
-  function round(lv, n, rnd) {
+  // 一輪 n 題（同一輪不重複）；isOld(q)＝這組數字已經答對過 2 次（2026-11-21）：先出新的組合，找很久都沒有才放行
+  function round(lv, n, rnd, isOld) {
     rnd = rnd || Math.random;
     var out = [], seen = {}, guard = 0;
     while (out.length < n && guard++ < 2000) {
       var q = gen(lv, rnd); if (!q) return [];
       var k = q.a + 'x' + q.b;
       if (seen[k] && guard < 1500) continue;
+      if (isOld && guard < 1000 && isOld(q)) continue;
       seen[k] = 1; out.push(q);
     }
     return out;
   }
   // 每日清單（2026-11-09 家長定）：兩個數都至少兩位數（含二位數×整十）才算今日數學題數；九九、二位×一位、三位×一位不算
+  // 同一題＝同一組數字（a×b 和 b×a 一樣）
+  function pairKey(a, b) { return Math.min(a, b) + 'x' + Math.max(a, b); }
   function daily(a, b) { return isInt(a) && isInt(b) && a >= 10 && b >= 10; }
   var DAILY_LV = { d22t: 1, d22: 1 };   // 題型列標「算今日題數」的（應用題看那一題的數字）
   // 錯題庫重做：檢查數字合理
@@ -220,7 +223,7 @@
     return { n: n, ok: ok, acc: n ? Math.round(ok / n * 100) : 0, total: Math.round(tot * 10) / 10, avg: n ? Math.round(tot / n * 10) / 10 : 0 };
   }
 
-  var MX = { LV: LV, LV_NAME: LV_NAME, LV_EG: LV_EG, gen: gen, round: round, valid: valid, daily: daily, DAILY_LV: DAILY_LV, split: split, parts: parts, hint: hint, full: full,
+  var MX = { LV: LV, LV_NAME: LV_NAME, LV_EG: LV_EG, gen: gen, round: round, valid: valid, daily: daily, pairKey: pairKey, DAILY_LV: DAILY_LV, split: split, parts: parts, hint: hint, full: full,
     vertical: vertical, rowDigits: rowDigits, colSteps: colSteps, addSteps: addSteps, checkRow: checkRow, parseNum: parseNum, summarize: summarize,
     WCTX: WCTX, ctxD: ctxD, distract: distract, validWord: validWord, genWord: genWord, wordText: wordText, wordUnit: wordUnit, wordRound: wordRound };
   if (typeof module !== 'undefined' && module.exports) module.exports = MX;

@@ -78,7 +78,7 @@ body{background:var(--bg)}
 </main>
 
 <script src="../kids-mistakes.js?v=c6761f9e74"></script>
-<script src="multiply.js?v=05c1bfe05f"></script>
+<script src="multiply.js?v=42675591e0"></script>
 <script src="word-level.js?v=f34fb6bb02"></script>
 <script>
 (function () {
@@ -108,8 +108,17 @@ function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'ma
 function coinReport(item, c, n) { try { if (window.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); } catch (e) { } }
 function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
 function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
+// 2026-11-21 學過 2 次就不算：同一組數字（a×b、b×a 同一題）答對過幾次存本機 kids_mx_ok；≥ 2＝舊題，不算今日清單。應用題（故事＋數字隨機）不看次數
+// shortcut: 只在本機判斷，換裝置可繞過（題目是隨機出的、小孩挑不了，同一台會先出沒學過的組合）；之後要擋就把二位×整十 648 組壓成位元圖放進同步（約 260 B）
+var OKK = 'kids_mx_ok';
+function okLd() { try { return JSON.parse(localStorage.getItem(OKK)) || {}; } catch (e) { return {}; } }
+function okOf(q) { return +okLd()[X.pairKey(q.a, q.b)] || 0; }
+function okBump(q) { var o = okLd(), k = X.pairKey(q.a, q.b); if ((+o[k] || 0) < 2) { o[k] = (+o[k] || 0) + 1; try { localStorage.setItem(OKK, JSON.stringify(o)); } catch (e) { } } }
+function isOld(q) { return okOf(q) >= 2; }
+function oldNote() { return R && R.Q && R.Q.old && window.KidsDaily ? KidsDaily.oldNote(null, '這組數字你已經算對 2 次了，不算今天的題數；接下來會先出新的組合') : ''; }
 function mkRec(q, ok) {
-  if (window.KidsDaily && X.daily(q.a, q.b)) KidsDaily.rec('math', ok, 'mul');   // 每日學習紀錄（2026-11-09）：兩位數×兩位數以上才算，1 題算 1 題（今日清單「乘法」）；九九、二位×一位等不算
+  var prev = q.c != null ? null : okOf(q); if (ok && q.c == null) okBump(q);
+  if (window.KidsDaily && X.daily(q.a, q.b)) q.old = KidsDaily.rec('math', ok, 'mul', prev) === false;   // 每日學習紀錄（2026-11-09）：兩位數×兩位數以上才算，1 題算 1 題（今日清單「乘法」）；九九、二位×一位等不算；學過 2 次的組合不算
   try {
     if (!window.KidsMistakes) return null;
     if (q.c != null) return KidsMistakes.record('math', 'mxw:' + q.c + ':' + q.a + 'x' + q.b, ok, { type: 'multiply', a: q.a, b: q.b, lv: 'word', c: q.c, q: X.wordText(q) });   // 應用題：c＝故事，原題重做
@@ -185,7 +194,7 @@ function go() {
   if (S.mode !== 'mk' && lvGate(S.lv)) return;
   if (!authOK()) return;
   if (S.mode !== 'mk' && !startAct(go)) return;
-  var n = S.mode === 'chal' ? N_CHAL : N_PRAC, items = S.mode === 'mk' ? mkList() : S.lv === 'word' ? X.wordRound(n, null, wlLevel()) : X.round(S.lv, n);
+  var n = S.mode === 'chal' ? N_CHAL : N_PRAC, items = S.mode === 'mk' ? mkList() : S.lv === 'word' ? X.wordRound(n, null, wlLevel()) : X.round(S.lv, n, null, isOld);
   if (!items.length) { home(); return; }
   R = { mode: S.mode, lv: S.lv, items: items, idx: 0, ok: 0, grad: 0, secs: [], oks: [], sent: false, mk: S.mode === 'mk', wrongList: [] };
   ask();
@@ -272,7 +281,7 @@ function submit() {
     if (ok) { R.ok++; if (mkRec(Q, true) === 'graduated') R.grad++; wlAdd(Q); } else { wrongOnce(); R.wrongList.push({ a: Q.a, b: Q.b, v: v }); }
     R.idx++;
     if (R.idx >= R.items.length) end(); else ask();
-    msg(ok ? '✓ 對' : '✗ ' + Q.a + '×' + Q.b + ' ＝ ' + (Q.a * Q.b), ok ? 'good' : 'bad');
+    msg((ok ? '✓ 對' : '✗ ' + Q.a + '×' + Q.b + ' ＝ ' + (Q.a * Q.b)) + oldNote(), ok ? 'good' : 'bad');
     return;
   }
   var right;
@@ -299,7 +308,7 @@ function submit() {
   }
   Q.done = true;
   if (!Q.wrong) { R.ok++; if (mkRec(Q, true) === 'graduated') R.grad++; wlAdd(Q); }
-  msg('答對了！🎉', 'good'); draw();
+  msg('答對了！🎉' + oldNote(), 'good'); draw();
 }
 function end() {
   stopClock();
@@ -365,13 +374,13 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=8a5c449e88"></script>
-<script src="../syncmerge.js?v=e89be3de7e"></script>
-<script src="../kids-daily.js?v=79c5f7d15c"></script>
+<script src="../syncmerge.js?v=a4980b725d"></script>
+<script src="../kids-daily.js?v=52f643ae99"></script>
 <script src="../completion.js?v=39bc9551b3"></script>
 <script src="../kids-done.js?v=6c3dfa8aeb"></script>
 <script src="../kids-lock.js?v=21d5adb752"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
-<script src="../sync.js?v=25f6e03c9f"></script>
+<script src="../sync.js?v=5061afc5bb"></script>
 <script>if (window.MXPage && MXPage.paintDone) MXPage.paintDone();</script>
 </body>
 </html>

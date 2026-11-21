@@ -477,6 +477,7 @@
     D.patterns.forEach(p => { this.speakSets[patternItemId(p)] = swap2(this.sets[patternItemId(p)], id => { const m = /^(p:[^:]+:\d+):(choose|reorder)$/.exec(id); return m ? m[1] + ':speak' : null; }); });
     this.speakOn = false;          // app 依「裝置支援語音辨識」設定：支援 → 口說題算進解鎖條件
     this.speakWaive = new Set();   // 這次「先跳過」的口說題（不支援／裝置有狀況）：不算進解鎖、這回合不重出；重新整理就清掉
+    this.old = new Set();          // 2026-11-21：已經答對過 2 次的題（app.js 從 ke_log＋agg 算）；抽題時排在新題後面，新題不夠才出
 
     function typedQ(module, topic, id, t, why, setOnly) {
       add({ id, module, topic, type: TYPED, title: t.en, setOnly: !!setOnly }, () => ({ prompt: t.zh, sub: '用鍵盤打出整句英文', input: 'type', options: null, answer: t.en, alts: t.alts || [], speakText: t.en, why }));
@@ -485,6 +486,8 @@
 
   Engine.prototype = {
     get(id) { const m = this.byId[id]; return m ? m.make() : null; },
+    // 學過 2 次的題排到後面（各自順序不變）；xs＝題號或 meta 陣列
+    newFirst(xs) { const old = this.old, isOld = x => !!(old && old.has(typeof x === 'string' ? x : x && x.id)); return xs.filter(x => !isOld(x)).concat(xs.filter(isOld)); },
     // ---- 課本單元（2026-10-18）----
     tbUnit(unitId) { return this.D.textbook.find(u => u.id === unitId) || null; },
     // 本課的單字／片語／句型／文法：照各資料檔的 tb 標記（同一個字不重複新增，id 不變）
@@ -498,7 +501,7 @@
       const out = [], F = this.tbq[unitId] || {};
       for (const strict of strictOnly ? [true] : [true, false]) {
         for (const fam of [].concat(fams)) {
-          for (const id of shuffle(F[fam] || [])) {
+          for (const id of this.newFirst(shuffle(F[fam] || []))) {
             if (out.length >= n) return out;
             if ((f && !f(id)) || used.has('#' + id)) continue;
             const c = this.byId[id].card;
@@ -543,7 +546,8 @@
     tbOral(unitId) {
       const u = this.tbUnit(unitId), bank = u && u.oral; if (!bank) return [];
       const L = { 1: '難度 1・簡短問答', 2: '難度 2・照提示回答', 3: '難度 3・小對話' };
-      return [1, 2, 3].flatMap(lv => shuffle(bank.qs.filter(o => o.lv === lv)).slice(0, bank.pick[lv]).sort((a, b) => a.n - b.n)
+      const oid = o => `tb:${o.tb}:oral:${o.n}`, old = o => this.old && this.old.has(oid(o));
+      return [1, 2, 3].flatMap(lv => shuffle(bank.qs.filter(o => o.lv === lv)).sort((a, b) => old(a) - old(b)).slice(0, bank.pick[lv]).sort((a, b) => a.n - b.n)
         .map(o => Object.assign(this.get(`tb:${o.tb}:oral:${o.n}`), { sec: L[lv], pts: 5 })));
     },
     // ---- 打字保底（2026-10-25）：題號 → 學習項目；項目 → 打字題（zh＝中翻英打字、typed＝其他打字）----
@@ -575,7 +579,7 @@
         for (let i = out.length - 1; wantZ && i >= 0 && vi < 0; i--) if (!isZ(out[i]) && free(out[i])) vi = i;
         const items = [...new Set((vi < 0 ? [] : [out[vi]]).concat(out.slice().reverse()).map(q => this.itemOfQ(q.id)).filter(Boolean))], vm = vi < 0 ? null : this.byId[out[vi].id], vc = vm && vm.card;
         for (const it of items) {
-          const pool = this.typedPool(it), cs = shuffle(pool.zh).concat(wantZ ? [] : shuffle(pool.typed)).filter(x => !has.has(x)); // 中翻英優先
+          const pool = this.typedPool(it), cs = this.newFirst(shuffle(pool.zh)).concat(wantZ ? [] : this.newFirst(shuffle(pool.typed))).filter(x => !has.has(x)); // 中翻英優先；學過 2 次的排後面
           const id = (vc != null && cs.find(x => this.byId[x].card === vc)) || cs[0]; // 課本題：先挑同一句的打字題
           if (id) { has.add(id); if (vi < 0) out.push(this.get(id)); else out[vi] = this.get(id); return true; }
         }
@@ -589,7 +593,7 @@
     // 錯題庫的錯題、「練答錯的題目」的題、說說看回合的口說題不換掉，打字不足的部分追加到最後
     round(cfg) {
       cfg = cfg || {};
-      const qs = cfg.ids ? shuffle(cfg.ids).slice(0, cfg.count || 30).map(id => this.get(id)).filter(Boolean) : this.buildQuiz(cfg);
+      const qs = cfg.ids ? shuffle(this.newFirst(shuffle(cfg.ids)).slice(0, cfg.count || 30)).map(id => this.get(id)).filter(Boolean) : this.buildQuiz(cfg);
       const all = cfg.ids && (cfg.mode === 'mistakes' || cfg.mode === 'redo'), ms = new Set(cfg.mistakes || []);
       return this.withTyped(qs, q => all || ms.has(q.id) || (cfg.mode === 'speak' && q.type === 'speak'));
     },
@@ -686,13 +690,15 @@
       let mpool = pool.filter(m => mset.has(m.id));
       if (ratio >= 1 && !mpool.length) mpool = [...mset].map(id => this.byId[id]).filter(m => m && lvOk(m) && (cfg.allowSpeak || m.type !== 'speak'));
       const nm = ratio >= 1 ? Math.min(count, mpool.length) : Math.min(Math.round(count * ratio), mpool.length);
-      let chosen = shuffle(mpool).slice(0, nm);
+      let chosen = this.newFirst(shuffle(mpool)).slice(0, nm);
       if (ratio < 1) {
-        // 依「單元＋題型」分組輪流抽，避免單字題淹沒其他題型
-        const taken = new Set(chosen.map(m => m.id)), groups = {};
+        // 依「單元＋題型」分組輪流抽，避免單字題淹沒其他題型；2026-11-21：先只輪新題（學過不到 2 次），新題都抽完了才輪舊題
+        const taken = new Set(chosen.map(m => m.id)), groups = {}, isOld = m => this.old && this.old.has(m.id);
         pool.forEach(m => { if (!taken.has(m.id)) (groups[m.module + '|' + m.type] = groups[m.module + '|' + m.type] || []).push(m); });
-        const gs = shuffle(Object.values(groups).map(shuffle));
-        while (chosen.length < count && gs.some(g => g.length)) gs.forEach(g => { if (g.length && chosen.length < count) chosen.push(g.pop()); });
+        const gs0 = shuffle(Object.values(groups).map(shuffle));
+        [gs0.map(g => g.filter(m => !isOld(m))), gs0.map(g => g.filter(isOld))].forEach(gs => {
+          while (chosen.length < count && gs.some(g => g.length)) gs.forEach(g => { if (g.length && chosen.length < count) chosen.push(g.pop()); });
+        });
       }
       return shuffle(chosen).map(m => m.make());
     },

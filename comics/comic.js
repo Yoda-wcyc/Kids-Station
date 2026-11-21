@@ -100,17 +100,26 @@
     function quizStart() { quiz.items = ep.quiz.map(q => QK.prep(q)); quiz.i = 0; quiz.fin = 0; }
     // 每日清單「歷史 1 話」（2026-11-09）：測驗做完記一話（重看、再測一次也算；結果頁重畫不重複記）；
     // 本機 kids_comic＝{seen:{話id:時間}, next:下一話沒看過的 id}（首頁按鈕用）；2026-11-19 起看過的話跟著同步（syncmerge.js pg 的 C，別台同步進來的時間記 1），漫畫頁也載 sync.js
+    // 2026-11-21 學過 2 次就不算：「歷史 1 話」跟做過幾次（kids-lock）同一個算法——「從頭再看一次」才是新的一次，「再測一次」不算新的一話；
+    //   這一話之前已經做完 2 次（done.n，已同步）＝不算今天的清單（quiz.old → 結果頁小提示）
     function epDone() {
       if (quiz.fin || !/^v\d+e\d+$/.test(ep.id)) return;
       quiz.fin = 1;
-      if (window.KidsDaily && KidsDaily.finish) KidsDaily.finish('comic');
       // 做過幾次（../kids-lock.js，同步在 kids_done.n）：看完一話＝1 次；「再測一次」不重複算，「從頭再看一次」才算。要在寫 kids_comic 之前記（才分得出第一次）
-      if (!quiz.counted) { quiz.counted = 1; try { if (window.KidsLock) KidsLock.bump(ep.id); } catch (e) { } }
+      if (!quiz.counted) {
+        quiz.counted = 1;
+        let prev = 0; try { prev = KidsDaily._core.epTimes(JSON.parse(localStorage.getItem('kids_done') || '{}'), (JSON.parse(localStorage.getItem('kids_comic') || '{}') || {}).seen, ep.id); } catch (e) { }
+        if (window.KidsDaily && KidsDaily.finish) quiz.old = KidsDaily.finish('comic', KidsDaily.isNew(prev)) === false;
+        try { if (window.KidsLock) KidsLock.bump(ep.id); } catch (e) { }
+      }
       try {
         const s = JSON.parse(localStorage.getItem('kids_comic') || '{}') || {}, seen = Object.assign({}, s.seen); seen[ep.id] = Date.now();
         const all = window.COMIC_CATALOG ? COMIC_CATALOG.vols.flatMap(v => v.eps).filter(e => e.ready) : [], nx = all.find(e => !seen[e.id]);
         localStorage.setItem('kids_comic', JSON.stringify({ seen, next: nx ? nx.id : '' }));
       } catch (e) { }
+    }
+    function oldHint() {
+      try { const K = KidsDaily, href = '../' + K._core.nextComic(JSON.parse(localStorage.getItem('kids_comic') || '{}'), JSON.parse(localStorage.getItem('kids_done') || '{}')); return K.oldNote(href, '這一話你已經看完 2 次了，不算今天的「歷史 1 話」，去看新的一話吧', '去看新的一話 →'); } catch (e) { return ''; }
     }
     function quizHTML() {
       if (!quiz.items.length) quizStart();
@@ -124,7 +133,7 @@
         const nextHTML = nx && nx.ready ? `<p class="cm-next"><a class="btn primary big" href="${esc(nx.id)}.html">下一話：${esc(nx.t)} ▶</a></p>` : nx ? `<p class="cm-next">下一話〈${esc(ep.next)}〉還在製作中。</p>` : ni >= 0 ? `<p class="cm-next">🎉 ${esc(ep.next)}</p>` : '';
         return `<div class="cm-sh"><p class="cm-eyebrow">RESULT</p><h2>答對 ${g.ok} / ${g.n} 題 ${g.ok === g.n ? '🎉' : g.pct >= ZR.PASS ? '👍' : '💪'}</h2>${wrong ? `<p>再看一次這幾題：</p><ul class="cm-wrong">${wrong}</ul>` : `<p>${esc(ep.perfect || '全對！阿凱和小禾幫你拍拍手！')}</p>`}
           <div class="qk-row"><button type="button" class="btn primary big" data-c="retry">↻ 再測一次</button><button type="button" class="btn big" data-c="again">📖 從頭再看一次</button></div>
-          ${nextHTML}<p class="cm-next"><a href="index.html">📚 回漫畫目錄</a></p></div>`;
+          ${quiz.old ? oldHint() : ''}${nextHTML}<p class="cm-next"><a href="index.html">📚 回漫畫目錄</a></p></div>`;
       }
       const st = quiz.items[quiz.i], q = st.q;
       const fb = st.done ? `<div class="fb ${st.right ? 'ok' : 'no'}"><div class="fbh">${st.right ? '答對了！🎉' : '再看一次 👀'}</div><div>${esc(q.why)}${QK.extra(st)}</div></div><div class="qk-row"><button type="button" class="btn primary big wide" data-c="nextq">${quiz.i + 1 < quiz.items.length ? '下一題 ▶' : '看結果 ▶'}</button></div>` : '';

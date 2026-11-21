@@ -1,7 +1,7 @@
 // test/fracadd-browser.js — ➕ 異分母分數加減的 📕 錯題庫 headless Chrome 實測（CDP；本機靜態伺服器、擋掉所有外連）。改自 test/geo-browser.js。
 // 用法：node test/fracadd-browser.js；環境變數 FA_PS／FA_PD 換 port、FA_SHOTS＝截圖資料夾
 // 820 寬（iPad 直放）：一般一輪用畫面數字鍵答錯一題 → 錯題庫收進 'fa:…'（p 只有 type/v/op/q）→ 首頁數學錯題庫歸「五上 → 單元六 異分母分數的加減」、畫上下排分數
-//   → 只練錯題開 iframe math/fracadd.html?mistakes=1 → 原題重出，真的點數字鍵答對 3 輪 → 畢業移出（墓碑 d:1）；每輪學習幣算數學、每日清單「異分母加減」(f) 加 1、送 math:mistakes。
+//   → 只練錯題開 iframe math/fracadd.html?mistakes=1 → 原題重出，真的點數字鍵答對 3 輪 → 畢業移出（墓碑 d:1）；每輪學習幣算數學、每日清單「異分母加減」(f) 前 2 輪加 1（第 3 輪已學過 2 次不算，2026-11-21）、送 math:mistakes。
 // 另外：未畢業最多 50 題（第 51 題擠掉最舊的）；375 寬不左右捲；全程 JS 例外、console.error 要 0。
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), { spawn } = require('child_process');
@@ -83,7 +83,7 @@ async function run() {
     await press('#next');
     const r = await ev(`return { score: document.getElementById('fa-score').textContent, grad: document.getElementById('fa-grad').textContent, back: document.getElementById('mk-back').getAttribute('href'), coin: __coin, rep: __rep, bk: JSON.parse(localStorage.getItem('kids_mistakes')).math['${q0.id}'] }`);
     const f1 = await ev(DAILY_F);
-    assert(r.score === '1 / 1' && r.coin.join() === 'math' && r.rep.join() === 'math:mistakes' && f1 === f0 + 1 && r.back === '../index.html#s/math/mistakes', `replay ${k}: 1/1, coin math, practice_round math:mistakes, daily 異分母加減 ${f0} → ${f1}`);
+    assert(r.score === '1 / 1' && r.coin.join() === 'math' && r.rep.join() === 'math:mistakes' && f1 === f0 + (k < 3 ? 1 : 0) && r.back === '../index.html#s/math/mistakes', `replay ${k}: 1/1, coin math, practice_round math:mistakes, daily 異分母加減 ${f0} → ${f1}（2026-11-21：第 3 次答對＝已學過 2 次，不算）`);
     if (k < 3) assert(r.bk.c === k && !r.bk.d && /連續答對 3 次/.test(r.grad), `replay ${k}: still in the book (c=${r.bk.c})`);
     else assert(r.bk.d === 1 && /有 1 題錯題畢業了/.test(r.grad), 'replay 3: graduated (tombstone d:1)');
   }

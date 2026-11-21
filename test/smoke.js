@@ -856,7 +856,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   { const Wp = { window: {} }; vm.createContext(Wp);
     ['comics/catalog.js', 'gept/data/catalog.js', 'chinese/writing/data/catalog.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), Wp));
     ['social', 'science'].forEach(k => { const dir = path.join(root, 'mindmap', 'data', k); fs.readdirSync(dir).filter(f => /^(unit|cards|lit)[\w-]*\.js$/.test(f)).sort((a, b) => (a.startsWith('unit') ? -1 : 0) - (b.startsWith('unit') ? -1 : 0)).forEach(f => vm.runInContext(fs.readFileSync(path.join(dir, f), 'utf8'), Wp)); });
-    const t = 1.8e12, L = { comic: { seen: {} }, anim: { seen: {} }, writing: { t: {}, l: {} }, gept: { best: {}, task: {}, mock: [] }, exam: {}, lit: {}, cards: {}, wordLv: {}, zhRead: {}, zhIdiom: {} };
+    const t = 1.8e12, L = { comic: { seen: {} }, anim: { seen: {} }, writing: { t: {}, l: {} }, gept: { best: {}, task: {}, mock: [] }, exam: {}, lit: {}, cards: {}, wordLv: {}, zhRead: {}, zhIdiom: {}, geoQ: {} };
     Wp.window.COMIC_CATALOG.vols.forEach(v => v.eps.forEach(e => { L.comic.seen[e.id] = t; }));
     'ABCDEFG'.split('').forEach(c => { L.anim.seen[c] = t; });
     Wp.window.WR_CAT.topics.forEach(c => { L.writing.t[c.id] = { done: t }; }); Wp.window.WR_CAT.lessons.forEach(c => { L.writing.l[c.id] = { best: 100, n: 99, done: t }; });
@@ -870,11 +870,13 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     require(path.join(root, 'chinese', 'data', 'catalog.js')).forEach(c => { L.zhRead[c.id] = { best: 100, n: 99 }; });
     const CY = require(path.join(root, 'chinese', 'idioms', 'data', 'catalog.js'));
     CY.idioms.map(c => c.id).concat((CY.readings || []).map(r => r.id), Array.from({ length: 10 }, (_, i) => 'cyu' + String(i + 1).padStart(2, '0')), ['cyall']).forEach(id => { L.zhIdiom[id] = { best: 100, n: 99 }; });
+    // 2026-11-21 地理每題答對次數 geoQ（學過 2 次就不算）：18 單元 × 40 題全部答對 2 次（720 題，f 旗標兩層）
+    require(path.join(root, 'completion.js')).GEO_UNITS.forEach(([u]) => { for (let i = 1; i <= 30; i++) L.geoQ[u + '-p' + String(i).padStart(2, '0')] = 2; for (let i = 1; i <= 10; i++) L.geoQ[u + '-t' + String(i).padStart(2, '0')] = 2; });
     const pg = SM.pgFromLocal(L), back = SM.pgApply(pg, {});
     pgBytes = SM.bytes({ pg }) - 2;   // ,"pg":{…} 在整份文件裡的大小
     const cnt = { comic: Object.keys(back.comic.seen).length, writing: Object.keys(back.writing.t).length + Object.keys(back.writing.l).length, best: Object.keys(back.gept.best).length, task: Object.keys(back.gept.task).length, mock: back.gept.mock.length,
-      exam: Object.keys(back.exam).length, lit: Object.keys(back.lit).length, cards: Object.keys(back.cards).length, zh: Object.keys(back.zhRead).length, cy: Object.keys(back.zhIdiom).length };
-    ok(cnt.comic === 42 && cnt.writing === 172 && cnt.best === Object.keys(L.gept.best).length && cnt.best >= 120 && cnt.task === Object.keys(L.gept.task).length && cnt.task >= 75 && cnt.mock === SM.PG_MOCK && cnt.exam === Object.keys(L.exam).length && cnt.exam >= 60 && cnt.lit === Object.keys(L.lit).length && cnt.lit >= 160 && cnt.cards === Object.keys(L.cards).length && cnt.cards >= 1000 && cnt.zh === 100 && cnt.cy === 121,
+      exam: Object.keys(back.exam).length, lit: Object.keys(back.lit).length, cards: Object.keys(back.cards).length, zh: Object.keys(back.zhRead).length, cy: Object.keys(back.zhIdiom).length, geoQ: Object.values(back.geoQ).filter(v => v === 2).length };
+    ok(cnt.comic === 42 && cnt.writing === 172 && cnt.best === Object.keys(L.gept.best).length && cnt.best >= 120 && cnt.task === Object.keys(L.gept.task).length && cnt.task >= 75 && cnt.mock === SM.PG_MOCK && cnt.exam === Object.keys(L.exam).length && cnt.exam >= 60 && cnt.lit === Object.keys(L.lit).length && cnt.lit >= 160 && cnt.cards === Object.keys(L.cards).length && cnt.cards >= 1000 && cnt.zh === 100 && cnt.cy === 121 && cnt.geoQ === 720,
       'pg worst case keeps every item (only the newest ' + SM.PG_MOCK + ' mock exams): ' + JSON.stringify(cnt));
     ok(same(SM.pgFromLocal(back), pg), 'pg worst case: local → doc → local → doc is stable');
     projDoc.pg = pg; }
@@ -883,8 +885,9 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   ok(g6a.length === 9 && projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats) after 六下 (9 units, sized like 六上) still ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes (六下已上線 ' + g6bHave + ' 單元)');
   // 2026-11-17 瘦身（背架構節點 id 省掉單元名、天平刪除墓碑 100 → 50；上限一個都沒放寬）：dd 用上限 DD_MAX 算，最壞情況 127,544 → 124,016 B，空出約 4KB 給以後的新功能
   const worstCap = SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX;
-  // 2026-11-19 加 pg 之後：124,016 B ＋ pg 最壞（約 2.7KB）；仍 ≤ MAX_BYTES/4，留至少 1KB 給以後
-  ok(worstCap - pgBytes <= 124100 && worstCap <= SM.MAX_BYTES / 4 - 1000, 'worst case at caps (2026-11-17 trim + 2026-11-19 pg ' + pgBytes + ' B): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (124,016 B / 3,984 B before pg)');
+  // 2026-11-19 加 pg 之後：124,016 B ＋ pg 最壞（約 2.7KB）；仍 ≤ MAX_BYTES/4（上限沒放寬）
+  // 2026-11-21 pg 多了地理每題答對次數（geoQ，720 題兩層旗標）：用掉剩下 1,117 B 裡的約 330 B（家長同意可以用這 1,117 B），留至少 700 B 給以後
+  ok(worstCap - pgBytes <= 124100 && worstCap <= SM.MAX_BYTES / 4 - 700, 'worst case at caps (2026-11-17 trim + 2026-11-19 pg + 2026-11-21 geoQ, pg ' + pgBytes + ' B): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (126,883 B / 1,117 B before geoQ)');
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
   // 2026-11-02 五下上線塞滿約 156KB 超過 1/4 → v7 壓成字串（114,868 B，六下必超）→ v8 只同步答過的、封頂、熟練旗標
   ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === SM.MAX_EQ_DEL && SM.MAX_EQ_DEL === 50 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,9999')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
@@ -1215,6 +1218,8 @@ ok(!fs.existsSync(path.join(root, 'gas')), 'gas folder removed');
   require('./completion.test.js');
   // 單元做過幾次＋做滿 2 次上鎖（2026-11-16，kids-lock.js）：計數、鎖、安全閥、找下一個、合併、解鎖、回推、網址、頁面接線 → test/kids-lock.test.js
   require('./kids-lock.test.js');
+  // 每日清單「學過 2 次就不算」（2026-11-21）：計入／不計入、答錯不算、錯題重練、優先出新題、全部學會、跨裝置、舊日期不重算 → test/norepeat.test.js
+  require('./norepeat.test.js');
 }
 
 // ---- 國語〈閱讀素養 100 篇〉（2026-11-01）：資料格式、四層次、題數、d 遞增、單選唯一正解、開放題要點、id 唯一 → test/chinese-reading.test.js；

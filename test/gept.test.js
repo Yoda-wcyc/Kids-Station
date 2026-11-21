@@ -65,7 +65,7 @@ KMc.cap(capB, '', KMc.MAX_GEPT, 5000);
 ok(KMc.liveList(capB).length === 100 && capB['e-L2-01-0'].d === 1, 'cap: the 101st mistake pushes out the oldest (tombstone)');
 // ---- 頁面接線 ----
 const gj = read('gept/gept.js');
-ok(gj.includes("KidsCoins.answer(!!ok, 'english')") && gj.includes("KidsDaily.rec('english', !!ok)") && gj.includes("KidsMistakes.record('gept', Q.id, !!ok, G.mkP(Q))") && gj.includes("KidsDaily.rec('english', null)"), 'gept.js records coins (english), daily (english total only), mistakes; open tasks count as null');
+ok(gj.includes("KidsCoins.answer(!!ok, 'english')") && gj.includes("KidsDaily.rec('english', !!ok, null, prev)") && gj.includes("KidsMistakes.record('gept', Q.id, !!ok, G.mkP(Q))") && gj.includes("KidsDaily.rec('english', null, null, prev)"), 'gept.js records coins (english), daily (english total only), mistakes; open tasks count as null');
 const gjc = gj.replace(/\/\*[\s\S]*?\*\//g, '');
 ok((gjc.match(/practice_round/g) || []).length === 1 && gjc.includes("item: 'english:gept'") && (gjc.match(/coinRound\(/g) || []).length === 3 && !/KidsDaily\.rec\('english', [^)]*, '/.test(gj), 'practice_round only english:gept (one set / one mock); no sentence/phrase sub-goal kind');
 ok(/MODES = \[[^\]]*'gept'/.test(read('kids-coins.js')), 'kids-coins MODES allows english:gept');

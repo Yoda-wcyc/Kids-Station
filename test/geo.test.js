@@ -110,7 +110,7 @@ const KCoins = require(path.join(root, 'kids-coins.js'));
 const core = KCoins._core || KCoins;
 ok(/geo:\(practice\|test\)/.test(read('kids-coins.js')), 'kids-coins MM_RE has geo:practice|test');
 const g = read('geo/geo.js');
-ok(g.includes("KidsCoins.answer(!!ok, 'social')") && g.includes("KidsDaily.rec('geo', !!ok)") && g.includes("item: item") && g.includes("'geo:practice'") && g.includes("'geo:test'"), 'geo.js: answer + daily + practice_round');
+ok(g.includes("KidsCoins.answer(!!ok, 'social')") && g.includes("KidsDaily.rec('geo', !!ok, null, prev)") && g.includes("item: item") && g.includes("'geo:practice'") && g.includes("'geo:test'"), 'geo.js: answer + daily + practice_round');
 ok(/\['geo', 'g', '地理'\]/.test(read('kids-daily.js')), 'kids-daily has 地理 (code g)');
 const html = read('geo/unit.html'), at = s => html.search(new RegExp('src="' + s.replace(/[.]/g, '\\.') + '(\\?v=[0-9a-f]+)?"'));   // 部署夾的引用有 ?v=雜湊
 ok(at('../syncmerge.js') >= 0 && at('../syncmerge.js') < at('../kids-daily.js') && at('../completion.js') < at('geo.js') && at('geo.js') < html.indexOf('document.write'), 'unit.html script order');

@@ -478,7 +478,17 @@
   function doneVal(key) { try { var d = JSON.parse(localStorage.getItem('kids_done') || 'null'), v = d && d.geo && d.geo[key]; return typeof v === 'number' ? v : null; } catch (e) { return null; } }
   function safe(f) { try { return f(); } catch (e) { return null; } }
   // 每題作答：學習幣算社會、每日紀錄記地理（練習、測驗、錯題練習同一套）
-  function coinRec(ok) { safe(function () { if (window.KidsCoins) KidsCoins.answer(!!ok, 'social'); }); safe(function () { if (window.KidsDaily) KidsDaily.rec('geo', !!ok); }); }
+  // 2026-11-21 學過 2 次就不算：每題答對過幾次在 kids_geo_q（KidsDaily.geoQ／geoBump，跟著同步）；prev＝這次之前的次數，≥ 2 的題記成舊題（回 {prev, old}）
+  function coinRec(ok, q) {
+    safe(function () { if (window.KidsCoins) KidsCoins.answer(!!ok, 'social'); });
+    var K = window.KidsDaily, prev = q && K && K.geoQ ? +K.geoQ()[q.id] || 0 : null, c = null;
+    if (q && ok && K && K.geoBump) safe(function () { K.geoBump(q.id); });
+    safe(function () { if (K) c = KidsDaily.rec('geo', !!ok, null, prev); });
+    return { prev: prev, old: c === false };
+  }
+  // 有新題的地方（../ 開頭，給 unit.html 用）：第一個還有學過不到 2 次的題的組
+  function newHref() { var r = safe(function () { var K = window.KidsDaily, KC = window.KidsCompletion; return K._core.nextGeo(null, KC && KC.GEO_UNITS, K.geoQ()); }); return '../' + (r || 'index.html#s/geo'); }
+  function oldNote(text) { return safe(function () { return window.KidsDaily.oldNote(newHref(), text, '去做有新題的一組 →'); }) || ''; }
   /* 📕 錯題庫（kids-mistakes.js 的 geo 科）：id＝題目 id、p＝{ty, s}（不存圖）；答錯收進去，在錯題庫裡的題連對 3 次畢業。回 'added'｜'counted'｜'graduated'｜null */
   function mkP(q) { return { ty: q.type, s: q.q }; }
   function mkRec(q, ok) { return safe(function () { return window.KidsMistakes ? KidsMistakes.record('geo', q.id, !!ok, mkP(q)) : null; }); }
@@ -492,7 +502,7 @@
     $('lede').textContent = '先看重點，再做練習（3 組、每組 10 題），最後考單元測驗 10 題。';
     $('tabs').hidden = false;
     function toast(t) { safe(function () { if (window.KidsCoins && KidsCoins.toast) KidsCoins.toast(t); else { var m = $('g-msg'); if (m) m.textContent = t; } }); }
-    function rec(ok, q) { coinRec(ok); mkRec(q, ok); }
+    function rec(ok, q) { var r = coinRec(ok, q); mkRec(q, ok); return r; }
     function report(item, c, n) { safe(function () { if (window.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); }); }
     function doneRec(key, v) { safe(function () { if (window.KidsDone) KidsDone.record('geo', key, v); }); }
     function authOK() { var r = safe(function () { return !window.KidsAuth || KidsAuth.requireLogin('social'); }); return r !== false; }
@@ -525,9 +535,9 @@
       window.scrollTo(0, Math.max(0, host.getBoundingClientRect().top + window.pageYOffset - 6));   // 捲到這一題（頁首、分頁按鈕捲上去），拖拉題的地圖和卡片才放得進同一個畫面
     }
     function after(q, ok, st) {
-      rec(ok, q); if (ok) run.ok++; run.res.push({ q: q, ok: ok, st: JSON.parse(JSON.stringify(st)) });
+      var dr = rec(ok, q); if (ok) run.ok++; run.res.push({ q: q, id: q.id, ok: ok, prev: dr.prev, old: dr.old, st: JSON.parse(JSON.stringify(st)) });
       var more = run.i + 1 < run.qs.length, fb = $('g-fb'); $('g-msg').textContent = '';
-      fb.innerHTML = (run.mode === 'test' ? '' : '<div class="fb ' + (ok ? 'ok' : 'no') + '">' + (ok ? '🎉 答對了！' : '✘ 再看一次：正確答案是 <b>' + esc(ansText(q)) + '</b>') + '<br>💡 ' + esc(q.why) + '</div>') +
+      fb.innerHTML = (run.mode === 'test' ? '' : '<div class="fb ' + (ok ? 'ok' : 'no') + '">' + (ok ? '🎉 答對了！' : '✘ 再看一次：正確答案是 <b>' + esc(ansText(q)) + '</b>') + '<br>💡 ' + esc(q.why) + (dr.old ? oldNote() : '') + '</div>') +
         '<div class="row"><button type="button" class="btn primary big" id="g-next">' + (more ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
       safe(function () { $('g-next').focus({ preventScroll: true }); });
     }
@@ -535,14 +545,16 @@
       var n = run.qs.length, pct = Math.round(run.ok / n * 100), host = sec();
       if (run.mode === 'test') { doneRec(uid + 't', pct); report('geo:test', run.ok, n); }
       else { doneRec(uid + 'p' + run.g, pct); report('geo:practice', run.ok, n); }
-      safe(function () { if (window.KidsDaily && KidsDaily.finish) KidsDaily.finish('geo'); });   // 每日清單「地理 1 組」：一組練習或一次測驗做完（錯題重練不走這裡）
+      // 每日清單「地理 1 組」：一組練習或一次測驗做完（錯題重練不走這裡）；2026-11-21 起這一輪至少答對 1 題還沒學過 2 次的題才算（整組都是舊題不算）
+      var setNew = safe(function () { return KidsDaily._core.geoSetNew(run.res); }) !== false, nOld = run.res.filter(function (x) { return x.old; }).length;
+      safe(function () { if (window.KidsDaily && KidsDaily.finish) KidsDaily.finish('geo', setNew); });
       var pass = pct >= PASS, list = run.mode === 'test' ? '<div class="card">' + run.res.map(function (x, i) {
         return '<div class="ri ' + (x.ok ? 'ok' : 'no') + '" data-ok="' + x.ok + '"><span class="mk">' + (x.ok ? '✔' : '✘') + '</span><b>(' + (i + 1) + ')</b> ' + esc(x.q.q) + (x.ok ? '' : '<br><span class="right">正解：' + esc(ansText(x.q)) + '</span><br>💡 ' + esc(x.q.why)) + '</div>';
       }).join('') + '</div>' : '';
       host.innerHTML = '<div class="card center"><p style="font-size:3rem;margin:0">' + (pass ? '🏆' : '💪') + '</p><p class="res-tot" id="g-score">' + (run.mode === 'test' ? pct + ' 分' : run.ok + ' / ' + n) + '</p><p>' +
         (run.mode === 'test' ? (pass ? '🎉 ' + PASS + ' 分以上，過關！' : '💪 再練一下，' + PASS + ' 分就過關') + '　答對 ' + run.ok + ' / ' + n + ' 題' : '答對 ' + pct + '%' + (pass ? '，這一組過關！' : '，' + PASS + '% 就過關，再試一次')) + '</p><div class="row">' +
         (run.mode === 'test' ? '<button type="button" class="btn primary big" data-redo="t">再考一次 ▶</button>' : '<button type="button" class="btn primary big" data-redo="' + run.g + '">再做一次 ▶</button>' + (run.g < 3 ? '<button type="button" class="btn" data-go="' + (run.g + 1) + '">第 ' + (run.g + 1) + ' 組 ▶</button>' : '<button type="button" class="btn" id="go-exam">📝 去單元測驗</button>') + '<button type="button" class="btn" id="g-home">回練習首頁</button>') +
-        '</div></div>' + list;
+        '</div>' + (!setNew ? oldNote('這一組的題你都已經學過 2 次了，不算今天的「地理 1 組」，去做有新題的一組吧') : nOld ? oldNote('這一組有 ' + nOld + ' 題你已經學過 2 次，不算題數') : '') + '</div>' + list;
       run = null; window.scrollTo(0, 0);
     }
     function eHome() {
@@ -590,10 +602,10 @@
       host.innerHTML = '<div class="prog"><span>📕 錯題　第 ' + (run.i + 1) + ' / ' + run.qs.length + ' 題</span><span class="muted">答對 ' + run.ok + ' 題</span><span class="geo-kind">' + LAB[q.type] + '</span></div>' +
         '<div class="card" id="g-card"><p class="q-text">' + esc(q.q) + '</p><div id="g-q"></div><p class="msg" id="g-msg" role="status" aria-live="polite"></p><div id="g-fb"></div></div>';
       run.m = mount($('g-q'), q, { feedback: true, toast: function (t) { var m = $('g-msg'); if (m) m.textContent = t; }, onAnswer: function (ok) {
-        coinRec(ok); if (ok) run.ok++;
+        var dr = coinRec(ok, q); if (ok) run.ok++;
         var g = mkRec(q, ok) === 'graduated'; if (g) run.grad++;
         $('g-msg').textContent = '';
-        $('g-fb').innerHTML = '<div class="fb ' + (ok ? 'ok' : 'no') + '">' + (ok ? '🎉 答對了！' + (g ? '這題畢業了 🎓' : '') : '✘ 再看一次：正確答案是 <b>' + esc(ansText(q)) + '</b>') + '<br>💡 ' + esc(q.why) + '</div>' +
+        $('g-fb').innerHTML = '<div class="fb ' + (ok ? 'ok' : 'no') + '">' + (ok ? '🎉 答對了！' + (g ? '這題畢業了 🎓' : '') : '✘ 再看一次：正確答案是 <b>' + esc(ansText(q)) + '</b>') + '<br>💡 ' + esc(q.why) + (dr.old ? oldNote() : '') + '</div>' +
           '<div class="row"><button type="button" class="btn primary big" id="g-next">' + (run.i + 1 < run.qs.length ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
         safe(function () { $('g-next').focus({ preventScroll: true }); });
       } });

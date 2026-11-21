@@ -87,9 +87,12 @@ var R = null, N = 10, F = ['w', 'n', 'd'], MK = /[?&]mistakes=1(?:&|$)/.test(loc
 window.FAPage = { R: function () { return R; } };   // 測試用
 function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
 function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
+// 2026-11-21 學過 2 次就不算：一般一輪是隨機出題（每次都是新題，不看次數）；錯題重練的題看錯題庫裡這題連對幾次（c，跟著同步；進錯題庫前是答錯的，所以沒有更早的答對）
+//   c ≥ 2＝這題已經答對 2 次，第 3 次（畢業那次）照樣畢業，但不算今日清單
+function mkPrev(q) { try { var e = (KidsMistakes.loadAll().math || {})[FA.mkEntry(q).id]; return e && !e.d ? +e.c || 0 : 0; } catch (e) { return 0; } }
 function rec(q, ok) {
   try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'math'); } catch (e) { }
-  if (window.KidsDaily) KidsDaily.rec('math', ok, 'fracadd');   // 每日清單：數學「異分母加減」
+  if (window.KidsDaily) q.old = KidsDaily.rec('math', ok, 'fracadd', R && R.mk ? mkPrev(q) : null) === false;   // 每日清單：數學「異分母加減」
   try { if (!window.KidsMistakes) return null; var m = FA.mkEntry(q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e) { return null; }
 }
 function coinReport(item, c, n) { try { if (window.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); } catch (e) { } }
@@ -128,6 +131,7 @@ function submit() {
   if (g.st === 'bad' || g.st === 'fix') { m.textContent = g.msg; m.className = 'msg bad'; return; }   // 只提醒，不算對錯
   var ok = g.st === 'ok'; R.done = true; if (ok) R.ok++; if (rec(q, ok) === 'graduated') R.grad++; paint();
   m.textContent = ok ? '✓ 答對了！' : '✗ 差一點！正確答案是 ' + FA.txt(q.ans); m.className = 'msg ' + (ok ? 'good' : 'bad');
+  if (q.old && window.KidsDaily) m.insertAdjacentHTML('beforeend', KidsDaily.oldNote('fracadd.html', '這題你已經答對 2 次了，不算今天的題數，去練新的題吧', '練新的異分母題 →'));
   $('keys').hidden = true;
   $('fb').innerHTML = (ok ? '' : '<ol class="steps">' + FA.steps(q).map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>') +
     '<div class="row"><button type="button" class="btn primary big" id="next">' + (R.i + 1 < N ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
@@ -169,9 +173,9 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=8a5c449e88"></script>
-<script src="../syncmerge.js?v=e89be3de7e"></script>
-<script src="../kids-daily.js?v=79c5f7d15c"></script>
+<script src="../syncmerge.js?v=a4980b725d"></script>
+<script src="../kids-daily.js?v=52f643ae99"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>
-<script src="../sync.js?v=25f6e03c9f"></script>
+<script src="../sync.js?v=5061afc5bb"></script>
 </body>
 </html>
