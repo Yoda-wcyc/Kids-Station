@@ -101,13 +101,49 @@ async function run() {
   assert(await ev(`return document.documentElement.scrollWidth <= innerWidth + 1`), '375: replay page no horizontal scroll');
   await shot('fa-mk-375.png');
   await ev(`localStorage.removeItem('kids_mistakes'); localStorage.removeItem('kids_daily'); return 1`);
+  await carry();
   await paperSeed();
+}
+
+// 🔁 進位挑戰＋收尾檢查（2026-11-21）：同一頁第二個按鈕；每題分數部分相加 > 1；沒進位的答案只提醒；值錯又沒整理好 → 先提醒一次、第 2 次才判錯；每日清單「異分母加減」照算
+async function carry() {
+  await width(820);
+  await go('/math/fracadd.html'); await ev(HOOK);
+  assert(await ev(`return !document.getElementById('kl-gate') && /進位挑戰/.test(document.getElementById('go-carry').textContent)`), 'carry: button on the home card, not locked');
+  await shot('fa-carry-home.png');
+  await press('#go-carry');
+  const qs = await ev(`return FAPage.R().qs.map(q => ({ id: q.id, kind: q.kind, s: q.a.n / q.a.d + q.b.n / q.b.d, aw: q.a.w + q.b.w, w: q.ans.w, n: q.ans.n, d: q.ans.d }))`);
+  assert(qs.length === 10 && qs.every(q => q.kind === 'carry' && q.s > 1 && q.w === q.aw + 1 && q.n > 0),'carry: 10 questions, every one needs carrying: ' + qs.map(q => q.id).join(' '));
+  assert(await ev(`return document.getElementById('prog').textContent.includes('進位挑戰') && document.querySelectorAll('#qline .fr').length === 2`), 'carry: question drawn, labelled 進位挑戰');
+  const f0 = await ev(DAILY_F);
+  // 第 1 題：值對但沒進位（整數少 1、分子多一個分母）→ 只提醒；再送一樣的還是只提醒（值對＝照原規則）；改好 → 答對
+  const q = qs[0], un = { w: q.w - 1 || '', n: q.n + q.d, d: q.d };
+  await answer(un);
+  assert(await ev(`const m = document.getElementById('msg').textContent; return /再檢查一下/.test(m) && /進位/.test(m) && !/錯/.test(m) && !FAPage.R().done`), 'carry: not carried → gentle reminder, not graded');
+  await shot('fa-carry-tidy.png');
+  await ev(`FAPage.R().v = { w: '', n: '', d: '' }; return 1`); await answer(un);
+  assert(await ev(`return /答案一樣大/.test(document.getElementById('msg').textContent) && !FAPage.R().done`), 'carry: same untidy right answer again → existing reminder, still not graded');
+  await ev(`FAPage.R().v = { w: '', n: '', d: '' }; return 1`); await answer({ w: q.w, n: q.n, d: q.d });
+  assert(await ev(`return /答對了/.test(document.getElementById('msg').textContent)`), 'carry: carried answer → 答對了');
+  await shot('fa-carry-ok.png');
+  await press('#next');
+  // 第 2 題：值錯又沒進位（分子多 1）→ 先提醒；第 2 次這樣送 → 照原規則判錯、給算法（有進位那一步）
+  const r = qs[1], bad = { w: r.w - 1 || '', n: r.n + r.d + 1, d: r.d };
+  await answer(bad);
+  assert(await ev(`return /進位/.test(document.getElementById('msg').textContent) && !FAPage.R().done`), 'tidy check: wrong + not carried → reminder first');
+  await ev(`FAPage.R().v = { w: '', n: '', d: '' }; return 1`); await answer(bad);
+  assert(await ev(`return /差一點/.test(document.getElementById('msg').textContent) && FAPage.R().done && /進位/.test(document.querySelector('.steps').textContent)`), 'tidy check: 2nd time the same → graded wrong, steps show the carry');
+  await shot('fa-carry-wrong.png');
+  const bk = await ev(BOOK), f1 = await ev(DAILY_F);
+  assert(bk[r.id] && bk[r.id].c === 0 && f1 === f0 + 2 && (await ev(`return __coin.join()`)) === 'math,math', 'carry: wrong one in 錯題庫 ' + r.id + ', daily 異分母加減 +2 (' + f0 + ' → ' + f1 + '), coins math');
+  await ev(`localStorage.removeItem('kids_mistakes'); localStorage.removeItem('kids_daily'); return 1`);
 }
 
 // 📝 家長登錄的紙本錯題（math/paper.js FA_ROWS，2026-11-19）：時間固定在登錄日（__KIDS_TEST_DAYS），測試不會過了 14 天就失效
 async function paperSeed() {
-  const PAPER_IDS = ['fa:12_15+3.4_5', 'fa:3.4_9+1.5_12', 'fa:5.1_12-3.4_6',   // 清單排序：新登錄的（11-21）在前，同一個 t → id 排
-    'fa:3.15_27-11_18', 'fa:3.2_3+1.4_5', 'fa:3.5_7+5.11_12', 'fa:33_14-5_3', 'fa:4.16_45+8_9', 'fa:4.3_10-3.2_3'];
+  const PAPER_IDS = ['fa:12_15+3.4_5', 'fa:3.4_9+1.5_12', 'fa:5.1_12-3.4_6', 'fa:8_27+7_18',   // 清單排序：新登錄的（11-21）在前，同一個 t → id 排
+    'fa:2.1_2+1.4_5-3.2_3', 'fa:3.15_27-11_18', 'fa:3.2_3+1.4_5', 'fa:3.5_7+5.11_12', 'fa:33_14-5_3', 'fa:8_9+3.7_15+8_9'];   // 三個數＝2026-11-21 改收原題
+  const NFR = id => id.split(/[+-]/).length;   // 幾個數
   const T = Date.parse('2026-11-19T00:00:00+08:00') + 3600e3;
   await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `window.__KIDS_TEST_DAYS = (${T} - Date.now()) / 864e5;` });
   await width(820);
@@ -119,7 +155,7 @@ async function paperSeed() {
   await ev(`localStorage.setItem('kids_mistakes', JSON.stringify({ math: { 'pp:A': { d: 1, w: 1, t: 5, u: 5 } } })); return 1`);
   await go('/index.html?reload=1#s/math/mistakes'); await sleep(400);   // 換網址才會真的重新載入（只換 # 不會）
   const L = await ev(`return { ids: [...document.querySelectorAll('#mk-list li[data-id]')].map(li => li.dataset.id), units: [...document.querySelectorAll('#mk-list .mk-uh')].map(h => h.textContent), badges: [...document.querySelectorAll('#mk-list .badge')].map(b => b.textContent), stacked: document.querySelectorAll('#mk-list li span[style*="flex-direction:column"]').length, go: document.getElementById('mk-go').textContent, noH: document.documentElement.scrollWidth <= innerWidth + 1, bk: JSON.parse(localStorage.getItem('kids_mistakes')).math }`);
-  assert(L.ids.join() === PAPER_IDS.join() && L.units.length === 1 && /單元六/.test(L.units[0]) && L.badges.every(b => b === '異分母加減') && L.stacked === 2 * PAPER_IDS.length && new RegExp(PAPER_IDS.length + ' 題').test(L.go) && L.noH, 'paper seed: ' + PAPER_IDS.length + ' questions in 錯題庫 → 五上 單元六: ' + JSON.stringify({ ids: L.ids, units: L.units, go: L.go }));
+  assert(L.ids.join() === PAPER_IDS.join() && L.units.length === 1 && /單元六/.test(L.units[0]) && L.badges.every(b => b === '異分母加減') && L.stacked === PAPER_IDS.reduce((s, id) => s + NFR(id), 0) && new RegExp(PAPER_IDS.length + ' 題').test(L.go) && L.noH, 'paper seed: ' + PAPER_IDS.length + ' questions in 錯題庫 → 五上 單元六: ' + JSON.stringify({ ids: L.ids, units: L.units, go: L.go }));
   assert(PAPER_IDS.every(id => L.bk[id].c === 0 && L.bk[id].w === 1 && L.bk[id].t === L.bk[id].u), 'paper seed: stored c=0 w=1 t=u');
   await shot('paper-mk-list.png');
   await ev(`KidsAuth.requireLogin = () => true; KidsAuth.startActivity = () => true; document.getElementById('mk-go').click(); return 1`); await sleep(800);
@@ -131,7 +167,13 @@ async function paperSeed() {
   assert(qs.map(q => q.id).sort().join() === PAPER_IDS.slice().sort().join(), 'paper replay: all ' + PAPER_IDS.length + ' questions: ' + qs.map(q => q.id + '=' + q.w + ' ' + q.n + '/' + q.d).join(', '));
   for (let i = 0; i < qs.length; i++) {
     const q = qs[i];
-    assert(await ev(`return document.getElementById('prog').textContent.includes(${JSON.stringify(q.kind)}) && document.querySelectorAll('#qline .fr').length === 2`), 'paper replay ' + q.id + ': question drawn (' + q.kind + ')');
+    assert(await ev(`return document.getElementById('prog').textContent.includes(${JSON.stringify(q.kind)}) && document.querySelectorAll('#qline .fr').length === ${NFR(q.id)}`), 'paper replay ' + q.id + ': question drawn (' + q.kind + ', ' + NFR(q.id) + ' numbers)');
+    if (q.id === 'fa:8_9+3.7_15+8_9') {   // 三個數：只做一步（4又16/45）判錯前先看提醒：4又56/45 沒進位 → 提醒
+      await answer({ w: 4, n: 56, d: 45 });
+      assert(await ev(`return /進位/.test(document.getElementById('msg').textContent) && !FAPage.R().done`), 'paper replay 3 numbers: 4又56/45 → 要進位 reminder');
+      await shot('paper-3num-tidy.png');
+      await ev(`FAPage.R().v = { w: '', n: '', d: '' }; return 1`);
+    }
     if (q.id === 'fa:3.2_3+1.4_5') {
       await answer({ w: 4, n: 22, d: 15 });
       assert(await ev(`return /帶分數/.test(document.getElementById('msg').textContent) && !FAPage.R().done`), 'paper replay: 4又22/15 → reminder only (帶分數), not graded');
@@ -150,6 +192,7 @@ async function paperSeed() {
     await answer(q);
     assert(await ev(`return /答對了/.test(document.getElementById('msg').textContent)`), 'paper replay ' + q.id + ': answered ' + q.w + ' ' + q.n + '/' + q.d + ' → 答對了');
     if (q.id === 'fa:33_14-5_3') await shot('paper-replay.png');
+    if (NFR(q.id) === 3) await shot('paper-3num-' + (q.id === 'fa:8_9+3.7_15+8_9' ? 'b' : 'a') + '-ok.png');
     await press('#next');
   }
   const r = await ev(`return { score: document.getElementById('fa-score').textContent, bk: JSON.parse(localStorage.getItem('kids_mistakes')).math }`);
@@ -160,6 +203,13 @@ async function paperSeed() {
   await go('/index.html#s/math/mistakes'); await sleep(400);
   const r2 = await ev(`const b = JSON.parse(localStorage.getItem('kids_mistakes')).math; return { n: Object.keys(b).length, c: ${JSON.stringify(PAPER_IDS)}.map(id => b[id].c) }`);
   assert(r2.n === PAPER_IDS.length + 1 && r2.c.every(c => c === 1), 'paper seed: reload adds nothing, progress kept: ' + JSON.stringify(r2));
+  // 換 id（2026-11-21）：舊的兩個數 id 一個畢業了、一個還在練（c=1）→ 首頁載入：畢業的不補新 id；還在練的換成新 id（c=1 接著），舊 id 蓋墓碑；清單每題一次
+  await ev(`localStorage.setItem('kids_mistakes', JSON.stringify({ math: { 'pp:A': { d: 1, w: 1, t: 5, u: 5 }, 'fa:4.3_10-3.2_3': { d: 1, w: 1, t: 1763481600000, u: 1763482000000 },
+    'fa:4.16_45+8_9': { c: 1, w: 2, t: 1763481600000, u: 1763482000000, p: { type: 'fracadd', v: [4, 16, 45, 0, 8, 9], op: '+', q: '4 又 16/45 ＋ 8/9' } } } })); return 1`);
+  await go('/index.html?reload=2#s/math/mistakes'); await sleep(400);
+  const M = await ev(`const b = JSON.parse(localStorage.getItem('kids_mistakes')).math; return { ids: [...document.querySelectorAll('#mk-list li[data-id]')].map(li => li.dataset.id), n1: b['fa:2.1_2+1.4_5-3.2_3'] || null, o1: b['fa:4.3_10-3.2_3'], n2: b['fa:8_9+3.7_15+8_9'], o2: b['fa:4.16_45+8_9'] }`);
+  assert(!M.n1 && M.o1.d === 1 && M.n2 && M.n2.c === 1 && M.n2.w === 2 && M.o2.d === 1 && M.ids.length === PAPER_IDS.length - 1 && M.ids.indexOf('fa:8_9+3.7_15+8_9') >= 0 && !M.ids.some(id => id === 'fa:4.16_45+8_9' || id === 'fa:4.3_10-3.2_3' || id === 'fa:2.1_2+1.4_5-3.2_3'), 'id change: graduated old → not re-added; live old → new id (c=1, w=2), old tombstoned; list ' + M.ids.length);
+  await shot('paper-id-change.png');
   await ev(`localStorage.removeItem('kids_mistakes'); localStorage.removeItem('kids_daily'); return 1`);
 }
 

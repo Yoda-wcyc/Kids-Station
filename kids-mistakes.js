@@ -14,7 +14,7 @@
        'mx:<a>x<b>'，p＝{type:'multiply', a, b, lv, q:'a×b'}（乘法快算，2026-10-21）；
        'frc:<題型>:<數字>'，p＝{type:'fraction', k:題型, v:[aw,an,ad,bw,bn,bd], q:顯示文字}（分數比較大小，math/fraction.js 用 k＋v 原題重做；清單用 v 畫上下排的分數，2026-10-27）
        'mg:<題目id>'，p＝{type:'grade', qid, b:'五下 單元一', q:題目純文字}（五下～六下 math/grade.js 用 qid 找回原題，2026-11-06）；
-       'fa:<數>±<數>'（數＝[整數.]分子_分母，例 'fa:1_3+3_4'、'fa:2.1_3-1_4'），p＝{type:'fracadd', v:[aw,an,ad,bw,bn,bd], op, q:顯示文字}（異分母分數加減，
+       'fa:<數>±<數>[±<數>]'（數＝[整數.]分子_分母，例 'fa:1_3+3_4'、'fa:2.1_3-1_4'、三個數 'fa:2.1_2+1.4_5-3.2_3'），p＝{type:'fracadd', v:[aw,an,ad,bw,bn,bd(,cw,cn,cd)], op:'+'|'-'|兩個字, q:顯示文字}（異分母分數加減，
          math/fracadd.js FA.fromId 用 id 原題重做；歸五上單元六；隨機題會一直冒新的 → 未畢業最多留 MAX_FA＝50 題，超過把最舊答錯的蓋墓碑擠掉，2026-11-09；紙本上錯的異分母題由家長登錄在 math/paper.js FA_ROWS、seedPaper 補進來，2026-11-19）；
        'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯）、'pf:<題>'（約分通分 15 題答錯，2026-11-05）、'pm:'／'pe:'（期中錯題／期中類題）、'ps:'（扇形小考錯題，2026-11-06）、'pc:'（期中第 15、17 題類題 5 題，2026-11-06），p＝{type:'paper', set:'p'|'v'|'f'|'m'|'e'|'s'|'c', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
      AI id＝'<頁>|<第幾關>'，p＝{pg, tag, q:題目, opts:[選項], c:正解索引, why:說明}（全部是純文字，畫面一律跳脫）
@@ -148,16 +148,19 @@
      - 只開在加過紙本錯題的帳號（錯題本有 pp: 開頭的題，墓碑也算＝同「📝 紙本錯題」區的開關）；別的帳號（其他會員）不補。
      - 本機已經有這題（還在、或畢業留墓碑）就不動 → 不重複、畢業了不會被加回來。
      - 補進去的 t＝u＝登錄日（比之後的作答、畢業都舊）→ 另一台還沒收到墓碑就先補，同步時墓碑照樣勝。
-     - 登錄超過 SEED_DAYS 天的不補：墓碑每科只留最新 300 筆，太久以後墓碑可能被擠掉，不補才不會讓畢業的題復活。 */
+     - 登錄超過 SEED_DAYS 天的不補：墓碑每科只留最新 300 筆，太久以後墓碑可能被擠掉，不補才不會讓畢業的題復活。
+     - 換 id（2026-11-21，三個數連算改收原題）：r.was＝同一題以前的 id。舊 id 畢業了（墓碑）→ 新 id 不補（同一題）；
+       舊 id 還在練 → 補新 id（接著舊的 c、w，t＝u＝登錄日），舊 id 蓋墓碑（同步到別台也收掉，同一題不會出現兩次）；新舊都在（別台同步來的）→ 舊的蓋墓碑。
+     回傳改了幾筆（補進的＋收掉的舊 id）。 */
   var SEED_DAYS = 14;
   function hasPaper(b) { return Object.keys(obj(b) || {}).some(function (id) { return id.indexOf('pp:') === 0; }); }
   function seed(book, rows, now) {
     if (!hasPaper(book)) return 0;
     var n = 0;
     (rows || []).forEach(function (r) {
-      var t = r && nat(r.t);
-      if (!t || !okId(r.id) || book[r.id] || now - t > SEED_DAYS * DAY) return;
-      book[r.id] = { c: 0, w: 1, t: t, u: t, p: normP(r.p) }; n++;
+      var t = r && nat(r.t), o = r && okId(r.was) && r.was !== r.id ? book[r.was] : null;
+      if (t && okId(r.id) && !book[r.id] && !(o && o.d) && now - t <= SEED_DAYS * DAY) { book[r.id] = { c: o ? o.c : 0, w: o ? o.w : 1, t: t, u: t, p: normP(r.p) }; n++; }
+      if (o && !o.d && book[r.id]) { book[r.was] = { d: 1, w: o.w, t: o.t, u: Math.max(nat(now), o.u + 1) }; n++; }
     });
     return n;
   }
@@ -186,7 +189,7 @@
   function seedPaper() {
     try {
       var P = G.PAPER, F = G.FA; if (!P || !P.FA_ROWS || !F) return 0;
-      var rows = P.FA_ROWS.map(function (r) { var q = F.fromId(r.id), e = q && F.mkEntry(q); return e ? { id: e.id, t: Date.parse(r.d + 'T00:00:00+08:00'), p: e.p } : null; });
+      var rows = P.FA_ROWS.map(function (r) { var q = F.fromId(r.id), e = q && F.mkEntry(q); return e ? { id: e.id, t: Date.parse(r.d + 'T00:00:00+08:00'), p: e.p, was: r.was } : null; });
       var a = loadAll(), b = a.math || {}, n = seed(b, rows, now());
       if (n) { a.math = b; cap(b, 'fa:', MAX_FA, now()); saveAll(a); }
       return n;
@@ -210,10 +213,13 @@
     return (p.s || '') + (p.a ? '　→ ' + p.a : '');
   }
   // 分數題（type 'fraction'；'fracadd' 傳 op）：v 是 6 個整數 → 畫成上下排（分子／分母疊起來），不寫斜線；v 不對就退回純文字
+  // 三個數連算（fracadd，2026-11-21）：op 兩個字（'+-'）、v 9 個數
   function frItem(v, op) {
-    if (!Array.isArray(v) || v.length !== 6 || !v.every(function (x) { return typeof x === 'number' && isFinite(x) && x >= 0 && Math.floor(x) === x; })) return '';
+    var n3 = !!op && op.length === 2;
+    if (!Array.isArray(v) || v.length !== (n3 ? 9 : 6) || !v.every(function (x) { return typeof x === 'number' && isFinite(x) && x >= 0 && Math.floor(x) === x; })) return '';
     var f = function (w, n, d) { return (w ? '<b>' + w + '</b>' : '') + '<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.1;margin:0 .15em;font-weight:700"><span style="border-bottom:2px solid currentColor;padding:0 .2em">' + n + '</span><span style="padding:0 .2em">' + d + '</span></span>'; };
-    if (op) return f(v[0], v[1], v[2]) + (op === '-' ? ' － ' : ' ＋ ') + f(v[3], v[4], v[5]) + ' ＝ ？';
+    var s = function (o) { return o === '-' ? ' － ' : ' ＋ '; };
+    if (op) return f(v[0], v[1], v[2]) + s(op.charAt(0)) + f(v[3], v[4], v[5]) + (n3 ? s(op.charAt(1)) + f(v[6], v[7], v[8]) : '') + ' ＝ ？';
     return f(v[0], v[1], v[2]) + ' ○ ' + f(v[3], v[4], v[5]) + '　比大小';
   }
   function dots(c) { var s = ''; for (var i = 0; i < GRAD; i++) s += i < c ? '●' : '○'; return s; }
@@ -279,7 +285,7 @@
     function dueText(e) { var d = (e.due || today) - today; return d <= 0 ? '🔁 今天複習' : d === 1 ? '明天複習' : d + ' 天後複習'; }
     var li = function (e) {
       var u = e.p.u && ulab[e.p.u] ? '<small class="muted">' + ulab[e.p.u] + '</small> ' : '';
-      return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf(k, e.p)) + '</span> ' + u + '<span>' + ((k === 'math' && e.p.type === 'fraction' && frItem(e.p.v)) || (k === 'math' && e.p.type === 'fracadd' && frItem(e.p.v, e.p.op === '-' ? '-' : '+')) || esc(textOf(k, e.p))) + '</span> <span class="dots">' + dots(e.c) + '</span> <small class="muted">錯 ' + e.w + ' 次' + (sp ? '・' + dueText(e) : '') + '</small></li>';
+      return '<li data-id="' + esc(e.id) + '"><span class="badge">' + esc(badgeOf(k, e.p)) + '</span> ' + u + '<span>' + ((k === 'math' && e.p.type === 'fraction' && frItem(e.p.v)) || (k === 'math' && e.p.type === 'fracadd' && frItem(e.p.v, /^[+-]{1,2}$/.test(e.p.op) ? e.p.op : '+')) || esc(textOf(k, e.p))) + '</span> <span class="dots">' + dots(e.c) + '</span> <small class="muted">錯 ' + e.w + ' 次' + (sp ? '・' + dueText(e) : '') + '</small></li>';
     }, ulist = o.ulist || o.units;
     box.innerHTML = '<header class="top"><a class="btn" href="#s/' + k + '">← 回' + esc(o.n) + '</a><h1>📕 ' + esc(o.n) + '錯題庫</h1></header>' +
       '<div class="card"><p>' + (sp ? '答錯的題目（還有閃卡按「再想想」的）會來這裡，隔 <b>1 天、3 天、7 天</b>各複習一次；到期都答對就畢業離開 🎓' : '答錯的題目會來這裡。同一題<b>連續答對 3 次</b>就會畢業離開 🎓') + '</p>' + filt +

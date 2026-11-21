@@ -52,7 +52,8 @@ body{background:var(--bg)}
       <li>能<b>約分</b>就約分；分子比分母大就化成<b>帶分數</b>。帶分數可以先化成假分數再算。</li>
     </ol>
     <p>一輪 10 題：真分數加、減，帶分數加、減。答案要寫成<b>最簡分數</b>（或帶分數、整數）。</p>
-    <div class="row"><button type="button" class="btn primary big" id="go">✏️ 開始一輪 10 題</button></div>
+    <p><b>🔁 進位挑戰</b>：每一題的分數部分加起來都比 1 大，要先化成帶分數、再<b>進位</b>到整數（例：2 又 3/4 ＋ 1 又 5/6 ＝ 3 又 19/12 ＝ 4 又 7/12）。</p>
+    <div class="row"><button type="button" class="btn primary big" id="go">✏️ 開始一輪 10 題</button><button type="button" class="btn primary big" id="go-carry">🔁 進位挑戰 10 題</button></div>
   </section>
   <section class="card" id="play" hidden>
     <div class="prog" id="prog"></div>
@@ -71,13 +72,13 @@ body{background:var(--bg)}
   </section>
   <section class="card end center" id="end" hidden></section>
 </main>
-<script src="fracadd.js?v=3ee3b3b12a"></script>
-<script src="../kids-mistakes.js?v=c6761f9e74"></script>
+<script src="fracadd.js?v=bc1657e3d0"></script>
+<script src="../kids-mistakes.js?v=6bec191c33"></script>
 <script>
 (function () {
 'use strict';
 /* 〈異分母分數加減〉頁面（2026-11-09）。出題、判分在 fracadd.js（window.FA）。要登入（requireLogin＋一輪開始 startActivity('math')）。
-   一題一次：第一次送出的答案定對錯（值對但沒約分／沒化成帶分數只提醒，不算）；答錯給算法。每題 KidsCoins.answer(ok,'math')＋KidsDaily.rec('math', ok, 'fracadd')。
+   一題一次：第一次送出的答案定對錯（值對但沒約分／沒化成帶分數只提醒，不算；2026-11-21 收尾檢查：寫法沒整理好的先提醒一次，值錯也一樣，同一題第 2 次再這樣送才照原規則判）；答錯給算法。每題 KidsCoins.answer(ok,'math')＋KidsDaily.rec('math', ok, 'fracadd')。
    一般一輪不送 practice_round（後端白名單沒有這個 item，學習幣規則不動）。
    📕 錯題庫（2026-11-09）：每題 KidsMistakes.record('math', 'fa:…', ok, p)（id＝題目本身，見 fracadd.js mkId）；答錯收進去、在錯題庫裡連對 3 次畢業。
      ?mistakes=1＝錯題重練：錯題庫裡 type 'fracadd' 的題（最多 30 題）用 id 原題重出，同一個數字鍵、一樣要最簡；做完送 practice_round 'math:mistakes'（同其他數學錯題頁）。
@@ -104,18 +105,21 @@ function mkList() {
 function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['eq', 'gcd', 'gcdword', 'multiples', 'multiply', 'fraction'], 'fracadd') : ''; } catch (e) { return ''; } }
 var MKBACK = '<a class="btn primary" id="mk-back" target="_top" href="../index.html#s/math/mistakes">📕 回錯題庫</a>';
 function frHTML(x) { var f = x.n ? '<span class="fr"><span class="n">' + x.n + '</span><span>' + x.d + '</span></span>' : ''; return x.w ? '<span class="mix"><span class="w">' + x.w + '</span>' + f + '</span>' : f || '0'; }
-function begin(qs, mk) {
-  R = { qs: qs, i: 0, ok: 0, grad: 0, mk: mk }; N = qs.length;
+function begin(qs, mk, carry) {
+  R = { qs: qs, i: 0, ok: 0, grad: 0, mk: mk, carry: !!carry }; N = qs.length;
   $('home').hidden = true; $('end').hidden = true; $('play').hidden = false; one();
 }
-function start() {
-  if (!authOK() || !startAct(start)) return;
-  begin(FA.round(10), false);
+// 🔁 進位挑戰（2026-11-21）：同一頁、同一套判分和記錄（學習幣、每日清單「異分母加減」f、答錯進錯題庫），只是題目全是要進位的帶分數相加；隨機出題 → 不看「學過 2 次」、kids-lock 不鎖（同一般一輪）
+function start(carry) {
+  carry = carry === true;
+  if (!authOK() || !startAct(function () { start(carry); })) return;
+  begin(FA.round(10, null, carry ? ['carry'] : null), false, carry);
 }
 function one() {
-  var q = R.qs[R.i]; R.v = { w: '', n: '', d: '' }; R.f = 'n'; R.done = false;
+  var q = R.qs[R.i]; R.v = { w: '', n: '', d: '' }; R.f = 'n'; R.done = false; R.tidy = 0;
   $('prog').innerHTML = '<span>第 ' + (R.i + 1) + ' / ' + N + ' 題</span><span class="muted">答對 ' + R.ok + ' 題</span><span class="muted">' + FA.KIND_NAME[q.kind] + '</span>';
-  $('qline').innerHTML = frHTML(q.a) + '<span>' + (q.op === '+' ? '＋' : '－') + '</span>' + frHTML(q.b) + '<span>＝</span><span>？</span>';
+  var xs = FA.nums(q), os = FA.opsOf(q);
+  $('qline').innerHTML = xs.map(function (x, i) { return (i ? '<span>' + (os[i - 1] === '+' ? '＋' : '－') + '</span>' : '') + frHTML(x); }).join('') + '<span>＝</span><span>？</span>';
   $('msg').textContent = ''; $('msg').className = 'msg'; $('fb').innerHTML = ''; $('keys').hidden = false; paint();
 }
 function paint() { Array.prototype.forEach.call(document.querySelectorAll('.box'), function (b) { var f = b.getAttribute('data-f'); b.textContent = R.v[f]; b.classList.toggle('on', f === R.f && !R.done); }); }
@@ -127,7 +131,8 @@ function key(k) {
   paint();
 }
 function submit() {
-  var q = R.qs[R.i], g = FA.grade(q, R.v), m = $('msg');
+  var q = R.qs[R.i], g = FA.grade(q, R.v, R.tidy > 0), m = $('msg');
+  if (g.st === 'fix') R.tidy++;   // 收尾檢查提醒過了：同一題再這樣送 → 照原本規則判（FA.grade again）
   if (g.st === 'bad' || g.st === 'fix') { m.textContent = g.msg; m.className = 'msg bad'; return; }   // 只提醒，不算對錯
   var ok = g.st === 'ok'; R.done = true; if (ok) R.ok++; if (rec(q, ok) === 'graduated') R.grad++; paint();
   m.textContent = ok ? '✓ 答對了！' : '✗ 差一點！正確答案是 ' + FA.txt(q.ans); m.className = 'msg ' + (ok ? 'good' : 'bad');
@@ -143,12 +148,12 @@ function end() {
     e.innerHTML = '<p class="big">' + (R.ok === N ? '🏆' : '💪') + '</p><p class="score" id="fa-score">' + R.ok + ' / ' + N + '</p><p id="fa-grad">' + (R.grad ? '🎓 有 ' + R.grad + ' 題錯題畢業了！' : '同一題連續答對 3 次就會畢業喔！') + '</p>' +
       '<div class="row">' + MKBACK + mkMore() + '</div>';
   } else e.innerHTML = '<p class="big">' + (R.ok >= 8 ? '🏆' : '💪') + '</p><p class="score" id="fa-score">' + R.ok + ' / ' + N + '</p><p>' + (R.ok >= 8 ? '很棒！通分、約分都很熟了。' : '再來一輪，會越算越快！') + (R.ok < N ? '答錯的題在 📕 錯題庫。' : '') + '</p>' +
-    '<div class="row"><button type="button" class="btn primary big" id="again">再來一輪 ▶</button><button type="button" class="btn" id="back">看算法</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a></div>';
+    '<div class="row"><button type="button" class="btn primary big" id="again" data-carry="' + (R.carry ? 1 : 0) + '">' + (R.carry ? '再來一輪進位挑戰 ▶' : '再來一輪 ▶') + '</button><button type="button" class="btn" id="back">看算法</button><a class="btn" target="_top" href="../index.html#s/math/mistakes">📕 錯題庫</a></div>';
   R = null;
 }
 document.addEventListener('click', function (e) {
   var t = e.target.closest('button'); if (!t) return;
-  if (t.id === 'go' || t.id === 'again') return start();
+  if (t.id === 'go' || t.id === 'go-carry' || t.id === 'again') return start(t.id === 'go-carry' || (t.id === 'again' && t.getAttribute('data-carry') === '1'));
   if (t.id === 'back') { $('end').hidden = true; $('home').hidden = false; return; }
   if (t.id === 'next') { R.i++; if (R.i >= N) end(); else one(); return; }
   var f = t.getAttribute('data-f'); if (f && R && !R.done) { R.f = f; return paint(); }
