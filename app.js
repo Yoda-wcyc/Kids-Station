@@ -114,6 +114,8 @@
   const speakErr = code => SPEAK_ERR[code] || '出了一點小狀況，再按一次 🎤 試試看；不行的話可以按「跳過」。';
 
   // ---------- 紀錄與錯題 ----------
+  // 學會／取消學會的時間：比這個項目上一次的事件（學會 at／取消 removedAt）晚（SM.stamp；別台時鐘快時，這台後來按的才會勝）
+  const learnIso = id => { const r = S.learned[id] || {}; return new Date(SM.stamp(Math.max(Date.parse(r.at) || 0, Date.parse(r.removedAt) || 0), Date.now())).toISOString(); };
   function record(q, ok, input) {
     const e = { t: Date.now(), id: q.id, m: q.module, k: q.tkey, y: q.type, ok: ok ? 1 : 0, a: String(input == null ? '' : input).slice(0, 120) };
     e.r = SM.rid(e);
@@ -126,8 +128,9 @@
     save('ke_log', S.log);
     if (ok) { const c = (S.okN.get(q.id) || 0) + 1; S.okN.set(q.id, c); if (c === 2) { E.old.add(q.id); saveLeft(); } }
     if (ok && !S.correct.has(q.id)) { S.correct.add(q.id); save('ke_correct', [...S.correct]); }
-    const m = S.mistakes, now = Date.now(), prev = m[q.id] && !m[q.id].d ? m[q.id] : null;
-    if (!ok) m[q.id] = { c: 0, w: ((m[q.id] || {}).w || 0) + 1, t: now, u: now };
+    // u（同步比新舊用）比這題上一次的 u 晚（SM.stamp：別台時鐘快也不會蓋掉這台後來的作答／畢業）；t（最近一次答錯）照舊用真的時間
+    const m = S.mistakes, t0 = Date.now(), now = SM.stamp(m[q.id] && (m[q.id].u || m[q.id].t), t0), prev = m[q.id] && !m[q.id].d ? m[q.id] : null;
+    if (!ok) m[q.id] = { c: 0, w: ((m[q.id] || {}).w || 0) + 1, t: t0, u: now };
     else if (prev) {
       prev.c++; prev.u = now;
       if (prev.c >= 3) { m[q.id] = { d: 1, w: prev.w, t: prev.t, u: now }; Q.graduated++; } // 畢業＝墓碑，同步到別台才不會復活
@@ -169,7 +172,7 @@
       if (lb.dataset.learn) { startGate(lb.dataset.learn, rendered); return; }
       if (!authOK('unlearn')) return; // 改學習紀錄一律要登入
       if (!confirm('確定要取消「已學會」嗎？')) return;
-      S.learned = KE.unsetLearned(S.learned, lb.dataset.unlearn, new Date().toISOString());
+      S.learned = KE.unsetLearned(S.learned, lb.dataset.unlearn, learnIso(lb.dataset.unlearn));
       save('ke_learned', S.learned);
       if (window.KESync) KESync.now();
       if (redraw) redraw();
@@ -710,7 +713,7 @@
     if (Q.gate) {
       Q.result.pass = KE.gatePassed(Q.gate, ok);
       if (Q.result.pass) {
-        S.learned = KE.setLearned(S.learned, Q.gate.itemId, new Date().toISOString(), `${ok}/${tot}`); save('ke_learned', S.learned);
+        S.learned = KE.setLearned(S.learned, Q.gate.itemId, learnIso(Q.gate.itemId), `${ok}/${tot}`); save('ke_learned', S.learned);
         if (window.KidsCoins) KidsCoins.report({ type: 'test_' + Q.gate.itemId.split(':')[0], item: Q.gate.itemId, correct: ok, total: tot });
       }
     }

@@ -618,6 +618,8 @@ ok(E.progress('word:apple', SM.correctIds(SM.merge({ log: E.itemSet('word:apple'
 const LS1 = KE.setLearned({}, 'word:apple', '2026-10-05T01:00:00Z', '3/3');
 ok(LS1['word:apple'].score === '3/3' && E.learnedRows(LS1)[0].score === '3/3', 'learned score stored');
 ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '—', 'old entry score shows —');
+// 裝置時鐘不一致（2026-11-21）：寫入端用 SM.stamp（比同一筆上一次晚 1 毫秒）→ 時鐘快的那台不再蓋掉慢的那台後來的操作；盤點、T6／T6b、新舊雙向、快 1 年防爆、每日日期、三台收斂 → test/sync-clock.test.js
+{ const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'sync-clock.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/sync-clock.test.js passes: ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
 
 // ---- 裝置同步 v3：各科練習紀錄（社會／自然心智圖、數學天平題目、Scratch、英文星星）----
 {

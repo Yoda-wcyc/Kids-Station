@@ -138,11 +138,13 @@ function prog(){ return lsGet(PKEY, {}); }
 function uprog(p, uid){ var k = pk(uid); if(!p[k]) p[k] = {unlocked:1, best:{}, passedAt:{}, lastPassAt:0, reviewStep:0}; return p[k]; }
 function now(){ var p = prog(); return Date.now() + (DEMO ? (p._clockDays || 0) * DAY : 0); }
 function reviewDue(uid){ var u = prog()[pk(uid)]; if(!u || !u.lastPassAt || (u.reviewStep||0) >= REVIEW.length) return 0; var days = (now() - u.lastPassAt) / DAY; return days >= REVIEW[u.reviewStep||0] ? REVIEW[u.reviewStep||0] : 0; }
+function stampAt(prev, t){ var SM = window.KESyncMerge; return SM && SM.stamp ? SM.stamp(prev, t) : t; }
 function recordResult(uid, level, pct, isReview){
   var p = prog(), u = uprog(p, uid), t = now();
   u.best[level] = Math.max(u.best[level] || 0, pct);
   var pass = pct >= PASS[level];
-  if(pass){ u.passedAt[level] = t; u.lastPassAt = t; u.unlocked = Math.max(u.unlocked, Math.min(level + 1, 5)); if(isReview) u.reviewStep = (u.reviewStep || 0) + 1; }
+  // lastPassAt 同步時決定 reviewStep 跟誰：比上一次晚（syncmerge stamp；別台時鐘快也不會把這次的複習進度蓋回去）。passedAt 照舊用真的時間
+  if(pass){ u.passedAt[level] = t; u.lastPassAt = stampAt(u.lastPassAt, t); u.unlocked = Math.max(u.unlocked, Math.min(level + 1, 5)); if(isReview) u.reviewStep = (u.reviewStep || 0) + 1; }
   lsSet(PKEY, p); syncTouch(true); try{ if(window.KidsDone) window.KidsDone.refresh(); }catch(e){} return pass;
 }
 /* 單元完成（../completion.js 判定、../kids-done.js 補存＋頁首橫幅）：考考自己、練習題一輪的答對率（跟結果畫面上的 % 一樣）存進 kids_done */
@@ -1068,7 +1070,7 @@ function exSubmit(force){
   P.items.forEach(function(it, i){ coinAnswer(oks[i]); dailyRec(oks[i]); mkRec(it.mk, oks[i], {u:it.u, k:it.src === 'x' ? 'X' : 'q', s:String(it.q.q).slice(0, 120), a:String(QKx().answerText(it.q)).slice(0, 120)}); });
   coinRound('quiz', S.right, S.total);
   exMarkSeen(P.items.map(function(it){ return it.key; }));
-  var all = exAll(), k = SUBJ + ':' + P.id, r = all[k] || {}; r.best = Math.max(r.best || 0, S.score); r.last = S.score; r.n = (r.n || 0) + 1; r.at = Date.now(); all[k] = r; lsSet(XKEY, all);
+  var all = exAll(), k = SUBJ + ':' + P.id, r = all[k] || {}; r.best = Math.max(r.best || 0, S.score); r.last = S.score; r.n = (r.n || 0) + 1; r.at = stampAt(r.at, Date.now()); all[k] = r; lsSet(XKEY, all);   // at 同步時決定「最近一次」跟誰（比上一次晚）
   EXM.sg = M.suggest({units:ALL_UNITS}, P.items.filter(function(_, i){ return !oks[i]; }), 3);
   renderExam(); $('#panel').scrollTop = 0;
 }

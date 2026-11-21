@@ -97,7 +97,7 @@
   function record(store, sec, key, val, now) {
     const s = SM.normDone(store), t = Math.max(1, Math.floor(+now || Date.now())), v = Math.max(0, Math.min(100, Math.round(+val || 0)));
     key = String(key || '');
-    if (sec === 'tb') { const p = s.tb[key]; s.tb[key] = { best: Math.max(p ? p.best : 0, v), last: v, at: t }; }
+    if (sec === 'tb') { const p = s.tb[key]; s.tb[key] = { best: Math.max(p ? p.best : 0, v), last: v, at: SM.stamp(p && p.at, t) }; }   // at 只拿來比「最近一次」：比上一次晚（別台時鐘快也不會蓋掉這次）
     else if (sec === 'cz' || sec === 'czFirst' || sec === 'qz') { const p = Object.assign({}, s.mm[key]); p[sec] = Math.max(p[sec] == null ? 0 : p[sec], v); s.mm[key] = p; }
     else if (sec === 'sd' || sec === 'gw') s[sec][key] = Math.max(s[sec][key] == null ? 0 : s[sec][key], v);
     else if (sec === 'bal' || sec === 'ai' || sec === 'zh' || sec === 'cy') { if (!s[sec][key]) s[sec][key] = t; }   // zh／cy：國語閱讀／成語第一次完成的時間（val 不用）

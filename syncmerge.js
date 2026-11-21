@@ -1,4 +1,8 @@
 /* syncmerge.js — 裝置同步的合併規則（純函式，不碰 DOM／網路以外的東西；瀏覽器與 Node 共用）
+   2026-11-21 裝置時鐘不一致（文件格式、合併規則、上限都沒動）：合併時用「裝置自己的時間」比新舊的欄位，寫入端改用 stamp(上一次的時間, 現在)
+    ＝比同一筆上一次的時間至少晚 1 毫秒（prev 超過現在＋1 天就不跟）。時鐘快的那台寫過、慢的那台同步看過之後再改 → 慢的那台一定勝。
+    用到的地方：取消學會／重新學會、英文錯題（app.js）、天平新增／刪除／換順序（eqFromLocal）、課本考試最近一次（completion.js）、
+    心智圖最後過關＋複習進度、單元測驗最近一次（mindmap.js）；各科錯題庫 kids-mistakes.js 本來就這樣寫（u＋1）。盤點與測試見 test/sync-clock.test.js。
    2026-11-17 瘦身（不升版、上限都沒動；舊版↔新版雙向合併見 test/sync-compat.test.js，舊版＝test/fixtures/syncmerge-old-v9.js）：
     - mmBlanks.a（背架構節點）的 key 省掉單元名：'u1-l1-c' → '-l1-c'（normA／expandBl）。舊版把它當成不認得的節點照樣留著、不會刪；新版兩種都吃。
     - eq.del（天平刪除墓碑）留最新 50 筆（原 100）。舊版留 100 筆也不衝突。
@@ -94,6 +98,11 @@
   const cmpLog = (a, b) => (a.t - b.t) || (a.r < b.r ? -1 : a.r > b.r ? 1 : 0);
   const evL = x => Math.max(Date.parse(x && x.at) || 0, Date.parse(x && x.removedAt) || 0);
   const evM = x => (x && (x.u || x.t)) || 0;
+  // 寫「拿來比新舊的時間」用（2026-11-21 裝置時鐘不一致）：比同一筆上一次的時間 prev 至少晚 1 毫秒（混合邏輯時鐘的簡化版，只看同一筆、不存任何新東西）。
+  //   時鐘快 10 分鐘的那台寫過、這台同步看過 → 這台之後的操作一定排在後面。prev 超過「現在＋1 天」就不跟（時鐘快很多的那台不會把大家的時間一起推走），用現在。
+  //   顯示、日期判斷（每日清單哪一天、隔天複習、補題期限、x 分鐘前）照舊用真的 Date.now()，不要用這個。
+  const STAMP_MAX_AHEAD = 864e5;
+  const stamp = (prev, now) => { const n = now == null ? Date.now() : +now, p = +prev || 0; return p >= n && p <= n + STAMP_MAX_AHEAD ? p + 1 : n; };
   // 兩筆取「事件較新」的；一樣新就取 canon 字串較大的（兩邊結果一致）
   function newest(a, b, ev) { if (!a) return b; if (!b) return a; const ea = ev(a), eb = ev(b); if (ea !== eb) return ea > eb ? a : b; return canon(a) >= canon(b) ? a : b; }
   function mergeMap(a, b, ev) { const o = {}; Object.keys(Object.assign({}, a, b)).sort().forEach(k => { const v = newest(a[k], b[k], ev); if (v) o[k] = v; }); return o; }
@@ -201,17 +210,18 @@
     return finishEq(Math.max(a.at, b.at), [...m.values()], del);
   }
   // 本機清單（[{q,own}]，沒有＝null）＋上次同步後的清單狀態 prev → 這台的 eq：新出現的題 t＝now、不見的題記墓碑、順序變了 at＝now
+  //   （時間都用 stamp：比這一題／這份清單上一次的時間晚，時鐘慢的那台後來的新增、刪除、換順序才不會輸給時鐘快的那台）
   function eqFromLocal(list, prev, now) {
     const p = normEq(prev);
     if (!Array.isArray(list)) return p;
     const pm = new Map(p.items.map(it => [it.q, it])), del = Object.assign(Object.create(null), p.del), items = [], seen = new Set();
     list.forEach(it => {
       if (!it || typeof it.q !== 'string' || !it.q || seen.has(it.q)) return;
-      seen.add(it.q); const o = pm.get(it.q); items.push({ q: it.q, own: !!it.own, t: o ? o.t : now });
+      seen.add(it.q); const o = pm.get(it.q); items.push({ q: it.q, own: !!it.own, t: o ? o.t : stamp(del[it.q], now) });
     });
-    pm.forEach((it, q) => { if (!seen.has(q)) del[q] = now; });
+    pm.forEach((it, q) => { if (!seen.has(q)) del[q] = stamp(it.t, now); });
     const same = items.length === p.items.length && items.every((it, i) => it.q === p.items[i].q && it.own === p.items[i].own);
-    return finishEq(same ? p.at : now, items, del);
+    return finishEq(same ? p.at : stamp(p.at, now), items, del);
   }
   // ---- scratch：Scratch「我完成了」（聯集，留最早的時間）----
   const normScr = x => section(x, v => (typeof v === 'string' && v ? v : null));
@@ -565,7 +575,7 @@
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function normCode(s) { const c = String(s || '').toUpperCase().replace(/[\s-]/g, ''); return c.length === 8 && [...c].every(ch => ALPHA.includes(ch)) ? c.slice(0, 4) + '-' + c.slice(4) : null; }
 
-  const SM = { MAX_BYTES, VERSION, MAX_EQ, MAX_EQ_DEL, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, N_ABC, normN, mergeN, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg, normPg, mergePg, pgFromLocal, pgApply, COMIC_EPS, PG_MOCK };
+  const SM = { stamp, STAMP_MAX_AHEAD, MAX_BYTES, VERSION, MAX_EQ, MAX_EQ_DEL, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, N_ABC, normN, mergeN, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg, normPg, mergePg, pgFromLocal, pgApply, COMIC_EPS, PG_MOCK };
   if (typeof module !== 'undefined' && module.exports) module.exports = SM;
   root.KESyncMerge = SM;
 })(typeof window !== 'undefined' ? window : globalThis);
