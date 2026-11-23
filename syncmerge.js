@@ -1,4 +1,14 @@
 /* syncmerge.js — 裝置同步的合併規則（純函式，不碰 DOM／網路以外的東西；瀏覽器與 Node 共用）
+   2026-11-23 英文 agg／learned 上傳時壓縮（不升版、上限都沒動；以前這兩個欄位跟著學過的題數一直長，約 2,560 字就會 413）：
+    ke:{a:'<LZW>', l:'<LZW>', o:舊版最後出現的時間}   ← 只在 PUT 出去的文件裡（packDoc）；normalize 解開併回 agg／learned，程式裡、本機照舊是完整物件。
+    - a：每題只留「答對過幾次（封頂 2）」三種狀態（答過沒對／1 次／2 次以上）——學過 2 次就不算、解鎖、課本「有沒有練過」都只看這個；
+      答題次數 n、確切的 k、fc 時間只留在本機 ke_agg（家長頁各主題正確率＝那台自己的數字＋同步來的封頂值）。合併＝每題取大，跟以前一樣。
+    - l：學會 at／取消 removedAt 留到毫秒（新的勝、墓碑照舊）＋分數。還原後跟原本不一樣的（非標準時間、多的欄位）照舊放在 learned 物件。
+    - 英文錯題墓碑：最多留 300 筆最新的（比照 mk；以前沒有上限）。
+    - 舊版（2026-11-21 線上版，凍結在 test/fixtures/syncmerge-old-1121.js）讀到：丟掉 ke，PUT 回去少了 ke → 新版下次同步從本機補回。
+      新版看到舊版寫過的文件（有 agg／learned、沒有 ke）→ ke.o＝那時候；之後 14 天內舊寫法的 agg／learned 也整份寫一份（放得進 MAX_BYTES 才寫），
+      舊版那台看得到全部、也不會因為「本機有、文件沒有」每次都重傳、跟新版來回蓋；放不下時舊版那台只看得到自己的。
+      雙向測試見 test/sync-ke.test.js；最壞大小見 smoke。
    2026-11-21 裝置時鐘不一致（文件格式、合併規則、上限都沒動）：合併時用「裝置自己的時間」比新舊的欄位，寫入端改用 stamp(上一次的時間, 現在)
     ＝比同一筆上一次的時間至少晚 1 毫秒（prev 超過現在＋1 天就不跟）。時鐘快的那台寫過、慢的那台同步看過之後再改 → 慢的那台一定勝。
     用到的地方：取消學會／重新學會、英文錯題（app.js）、天平新增／刪除／換順序（eqFromLocal）、課本考試最近一次（completion.js）、
@@ -512,16 +522,132 @@
     return out;
   }
 
+  // ---- ke：英文 agg／learned 上傳時的壓縮寫法（2026-11-23，格式見檔頭；不升版：舊版裝置丟掉 ke、新版從本機補回）----
+  // 程式裡（normalize／merge／compact 的結果、本機 ke_agg／ke_learned）照舊是完整物件；只有 PUT 出去的文件（packDoc）是壓縮的。
+  const KE_ID = /^[-0-9a-z]+(:[-0-9a-z]+)+$/, KE_LS = /^\d{1,4}\/\d{1,4}$/, KE_ST = '.+*', KE_OLD_MS = 14 * 864e5, KE_TMAX = 8.64e15;
+  // 常見的題型尾巴換成一個大寫字（只能往後加，不能改順序）
+  const KE_TOK = ['type', 'speak', 'listen', 'zh2en', 'en2zh', 'extype', 'spell', 'gap1', 'gap2', 'reorder', 'choose', 'fill', 'filltype', 'dict', 'meaning', 'word'];
+  const keOk = k => k.length <= 200 && KE_ID.test(k);
+  // 前綴共用：跟上一筆一樣的前幾個字只寫長度（一個 base36 字，最多 35）
+  const pre = (k, prev) => { let p = 0; while (p < 35 && p < k.length && k[p] === prev[p]) p++; return p; };
+  // LZW（字串 → [0-9a-zA-Z_-]，可以直接放進 JSON）：'原長度36進位.內容'。第 i 個碼用 bitlen(字表初始大小＋i) 位元，編解碼兩邊算法一樣
+  const Z_IN = '-0123456789:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ=,.+*~/', Z_OUT = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_', Z_MAX = 4e6;
+  const zMemo = new Map(), memo = (k, f) => { if (zMemo.has(k)) return zMemo.get(k); const v = f(); if (zMemo.size > 8) zMemo.clear(); zMemo.set(k, v); return v; };
+  function zip(s) {
+    if (!s) return '';
+    return memo('z' + s, () => {
+      const d = new Map(); for (let i = 0; i < Z_IN.length; i++) d.set(Z_IN[i], i);
+      let n = Z_IN.length, i = 0, w = '', out = '', acc = 0, nb = 0;
+      const put = c => { for (let b = 0, wd = 32 - Math.clz32(Z_IN.length + i++); b < wd; b++) { acc |= (c >> b & 1) << nb; if (++nb === 6) { out += Z_OUT[acc]; acc = nb = 0; } } };
+      for (const ch of s) { if (!d.has(ch)) throw new Error('zip: bad char ' + ch); const wc = w + ch; if (d.has(wc)) w = wc; else { put(d.get(w)); d.set(wc, n++); w = ch; } }
+      put(d.get(w)); if (nb) out += Z_OUT[acc];
+      return s.length.toString(36) + '.' + out;
+    });
+  }
+  // 解不開（壞掉、被截斷）回 ''＝當作沒有（不報錯）
+  function unzip(z) {
+    const m = /^([0-9a-z]{1,6})\.([0-9a-zA-Z_-]+)$/.exec(typeof z === 'string' ? z : ''); if (!m) return '';
+    return memo('u' + z, () => {
+      const len = parseInt(m[1], 36), src = m[2], d = Z_IN.split(''); if (!(len > 0 && len <= Z_MAX)) return '';
+      let pos = 0, acc = 0, nb = 0, i = 0;
+      const get = () => { let c = 0; for (let b = 0, wd = 32 - Math.clz32(Z_IN.length + i++); b < wd; b++) { if (!nb) { if (pos >= src.length) return -1; acc = Z_OUT.indexOf(src[pos++]); nb = 6; } c |= (acc & 1) << b; acc >>= 1; nb--; } return c; };
+      let c = get(); if (c < 0 || c >= d.length) return '';
+      let w = d[c], out = w;
+      while (out.length < len) {
+        c = get(); const e = c >= 0 && c < d.length ? d[c] : c === d.length ? w + w[0] : null; if (e == null) return '';
+        out += e; d.push(w + e[0]); w = e;
+      }
+      return out.length === len && pos === src.length ? out : '';
+    });
+  }
+  // agg：每題只上傳「答對過幾次（封頂 2）」：'.'＝答過、沒答對；'+'＝答對 1 次；'*'＝2 次以上（學過 2 次就不算、解鎖都只看這個）。
+  //   題號照「最後一個 : 之前」分組（例 w:apple），組名前綴共用；組內每題＝尾巴（KE_TOK 的大寫字或原字）＋狀態字。
+  //   答題次數 n、確切的答對次數 k、第一次答對的時間 fc 只留在本機 ke_agg（各主題正確率是那台自己的數字）。
+  const keSt = g => Math.min(2, Math.max(int0(g && g.k), g && g.fc != null ? 1 : 0));
+  function aggPack(agg) {
+    const grp = new Map(), rest = {};
+    Object.keys(agg).forEach(q => { if (!keOk(q)) { rest[q] = agg[q]; return; } const i = q.lastIndexOf(':'), G = q.slice(0, i); (grp.get(G) || grp.set(G, []).get(G)).push(q.slice(i + 1)); });
+    let prev = ''; const out = [];
+    [...grp.keys()].sort().forEach(G => {
+      const p = pre(G, prev); prev = G;
+      out.push(p.toString(36) + G.slice(p) + '=' + grp.get(G).sort().map(l => { const t = KE_TOK.indexOf(l); return (t >= 0 ? String.fromCharCode(65 + t) : l) + KE_ST[keSt(agg[G + ':' + l])]; }).join(''));
+    });
+    return { s: out.join(','), rest };
+  }
+  // 還原成 {n,k,fc}：fc 只是「答對過」的記號，用 cut（壓進 agg 的紀錄都 ≤ cut；跟本機合併取小，本機真的時間會留著）
+  function aggUnpack(s, fc) {
+    const o = {}; let prev = '';
+    (s ? s.split(',') : []).forEach(r => {
+      const e = r.indexOf('='); if (e < 1) return;
+      const G = prev.slice(0, parseInt(r[0], 36) || 0) + r.slice(1, e); prev = G;
+      r.slice(e + 1).replace(/([A-P]|[-0-9a-z]+)([.+*])/g, (_, l, st) => {
+        const q = G + ':' + (/^[A-P]$/.test(l) ? KE_TOK[l.charCodeAt(0) - 65] : l), c = KE_ST.indexOf(st);
+        if (keOk(q)) o[q] = c ? { n: c, k: c, fc } : { n: 1, k: 0 };
+        return '';
+      });
+    });
+    return o;
+  }
+  // learned：'前綴長度＋項目=a<學會時間 ms 36進位>[~分數]' 或 '=r<取消時間>'，逗號隔開。時間留到毫秒（stamp 的 +1 毫秒才比得出新舊）。
+  //   只壓「還原後一模一樣」的（標準 ISO 時間、分數 n/m、沒有別的欄位）；其他照舊放在 learned 物件裡
+  const kIso = t => new Date(t).toISOString();
+  function lOne(v) {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+    const ks = Object.keys(v).sort().join(), t = Date.parse(ks === 'removedAt' ? v.removedAt : v.at);
+    if (!(t > 0 && t < KE_TMAX) || kIso(t) !== (ks === 'removedAt' ? v.removedAt : v.at)) return null;
+    if (ks === 'removedAt') return 'r' + t.toString(36);
+    if (ks === 'at') return 'a' + t.toString(36);
+    return ks === 'at,score' && typeof v.score === 'string' && KE_LS.test(v.score) ? 'a' + t.toString(36) + '~' + v.score : null;
+  }
+  function lPack(L) {
+    const rest = {}, out = []; let prev = '';
+    Object.keys(L).sort().forEach(k => { const s = keOk(k) ? lOne(L[k]) : null; if (s == null) { rest[k] = L[k]; return; } const p = pre(k, prev); prev = k; out.push(p.toString(36) + k.slice(p) + '=' + s); });
+    return { s: out.join(','), rest };
+  }
+  function lUnpack(s) {
+    const o = {}; let prev = '';
+    (s ? s.split(',') : []).forEach(r => {
+      const e = r.indexOf('='); if (e < 1) return;
+      const k = prev.slice(0, parseInt(r[0], 36) || 0) + r.slice(1, e); prev = k;
+      const m = /^([ar])([0-9a-z]{1,11})(?:~(\d{1,4}\/\d{1,4}))?$/.exec(r.slice(e + 1)), t = m ? parseInt(m[2], 36) : 0;
+      if (!m || !(t > 0 && t < KE_TMAX) || !keOk(k)) return;
+      o[k] = m[1] === 'r' ? { removedAt: kIso(t) } : m[3] ? { at: kIso(t), score: m[3] } : { at: kIso(t) };
+    });
+    return o;
+  }
+  // 英文錯題墓碑最多留 MK_DEL（300）筆最新的（比照其他科；2026-11-23 以前沒有上限）
+  function capDead(m) {
+    const dead = Object.keys(m).filter(k => m[k] && m[k].d), ev = k => +evM(m[k]) || 0;
+    if (dead.length > MK_DEL) dead.sort((a, b) => (ev(b) - ev(a)) || (a < b ? -1 : 1)).slice(MK_DEL).forEach(k => { delete m[k]; });
+    return m;
+  }
+  // 上傳用的文件：agg、learned 壓進 ke。remote＝伺服器上那份（原樣）：
+  //   舊版裝置寫過（有 agg／learned、沒有 ke）→ ke.o＝現在。KE_OLD_MS（14 天）內舊寫法的 agg／learned 也整份寫一份：
+  //   舊版那台看得到全部（學會、學過 2 次都一致），也不會因為「本機有、文件沒有」每次都 PUT、跟新版來回蓋。
+  //   兩份加起來超過 MAX_BYTES 就只寫壓縮的（舊版那台只看得到自己的；它 PUT 時丟掉 ke，新版下次同步補回）。14 天沒再看到舊版就不寫舊寫法了。
+  function packDoc(d, remote, now) {
+    const r = obj(remote), ro = num(obj(r.ke).o, 0);
+    const seen = Math.max(ro <= now + 864e5 ? ro : 0, !r.ke && (Object.keys(obj(r.agg)).length || Object.keys(obj(r.learned)).length) ? now : 0);
+    const A = aggPack(obj(d.agg)), L = lPack(obj(d.learned)), ke = {};
+    if (A.s) ke.a = zip(A.s); if (L.s) ke.l = zip(L.s);
+    const out = Object.assign({}, d, { agg: A.rest, learned: L.rest, ke });
+    if (!(seen > 0 && now - seen < KE_OLD_MS)) return out;
+    ke.o = seen;
+    const both = Object.assign({}, out, { agg: d.agg, learned: d.learned });
+    return bytes(both) <= MAX_BYTES ? both : out;
+  }
+
   // 整理成 v7：補 r、去重、排序；t ≤ cut 的舊紀錄只保留「答對過」到 agg；新欄位缺了就是空的（讀舊文件不會壞）
+  // 2026-11-23：壓縮的 ke（agg、learned）解開併回完整物件；結果裡沒有 ke（上傳前才 packDoc）
   function normalize(doc) {
-    const d = obj(doc), cut = +d.cut || 0, agg = mergeAgg(obj(d.agg), {}), seen = new Map();
+    const d = obj(doc), cut = +d.cut || 0, ke = obj(d.ke), agg = mergeAgg(obj(d.agg), aggUnpack(unzip(ke.a), cut > 0 ? cut : KE_TMAX)), seen = new Map();
     (Array.isArray(d.log) ? d.log : []).forEach(e0 => {
       if (!e0 || !e0.id || !isFinite(+e0.t)) return;
       const e = e0.r ? e0 : Object.assign({}, e0, { r: rid(e0) });
       if (e.t <= cut) { addFc(agg, e); return; }
       const p = seen.get(e.r); if (!p || canon(e) > canon(p)) seen.set(e.r, e);
     });
-    const o = { v: VERSION, cut, log: [...seen.values()].sort(cmpLog), agg, learned: mergeMap(obj(d.learned), {}, evL), mistakes: mergeMap(obj(d.mistakes), {}, evM),
+    const o = { v: VERSION, cut, log: [...seen.values()].sort(cmpLog), agg, learned: mergeMap(obj(d.learned), lUnpack(unzip(ke.l)), evL), mistakes: capDead(mergeMap(obj(d.mistakes), {}, evM)),
       mm: section(d.mm, normProg), mmBlanks: section(d.mmBlanks, normBl), eq: normEq(d.eq), scratch: normScr(d.scratch), ctr: normCtr(d.ctr), mk: normMk(d.mk), done: normDone(d.done), dd: normDd(d.dd), dg: normDg(d.dg) };
     const pg = normPg(d.pg); if (Object.keys(pg).length) o.pg = pg;   // 沒有就不放（舊文件、舊測試的形狀不變）
     return o;
@@ -533,10 +659,10 @@
       mm: mergeSection(a.mm, b.mm, mergeProg), mmBlanks: mergeSection(a.mmBlanks, b.mmBlanks, mergeBl), eq: mergeEq(a.eq, b.eq),
       scratch: mergeSection(a.scratch, b.scratch, earliest), ctr: mergeSection(a.ctr, b.ctr, mergeCtr), mk: mergeMk(a.mk, b.mk), done: mergeDone(a.done, b.done), dd: mergeDd(a.dd, b.dd), dg: mergeDg(a.dg, b.dg), pg: mergePg(a.pg, b.pg) });
   }
-  // 太大就把最舊的 1/4 壓進 agg（保留每題第一次答對的時間），重複到夠小
+  // 太大就把最舊的 1/4 壓進 agg（保留每題第一次答對的時間），重複到夠小（2026-11-23 起量的是上傳的樣子 packDoc）
   function compact(doc, maxBytes) {
     let d = normalize(doc); const lim = maxBytes || MAX_BYTES;
-    while (bytes(d) > lim && d.log.length > 50) {
+    while (d.log.length > 50 && bytes(d) > lim && bytes(packDoc(d, null, 0)) > lim) {   // 完整物件放得下，壓縮的一定也放得下：先比便宜的
       const cutT = d.log[Math.ceil(d.log.length / 4) - 1].t, agg = JSON.parse(JSON.stringify(d.agg));
       d.log.forEach(e => { if (e.t > cutT) return; const g = agg[e.id] || (agg[e.id] = { n: 0, k: 0 }); g.n++; if (e.ok) { g.k++; if (g.fc == null || e.t < g.fc) g.fc = e.t; } });
       d = normalize(Object.assign({}, d, { cut: Math.max(d.cut, cutT), agg }));
@@ -563,8 +689,10 @@
       // 寫回本機前再跟「現在的本機」合一次，期間新增的作答不會被蓋掉
       const fresh = compact(merge(io.readLocal(), merged));
       if (canon(fresh) !== canon(normalize(io.readLocal()))) { io.writeLocal(fresh); changedLocal = true; }
-      if (canon(merged) === canon(rdoc)) return { ok: true, puts, changedLocal };
-      const r = await io.put(code, merged, remote.etag);
+      // 比「上傳的樣子」：agg 在文件裡只有封頂的次數，本機比較準的數字不算新東西（不然每次都 PUT）
+      const now = opts.now || Date.now(), out = packDoc(merged, remote.doc, now);
+      if (canon(out) === canon(packDoc(rdoc, remote.doc, now))) return { ok: true, puts, changedLocal };
+      const r = await io.put(code, out, remote.etag);
       if (r && r.conflict) continue;
       puts++;
       return { ok: true, puts, changedLocal };
@@ -575,7 +703,7 @@
   const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   function normCode(s) { const c = String(s || '').toUpperCase().replace(/[\s-]/g, ''); return c.length === 8 && [...c].every(ch => ALPHA.includes(ch)) ? c.slice(0, 4) + '-' + c.slice(4) : null; }
 
-  const SM = { stamp, STAMP_MAX_AHEAD, MAX_BYTES, VERSION, MAX_EQ, MAX_EQ_DEL, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, N_ABC, normN, mergeN, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg, normPg, mergePg, pgFromLocal, pgApply, COMIC_EPS, PG_MOCK };
+  const SM = { packDoc, zip, unzip, KE_OLD_MS, stamp, STAMP_MAX_AHEAD, MAX_BYTES, VERSION, MAX_EQ, MAX_EQ_DEL, MK_DEL, rid, canon, bytes, normalize, merge, compact, expandBl, correctIds, syncOnce, normCode, normEq, eqFromLocal, ctrSum, normMk, mergeMk, normDone, mergeDone, N_ABC, normN, mergeN, MP_K, MX_K, FR_K, DD_DAYS, DD_MAX, DG_MAX_BYTES, ddDay, normDd, mergeDd, ddAdd, ddSum, normDg, mergeDg, normPg, mergePg, pgFromLocal, pgApply, COMIC_EPS, PG_MOCK };
   if (typeof module !== 'undefined' && module.exports) module.exports = SM;
   root.KESyncMerge = SM;
 })(typeof window !== 'undefined' ? window : globalThis);

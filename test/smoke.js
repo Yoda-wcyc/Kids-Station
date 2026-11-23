@@ -610,7 +610,7 @@ ok(SM.normCode(' abcd efgh ') === 'ABCD-EFGH' && SM.normCode('ABCD-EFG0') === nu
 const big = { log: [] };
 for (let i = 0; i < 9000; i++) big.log.push({ t: T0 + i, id: E.meta[i % 600].id, m: 'x', k: 'words:food', y: 'zh2en', ok: i % 3 ? 1 : 0, a: 'answer-' + (i % 50) });
 const before = SM.correctIds(big), small = SM.compact(big, 120 * 1024);
-ok(SM.bytes(small) <= 120 * 1024 && small.cut > 0 && Object.keys(small.agg).length > 0, 'compaction shrinks the doc: ' + SM.bytes(small));
+ok(SM.bytes(SM.packDoc(small, null, 0)) <= 120 * 1024 && small.cut > 0 && Object.keys(small.agg).length > 0, 'compaction shrinks the doc (2026-11-23 起量上傳的樣子，agg 壓在 ke): ' + SM.bytes(SM.packDoc(small, null, 0)));
 const after = SM.correctIds(small);
 ok(before.size === after.size && [...before].every(id => after.has(id)), 'compaction preserves "answered correctly at least once"');
 ok(SM.canon(SM.merge(small, big)) === SM.canon(SM.merge(small, small)), 'merge after compaction is idempotent (old entries fold into agg)');
@@ -895,8 +895,42 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 2026-11-02 五下上線塞滿約 156KB 超過 1/4 → v7 壓成字串（114,868 B，六下必超）→ v8 只同步答過的、封頂、熟練旗標
   ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === SM.MAX_EQ_DEL && SM.MAX_EQ_DEL === 50 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,9999')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
   const bigAll = SM.compact(Object.assign({}, maxDoc, { log: big.log.concat(big.log.map(e => Object.assign({}, e, { t: e.t + 1e7, a: e.a + '-again' }))) }));
-  ok(SM.bytes(bigAll) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq) && same(bigAll.dd, sec.dd) && SM.bytes(sec.dd) <= SM.DD_MAX, 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(bigAll));
-  console.log('sync v9 doc size: sections max ' + secBytes + ' B (六下全上線估 ' + projBytes + ' B；dd 用上限算 ' + worstCap + ' B，其中 pg ' + pgBytes + ' B，剩 ' + (SM.MAX_BYTES / 4 - worstCap) + ' B); 18000 answers + sections after compact ' + SM.bytes(bigAll) + ' B');
+  ok(SM.bytes(SM.packDoc(bigAll, null, 0)) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq) && same(bigAll.dd, sec.dd) && SM.bytes(sec.dd) <= SM.DD_MAX, 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(SM.packDoc(bigAll, null, 0)));
+  console.log('sync v9 doc size: sections max ' + secBytes + ' B (六下全上線估 ' + projBytes + ' B；dd 用上限算 ' + worstCap + ' B，其中 pg ' + pgBytes + ' B，剩 ' + (SM.MAX_BYTES / 4 - worstCap) + ' B); 18000 answers + sections after compact ' + SM.bytes(SM.packDoc(bigAll, null, 0)) + ' B（上傳的樣子）');
+}
+
+// ---- 2026-11-23 英文全部學會的最壞情況（agg／learned 上傳時壓進 ke；上限一個都沒放寬）----
+// 題數用真的題庫算：單字補到 2,900 字（不夠的用亂數字母當新字，每字的題型＝現在一個字的題型），片語、字根、文法、句型、課本＝現在全部。
+//   每一題都答過、狀態亂數（答過沒對／1 次／2 次以上，亂數比全部 2 次更難壓＝更大）；每一項都學會（時間亂數到毫秒、分數 n/15）；
+//   英文錯題 300 題沒畢業＋300 筆墓碑（墓碑上限）；作答紀錄 log 剩 50 筆（compact 的下限，每筆答案 120 字）。
+// 算式：非英文欄位上限 MAX_BYTES/4（128,000 B）＋英文最壞（ke＋錯題＋log）≤ MAX_BYTES × 80%（409,600 B，留 20% 餘裕）
+{
+  const SMk = require(path.join(root, 'syncmerge.js'));
+  let seed = 20261123; const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const ids = E.meta.map(m => m.id), items = new Set(ids.map(q => E.itemOfQ(q))), key0 = E.itemOfQ(ids.find(q => q.indexOf('w:') === 0)).slice(5);
+  const wq = ids.filter(q => q.indexOf('w:' + key0 + ':') === 0).map(q => q.slice(3 + key0.length)), WORDS = 2900, addW = Math.max(0, WORDS - W.length);
+  for (let i = 0; i < addW; i++) { let k = ''; for (let j = 3 + Math.floor(rnd() * 8); j > 0; j--) k += String.fromCharCode(97 + Math.floor(rnd() * 26)); k += i.toString(36); wq.forEach(s => ids.push('w:' + k + ':' + s)); items.add('word:' + k); }
+  const T0 = Date.UTC(2026, 0, 1), agg = {}, learned = {}, mistakes = {};
+  ids.forEach(q => { const c = Math.floor(rnd() * 3); agg[q] = c === 2 ? { n: 99, k: 99, fc: T0 } : c === 1 ? { n: 9, k: 1, fc: T0 } : { n: 5, k: 0 }; });
+  [...items].forEach(k => { learned[k] = { at: new Date(T0 + Math.floor(rnd() * 6e10)).toISOString(), score: (1 + Math.floor(rnd() * 15)) + '/15' }; });
+  const longQ = ids.slice().sort((a, b) => b.length - a.length);
+  longQ.slice(0, 300).forEach((q, i) => { mistakes[q] = { c: 2, w: 99, t: 1.8e12 + i, u: 1.8e12 + i }; });
+  longQ.slice(300, 600).forEach((q, i) => { mistakes[q] = { d: 1, w: 99, t: 1.8e12 + i, u: 1.8e12 + i }; });
+  for (let i = 0; i < 50; i++) mistakes[longQ[600 + i] + ':old'] = { d: 1, w: 9, t: 1e12 + i, u: 1e12 + i };   // 超過 300 筆的舊墓碑：會被砍掉
+  const log = Array.from({ length: 50 }, (_, i) => ({ t: T0 + 7e10 + i, id: longQ[i], m: 'textbook', k: 'textbook:x', y: 'reorder', ok: 1, a: 'x'.repeat(120) }));
+  const en = SMk.normalize({ cut: T0 + 6.9e10, log, agg, learned, mistakes }), wire = SMk.packDoc(en, null, 0), enB = SMk.bytes(wire), legacyB = SMk.bytes(en);
+  const total = SMk.MAX_BYTES / 4 + enB, LIM = SMk.MAX_BYTES * 0.8;
+  ok(Object.keys(en.mistakes).filter(k => en.mistakes[k].d).length === 300 && !en.mistakes[longQ[600] + ':old'], 'english mistakes: tombstones capped at the 300 newest (like the other subjects)');
+  const back = SMk.normalize(JSON.parse(JSON.stringify(wire)));
+  ok(Object.keys(back.agg).length === ids.length && ids.every(q => SMk.canon(Math.min(2, agg[q].k)) === SMk.canon(back.agg[q].k)) && SMk.canon(back.learned) === SMk.canon(learned), 'english worst case: every question state and every learned item survive packDoc → normalize');
+  ok(total <= LIM, 'english worst case (' + WORDS + ' words, ' + ids.length + ' questions, ' + items.size + ' items): ' + (SMk.MAX_BYTES / 4) + ' + ' + enB + ' = ' + total + ' B ≤ 80% of ' + SMk.MAX_BYTES + ' (' + LIM + ' B); old format would be ' + legacyB + ' B');
+  // 塞滿英文＋一大堆新作答：compact 只壓 log，整份（上傳的樣子）≤ MAX_BYTES，每一題的狀態都還在
+  const flood = Array.from({ length: 6000 }, (_, i) => ({ t: T0 + 8e10 + i, id: ids[i * 7 % ids.length], m: 'words', k: 'words:x', y: 'listen-choose', ok: i % 3 ? 1 : 0, a: 'y'.repeat(100) }));
+  const cp = SMk.compact(Object.assign({}, en, { log: en.log.concat(flood) })), cpB = SMk.bytes(SMk.packDoc(cp, null, 0));
+  ok(cpB <= SMk.MAX_BYTES && cp.log.length < 6050 && ids.every(q => cp.agg[q] && Math.min(2, cp.agg[q].k) >= Math.min(2, agg[q].k)), 'compact with full English + 6000 new answers: wire doc ' + cpB + ' B ≤ MAX_BYTES, log ' + cp.log.length + ' kept, no question lost');
+  // 壓縮與還原、合併語意、學過 2 次、新舊版雙向（凍結的 2026-11-21 線上版）、三台輪流同步 → test/sync-ke.test.js
+  { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'sync-ke.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/sync-ke.test.js passes: ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
+  console.log('english worst case: ' + WORDS + ' 字（現有 ' + W.length + ' ＋ 補 ' + addW + '）、' + ids.length + ' 題、' + items.size + ' 項；ke.a ' + (wire.ke.a || '').length + ' B、ke.l ' + (wire.ke.l || '').length + ' B、英文合計 ' + enB + ' B；128,000 + ' + enB + ' = ' + total + ' B ≤ ' + LIM + ' B（舊寫法 ' + legacyB + ' B）');
 }
 
 // ---- 📕 錯題庫（kids-mistakes.js；社會／自然／數學／AI）＋ 同步 v4 的 mk 欄位 ----
