@@ -3,6 +3,7 @@
   'use strict';
   const D = { words: window.DATA_WORDS || [], phrases: window.DATA_PHRASES || [], roots: window.DATA_ROOTS || [], grammar: window.DATA_GRAMMAR || [], patterns: window.DATA_PATTERNS || [], textbook: window.DATA_TEXTBOOK || [] };
   const E = new KE.Engine(D);
+  E.isLearned = id => isL(id);   // 單字自動路徑：按過「學會了」的字排到後面（engine buildQuiz）
   const app = document.getElementById('app');
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -55,7 +56,8 @@
   // 英文還有幾題新題（學過不到 2 次）：e＝全部英文題、j＝句型、p＝片語 → kids_daily_left（本機快取；每日清單「🎉 這裡全部學會了」用，從同步過的紀錄算出來）
   function saveLeft() {
     const n = { e: 0, j: 0, p: 0 };
-    E.meta.forEach(m => { if (E.old.has(m.id)) return; n.e++; const k = KE.dailyKind(Object.assign({ oral: /:oral:/.test(m.id) }, m)); if (k === 'sentence') n.j++; else if (k === 'phrase') n.p++; });
+    // 等級 1 下架的單字不算新題（自動路徑不會出）
+    E.meta.forEach(m => { if (E.old.has(m.id) || (m.module === 'words' && !KE.wordInPath(m))) return; n.e++; const k = KE.dailyKind(Object.assign({ oral: /:oral:/.test(m.id) }, m)); if (k === 'sentence') n.j++; else if (k === 'phrase') n.p++; });
     // 只有某一類已經沒有新題（0）才需要記；都還有就不建這個 key（沒練過的訪客不多出本機資料）
     const cur = load('kids_daily_left', null), need = !n.e || !n.j || !n.p;
     try { if (!need) { if (cur) localStorage.removeItem('kids_daily_left'); } else if (!cur || cur.e !== n.e || cur.j !== n.j || cur.p !== n.p) localStorage.setItem('kids_daily_left', JSON.stringify(n)); } catch (e) { }
@@ -314,46 +316,55 @@
   }
 
   // ---------- 學習 ----------
-  const LF = { lv: '', tag: '', src: '', q: '', page: 0 };
+  const LF = { tag: '', src: '', q: '', page: 0 };
   const PAGE = 40; // 單字卡一頁 40 張（1200 字一次全畫，iPad 會卡）
+  // 2026-11-23 單字卡（家長定）：孩子不選等級、來源。路徑＝等級 2 → 3 → 進階（國中，含 words-8 新字），沒學會的在前；等級 1 下架（紀錄都留著）
+  // 家長頁可以指定範圍（S.settings.wordScope：''＝自動、'tb'＝課本、'src:<來源>'）；#learn/words/<來源>（全民英檢準備區連結）這一次只看那個來源
+  const wordScope = () => S.settings.wordScope || '';
+  const pathWords = scope => D.words.filter(w => KE.wordScopeOk(scope == null ? wordScope() : scope, w));
+  const scopeName = sc => !sc ? '自動（等級 2 → 3 → 進階，由易到難）' : sc === 'tb' ? '課本單元的字' : srcLabel(sc.slice(4));
   function pLearn(sub, sub2) {
     if (sub === 'words') return pWords(sub2);   // #learn/words/<來源>：從全民英檢準備區直接開某個來源（moe1200、moe800、gept1）
     if (sub === 'roots') return pRoots();
     if (sub === 'grammar') return pGrammar();
     if (sub === 'patterns') return pPatterns();
     if (sub === 'phrases') return pPhrases();
-    app.innerHTML = top('學習') + `<div class="tiles">${tile('#learn/words', '🔤', '單字卡', `${D.words.length} 個常用字`, 'c1')}${tile('#learn/phrases', '🔗', '片語', `${D.phrases.length} 個常用片語`, 'c5')}${tile('#learn/roots', '🧩', '字根字首', `${D.roots.length} 組拆字密碼`, 'c2')}${tile('#learn/grammar', '📐', '文法', `${D.grammar.length} 個主題`, 'c3')}${tile('#learn/patterns', '💬', '句型', `${D.patterns.length} 個好用句型`, 'c4')}</div>`;
+    app.innerHTML = top('學習') + `<div class="tiles">${tile('#learn/words', '🔤', '單字卡', `${pathWords().length} 個常用字`, 'c1')}${tile('#learn/phrases', '🔗', '片語', `${D.phrases.length} 個常用片語`, 'c5')}${tile('#learn/roots', '🧩', '字根字首', `${D.roots.length} 組拆字密碼`, 'c2')}${tile('#learn/grammar', '📐', '文法', `${D.grammar.length} 個主題`, 'c3')}${tile('#learn/patterns', '💬', '句型', `${D.patterns.length} 個好用句型`, 'c4')}</div>`;
   }
   function pWords(src) {
-    const srcs = E.sources(), tags = [...new Set(D.words.flatMap(w => w.tags || []))];
-    if (src && srcs.includes(src)) Object.assign(LF, { src, lv: '', tag: '', q: '', page: 0 });
+    const srcs = E.sources();
+    if (src && srcs.includes(src) && LF.src !== src) Object.assign(LF, { tag: '', q: '', page: 0 });
+    LF.src = src && srcs.includes(src) ? src : '';
+    const scope = LF.src ? 'src:' + LF.src : wordScope(), all = pathWords(scope), tags = [...new Set(all.flatMap(w => w.tags || []))];
+    const note = LF.src ? `📚 只看「${esc(srcLabel(LF.src))}」<a href="#learn/words">看全部單字</a>` : scope ? `📚 爸爸媽媽設定的範圍：${esc(scopeName(scope))}` : '';
     app.innerHTML = top('單字卡', '#learn') + `<div class="filters">
       <input id="fq" class="search" type="search" placeholder="🔍 搜尋英文或中文" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="搜尋單字">
-      <select id="flv" aria-label="等級"><option value="">全部等級</option><option value="1">等級 1</option><option value="2">等級 2</option><option value="3">等級 3</option><option value="4">進階（國中）</option></select>
       <select id="ftag" aria-label="主題"><option value="">全部主題</option>${tags.map(t => `<option value="${esc(t)}">${esc(KE.TAGS[t] || t)}</option>`).join('')}</select>
-      ${srcs.length > 1 ? `<select id="fsrc" aria-label="來源"><option value="">全部來源</option>${srcs.map(s => `<option value="${esc(s)}">${esc(srcLabel(s))}</option>`).join('')}</select>` : ''}
-      <button class="btn primary" id="pw">🎯 練這些字</button><button class="btn" id="ps" ${canSpeak ? '' : 'disabled'} title="${canSpeak ? '用說的練這些字' : NO_SPEAK_MSG}">🎤 說說看</button></div>${canSpeak ? '' : `<p class="muted" id="psno">🎤 ${NO_SPEAK_MSG}</p>`}${lfBar('words')}<p class="muted" id="wn"></p><div class="cards" id="wl"></div><div class="pager" id="wp"></div>`;
+      <button class="btn primary" id="pw">🎯 練這些字</button><button class="btn" id="ps" ${canSpeak ? '' : 'disabled'} title="${canSpeak ? '用說的練這些字' : NO_SPEAK_MSG}">🎤 說說看</button></div>${canSpeak ? '' : `<p class="muted" id="psno">🎤 ${NO_SPEAK_MSG}</p>`}${note ? `<p class="muted" id="wscope-note">${note}</p>` : ''}${lfBar('words')}<p class="muted" id="wn"></p><div class="cards" id="wl"></div><div class="pager" id="wp"></div>`;
     const qOk = w => { const q = LF.q.trim().toLowerCase(); return !q || w.w.toLowerCase().includes(q) || w.zh.includes(LF.q.trim()); };
-    const pick = () => D.words.filter(w => (!LF.lv || String(w.lv) === LF.lv) && (!LF.tag || (w.tags || []).includes(LF.tag)) && (!LF.src || (w.src || 'moe') === LF.src) && qOk(w) && lfPass('words', KE.wordItemId(w)));
+    // 卡片照 lv2 → lv3 → lv4 排；按了「學會了」的卡留在原位（不會一按就跳到最後一頁），要只看沒學會的用上面的「未學會」
+    const pick = () => KE.pathSort(all.filter(w => (!LF.tag || (w.tags || []).includes(LF.tag)) && qOk(w) && lfPass('words', KE.wordItemId(w))), () => false);
+    // 🎯／🎤：照順序取前 10 個還有新題（學過不到 2 次）的字，由易到難；都學過了就用前 10 個
+    const fresh = () => { const L = pick(), f = L.filter(w => !isL(KE.wordItemId(w)) && ['listen', 'zh2en', 'en2zh', 'spell', 'type'].some(t => !E.old.has(`w:${KE.wordKey(w)}:${t}`))); return (f.length ? f : L).slice(0, 10); };
     const draw = () => {
       const L = pick(), pages = Math.max(1, Math.ceil(L.length / PAGE));
       LF.page = Math.min(LF.page, pages - 1);
       const show = L.slice(LF.page * PAGE, LF.page * PAGE + PAGE);
       $('#wn').textContent = `這裡有 ${L.length} 個字${pages > 1 ? `（第 ${LF.page + 1}／${pages} 頁）` : ''}，點英文就會唸`;
-      $('#wl').innerHTML = show.map(w => `<div class="card word ${isL(KE.wordItemId(w)) ? 'is-learned' : ''}"><span class="lvb lv${w.lv}">${w.lv === 4 ? '進階（國中）' : '等級 ' + w.lv}</span><div class="w en say">${esc(w.w)}</div><div class="ipa">${esc(w.ipa)} <span class="pos">${esc(KE.POS[w.pos] || w.pos)}</span></div><div class="zh">${esc(w.zh)}</div>${w.ex ? `<div class="ex en say">${esc(w.ex)}</div><div class="exzh">${esc(w.exZh || '')}</div>` : ''}${learnUI(KE.wordItemId(w))}</div>`).join('');
+      $('#wl').innerHTML = show.map(w => `<div class="card word ${isL(KE.wordItemId(w)) ? 'is-learned' : ''}"><div class="w en say syl">${esc(w.w)}</div><div class="ipa">${esc(w.ipa)} <span class="pos">${esc(KE.POS[w.pos] || w.pos)}</span></div><div class="zh">${esc(w.zh)}</div>${w.ex ? `<div class="ex en say">${esc(w.ex)}</div><div class="exzh">${esc(w.exZh || '')}</div>` : ''}${learnUI(KE.wordItemId(w))}</div>`).join('');
       $('#wp').innerHTML = pages > 1 ? `<button class="btn" data-pg="-1" ${LF.page ? '' : 'disabled'}>⬅️ 上一頁</button><span>${LF.page + 1} / ${pages}</span><button class="btn" data-pg="1" ${LF.page < pages - 1 ? '' : 'disabled'}>下一頁 ➡️</button>` : '';
       $$('#wp [data-pg]').forEach(b => b.onclick = () => { LF.page += +b.dataset.pg; draw(); window.scrollTo(0, 0); });
     };
-    ['lv', 'tag', 'src'].forEach(k => { const el = $('#f' + k); if (el) { el.value = LF[k]; el.onchange = () => { LF[k] = el.value; LF.page = 0; draw(); }; } });
+    const ft = $('#ftag'); if (!tags.includes(LF.tag)) LF.tag = ''; ft.value = LF.tag; ft.onchange = () => { LF.tag = ft.value; LF.page = 0; draw(); };
     const fq = $('#fq'); let qt = null; fq.value = LF.q; fq.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { if (!fq.isConnected) return; /* 0.2 秒內已切頁：舊搜尋框不在畫面上，略過 */ LF.q = fq.value; LF.page = 0; draw(); }, 200); };
-    $('#pw').onclick = () => { const ids = pick().flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)); startQuiz({ ids, count: 10, mode: 'words' }); };
-    $('#ps').onclick = () => { if (!canSpeak) return; startQuiz({ ids: pick().map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true }); };
-    bindLf('words', '單字', D.words.map(KE.wordItemId), draw);
+    $('#pw').onclick = () => { const ids = fresh().flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)); startQuiz({ ids, count: 10, mode: 'words' }); };
+    $('#ps').onclick = () => { if (!canSpeak) return; startQuiz({ ids: fresh().map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true }); };
+    bindLf('words', '單字', all.map(KE.wordItemId), draw);   // 分母＝目前路徑的字數（不含等級 1、含新字）
   }
   function pRoots() {
     app.innerHTML = top('字根字首', '#learn') + `<p class="muted">把長長的單字拆開，就像拼樂高一樣！</p><button class="btn primary" data-act="pr">🎯 練字根字首</button>${lfBar('roots')}<div class="cards" id="rl"></div>`;
     const draw = () => {
-      $('#rl').innerHTML = D.roots.filter(r => lfPass('roots', KE.rootItemId(r))).map(r => `<div class="card root ${isL(KE.rootItemId(r)) ? 'is-learned' : ''}"><div class="rh"><b class="en">${esc(r.p)}</b><span class="tag">${KE.ROOT_T[r.t]}</span></div><div class="rm">＝ ${esc(r.m)}</div><ul>${r.words.map(w => `<li><span class="en say" data-say="${esc(w.w)}">${w.parts.map(esc).join(' <i>+</i> ')} ＝ <b>${esc(w.w)}</b></span> <span class="zh">${esc(w.zh)}</span></li>`).join('')}</ul>${learnUI(KE.rootItemId(r))}</div>`).join('');
+      $('#rl').innerHTML = D.roots.filter(r => lfPass('roots', KE.rootItemId(r))).map(r => `<div class="card root ${isL(KE.rootItemId(r)) ? 'is-learned' : ''}"><div class="rh"><b class="en">${esc(r.p)}</b><span class="tag">${KE.ROOT_T[r.t]}</span></div><div class="rm">＝ ${esc(r.m)}</div><ul>${r.words.map(w => `<li><span class="en say" data-say="${esc(w.w)}">${w.parts.map(esc).join(' <i>+</i> ')} ＝ <b class="syl">${esc(w.w)}</b></span> <span class="zh">${esc(w.zh)}</span></li>`).join('')}</ul>${learnUI(KE.rootItemId(r))}</div>`).join('');
     };
     $('[data-act="pr"]').onclick = () => startQuiz({ modules: ['roots'], count: 10, mode: 'roots' });
     bindLf('roots', '字根', D.roots.map(KE.rootItemId), draw);
@@ -381,7 +392,7 @@
     const draw = () => {
       const L = D.phrases.filter(p => (!PHF.lv || String(p.lv) === PHF.lv) && (!PHF.tag || p.tag === PHF.tag) && lfPass('phrases', KE.phraseItemId(p)));
       $('#phn').textContent = `這裡有 ${L.length} 個片語，點英文就會唸`;
-      $('#phl').innerHTML = L.map(p => `<div class="card word phrase ${isL(KE.phraseItemId(p)) ? 'is-learned' : ''}"><span class="lvb lv${p.lv}">${KE.PHRASE_LV[p.lv]}</span> <span class="tag">${esc(p.tag)}</span><div class="w en say">${esc(p.p)}</div><div class="zh">${esc(p.zh)}</div><div class="ex en say">${esc(p.ex)}</div><div class="exzh">${esc(p.exZh)}</div>${learnUI(KE.phraseItemId(p))}</div>`).join('');
+      $('#phl').innerHTML = L.map(p => `<div class="card word phrase ${isL(KE.phraseItemId(p)) ? 'is-learned' : ''}"><span class="lvb lv${p.lv}">${KE.PHRASE_LV[p.lv]}</span> <span class="tag">${esc(p.tag)}</span><div class="w en say syl">${esc(p.p)}</div><div class="zh">${esc(p.zh)}</div><div class="ex en say">${esc(p.ex)}</div><div class="exzh">${esc(p.exZh)}</div>${learnUI(KE.phraseItemId(p))}</div>`).join('');
     };
     $$('input[name="phlv"]').forEach(el => el.onchange = () => { PHF.lv = el.value; draw(); });
     const t = $('#phtag'); t.value = PHF.tag; t.onchange = () => { PHF.tag = t.value; draw(); };
@@ -445,7 +456,7 @@
   function tbBadge(id) { try { const r = window.KidsDone && KidsDone.result('tb:' + id); return (r ? `<small class="tb-st tb-st-${r.status}">${esc(KidsCompletion.statusText(r))}</small>` : '') + (window.KidsLock ? KidsLock.badge('tb:' + id) : ''); } catch (e) { return ''; } }
   function tbLearn(u, body) {
     const it = E.tbItems(u.id), wBy = new Map(it.words.map(w => [KE.wordKey(w), w])), phBy = new Map(it.phrases.map(p => [p.id, p]));
-    const card = (en, ipa, zh, pl) => `<div class="card tbw"><div class="tbw-h"><span class="w en say">${esc(en)}</span>${sayBtn(en)}</div><div class="ipa">${esc(ipa || '')}</div><div class="zh">${esc(zh)}</div>${pl ? `<div class="tbw-pl">複數：<span class="en say">${esc(pl)}</span></div>` : ''}</div>`;
+    const card = (en, ipa, zh, pl) => `<div class="card tbw"><div class="tbw-h"><span class="w en say syl">${esc(en)}</span>${sayBtn(en)}</div><div class="ipa">${esc(ipa || '')}</div><div class="zh">${esc(zh)}</div>${pl ? `<div class="tbw-pl">複數：<span class="en say">${esc(pl)}</span></div>` : ''}</div>`;
     const words = u.groups.map(g => `<h3 class="tb-h3">${g.icon} ${esc(g.title)}</h3><div class="tb-words">${(g.words || []).map(k => { const w = wBy.get(k); return w ? card(w.w, w.ipa, (u.tz || {})[k] || w.zh, (u.pl || {})[k]) : ''; }).join('')}${(g.phrases || []).map(k => { const p = phBy.get(k); return p ? card(p.p, (u.ipa || {})[k], (u.tz || {})[k] || p.zh) : ''; }).join('')}</div>`).join('');
     // 文法圖解（資料在 textbook.js 的 visual）：[字]＝標色、~字~＝刪掉的錯字；全英文的格子可以點來唸
     const mark = t => esc(t).replace(/\[(.+?)\]/g, '<b class="hl">$1</b>').replace(/~(.+?)~/g, '<s>$1</s>');
@@ -470,7 +481,7 @@
   // ✏️ 練習：本課單字／片語／句型／文法沿用原本的「練習這組」（含口說、填空、打字，學會紀錄照舊）＋課本專屬題一輪（送 english:textbook）
   function tbPractice(u, body) {
     const it = E.tbItems(u.id), back = rendered;
-    const wcard = (id, en, zh, cls) => `<div class="card word ${cls || ''} ${isL(id) ? 'is-learned' : ''}"><div class="w en say">${esc(en)}</div><div class="zh">${esc(zh)}</div>${learnUI(id)}</div>`;
+    const wcard = (id, en, zh, cls) => `<div class="card word ${cls || ''} ${isL(id) ? 'is-learned' : ''}"><div class="w en say syl">${esc(en)}</div><div class="zh">${esc(zh)}</div>${learnUI(id)}</div>`;
     const n = E.tbPractice(u.id, { speak: canSpeak }).length;
     const draw = () => {
       body.innerHTML = `<section class="card"><h2>🎯 課本專屬題</h2><p>選 Do／Does、填 on、看提示造問句、選或打簡答、重組${canSpeak ? '、🎤 說說看' : ''}，一輪 ${n} 題，每次都不一樣。</p><button class="btn primary big" id="tbgo">✏️ 開始專屬題</button></section>
@@ -519,24 +530,25 @@
 
   // ---------- 練習設定 ----------
   function pPractice() {
-    const mods = Object.keys(KE.MODULES), srcs = E.sources();
+    const mods = Object.keys(KE.MODULES);
     // 🎤 說說看要自己勾（預設不勾：要用麥克風、第一次要家長同意）；不支援的裝置顯示停用
     const types = Object.keys(KE.TYPES).filter(y => y !== 'speak' && !KE.SET_ONLY_TYPES.includes(y)); // 只在「練習這組」出的題型不列
-    const L = Object.assign({ mods: mods.slice(), offT: [], offY: [], count: 10, ratio: 0, lv: '', src: '', speak: false }, S.settings.last || {});
+    const L = Object.assign({ mods: mods.slice(), offT: [], offY: [], count: 10, ratio: 0, speak: false }, S.settings.last || {});
     app.innerHTML = top('練習設定') + `
       <section class="card"><h2>1. 選單元</h2>${mods.map(m => `<div class="mod"><label class="ck"><input type="checkbox" name="mod" value="${m}" ${L.mods.includes(m) ? 'checked' : ''}> ${KE.MODULES[m]}</label><details><summary>選主題</summary>${topicChecks(m, L)}</details></div>`).join('')}</section>
       <section class="card"><h2>2. 選題型</h2><div class="wrap">${types.map(y => `<label class="ck"><input type="checkbox" name="typ" value="${y}" ${L.offY.includes(y) ? '' : 'checked'}> ${KE.TYPES[y]}</label>`).join('')}<label class="ck${canSpeak ? '' : ' off'}"><input type="checkbox" name="typ" value="speak" ${canSpeak && L.speak ? 'checked' : ''} ${canSpeak ? '' : 'disabled'}> ${KE.TYPES.speak}</label></div><p class="muted" id="spnote">${canSpeak ? '🎤 說說看：可以只選它，也可以跟其他題型一起練（單字、片語、文法、句型都有）。要用麥克風，第一次會請爸爸媽媽同意。' : '🎤 ' + NO_SPEAK_MSG}</p></section>
-      <section class="card"><h2>3. 單字範圍</h2>${radios('lv', [['', '全部等級'], ['1', '等級 1'], ['2', '等級 2'], ['3', '等級 3'], ['4', '進階（國中）']], L.lv)}<p class="muted">「全部等級＋全部來源」只出等級 1～3；選「進階（國中）」，或在下面選了某一個來源（例如全民英檢初級），那個來源的進階（國中）字也會出</p>${srcs.length > 1 ? radios('src', [['', '全部來源']].concat(srcs.map(s => [s, srcLabel(s)])), L.src) : ''}</section>
+      <section class="card" id="wauto"><h2>3. 單字</h2><p class="muted">不用選：單字會自動由易到難，先出還沒學會的字${wordScope() ? `（爸爸媽媽設定的範圍：${esc(scopeName(wordScope()))}）` : ''}</p></section>
       <section class="card"><h2>4. 題數和錯題</h2>${radios('count', [['10', '10 題'], ['20', '20 題'], ['30', '30 題']], L.count)}${radios('ratio', [['0', '不加錯題'], ['0.3', '加 30% 錯題'], ['1', '只練錯題']], L.ratio)}<p class="muted">錯題庫目前有 ${mistakeIds().length} 題</p><p class="muted" id="typednote">每回最後至少 3 題打字（含 2 題中翻英）</p></section>
       ${voiceCard()}<button class="btn primary big wide" id="start">開始 🚀</button>`;
     bindVoice();
     $('#start').onclick = () => {
       const allT = $$('input[name="top"]').map(x => x.value), onT = vals('top'), onY = vals('typ');
       const spk = canSpeak && onY.includes('speak');
-      const last = { mods: vals('mod'), offT: allT.filter(t => !onT.includes(t)), offY: types.filter(y => !onY.includes(y)), count: +val('count') || 10, ratio: +val('ratio') || 0, lv: val('lv'), src: val('src'), speak: spk };
+      // 舊版存的 last.lv／last.src（單字等級、來源）不再用：單字改走自動路徑＋家長範圍（2026-11-23）
+      const last = { mods: vals('mod'), offT: allT.filter(t => !onT.includes(t)), offY: types.filter(y => !onY.includes(y)), count: +val('count') || 10, ratio: +val('ratio') || 0, speak: spk };
       S.settings.last = last; saveSettings();
       if (!last.mods.length || !onY.length) { alert('請至少選一個單元和一個題型喔！'); return; }
-      startQuiz({ modules: last.mods, topics: onT, types: onY, count: last.count, mistakeRatio: last.ratio, mistakes: mistakeIds(), lv: last.lv, src: last.src, allowSpeak: spk, mode: spk && onY.length === 1 ? 'speak' : 'practice' });
+      startQuiz({ modules: last.mods, topics: onT, types: onY, count: last.count, mistakeRatio: last.ratio, mistakes: mistakeIds(), scope: wordScope(), allowSpeak: spk, mode: spk && onY.length === 1 ? 'speak' : 'practice' });
     };
   }
 
@@ -852,6 +864,12 @@
   function speakCard() {
     return `<section class="card" id="spcard"><h2>🎤 說說看（麥克風）</h2><p>${SPEAK_NOTE}</p><p class="muted">單字、片語、文法、句型的「練習這組」都有說說看題。${MIC_ALLOW}不想用麥克風，可以到 iPad「設定」→「Safari」→「麥克風」關掉。</p>${canSpeak ? '' : `<p class="muted">${NO_SPEAK_MSG}；練習這組的說說看題可以先跳過，不算進「學會了」。</p>`}</section>`;
   }
+  // 家長指定單字卡範圍（2026-11-23：孩子的畫面不放等級、來源選單）
+  function scopeCard() {
+    const cur = wordScope(), opts = [['', scopeName('')], ['tb', '課本單元的字']].concat(E.sources().map(s => ['src:' + s, '只背：' + srcLabel(s)])).map(([v, t]) => [v, t, pathWords(v).length]).filter(o => o[2] || o[0] === cur);
+    return `<section class="card" id="wscope"><h2>🔤 單字卡範圍</h2><select id="wsc" aria-label="單字卡範圍">${opts.map(([v, t, n]) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(t)}（${n} 字）</option>`).join('')}</select>
+      <p class="muted">預設「自動」：孩子不用選，從等級 2 開始由易到難、先出還沒學會的字（等級 1 已下架，學會紀錄和錯題都留著，錯題庫照樣可以練）。想只背課本或某一個來源的字，在這裡選；單字卡和練習都照這個範圍。</p></section>`;
+  }
   function pParent() {
     const days = [];
     for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push(ymd(d)); }
@@ -876,11 +894,13 @@
       <section class="card"><h2>最需要加強的 5 個主題</h2>${weak.length ? `<ol>${weak.map(r => `<li>${esc(r.label)}（${esc(r.mod)}）— 正確率 ${pct(r.acc)}，做了 ${r.n} 題</li>`).join('')}</ol>` : '<p class="muted">每個主題做滿 3 題後就會出現。</p>'}</section>
       <section class="card"><h2>各主題正確率（點標題排序）</h2><div class="tblwrap"><table class="tbl" id="tt"></table></div></section>
       <section class="card"><h2>學會紀錄（${E.learnedRows(S.learned).length} 項，點標題排序）</h2><div class="tblwrap"><table class="tbl" id="lt"></table></div></section>
+      ${scopeCard()}
       ${syncCard()}
       ${window.KSParentPin ? KSParentPin.cardHtml() : ''}
       ${speakCard()}
       ${voiceCard()}
       <section class="card"><h2>備份與重設</h2><div class="row wrap"><button class="btn" id="exp">📤 匯出備份</button><label class="btn">📥 匯入備份<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn danger" id="rst">🗑️ 清除全部紀錄</button></div><p class="muted">紀錄只存在這台裝置的瀏覽器裡；換裝置前先匯出備份。</p></section>`;
+    $('#wsc').onchange = e => { S.settings.wordScope = e.target.value; saveSettings(); };
     bindVoice(); bindSync(); if (window.KSParentPin) KSParentPin.bindCard(render); if (window.KidsDaily) KidsDaily.bind(app, render); if (window.KidsLock) KidsLock.bindParent(app, render);
     sortTable($('#tt'), [{ k: 'label', t: '主題' }, { k: 'mod', t: '單元' }, { k: 'n', t: '題數' }, { k: 'ok', t: '答對' }, { k: 'acc', t: '正確率', f: pct }], rows, PS);
     sortTable($('#lt'), [{ k: 'item', t: '項目' }, { k: 'type', t: '類型' }, { k: 'at', t: '學會時間（台北）', f: x => KE.fmtTaipei(x, true) }, { k: 'score', t: '分數' }], E.learnedRows(S.learned), PL);

@@ -205,7 +205,7 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   const M2 = KC.build(DATA, ctx);
   ok(M2.done === 2 && M2.subjects[0].done === 1 && M2.subjects[0].units.find(u => u.key === 'tb:hanlin-5-u2').status === 'done' && M2.subjects[5].done === 1, 'map: one textbook unit + one AI page done → 2/32');
   const bw = M2.bank.find(b => b.k === 'words');
-  ok(M2.bank.map(b => b.k).join() === 'words,phrases,roots,grammar,patterns' && bw.total === W.DATA_WORDS.length && bw.levels.map(l => l.lv).join() === '1,2,3,4' && bw.learned >= 15, 'bank: categories + word levels 1–4, learned counted: ' + bw.learned + '/' + bw.total);
+  ok(M2.bank.map(b => b.k).join() === 'words,phrases,roots,grammar,patterns' && bw.total === W.DATA_WORDS.filter(w => w.lv !== 1).length && bw.levels.map(l => l.lv).join() === '2,3,4' && bw.learned > 0 && bw.learned === W.DATA_WORDS.filter(w => w.lv !== 1 && ctx.learned[KE.wordItemId(w)]).length, 'bank: categories + word levels 2–4 (等級 1 下架 2026-11-23), learned counted: ' + bw.learned + '/' + bw.total);
   ok(M2.bank.find(b => b.k === 'patterns').levels.length === 3 && M2.bank.find(b => b.k === 'roots').levels.length === 0, 'bank: pattern levels 簡單／基本／進階, roots no levels');
   ok(KC.statusText({ status: 'doing', pct: 42 }) === '🟡 進行中 42%' && KC.statusText({ status: 'done' }) === '✅ 已完成' && KC.statusText({ status: 'todo' }) === '⚪ 還沒開始', 'status text');
   // 目錄要跟各頁一致：心智圖單元（subjects.js、mindmap/data）、天平內建題、AI 頁

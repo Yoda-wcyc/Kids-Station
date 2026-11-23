@@ -68,7 +68,7 @@ const sumToday = store => SM.ddSum(JSON.parse(store.kids_daily || '{}'))[SM.ddDa
 // ---------- 4. 優先出新題 ----------
 {
   const ctx = { window: {} }; vm.createContext(ctx);
-  ['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook', 'oral'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx));
+  ['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'words-8', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook', 'oral'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx));
   const w = ctx.window, E = new KE.Engine({ words: w.DATA_WORDS, phrases: w.DATA_PHRASES, roots: w.DATA_ROOTS, grammar: w.DATA_GRAMMAR, patterns: w.DATA_PATTERNS, textbook: w.DATA_TEXTBOOK });
   const pat = E.list({ modules: ['patterns'] }), half = pat.slice(0, pat.length - 15);
   E.old = new Set(half.map(m => m.id));
@@ -160,7 +160,7 @@ const sumToday = store => SM.ddSum(JSON.parse(store.kids_daily || '{}'))[SM.ddDa
 
   // 還能撐幾天（依每日目標；每題最多算 2 次）—— 只印出來給家長看
   const ctx = { window: {} }; vm.createContext(ctx);
-  ['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook', 'oral'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx));
+  ['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'words-8', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook', 'oral'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx));
   const w = ctx.window, E = new KE.Engine({ words: w.DATA_WORDS, phrases: w.DATA_PHRASES, roots: w.DATA_ROOTS, grammar: w.DATA_GRAMMAR, patterns: w.DATA_PATTERNS, textbook: w.DATA_TEXTBOOK });
   const k = { e: 0, j: 0, p: 0, speak: 0 }; E.meta.forEach(m => { k.e++; if (m.type === 'speak') k.speak++; const d = KE.dailyKind(Object.assign({ oral: /:oral:/.test(m.id) }, m)); if (d === 'sentence') k.j++; if (d === 'phrase') k.p++; });
   const d22t = 81 * 8, d22 = 81 * 81 / 2;

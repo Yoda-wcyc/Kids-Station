@@ -305,7 +305,8 @@
       return { k, label, icon, href, total, learned: done, pct: total ? Math.floor(done / total * 100) : 0, levels: lvs };
     };
     return [
-      mk('words', '單字', '🔤', 'index.html#learn/words', data.words || [], KE.wordItemId, w => w.lv || 1, lv => (lv === 4 ? '進階（國中）' : '等級 ' + lv)),
+      // 2026-11-23 等級 1 下架：課程地圖不列（孩子在單字卡看不到、永遠做不完的一組）；路徑＝等級 2、3、進階（國中，含新字）
+      mk('words', '單字', '🔤', 'index.html#learn/words', (data.words || []).filter(w => (KE.wordInPath ? KE.wordInPath(w) : w.lv !== 1)), KE.wordItemId, w => w.lv || 1, lv => (lv === 4 ? '進階（國中）' : '等級 ' + lv)),
       mk('phrases', '片語', '🔗', 'index.html#learn/phrases', data.phrases || [], KE.phraseItemId, p => p.lv || 1, lv => (KE.PHRASE_LV && KE.PHRASE_LV[lv]) || '等級 ' + lv),
       mk('roots', '字根字首', '🧩', 'index.html#learn/roots', data.roots || [], KE.rootItemId),
       mk('grammar', '文法', '📐', 'index.html#learn/grammar', data.grammar || [], KE.grammarItemId),

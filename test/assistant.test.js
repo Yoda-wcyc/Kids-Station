@@ -10,7 +10,7 @@ const KE = require(path.join(root, 'engine.js'));
 const KA = require(path.join(root, 'assistant-core.js'));
 const coins = require(path.join(root, 'kids-coins.js'))._core;
 const ctxD = { window: {} }; vm.createContext(ctxD);
-['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctxD, { filename: n + '.js' }));
+['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'words-8', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctxD, { filename: n + '.js' }));
 const W = ctxD.window;
 const DATA = { textbook: W.DATA_TEXTBOOK, words: W.DATA_WORDS, phrases: W.DATA_PHRASES, roots: W.DATA_ROOTS, grammar: W.DATA_GRAMMAR, patterns: W.DATA_PATTERNS, KE, zhCatalog: require(path.join(root, 'chinese', 'data', 'catalog.js')) };
 const DAY = 864e5, NOW = Date.parse('2026-11-01T04:00:00Z');   // 台北 12:00

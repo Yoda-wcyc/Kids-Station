@@ -553,7 +553,7 @@
       var list = pick(), pages = Math.max(1, Math.ceil(list.length / PAGE)); F.page = Math.min(F.page, pages - 1);
       var show = list.slice(F.page * PAGE, F.page * PAGE + PAGE);
       $('gp-wn').textContent = '這裡有 ' + list.length + ' 個字' + (pages > 1 ? '（第 ' + (F.page + 1) + '／' + pages + ' 頁）' : '') + '，點字就會唸';
-      $('gp-wl').innerHTML = show.map(function (x) { return '<button type="button" class="btn gp-w en" data-say="' + esc(x.w) + '">' + esc(x.w) + '<small>' + x.c + '</small></button>'; }).join('');
+      $('gp-wl').innerHTML = show.map(function (x) { return '<button type="button" class="btn gp-w en" data-say="' + esc(x.w) + '"><span class="syl">' + esc(x.w) + '</span><small>' + x.c + '</small></button>'; }).join('');
       $('gp-wp').innerHTML = pages > 1 ? '<button type="button" class="btn" data-pg="-1"' + (F.page ? '' : ' disabled') + '>⬅️ 上一頁</button><span>' + (F.page + 1) + ' / ' + pages + '</span><button type="button" class="btn" data-pg="1"' + (F.page < pages - 1 ? '' : ' disabled') + '>下一頁 ➡️</button>' : '';
     }
     function list0() {
@@ -588,7 +588,7 @@
       var ok = inp.value.trim().toLowerCase() === x.w.toLowerCase(); inp.disabled = true; $('gp-wok').disabled = true; if (ok) Z.ok++;
       try { if (W.KidsCoins) KidsCoins.answer(ok, 'english'); } catch (e) { } dailyRec('w:' + x.w.toLowerCase(), ok);
       var last = Z.i + 1 >= Z.qs.length;
-      $('gp-wf').innerHTML = '<div class="gp-fb ' + (ok ? 'ok' : 'no') + '" id="gp-wr">' + (ok ? '✓ 答對了！' : '✗ 正確拼法：') + '<b class="en">' + esc(x.w) + '</b>（' + x.c + '）' + (lastOld ? oldNote() : '') + '</div><div class="gp-row"><button type="button" class="btn primary big" id="gp-wnx">' + (last ? '看結果 🏁' : '下一題 ▶') + '</button></div>';
+      $('gp-wf').innerHTML = '<div class="gp-fb ' + (ok ? 'ok' : 'no') + '" id="gp-wr">' + (ok ? '✓ 答對了！' : '✗ 正確拼法：') + '<b class="en syl">' + esc(x.w) + '</b>（' + x.c + '）' + (lastOld ? oldNote() : '') + '</div><div class="gp-row"><button type="button" class="btn primary big" id="gp-wnx">' + (last ? '看結果 🏁' : '下一題 ▶') + '</button></div>';
     }
     root.addEventListener('click', function (e) {
       var t = e.target.closest('button'); if (!t) return;

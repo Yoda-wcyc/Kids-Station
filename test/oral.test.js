@@ -8,7 +8,7 @@
 const vm = require('vm'), fs = require('fs'), path = require('path'), assert = require('assert');
 const root = path.join(__dirname, '..');
 const ctx = { window: {} }; vm.createContext(ctx);
-['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook', 'oral']
+['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'words-8', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook', 'oral']
   .forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx, { filename: n + '.js' }));
 const Wd = ctx.window, KE = require(path.join(root, 'engine.js'));
 const E = new KE.Engine({ words: Wd.DATA_WORDS, phrases: Wd.DATA_PHRASES, roots: Wd.DATA_ROOTS, grammar: Wd.DATA_GRAMMAR, patterns: Wd.DATA_PATTERNS, textbook: Wd.DATA_TEXTBOOK });

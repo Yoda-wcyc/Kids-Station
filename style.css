@@ -231,3 +231,9 @@ a.tile{text-decoration:none}
 .dg{margin-top:10px;border-top:1px solid var(--line)}.dg>summary{cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:700}
 .dg-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}.dg-f{display:inline-flex;align-items:center;gap:6px}
 .dg-f input{width:5em;min-height:48px;font:inherit;padding:4px 8px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+
+/* 音節底線（syl.js，2026-11-23）：每一節一條線、線之間留 3px（i 這種窄字母至少 5px 長）、相鄰兩節不同顏色；不影響行高 */
+.sy{background-repeat:no-repeat;background-position:50% 100%;background-size:max(5px,calc(100% - 3px)) 3px;padding-bottom:4px}
+.syl[data-syl],.syl[data-syl] .sy{text-decoration:none}
+b.syl[data-syl]{display:inline-block}   /* 字根例字在 .say 裡：inline-block 才不會吃到外層的虛線 */   /* 畫了音節線就拿掉「點了會唸」的虛線，不要疊在一起 */
+.sy0{background-image:linear-gradient(#e8590c,#e8590c)}.sy1{background-image:linear-gradient(#1c7ed6,#1c7ed6)}
