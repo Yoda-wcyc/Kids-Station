@@ -319,10 +319,12 @@
   const LF = { tag: '', src: '', q: '', page: 0 };
   const PAGE = 40; // 單字卡一頁 40 張（1200 字一次全畫，iPad 會卡）
   // 2026-11-23 單字卡（家長定）：孩子不選等級、來源。路徑＝等級 2 → 3 → 進階（國中，含 words-8 新字），沒學會的在前；等級 1 下架（紀錄都留著）
-  // 家長頁可以指定範圍（S.settings.wordScope：''＝自動、'tb'＝課本、'src:<來源>'）；#learn/words/<來源>（全民英檢準備區連結）這一次只看那個來源
+  // 家長頁可以指定範圍（S.settings.wordScope：''＝自動、'tb'＝課本、'lv:2|3|4'＝單一等級、'src:<來源>'）；#learn/words/<來源>（全民英檢準備區連結）這一次只看那個來源
+  // 2026-11-24 自動＝等級 2、3、國中三級交錯（3:2:1），不再整個 lv2 背完才到 lv3；最高到國中（lv4）
   const wordScope = () => S.settings.wordScope || '';
   const pathWords = scope => D.words.filter(w => KE.wordScopeOk(scope == null ? wordScope() : scope, w));
-  const scopeName = sc => !sc ? '自動（等級 2 → 3 → 進階，由易到難）' : sc === 'tb' ? '課本單元的字' : srcLabel(sc.slice(4));
+  const SCOPE_LV = { 'lv:2': '只背等級 2', 'lv:3': '只背等級 3', 'lv:4': '只背國中（lv4）' };
+  const scopeName = sc => !sc ? '自動（等級 2、3、國中交錯，由易到難）' : sc === 'tb' ? '課本單元的字' : SCOPE_LV[sc] || srcLabel(sc.slice(4));
   function pLearn(sub, sub2) {
     if (sub === 'words') return pWords(sub2);   // #learn/words/<來源>：從全民英檢準備區直接開某個來源（moe1200、moe800、gept1）
     if (sub === 'roots') return pRoots();
@@ -342,7 +344,7 @@
       <select id="ftag" aria-label="主題"><option value="">全部主題</option>${tags.map(t => `<option value="${esc(t)}">${esc(KE.TAGS[t] || t)}</option>`).join('')}</select>
       <button class="btn primary" id="pw">🎯 練這些字</button><button class="btn" id="ps" ${canSpeak ? '' : 'disabled'} title="${canSpeak ? '用說的練這些字' : NO_SPEAK_MSG}">🎤 說說看</button></div>${canSpeak ? '' : `<p class="muted" id="psno">🎤 ${NO_SPEAK_MSG}</p>`}${note ? `<p class="muted" id="wscope-note">${note}</p>` : ''}${lfBar('words')}<p class="muted" id="wn"></p><div class="cards" id="wl"></div><div class="pager" id="wp"></div>`;
     const qOk = w => { const q = LF.q.trim().toLowerCase(); return !q || w.w.toLowerCase().includes(q) || w.zh.includes(LF.q.trim()); };
-    // 卡片照 lv2 → lv3 → lv4 排；按了「學會了」的卡留在原位（不會一按就跳到最後一頁），要只看沒學會的用上面的「未學會」
+    // 卡片照 lv2:lv3:lv4 = 3:2:1 交錯排（KE.pathSort）；按了「學會了」的卡留在原位（不會一按就跳到最後一頁），要只看沒學會的用上面的「未學會」
     const pick = () => KE.pathSort(all.filter(w => (!LF.tag || (w.tags || []).includes(LF.tag)) && qOk(w) && lfPass('words', KE.wordItemId(w))), () => false);
     // 🎯／🎤：照順序取前 10 個還有新題（學過不到 2 次）的字，由易到難；都學過了就用前 10 個
     const fresh = () => { const L = pick(), f = L.filter(w => !isL(KE.wordItemId(w)) && ['listen', 'zh2en', 'en2zh', 'spell', 'type'].some(t => !E.old.has(`w:${KE.wordKey(w)}:${t}`))); return (f.length ? f : L).slice(0, 10); };
@@ -512,6 +514,8 @@
     body.appendChild(sec);
     const ob = $('#tboral'); if (ob) ob.onclick = () => startTb(u.id, 'test', back, true);
   }
+  // 純英文（含標點）才畫音節底線；中文答案不畫
+  const enText = s => /[A-Za-z]/.test(s || '') && !/[^\x20-\x7E’‘]/.test(s);
   function pExamResult() {
     const r = Q.result, score = r.tot ? Math.round(r.ok / r.tot * 100) : 0, msg = score >= 90 ? '超級厲害！🏆' : score >= 70 ? '做得很好！👍' : '多練幾次會更棒！💪';
     let sec = '';
@@ -519,7 +523,7 @@
       const q = a.q, head = q.sec !== sec ? (sec = q.sec, `<li class="tb-sec"><b>${esc(q.sec)}</b></li>`) : '';
       if (q.oral) return head + `<li class="${a.ok ? 'ok' : 'no'}"><b>${i + 1}. ${a.ok ? '✓' : '✗'}</b> 考官：<b class="say en" data-say="${esc(q.speakText)}">${esc(q.speakText)}</b> 🔊${q.sub ? `<div><small>${esc(q.prompt)}</small></div>` : ''}${a.ok ? '' : `<div>我聽到的是：<span class="en">${esc(a.skip ? '（沒有作答）' : a.input || '（沒有聲音）')}</span></div>`}<div>參考答案：<b class="en">${esc([q.answer].concat(q.alts || []).join(' ／ '))}</b></div><div class="muted">${esc(q.why)}</div></li>`;
       const mine = a.skip ? '（沒有作答）' : String(a.input == null ? '' : a.input) || '（空白）';
-      return head + `<li class="${a.ok ? 'ok' : 'no'}"><b>${i + 1}. ${a.ok ? '✓' : '✗'}</b> <span class="badge">${KE.TYPES[q.type]}</span> <span class="${q.en ? 'en' : ''}">${esc(q.prompt)}</span>${a.ok ? '' : `<div>你的答案：<span class="en">${esc(mine)}</span></div>`}<div>正確答案：<b class="say en" data-say="${esc(q.speakText || q.answer)}">${esc(q.answer)}</b> 🔊</div></li>`;
+      return head + `<li class="${a.ok ? 'ok' : 'no'}"><b>${i + 1}. ${a.ok ? '✓' : '✗'}</b> <span class="badge">${KE.TYPES[q.type]}</span> <span class="${q.en ? 'en' : ''}">${esc(q.prompt)}</span>${a.ok ? '' : `<div>你的答案：<span class="en">${esc(mine)}</span></div>`}<div>正確答案：<b class="say en${enText(q.answer) ? ' syl' : ''}" data-say="${esc(q.speakText || q.answer)}">${esc(q.answer)}</b> 🔊</div></li>`;
     }).join('');
     app.innerHTML = top('📝 考試結果', Q.cfg.back) + `<div class="card center result"><div class="party">${score >= 90 ? '🎉🏅🎉' : '📝'}</div><div class="score">${score} 分</div><p>答對 ${r.ok} / ${r.tot} 題・${msg}</p>${r.wrong.length ? `<p class="muted">答錯的 ${r.wrong.length} 題已經收進 🩹 錯題庫</p>` : ''}${oldLine()}</div>
       <section class="card"><h2>每一題的對錯</h2><ul class="tb-res">${rows}</ul></section>
@@ -696,10 +700,14 @@
     if (again) Q.list = KE.requeue(Q.list, Q.i, E.get(q.id));
     const last = Q.i === Q.list.length - 1;
     // 打字題答錯：正確答案標出第一個不一樣的字
-    const shown = res.diffAt >= 0 ? q.answer.split(/\s+/).map((w, k) => (k === res.diffAt ? `<mark>${esc(w)}</mark>` : esc(w))).join(' ') : esc(q.answer);
+    // 2026-11-24 答案揭曉了才畫音節底線（syl.js）：正確答案、選擇題的正確選項、單字／片語題的英文題目；有 <mark> 時每個字各自畫（syl.js 不畫有子元素的）
+    const en = enText(q.answer), sy = en ? ' class="syl"' : '';
+    const shown = res.diffAt >= 0 ? q.answer.split(/\s+/).map((w, k) => (k === res.diffAt ? `<mark${sy}>${esc(w)}</mark>` : en ? `<span${sy}>${esc(w)}</span>` : esc(w))).join(' ') : esc(q.answer);
+    $$('.opt.right').forEach(b => { if (enText(b.dataset.v)) b.classList.add('syl'); });
+    const pr = $('.qcard .prompt.en'); if (pr && /^(w|ph):/.test(q.id)) pr.classList.add('syl');
     $('#fb').innerHTML = `<div class="fb ${skipped ? 'skip' : res.ok ? 'ok' : 'no'}"><div class="fbh">${skipped ? '⏭️ 先跳過' : res.ok ? (q.input === 'mic' ? '✓ 說對了！太棒了' : '✓ 答對了！太棒了') : '✗ 差一點，再加油！'}</div>
       ${again ? '<div class="again">🔁 再一次！這題等一下會再出現</div>' : ''}
-      ${!res.ok ? `<div>正確答案：<b class="say" data-say="${esc(q.speakText || q.answer)}">${shown}</b> 🔊</div>` : ''}
+      ${!res.ok ? `<div>正確答案：<b class="say${en ? ' syl' : ''}" data-say="${esc(q.speakText || q.answer)}">${shown}</b> 🔊</div>` : ''}
       ${q.input === 'type' && res.ok ? `<button class="btn sm" data-say-btn>🔊 聽英文</button>` : ''}
       ${!res.ok && !skipped && q.input && input ? `<div class="muted">${q.input === 'mic' ? '我聽到的是' : '你的答案'}：${esc(input)}</div>` : ''}
       ${q.input === 'mic' && !skipped && !res.ok ? `<div class="muted">${Q.spk && Q.spk.id === q.id && Q.spk.tries.length >= SPEAK_TRIES ? `試了 ${SPEAK_TRIES} 次，下次再挑戰！` : '跳過算答錯，下次再挑戰！'}</div>` : ''}
@@ -866,9 +874,9 @@
   }
   // 家長指定單字卡範圍（2026-11-23：孩子的畫面不放等級、來源選單）
   function scopeCard() {
-    const cur = wordScope(), opts = [['', scopeName('')], ['tb', '課本單元的字']].concat(E.sources().map(s => ['src:' + s, '只背：' + srcLabel(s)])).map(([v, t]) => [v, t, pathWords(v).length]).filter(o => o[2] || o[0] === cur);
+    const cur = wordScope(), opts = [['', scopeName('')], ['tb', '課本單元的字']].concat(Object.entries(SCOPE_LV), E.sources().map(s => ['src:' + s, '只背：' + srcLabel(s)])).map(([v, t]) => [v, t, pathWords(v).length]).filter(o => o[2] || o[0] === cur);
     return `<section class="card" id="wscope"><h2>🔤 單字卡範圍</h2><select id="wsc" aria-label="單字卡範圍">${opts.map(([v, t, n]) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(t)}（${n} 字）</option>`).join('')}</select>
-      <p class="muted">預設「自動」：孩子不用選，從等級 2 開始由易到難、先出還沒學會的字（等級 1 已下架，學會紀錄和錯題都留著，錯題庫照樣可以練）。想只背課本或某一個來源的字，在這裡選；單字卡和練習都照這個範圍。</p></section>`;
+      <p class="muted">預設「自動」：孩子不用選，等級 2、等級 3、國中三級交錯出（大約 3 : 2 : 1），每一級裡由易到難、先出還沒學會的字；某一級學完就換另外兩級（等級 1 已下架，學會紀錄和錯題都留著，錯題庫照樣可以練）。想只背課本、某一級或某一個來源的字，在這裡選；單字卡和練習都照這個範圍。</p></section>`;
   }
   function pParent() {
     const days = [];

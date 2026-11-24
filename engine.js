@@ -39,16 +39,26 @@
   // 單字的題號：通常是 slug(w)；跟別的字撞名（May／may、Miss／miss）時用資料裡的 id
   const wordKey = w => w.id || slug(w.w);
   // 2026-11-23 單字路徑（家長定）：等級 1 下架（資料、學會紀錄、錯題都留著），孩子不選等級／來源，自動 lv2 → lv3 → lv4（含 words-8 新字）
-  // 家長頁可以指定範圍 scope：''＝自動全部、'tb'＝課本單元的字、'src:<來源>'＝只背那個來源；都在路徑裡（不含等級 1）
+  // 家長頁可以指定範圍 scope：''＝自動全部、'tb'＝課本單元的字、'lv:<2|3|4>'＝只背那一級（2026-11-24）、'src:<來源>'＝只背那個來源；都在路徑裡（不含等級 1）
   const wordInPath = w => !!w && w.lv !== 1;
   function wordScopeOk(scope, w) {
     if (!wordInPath(w)) return false;
     if (!scope) return true;
     if (scope === 'tb') return !!(w.tb && w.tb.length);
+    const l = /^lv:(\d)$/.exec(scope); if (l) return String(w.lv) === l[1];
     const m = /^src:(.+)$/.exec(scope); return !m || (w.src || 'moe') === m[1];
   }
-  // 卡片／出題順序：沒學會的在前，同一組裡 lv2 → lv3 → lv4（資料原順序不變）
-  const pathSort = (ws, learned) => ws.map((w, i) => [w, i]).sort((a, b) => (!!learned(a[0]) - !!learned(b[0])) || (a[0].lv - b[0].lv) || (a[1] - b[1])).map(x => x[0]);
+  // 2026-11-24（家長定）lv2 : lv3 : lv4 = 3 : 2 : 1 依位置輪替（每 6 張 3 張 lv2、2 張 lv3、1 張 lv4）；某級出完就跳過它的位置＝權重分給剩下的；
+  // 每級裡照傳進來的順序（卡片＝資料原順序，由易到難）；start＝從輪替的第幾格開始（出題時每個題型錯開，整回才湊得出 3:2:1）
+  const LV_CYCLE = [2, 3, 2, 4, 2, 3];
+  function lvWeave(ws, start) {
+    const b = {}, rest = [], out = [];
+    ws.forEach(w => (LV_CYCLE.includes(w.lv) ? (b[w.lv] = b[w.lv] || []) : rest).push(w));
+    for (let i = start || 0, n = ws.length - rest.length; out.length < n; i++) { const q = b[LV_CYCLE[i % 6]]; if (q && q.length) out.push(q.shift()); }
+    return out.concat(rest);
+  }
+  // 卡片／出題順序：沒學會的在前，同一組裡三級交錯（見 lvWeave）
+  const pathSort = (ws, learned) => lvWeave(ws.filter(w => !learned(w))).concat(lvWeave(ws.filter(w => !!learned(w))));
 
   function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   function norm(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' '); }
@@ -694,7 +704,7 @@
     buildQuiz(cfg) {
       cfg = cfg || {};
       const count = cfg.count || 10, ratio = cfg.mistakeRatio || 0, mset = new Set(cfg.mistakes || []);
-      // 2026-11-23 單字自動路徑：等級 1 不出、家長範圍（cfg.scope）以外不出；lv2 → lv3 → lv4 由易到難（見下面的分組輪流）
+      // 2026-11-23 單字自動路徑：等級 1 不出、家長範圍（cfg.scope）以外不出；2026-11-24 起 lv2:lv3:lv4 = 3:2:1 交錯（見下面的分組輪流）
       // 錯題一律可以練：錯題不看等級、來源、家長範圍（等級 1 的錯題照樣出），只看單元／主題／題型
       const pathOk = m => m.module !== 'words' || wordScopeOk(cfg.scope, m);
       const pool = this.list(cfg).filter(pathOk);
@@ -704,12 +714,13 @@
       let chosen = this.newFirst(shuffle(mpool)).slice(0, nm);
       if (ratio < 1) {
         // 依「單元＋題型」分組輪流抽，避免單字題淹沒其他題型；2026-11-21：先只輪新題（學過不到 2 次），新題都抽完了才輪舊題
-        // 單字：已按「學會了」的字也當舊題；每組裡 lv 小的排在尾巴（pop 先拿）→ 新題先出 lv2、lv2 的新題出完才輪 lv3、lv4
+        // 單字：已按「學會了」的字也當舊題；每組照 lvWeave 交錯（反過來放，pop 先拿）；第 j 個單字題型從輪替第 j 格開始，整回加起來接近 3:2:1
         const taken = new Set(chosen.map(m => m.id)), groups = {}, learnedW = m => m.module === 'words' && this.isLearned && this.isLearned(this.itemOfQ(m.id));
-        const isOld = m => (this.old && this.old.has(m.id)) || learnedW(m), easyLast = g => g.sort((a, b) => (b.module === 'words' ? b.lv : 0) - (a.module === 'words' ? a.lv : 0));
+        const isOld = m => (this.old && this.old.has(m.id)) || learnedW(m);
         pool.forEach(m => { if (!taken.has(m.id)) (groups[m.module + '|' + m.type] = groups[m.module + '|' + m.type] || []).push(m); });
         const gs0 = shuffle(Object.values(groups).map(shuffle));
-        [gs0.map(g => easyLast(g.filter(m => !isOld(m)))), gs0.map(g => easyLast(g.filter(isOld)))].forEach(gs => {
+        let wj = 0; const off = gs0.map(g => (g[0].module === 'words' ? wj++ : 0)), easyLast = (g, j) => (g.length && g[0].module === 'words' ? lvWeave(g, off[j]).reverse() : g);
+        [gs0.map((g, j) => easyLast(g.filter(m => !isOld(m)), j)), gs0.map((g, j) => easyLast(g.filter(isOld), j))].forEach(gs => {
           while (chosen.length < count && gs.some(g => g.length)) gs.forEach(g => { if (g.length && chosen.length < count) chosen.push(g.pop()); });
         });
       }
@@ -725,7 +736,7 @@
     }
   };
 
-  const KE = { Engine, phraseInEx, wordKey, wordInPath, wordScopeOk, pathSort, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, dailyKind, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, TB_TYPES, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, phraseInEx, wordKey, wordInPath, wordScopeOk, lvWeave, pathSort, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, dailyKind, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, TB_TYPES, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

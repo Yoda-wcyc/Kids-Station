@@ -4,8 +4,8 @@
 //   1. 單字卡頁沒有等級、來源選單、卡片沒有等級標籤；第一張卡是等級 2；「x/路徑字數 已學會」；首頁沒先載音節資料，進單字卡才載
 //   2. 音節底線：ability＝a／bi／li／ty 四段、相鄰顏色不同、線之間有空隙；cat 一段
 //   3. 片語卡、課本單字卡、字根例字、gept/words.html 都有底線
-//   4. 拼字題（聽寫拼字）題目上沒有底線
-//   5. 練習設定沒有等級、來源；家長頁可以指定範圍，單字卡跟著變
+//   4. 拼字題（聽寫拼字）題目上沒有底線；答錯後的解答畫面（正確拼法）有底線（2026-11-24）
+//   5. 練習設定沒有等級、來源；家長頁可以指定範圍（含只背等級 2／3／國中），單字卡跟著變；自動路徑卡片三級交錯 3:2:1（2026-11-24）
 //   全程 0 個 JS 錯誤、不左右捲
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), { spawn } = require('child_process');
@@ -53,6 +53,8 @@ async function run() {
     return { flv: !!document.getElementById('flv'), fsrc: !!document.getElementById('fsrc'), lvb: document.querySelectorAll('#wl .lvb').length, first, lv: w && w.lv, prog: document.getElementById('prog').textContent, path, ftag: !!document.getElementById('ftag'), new8: DATA_WORDS.filter(x => x.src === 'cefrj-a2').length }`);
   assert(!W.flv && !W.fsrc && W.lvb === 0, 'word cards: no level / source select, no level badge on cards ' + JSON.stringify(W));
   assert(W.lv === 2, 'first card is level 2: ' + W.first + ' lv' + W.lv);
+  const lvs = await ev(`return [...document.querySelectorAll('#wl .card .w')].slice(0, 12).map(e => DATA_WORDS.find(x => x.w === e.textContent).lv).join('')`);
+  assert(lvs === '232423232423', 'auto path cards interleave lv2:lv3:lv4 = 3:2:1 (2026-11-24): ' + lvs);
   assert(W.prog === `單字 0/${W.path} 已學會` && W.path === 2382 && W.new8 === 519, 'progress denominator = words in the path (no lv1, with words-8): ' + W.prog);
   await shot('1-word-cards');
 
@@ -83,7 +85,15 @@ async function run() {
   for (let k = 0; k < 12 && !spellSeen; k++) {
     const st = await ev(`const c = document.querySelector('.qcard'); if (!c) return null; return { type: c.querySelector('.qtype').textContent, sy: document.querySelectorAll('#app .sy, #app .syl').length, txt: c.textContent }`);
     if (!st) break;
-    if (/聽寫拼字/.test(st.type)) { spellSeen = true; await sleep(300); assert(st.sy === 0 && (await ev(`return document.querySelectorAll('#app .sy, #app .syl').length`)) === 0, 'spell question: no syllable lines on the prompt ' + JSON.stringify(st)); await shot('4-spell-no-lines'); break; }
+    if (/聽寫拼字/.test(st.type)) {
+      spellSeen = true; await sleep(300); assert(st.sy === 0 && (await ev(`return document.querySelectorAll('#app .sy, #app .syl').length`)) === 0, 'spell question: no syllable lines on the prompt ' + JSON.stringify(st)); await shot('4-spell-no-lines');
+      // 2026-11-24 答錯之後的解答畫面：正確拼法有底線（答案已經揭曉）
+      await ev(`document.getElementById('ans').value = 'abiliti'; document.getElementById('ok').click(); return 1`); await sleep(200); await ev(painted);
+      const fb = await ev(syls('#fb .fb'));
+      assert(fb && fb.map(s => s.t).join('/') === 'a/bi/li/ty' && fb.every((s, i) => i === 0 || s.c !== fb[i - 1].c), 'spell answered wrong: the revealed answer is underlined ' + JSON.stringify(fb && fb.map(s => s.t)));
+      await shot('4b-spell-wrong-answer-lines'); await shot('4c-spell-wrong-answer-zoom', '#fb .fb');
+      break;
+    }
     await ev(`const o = document.querySelector('.opt'); if (o) o.click(); else { const i = document.getElementById('ans'); if (i) { i.value = 'zzz'; document.getElementById('ok').click(); } else { const g = document.querySelectorAll('.gap-in'); g.forEach(x => x.value = 'z'); const b = document.getElementById('ok'); if (b) b.click(); } } return 1`); await sleep(150);
     await ev(`const n = document.getElementById('next'); if (n) n.click(); return 1`); await sleep(250);
   }
@@ -119,7 +129,14 @@ async function run() {
   await go('/index.html#parent'); await sleep(300);
   const opts = await ev(`const s = document.getElementById('wsc'); return s ? [...s.options].map(o => o.value + '=' + o.textContent) : null`);
   assert(opts && opts[0].startsWith('=自動') && opts.some(o => o.startsWith('tb=')) && opts.some(o => o.startsWith('src:gept1=')) && opts.some(o => o.startsWith('src:cefrj-a2=')), 'parent page: word scope select ' + JSON.stringify(opts));
+  assert(['lv:2=只背等級 2', 'lv:3=只背等級 3', 'lv:4=只背國中（lv4）'].every(t => opts.some(o => o.startsWith(t))) && !opts.some(o => o.startsWith('lv:1')), 'parent page: single-level options lv2 / lv3 / lv4 (no lv1) ' + JSON.stringify(opts.filter(o => /^lv:/.test(o))));
   await ev(`document.getElementById('wscope').scrollIntoView({ block: 'center' }); return 1`); await sleep(150); await shot('5a-parent-scope', '#wscope');
+  await ev(`const s = document.getElementById('wsc'); s.value = 'lv:3'; s.dispatchEvent(new Event('change')); return 1`);
+  await go('/index.html#learn/words'); await sleep(300);
+  const l3 = await ev(`const cards = [...document.querySelectorAll('#wl .card .w')].map(e => DATA_WORDS.find(x => x.w === e.textContent)); const n = DATA_WORDS.filter(x => x.lv === 3).length;
+    return { all: cards.length > 0 && cards.every(w => w && w.lv === 3), prog: document.getElementById('prog').textContent, n }`);
+  assert(l3.all && l3.prog === `單字 0/${l3.n} 已學會`, 'scope lv:3 → only level-3 cards, denominator = level-3 words ' + JSON.stringify(l3));
+  await go('/index.html#parent'); await sleep(300);
   await ev(`const s = document.getElementById('wsc'); s.value = 'src:gept1'; s.dispatchEvent(new Event('change')); return 1`);
   await go('/index.html#learn/words'); await sleep(300);
   const sc = await ev(`const cards = [...document.querySelectorAll('#wl .card .w')].map(e => DATA_WORDS.find(x => x.w === e.textContent)); const n = DATA_WORDS.filter(x => x.src === 'gept1' && x.lv !== 1).length;

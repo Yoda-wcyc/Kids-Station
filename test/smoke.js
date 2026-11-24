@@ -175,26 +175,36 @@ ok(E.buildQuiz({ modules: ['words'], src: 'textbook-x', count: 10 }).length === 
 {
   const byKey = new Map(W.map(w => [KE.wordKey(w), w])), wOf = q => byKey.get(q.id.split(':')[1]) || {}, lvOf = q => wOf(q).lv, srcOf = q => wOf(q).src;
   const E2 = new KE.Engine({ words: W, phrases: PH, roots: R, grammar: G, patterns: P, textbook: TBK }), wq = lv => E2.meta.filter(m => m.module === 'words' && m.lv === lv).map(m => m.id);
-  for (let k = 0; k < 3; k++) ok(E2.buildQuiz({ modules: ['words'], count: 300 }).every(q => lvOf(q) === 2), 'auto path starts at lv2 (all 300 questions lv2)');
-  ok(E2.buildQuiz({ count: 300, allowSpeak: true }).filter(q => q.module === 'words').every(q => lvOf(q) === 2), 'all modules: words part starts at lv2');
+  // 2026-11-24（家長定）自動路徑改三級交錯 lv2:lv3:lv4 = 3:2:1（位置輪替、可重現）；某級出完權重分給剩下的；最高 lv4
+  const lvN = qs => [2, 3, 4].map(l => qs.filter(q => lvOf(q) === l).length), near321 = ([a, b, c]) => { const t = a + b + c; return t > 0 && Math.abs(a / t - 1 / 2) <= 0.04 && Math.abs(b / t - 1 / 3) <= 0.04 && Math.abs(c / t - 1 / 6) <= 0.04; };
+  for (let k = 0; k < 3; k++) { const qs = E2.buildQuiz({ modules: ['words'], count: 300 }); ok(qs.length === 300 && qs.every(q => [2, 3, 4].includes(lvOf(q))) && near321(lvN(qs)), 'auto path interleaves lv2:lv3:lv4 ≈ 3:2:1 in one round: ' + lvN(qs)); }
+  { const qs = E2.buildQuiz({ modules: ['words'], count: 30 }), n = lvN(qs); ok(n[0] > n[1] && n[1] > n[2] && n[2] > 0, 'a 30-question round already has all three levels, lv2 > lv3 > lv4: ' + n); }
+  { const qs = E2.buildQuiz({ count: 300, allowSpeak: true }).filter(q => q.module === 'words'); ok(qs.every(q => [2, 3, 4].includes(lvOf(q))) && near321(lvN(qs)), 'all modules: words part interleaves ≈ 3:2:1: ' + lvN(qs)); }
   E2.old = new Set(wq(2));
-  ok(E2.buildQuiz({ modules: ['words'], count: 300 }).every(q => lvOf(q) === 3), 'lv2 all learned twice → lv3 next');
+  { const qs = E2.buildQuiz({ modules: ['words'], count: 300 }), [a, b, c] = lvN(qs); ok(a === 0 && Math.abs(b / (b + c) - 2 / 3) <= 0.05, 'lv2 all learned twice → its weight goes to lv3:lv4 ≈ 2:1: ' + [a, b, c]); }
   E2.old = new Set(wq(2).concat(wq(3)));
   const q4 = E2.buildQuiz({ modules: ['words'], count: 300 }); ok(q4.every(q => lvOf(q) === 4), 'lv2+lv3 done → lv4');
   ok(E2.buildQuiz({ modules: ['words'], count: 2000 }).some(q => srcOf(q) === 'cefrj-a2'), 'lv4 includes the new words-8 (cefrj-a2)');
   E2.old = new Set(wq(2).concat(wq(3), wq(4)));
-  ok(E2.buildQuiz({ modules: ['words'], count: 300 }).every(q => lvOf(q) === 2), 'everything old → old pass again easy first, still never lv1');
+  { const qs = E2.buildQuiz({ modules: ['words'], count: 300 }); ok(qs.every(q => lvOf(q) !== 1) && near321(lvN(qs)), 'everything old → old pass again, interleaved, still never lv1: ' + lvN(qs)); }
   E2.old = new Set(); E2.isLearned = id => (byKey.get(id.slice(5)) || {}).lv === 2;
-  ok(E2.buildQuiz({ modules: ['words'], count: 300 }).every(q => lvOf(q) === 3), '「學會了」的字當舊題：lv2 全部學會 → lv3');
+  { const [a, b, c] = lvN(E2.buildQuiz({ modules: ['words'], count: 300 })); ok(a === 0 && b > c && c > 0, '「學會了」的字當舊題：lv2 全部學會 → lv3、lv4 交錯: ' + [a, b, c]); }
   E2.isLearned = null;
-  for (let k = 0; k < 3; k++) ok(E2.buildQuiz({ modules: ['words'], count: 3000 }).every(q => lvOf(q) !== 1), 'lv1 never in the auto path');
-  ok(E2.buildQuiz({ modules: ['words'], lv: '', src: '', count: 200 }).every(q => lvOf(q) === 2), 'old saved settings (lv "") → auto path');
+  for (let k = 0; k < 3; k++) ok(E2.buildQuiz({ modules: ['words'], count: 3000 }).every(q => [2, 3, 4].includes(lvOf(q))), 'lv1 never in the auto path, nothing above lv4');
+  ok(E2.buildQuiz({ modules: ['words'], lv: '', src: '', count: 200 }).every(q => lvOf(q) !== 1), 'old saved settings (lv "") → auto path');
   const qg = E2.buildQuiz({ modules: ['words'], scope: 'src:gept1', count: 300 });
-  ok(qg.length === 300 && qg.every(q => srcOf(q) === 'gept1' && lvOf(q) !== 1) && qg.filter(q => lvOf(q) === 2).length === W.filter(w => w.src === 'gept1' && w.lv === 2).length * 5 && qg.some(q => lvOf(q) === 3) && !qg.some(q => lvOf(q) === 4), 'parent scope src:gept1 → only gept1, no lv1, every lv2 question first, then lv3 (lv4 not yet)');
+  ok(qg.length === 300 && qg.every(q => srcOf(q) === 'gept1' && lvOf(q) !== 1) && lvN(qg).every(n => n > 0), 'parent scope src:gept1 → only gept1, no lv1, levels interleaved: ' + lvN(qg));
+  // 2026-11-24 家長範圍「只背等級 2／3／國中（lv4）」：只出那一級；等級 1 不能選
+  [2, 3, 4].forEach(l => { const qs = E2.buildQuiz({ modules: ['words'], scope: 'lv:' + l, count: 300 }); ok(qs.length === 300 && qs.every(q => lvOf(q) === l), 'parent scope lv:' + l + ' → only level ' + l); });
+  ok(KE.wordScopeOk('lv:3', { lv: 3 }) && !KE.wordScopeOk('lv:3', { lv: 2 }) && !KE.wordScopeOk('lv:4', { lv: 3 }) && !KE.wordScopeOk('lv:1', { lv: 1 }) && W.filter(w => KE.wordScopeOk('lv:2', w)).length === 482 && [2, 3, 4].reduce((n, l) => n + W.filter(w => KE.wordScopeOk('lv:' + l, w)).length, 0) === W.filter(w => KE.wordScopeOk('', w)).length, 'wordScopeOk lv:<n>: lv2 = 482 words, lv2+lv3+lv4 = the whole path, lv1 never');
   const qt = E2.buildQuiz({ modules: ['words'], scope: 'tb', count: 300 });
   ok(qt.length && qt.every(q => (wOf(q).tb || []).length && lvOf(q) !== 1), 'parent scope tb → textbook words only, no lv1');
   ok(KE.wordScopeOk('', { lv: 2 }) && !KE.wordScopeOk('', { lv: 1 }) && !KE.wordScopeOk('tb', { lv: 1, tb: ['x'] }) && KE.wordScopeOk('src:moe800', { lv: 4, src: 'moe800' }) && !KE.wordScopeOk('src:moe800', { lv: 4, src: 'gept1' }), 'wordScopeOk');
-  ok(KE.pathSort([{ w: 'a', lv: 4 }, { w: 'b', lv: 2 }, { w: 'c', lv: 3 }, { w: 'd', lv: 2 }], w => w.w === 'd').map(w => w.w).join('') === 'bcad', 'pathSort: unlearned first, lv2 → lv3 → lv4, stable');
+  ok(KE.pathSort([{ w: 'a', lv: 4 }, { w: 'b', lv: 2 }, { w: 'c', lv: 3 }, { w: 'd', lv: 2 }], w => w.w === 'd').map(w => w.w).join('') === 'bcad', 'pathSort: unlearned first, levels interleaved, stable');
+  // lvWeave：每 6 張 3 張 lv2、2 張 lv3、1 張 lv4（2,3,2,4,2,3），每級照原順序；lv3 用完後剩 lv2:lv4；lv1 等不在輪替裡的放最後
+  { const mk = (l, n) => Array.from({ length: n }, (_, i) => ({ w: 'L' + l + '_' + i, lv: l })), ws = mk(4, 4).concat(mk(2, 9), mk(3, 2), [{ w: 'x', lv: 1 }]), out = KE.lvWeave(ws);
+    ok(out.map(w => w.lv).join('') === '232423' + '2242' + '2242' + '41' && out.filter(w => w.lv === 2).map(w => w.w).join() === mk(2, 9).map(w => w.w).join(), 'lvWeave: 3:2:1 by position, in-level order kept, exhausted level skipped: ' + out.map(w => w.lv).join(''));
+    ok(KE.lvWeave(ws, 3).map(w => w.lv).slice(0, 6).join('') === '423232', 'lvWeave start offset'); }
   // 錯題一律可以練：等級 1、範圍外的錯題都出
   const m1 = wq(1).slice(0, 3), m4 = E2.list({ modules: ['words'], lv: 4, src: 'gept1' }).slice(0, 3).map(m => m.id);
   ok(E2.buildQuiz({ count: 10, mistakeRatio: 1, mistakes: m1 }).length === 3, 'only-mistakes: lv1 mistakes still practiced');
