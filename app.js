@@ -700,7 +700,7 @@
     if (again) Q.list = KE.requeue(Q.list, Q.i, E.get(q.id));
     const last = Q.i === Q.list.length - 1;
     // 打字題答錯：正確答案標出第一個不一樣的字
-    // 2026-11-24 答案揭曉了才畫音節底線（syl.js）：正確答案、選擇題的正確選項、單字／片語題的英文題目；有 <mark> 時每個字各自畫（syl.js 不畫有子元素的）
+    // 2026-11-24 答案揭曉了才畫音節底線（syl.js）：正確答案、選擇題的正確選項、單字／片語題的英文題目、拼字聽寫答對時也秀那個字（.okw）；有 <mark> 時每個字各自畫（syl.js 不畫有子元素的）
     const en = enText(q.answer), sy = en ? ' class="syl"' : '';
     const shown = res.diffAt >= 0 ? q.answer.split(/\s+/).map((w, k) => (k === res.diffAt ? `<mark${sy}>${esc(w)}</mark>` : en ? `<span${sy}>${esc(w)}</span>` : esc(w))).join(' ') : esc(q.answer);
     $$('.opt.right').forEach(b => { if (enText(b.dataset.v)) b.classList.add('syl'); });
@@ -708,6 +708,7 @@
     $('#fb').innerHTML = `<div class="fb ${skipped ? 'skip' : res.ok ? 'ok' : 'no'}"><div class="fbh">${skipped ? '⏭️ 先跳過' : res.ok ? (q.input === 'mic' ? '✓ 說對了！太棒了' : '✓ 答對了！太棒了') : '✗ 差一點，再加油！'}</div>
       ${again ? '<div class="again">🔁 再一次！這題等一下會再出現</div>' : ''}
       ${!res.ok ? `<div>正確答案：<b class="say${en ? ' syl' : ''}" data-say="${esc(q.speakText || q.answer)}">${shown}</b> 🔊</div>` : ''}
+      ${res.ok && en && /^(type|gap)$/.test(q.input) && /^(w|ph|r):/.test(q.id) ? `<div class="okw"><b class="say syl" data-say="${esc(q.speakText || q.answer)}">${esc(q.answer)}</b></div>` : ''}
       ${q.input === 'type' && res.ok ? `<button class="btn sm" data-say-btn>🔊 聽英文</button>` : ''}
       ${!res.ok && !skipped && q.input && input ? `<div class="muted">${q.input === 'mic' ? '我聽到的是' : '你的答案'}：${esc(input)}</div>` : ''}
       ${q.input === 'mic' && !skipped && !res.ok ? `<div class="muted">${Q.spk && Q.spk.id === q.id && Q.spk.tries.length >= SPEAK_TRIES ? `試了 ${SPEAK_TRIES} 次，下次再挑戰！` : '跳過算答錯，下次再挑戰！'}</div>` : ''}

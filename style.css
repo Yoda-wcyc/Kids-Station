@@ -236,4 +236,5 @@ a.tile{text-decoration:none}
 .sy{background-repeat:no-repeat;background-position:50% 100%;background-size:max(5px,calc(100% - 3px)) 3px;padding-bottom:4px}
 .syl[data-syl],.syl[data-syl] .sy{text-decoration:none}
 b.syl[data-syl]{display:inline-block}   /* 字根例字在 .say 裡：inline-block 才不會吃到外層的虛線 */   /* 畫了音節線就拿掉「點了會唸」的虛線，不要疊在一起 */
+.fb .okw{margin:2px 0 10px}   /* 拼字聽寫答對秀的字（2026-11-24）：底線下面留空，不被「聽英文」按鈕蓋住 */
 .sy0{background-image:linear-gradient(#e8590c,#e8590c)}.sy1{background-image:linear-gradient(#1c7ed6,#1c7ed6)}

@@ -4,7 +4,7 @@
 //   1. 單字卡頁沒有等級、來源選單、卡片沒有等級標籤；第一張卡是等級 2；「x/路徑字數 已學會」；首頁沒先載音節資料，進單字卡才載
 //   2. 音節底線：ability＝a／bi／li／ty 四段、相鄰顏色不同、線之間有空隙；cat 一段
 //   3. 片語卡、課本單字卡、字根例字、gept/words.html 都有底線
-//   4. 拼字題（聽寫拼字）題目上沒有底線；答錯後的解答畫面（正確拼法）有底線（2026-11-24）
+//   4. 拼字題（聽寫拼字）題目上沒有底線；答錯後的解答畫面（正確拼法）有底線、答對也秀畫好底線的字（2026-11-24）
 //   5. 練習設定沒有等級、來源；家長頁可以指定範圍（含只背等級 2／3／國中），單字卡跟著變；自動路徑卡片三級交錯 3:2:1（2026-11-24）
 //   全程 0 個 JS 錯誤、不左右捲
 'use strict';
@@ -98,6 +98,26 @@ async function run() {
     await ev(`const n = document.getElementById('next'); if (n) n.click(); return 1`); await sleep(250);
   }
   assert(spellSeen, 'a spell (聽寫拼字) question came up in the ability round');
+  // 2026-11-24 第二輪：拼字答對也秀那個字（同一套底線）
+  await go('/index.html#learn/words'); await ev(HOOK);
+  await ev(`const q = document.getElementById('fq'); q.value = 'ability'; q.dispatchEvent(new Event('input')); return 1`); await sleep(500);
+  await ev(`document.getElementById('pw').click(); return 1`); await sleep(400);
+  let okSeen = false;
+  for (let k = 0; k < 12 && !okSeen; k++) {
+    const t = await ev(`const c = document.querySelector('.qcard'); return c ? c.querySelector('.qtype').textContent : null`);
+    if (!t) break;
+    if (/聽寫拼字/.test(t)) {
+      okSeen = true;
+      await ev(`document.getElementById('ans').value = 'ability'; document.getElementById('ok').click(); return 1`); await sleep(200); await ev(painted);
+      const okw = await ev(`const w = document.querySelector('#fb .okw'); return { ok: !!document.querySelector('#fb .fb.ok'), sy: w && [...w.querySelectorAll('.sy')].map(s => s.textContent) }`);
+      assert(okw.ok && okw.sy && okw.sy.join('/') === 'a/bi/li/ty', 'spell answered right: the word is shown underlined ' + JSON.stringify(okw));
+      await shot('4d-spell-right-answer-lines'); await shot('4e-spell-right-answer-zoom', '#fb .fb');
+      break;
+    }
+    await ev(`const o = document.querySelector('.opt'); if (o) o.click(); else { const i = document.getElementById('ans'); if (i) { i.value = 'zzz'; document.getElementById('ok').click(); } else { const g = document.querySelectorAll('.gap-in'); g.forEach(x => x.value = 'z'); const b = document.getElementById('ok'); if (b) b.click(); } } return 1`); await sleep(150);
+    await ev(`const n = document.getElementById('next'); if (n) n.click(); return 1`); await sleep(250);
+  }
+  assert(okSeen, 'a spell question came up in the second ability round');
 
   // ---- 3. 片語卡、課本單字卡、字根例字、英檢單字頁 ----
   await go('/index.html#learn/phrases'); assert(await ev(painted), 'phrase cards painted');

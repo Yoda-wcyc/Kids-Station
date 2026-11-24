@@ -715,14 +715,19 @@
       if (ratio < 1) {
         // 依「單元＋題型」分組輪流抽，避免單字題淹沒其他題型；2026-11-21：先只輪新題（學過不到 2 次），新題都抽完了才輪舊題
         // 單字：已按「學會了」的字也當舊題；每組照 lvWeave 交錯（反過來放，pop 先拿）；第 j 個單字題型從輪替第 j 格開始，整回加起來接近 3:2:1
+        // 2026-11-24 新題每級裡照資料順序（由易到難）、不洗牌：從還沒學會的字依序往後取（答對 2 次／按了學會的都算舊題，跳過）；舊題複習仍洗牌，免得每次都複習同一批
+        // 同一回一個字只出一題（照順序時各題型會挑到同一個字）；重複的先擱著，題數不夠才補回來
         const taken = new Set(chosen.map(m => m.id)), groups = {}, learnedW = m => m.module === 'words' && this.isLearned && this.isLearned(this.itemOfQ(m.id));
-        const isOld = m => (this.old && this.old.has(m.id)) || learnedW(m);
+        const isOld = m => (this.old && this.old.has(m.id)) || learnedW(m), isW = g => g.length && g[0].module === 'words';
         pool.forEach(m => { if (!taken.has(m.id)) (groups[m.module + '|' + m.type] = groups[m.module + '|' + m.type] || []).push(m); });
-        const gs0 = shuffle(Object.values(groups).map(shuffle));
-        let wj = 0; const off = gs0.map(g => (g[0].module === 'words' ? wj++ : 0)), easyLast = (g, j) => (g.length && g[0].module === 'words' ? lvWeave(g, off[j]).reverse() : g);
-        [gs0.map((g, j) => easyLast(g.filter(m => !isOld(m)), j)), gs0.map((g, j) => easyLast(g.filter(isOld), j))].forEach(gs => {
-          while (chosen.length < count && gs.some(g => g.length)) gs.forEach(g => { if (g.length && chosen.length < count) chosen.push(g.pop()); });
+        const gs0 = shuffle(Object.values(groups).map(g => (isW(g) ? g : shuffle(g))));
+        let wj = 0; const off = gs0.map(g => (isW(g) ? wj++ : 0)), easyLast = (g, j) => (isW(g) ? lvWeave(g, off[j]).reverse() : g);
+        const seenW = new Set(), later = [], wk = m => m.module === 'words' && m.id.split(':')[1];
+        const take = g => { while (g.length) { const m = g.pop(), k = wk(m); if (k && seenW.has(k)) { later.push(m); continue; } if (k) seenW.add(k); chosen.push(m); return; } };
+        [gs0.map((g, j) => easyLast(g.filter(m => !isOld(m)), j)), gs0.map((g, j) => easyLast(isW(g) ? shuffle(g.filter(isOld)) : g.filter(isOld), j))].forEach(gs => {
+          while (chosen.length < count && gs.some(g => g.length)) gs.forEach(g => { if (g.length && chosen.length < count) take(g); });
         });
+        while (chosen.length < count && later.length) chosen.push(later.shift());
       }
       return shuffle(chosen).map(m => m.make());
     },

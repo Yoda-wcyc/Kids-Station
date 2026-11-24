@@ -194,6 +194,20 @@ ok(E.buildQuiz({ modules: ['words'], src: 'textbook-x', count: 10 }).length === 
   ok(E2.buildQuiz({ modules: ['words'], lv: '', src: '', count: 200 }).every(q => lvOf(q) !== 1), 'old saved settings (lv "") → auto path');
   const qg = E2.buildQuiz({ modules: ['words'], scope: 'src:gept1', count: 300 });
   ok(qg.length === 300 && qg.every(q => srcOf(q) === 'gept1' && lvOf(q) !== 1) && lvN(qg).every(n => n > 0), 'parent scope src:gept1 → only gept1, no lv1, levels interleaved: ' + lvN(qg));
+  // 2026-11-24 第二輪：新題每級裡照資料順序（不洗牌）、一回一個字只出一題；答對 2 次／按了學會的跳過 → 下一回往後取，不會卡在同一批
+  { E2.old = new Set(); E2.isLearned = null;
+    const eqJ = (a, b) => JSON.stringify(a) === JSON.stringify(b), L2 = W.filter(w => w.lv === 2).map(KE.wordKey), keyOf = q => q.id.split(':')[1], wkeys = qs => qs.map(keyOf);
+    const r1 = E2.buildQuiz({ modules: ['words'], count: 30 }), k1 = wkeys(r1), n2 = r1.filter(q => lvOf(q) === 2).length;
+    ok(new Set(k1).size === 30 && eqJ(r1.filter(q => lvOf(q) === 2).map(keyOf).sort(), L2.slice(0, n2).sort()), 'quiz: lv2 words come in data order (first ' + n2 + ' lv2 words), 30 distinct words in one round');
+    ok(eqJ(wkeys(E2.buildQuiz({ modules: ['words'], count: 30 })).sort(), k1.slice().sort()), 'quiz: deterministic word choice (same words when nothing changed)');
+    E2.old = new Set(E2.meta.filter(m => m.module === 'words' && k1.includes(m.id.split(':')[1])).map(m => m.id));
+    const r2 = E2.buildQuiz({ modules: ['words'], count: 30 }), k2 = wkeys(r2), m2 = r2.filter(q => lvOf(q) === 2).map(keyOf);
+    ok(!k2.some(k => k1.includes(k)) && eqJ(m2.slice().sort(), L2.slice(n2, n2 + m2.length).sort()), 'quiz: words answered right twice are skipped → next round takes the next words in order (not stuck)');
+    E2.old = new Set(); E2.isLearned = id => L2.slice(0, 5).includes(id.slice(5));
+    ok(!wkeys(E2.buildQuiz({ modules: ['words'], count: 30 })).some(k => L2.slice(0, 5).includes(k)), 'quiz: 「學會了」的字跳過');
+    E2.isLearned = null;
+    const few = E2.buildQuiz({ modules: ['words'], scope: 'src:geptkids', count: 20 });
+    ok(few.length === 20 && new Set(wkeys(few)).size === W.filter(w => w.src === 'geptkids' && w.lv !== 1).length, 'quiz: small scope still fills the round (same word, other question types) ' + few.length); }
   // 2026-11-24 家長範圍「只背等級 2／3／國中（lv4）」：只出那一級；等級 1 不能選
   [2, 3, 4].forEach(l => { const qs = E2.buildQuiz({ modules: ['words'], scope: 'lv:' + l, count: 300 }); ok(qs.length === 300 && qs.every(q => lvOf(q) === l), 'parent scope lv:' + l + ' → only level ' + l); });
   ok(KE.wordScopeOk('lv:3', { lv: 3 }) && !KE.wordScopeOk('lv:3', { lv: 2 }) && !KE.wordScopeOk('lv:4', { lv: 3 }) && !KE.wordScopeOk('lv:1', { lv: 1 }) && W.filter(w => KE.wordScopeOk('lv:2', w)).length === 482 && [2, 3, 4].reduce((n, l) => n + W.filter(w => KE.wordScopeOk('lv:' + l, w)).length, 0) === W.filter(w => KE.wordScopeOk('', w)).length, 'wordScopeOk lv:<n>: lv2 = 482 words, lv2+lv3+lv4 = the whole path, lv1 never');
