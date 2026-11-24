@@ -102,11 +102,11 @@ ok(SM.normPg({ v: 'R=5l,Zz=00' }).v.indexOf('R=5l') === 0 && JSON.stringify(SM.p
 const dd = SM.ddAdd({}, 'dTEST', t0, 'b', true);
 ok((SM.ddSum(dd)[SM.ddDay(t0)] || {}).b[0] === 1, 'dd accepts a new one-letter code (b) without changing syncmerge.js');
 
-// 7. 接線：頁面載入順序、入口卡片
+// 7. 接線：頁面載入順序、入口卡片（部署夾的 html 帶 ?v=，所以用 src="reading.js 找）
 const html = fs.readFileSync(path.join(root, 'english-reading', 'index.html'), 'utf8');
 const pos = s => html.indexOf(s);
 ok(pos('nocopy.js') > 0 && pos('nocopy.js') < pos('</head>'), 'page: nocopy.js in <head>');
-ok(pos('syncmerge.js') > 0 && pos('kids-daily.js') > pos('syncmerge.js') && pos('reading.js"') > pos('data/a5.js') && pos('data/s0.js') > pos('reading-core.js'), 'page: script order');
+ok(pos('syncmerge.js') > 0 && pos('kids-daily.js') > pos('syncmerge.js') && html.search(/src="reading\.js/) > pos('data/a5.js') && pos('data/s0.js') > pos('reading-core.js'), 'page: script order');
 ['s0', 'a1', 'a2', 'a3', 'a4', 'a5'].forEach(k => ok(html.includes('data/' + k + '.js'), 'page loads data/' + k + '.js'));
 const js = fs.readFileSync(path.join(root, 'english-reading', 'reading.js'), 'utf8');
 ok(js.includes("KidsCoins.answer(!!ok, 'english')") && js.includes("KidsDaily.rec('english', !!ok, null, prev)") && js.includes("KidsDaily.finish('er', fresh)") && js.includes('KidsMistakes.record(ER.MK_SUBJ'), 'page: coins / daily / mistakes hooks');
