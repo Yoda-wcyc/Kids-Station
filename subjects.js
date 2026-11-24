@@ -189,7 +189,8 @@
       const secs = acts.filter(x => !x.hidden).reduce((a, x) => { const g = x.grp || ''; if (!a.length || a[a.length - 1].g !== g) a.push({ g, xs: [] }); a[a.length - 1].xs.push(x); return a; }, []);
       const tilesOf = xs => `<div class="tiles tiles-even">${xs.map(x => { const d = typeof x.desc === 'function' ? x.desc() : x.desc; return `<a class="tile ${COLORS[ci++ % COLORS.length]}${lockOff(x.dk)}" href="${x.href || `#s/${k}/${x.id}`}"><span class="ti">${x.icon}</span><b>${x.title}${lockTag(x.dk)}</b>${d ? `<small>${d}</small>` : ''}${doneTag(x.dk)}</a>`; }).join('')}</div>`;
       // 冊別收合：預設打開第一冊還沒學完的（使用者開關過就照他的）
-      const unfinished = sec => sec.xs.some(x => { try { const r = x.dk && window.KidsDone && KidsDone.result(x.dk); return !r || r.status !== 'done'; } catch (e) { return true; } });
+      // 沒有 dk 的卡（異分母加減、🎬 動畫教學、歷史地圖）沒有完成條件，不算「還沒學完」（2026-11-24 修：以前五上永遠算沒學完，五下打不開）
+      const unfinished = sec => sec.xs.some(x => { if (!x.dk) return false; try { const r = window.KidsDone && KidsDone.result(x.dk); return !r || r.status !== 'done'; } catch (e) { return true; } });
       const firstOpen = (secs.find(sec => sec.g && unfinished(sec)) || secs.find(sec => sec.g) || {}).g;
       const isOpen = g => (bookOpen[k + ':' + g] != null ? bookOpen[k + ':' + g] : g === firstOpen);
       box.innerHTML = `<header class="top"><h1>${s.i} ${s.n}</h1></header>${reviewBar(k)}${secs.map(sec => sec.g ? `<details class="book" data-g="${sec.g}" data-def="${isOpen(sec.g) ? 1 : 0}"${isOpen(sec.g) ? ' open' : ''}><summary class="tiles-h">📗 ${sec.g}</summary>${tilesOf(sec.xs)}</details>` : tilesOf(sec.xs)).join('')}<p class="center"><a class="btn" href="map.html">🗺️ 課程地圖：看哪些單元學完了</a></p>`;
