@@ -31,7 +31,9 @@
   }
   const isTyped = q => TYPED_TYPES.includes(q && q.type);
   // 每日清單的英文小分類（kids-daily.js，2026-11-09）：片語＝片語頁的題；句型＝句型頁的題＋課本句子題（重組、中翻英整句、看提示造句、🎤 唸句子；口語考試不算）；其他＝''
+  // 2026-11-24 單字＝單字模組的各題型（單字卡練習、單字測驗、課本本課單字都是 w:）＋字根拆出來的字（字根本身的意思 root-meaning 不算）
   const dailyKind = q => !q ? '' : q.module === 'phrases' ? 'phrase'
+    : q.module === 'words' || (q.module === 'roots' && q.type !== 'root-meaning') ? 'word'
     : q.module === 'patterns' || (q.module === 'textbook' && !q.oral && /^(reorder|zh2en-type|tb-ask-type|speak)$/.test(q.type)) ? 'sentence' : '';
   const SRC_LABEL = { moe: '教育部基本字彙', moe1200: '教育部 1200 字', moe800: '教育部 800 字（國中進階）', extra: '補充字', textbook: '課本補充字', geptkids: '小學英檢', gept1: '全民英檢初級', 'cefrj-a2': '國中補充（CEFR A2）' };
   const PATTERN_LV = { 1: '簡單', 2: '基本', 3: '進階' };

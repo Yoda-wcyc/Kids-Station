@@ -21,7 +21,11 @@
        答錯不算學過，所以還沒學會的題重做照算；沒給 prev（遊戲、隨機出的題）＝照舊算。回傳 true＝計入、false＝舊題不計入（頁面顯示 oldNote 小提示）、null＝沒記。
      各入口怎麼數 prev、用哪份紀錄：英文＝ke_log＋ke_agg（已同步，okCounts）；英檢＝kids_gept.ok（只在本機）＋那一組做滿 2 次（done.n）；地理＝kids_geo_q（已同步，pg 的 Q 群組）；
        歷史一話＝done.n（kids-lock，已同步）；乘法快算同一組數字＝kids_mx_ok（只在本機）；異分母錯題重練＝錯題庫的連對次數 c（已同步）。閱讀本來就只算第一次讀完（readDays），不變。
-     一整項都學過 2 次（沒有新的可學）＝那一項今天算達成、顯示「🎉 這裡全部學會了」（today()／view() 的 full，只用在今天）。舊日期不重算。 */
+     一整項都學過 2 次（沒有新的可學）＝那一項今天算達成、顯示「🎉 這裡全部學會了」（today()／view() 的 full，只用在今天）。舊日期不重算。
+   2026-11-24 起（GOAL_V3，家長定）：英文 30（其中單字 ≥20、句型 ≥5、片語 ≥5），其他不變。英文多一個子目標「單字」：rec('english', ok, 'word')→代碼 d
+     （KE.dailyKind：單字卡／單字測驗各題型、課本本課單字＝words 模組；字根拆出來的字＝roots 模組，字根本身的意思 root-meaning 不算；英檢詞彙 R1、單字聽寫＝gept.js）。
+     目標陣列第 10 個＝單字；dg 多第 11 欄「單字」（0～99，不升版；10 欄＝沒設單字，舊版裝置看不懂 11 欄會丟掉、新版下次同步從本機補回，同 11/09）。
+     11/24 起英文那一組（英文、句型、片語）還是 11/09 預設 100／30／10＝家長沒改過 → 換新預設 30／單字 20／5／5；改過的保留（單字 0＝不設）。11/23 以前照舊判。 */
 (function (G) {
   'use strict';
   const SMx = () => G.KESyncMerge || (typeof require === 'function' ? require('./syncmerge.js') : null);
@@ -29,10 +33,10 @@
   const SUBJ = [['english', 'e', '英文'], ['math', 'm', '數學'], ['chinese', 'c', '國語'], ['social', 's', '社會'], ['science', 'n', '自然'], ['history', 'h', '歷史'], ['geo', 'g', '地理'], ['ai', 'a', 'AI']];   // geo＝🌍 地理（2026-11-08，geo/geo.js）
   const OPEN = 'o', MX = 'x', CODE = { mathx: MX }, NAME = {};   // o＝國語開放題：加進國語題數，不進答對率分母；x＝舊的乘法快算（11/08 以前）：加進數學題數，清單 3 題折 1 題
   SUBJ.forEach(s => { CODE[s[0]] = s[1]; NAME[s[0]] = s[2]; });
-  // 目標 [英文,數學,閱讀,句型,片語,乘法,異分母加減,歷史話,地理組]
-  const GOAL_DEF = [100, 30, 2, 30, 10, 20, 10, 1, 1], GOAL_OLD = [60, 30, 1, 0, 0, 0, 0, 0, 0], GOAL_V2 = '261109', MX_RATE = 3, K_GOAL = 'kids_daily_goal', K_PARTY = 'kids_daily_party';
-  const HREF = { english: 'index.html#en', math: 'index.html#s/math', reading: 'index.html#s/chinese/reading', idioms: 'index.html#s/chinese/idioms', sentence: 'index.html#learn/patterns', phrase: 'index.html#learn/phrases', mul: 'index.html#s/math/multiply', fracadd: 'index.html#s/math/fracadd', history: 'comics/index.html', geo: 'index.html#s/geo' };   // 首頁上 assistant-ui link() 會拿掉 index.html；小助理全頁也點得到
-  const SUBK = { sentence: 'j', phrase: 'p', mul: 'u', fracadd: 'f' }, SUBN = { sentence: '句型', phrase: '片語', mul: '乘法', fracadd: '異分母加減' }, SUBOF = { english: ['sentence', 'phrase'], math: ['mul', 'fracadd'] };
+  // 目標 [英文,數學,閱讀,句型,片語,乘法,異分母加減,歷史話,地理組,單字]；GOAL_V2D＝11/09～11/23 的預設
+  const GOAL_DEF = [30, 30, 2, 5, 5, 20, 10, 1, 1, 20], GOAL_V2D = [100, 30, 2, 30, 10, 20, 10, 1, 1, 0], GOAL_OLD = [60, 30, 1, 0, 0, 0, 0, 0, 0, 0], GOAL_V2 = '261109', GOAL_V3 = '261124', MX_RATE = 3, K_GOAL = 'kids_daily_goal', K_PARTY = 'kids_daily_party';
+  const HREF = { english: 'index.html#en', math: 'index.html#s/math', reading: 'index.html#s/chinese/reading', idioms: 'index.html#s/chinese/idioms', sentence: 'index.html#learn/patterns', phrase: 'index.html#learn/phrases', mul: 'index.html#s/math/multiply', fracadd: 'index.html#s/math/fracadd', word: 'index.html#learn/words', history: 'comics/index.html', geo: 'index.html#s/geo' };   // 首頁上 assistant-ui link() 會拿掉 index.html；小助理全頁也點得到
+  const SUBK = { word: 'd', sentence: 'j', phrase: 'p', mul: 'u', fracadd: 'f' }, SUBN = { word: '單字', sentence: '句型', phrase: '片語', mul: '乘法', fracadd: '異分母加減' }, SUBOF = { english: ['word', 'sentence', 'phrase'], math: ['mul', 'fracadd'] };
   const FIN = { comic: 'v', geo: 'w' };   // finish(kind) 記的代碼：歷史一話、地理一組
   const LEARN_MAX = 2, NEW_RULE = '261121', OLDC = 'r';   // 學過 2 次＝舊題；r＝重複的舊題（不算清單，只給家長看）
   const READ_N = { zh: 100, cy: 100, cyr: 10 }, COMIC_N = 42, GEO_PER = 40;   // 閱讀篇數、漫畫話數（7 冊×6 話）、地理每單元題數（練習 30＋測驗 10）；test/norepeat.test.js 會對目錄
@@ -61,15 +65,19 @@
   // 這一天的目標（GOAL_DEF 的順序）：生效日 ≤ 這一天的最新一筆；都沒有＝預設（GOAL_V2 以前是舊預設，過去的判定不變）
   const subDef = (tot, a, b) => [Math.min(a, tot), Math.min(b, Math.max(0, tot - a))];   // 子目標預設，加起來不超過該科目標
   function goalOn(dg, day) {
-    const d = obj(dg), k = Object.keys(d).filter(x => x <= day).sort().pop();
-    if (!k) return (day < GOAL_V2 ? GOAL_OLD : GOAL_DEF).slice();
+    const d = obj(dg), k = Object.keys(d).filter(x => x <= day).sort().pop(), V = GOAL_V2D;
+    if (!k) return (day < GOAL_V2 ? GOAL_OLD : day < GOAL_V3 ? V : GOAL_DEF).slice();
     const a = String(d[k]).split(',').map(Number);
-    if (a.length >= 10) return [a[0], a[1], a[2]].concat(a.slice(4, 10));
-    if (day < GOAL_V2) return [a[0], a[1], a[2], 0, 0, 0, 0, 0, 0];
-    const e = a[0] === GOAL_OLD[0] ? GOAL_DEF[0] : a[0], m = a[1];   // 舊格式：還是舊預設＝家長沒改過 → 新預設（數學新舊預設都是 30）
-    return [e, m, a[2] === GOAL_OLD[2] ? GOAL_DEF[2] : a[2]].concat(subDef(e, GOAL_DEF[3], GOAL_DEF[4]), subDef(m, GOAL_DEF[5], GOAL_DEF[6]), GOAL_DEF.slice(7));
+    if (a.length >= 11) return [a[0], a[1], a[2]].concat(a.slice(4, 11));
+    if (a.length < 10 && day < GOAL_V2) return [a[0], a[1], a[2], 0, 0, 0, 0, 0, 0, 0];
+    const e = a[0] === GOAL_OLD[0] ? V[0] : a[0], m = a[1];   // 舊 4 欄：還是舊預設＝家長沒改過 → 11/09 預設（數學新舊預設都是 30）
+    const g = a.length >= 10 ? [a[0], a[1], a[2]].concat(a.slice(4, 10), 0)
+      : [e, m, a[2] === GOAL_OLD[2] ? V[2] : a[2]].concat(subDef(e, V[3], V[4]), subDef(m, V[5], V[6]), V.slice(7));
+    // 11/24 起：英文那一組還是 11/09 預設（100、句型 30、片語 10）＝沒改過 → 換新預設（含單字）；改過的保留、單字 0＝不設
+    if (day >= GOAL_V3 && g[0] === V[0] && g[3] === V[3] && g[4] === V[4]) [0, 3, 4, 9].forEach(i => { g[i] = GOAL_DEF[i]; });
+    return g;
   }
-  function setGoal(dg, day, g) { const d = Object.assign({}, obj(dg)), seq = d[day] ? (+String(d[day]).split(',')[3] || 0) + 1 : 0; d[day] = [g[0], g[1], g[2], Math.min(seq, 99)].concat([3, 4, 5, 6, 7, 8].map(i => g[i] || 0)).join(','); return d; }
+  function setGoal(dg, day, g) { const d = Object.assign({}, obj(dg)), seq = d[day] ? (+String(d[day]).split(',')[3] || 0) + 1 : 0; d[day] = [g[0], g[1], g[2], Math.min(seq, 99)].concat([3, 4, 5, 6, 7, 8, 9].map(i => g[i] || 0)).join(','); return d; }
   // 每天第一次完成幾篇閱讀（國語素養閱讀 zh、成語故事 cy001～、成語素養閱讀 cyr；單元測驗 cyu、總測驗不算）
   function readDays(done, dayOf) {
     const out = {}, d = obj(done), add = t => { if (+t > 0) { const k = dayOf(+t); out[k] = (out[k] || 0) + 1; } };
@@ -114,10 +122,10 @@
     const d = obj(done), n = re => Object.keys(obj(d.zh)).concat(Object.keys(obj(d.cy))).filter(k => re.test(k)).length;
     return n(/^zh[1-4]-\d\d$/) >= READ_N.zh && n(/^cy\d{3}$/) >= READ_N.cy && n(/^cyr\d\d$/) >= READ_N.cyr;
   }
-  // 今天哪些項目「全部學會了」：left＝app.js 算好的英文新題數 {e, j, p}（kids_daily_left）；其他從同步資料直接算
+  // 今天哪些項目「全部學會了」：left＝app.js 算好的英文新題數 {e, d, j, p}（kids_daily_left）；其他從同步資料直接算
   function fullOf(o) {
     o = obj(o); const L = obj(o.left), z = k => typeof L[k] === 'number' && L[k] <= 0;
-    return { e: z('e'), j: z('j'), p: z('p'), r: readFull(o.done), h: histFull(o.done, o.seen), g: geoFull(o.geoQ, o.units) };
+    return { e: z('e'), d: z('d'), j: z('j'), p: z('p'), r: readFull(o.done), h: histFull(o.done, o.seen), g: geoFull(o.geoQ, o.units) };
   }
   // 歷史「下一話」：comic.js 存的 kids_comic.next；沒看過任何一話＝第一話；全部看過（next 是空的）＝第一個做不到 2 次的那一話（給了 done 才找），再沒有＝漫畫目錄
   const nextComic = (c, done) => {
@@ -139,7 +147,7 @@
       const subLeft = subs.reduce((t, s) => t + s.left, 0), miss = subs.find(s => !s.done);
       return Object.assign(r, { subs }, miss ? { done: false, left: Math.max(r.left, subLeft), subLeft, href: miss.href } : {});
     };
-    const en = withSubs(row('e', 'english', '英文', e, goal[0], '題'), [goal[3], goal[4]]);
+    const en = withSubs(row('e', 'english', '英文', e, goal[0], '題'), [goal[9], goal[3], goal[4]]);
     const msub = goal[5] > 0 || goal[6] > 0;   // 有數學子目標：清單只認乘法快算（兩位×兩位）＋異分母加減
     const ma = msub ? withSubs(row('m', 'math', '數學', c('u') + c('f'), goal[1], '題'), [goal[5], goal[6]]) : row('m', 'math', '數學', m + Math.floor(x / MX_RATE), goal[1], '題', { raw: m + x, mx: x });
     if (msub && !ma.done && !ma.subLeft && ma.subs.length) ma.href = ma.subs[0].href;   // 子目標都到了、總數還不夠：一樣只能去那兩頁
@@ -147,7 +155,7 @@
     const doneN = rows.filter(r => r.done).length;
     return { rows, doneN, total: rows.length, allDone: doneN === rows.length };
   }
-  // 家長頁一行：✓ 全部完成 5/5，或「完成 2/5 項：英文 72/100（句型 25/30、片語 10/10 ✓）、數學 ✓、閱讀 未完成、歷史 0/1、地理 —」（— ＝那天的清單沒有這一項）
+  // 家長頁一行：✓ 全部完成 5/5，或「完成 2/5 項：英文 22/30（單字 12/20、句型 5/5 ✓、片語 10/10 ✓）、數學 ✓、閱讀 未完成、歷史 0/1、地理 —」（— ＝那天的清單沒有這一項）
   const ALL = [['e', '英文'], ['m', '數學'], ['r', '閱讀'], ['h', '歷史'], ['g', '地理']];
   function checkText(c) {
     const sub = r => (r.subs || []).map(s => s.name + ' ' + s.n + '/' + s.goal + (s.full ? ' 🎉 全部學會了' : s.done ? ' ✓' : '')).join('、');
@@ -210,20 +218,20 @@
 
   function goalForm(g) {
     const f = (id, name, v, unit, min, max) => `<label class="dg-f">${name}<input id="${id}" type="number" inputmode="numeric" min="${min}" max="${max}" value="${v}">${unit}</label>`;
-    return `<details class="dg" id="dgBox"><summary>🎯 改每日目標（現在：英文 ${g[0]} 題（句型 ${g[3]}、片語 ${g[4]}）、數學 ${g[1]} 題（乘法 ${g[5]}、異分母加減 ${g[6]}）、閱讀 ${g[2]} 篇、歷史 ${g[7]} 話、地理 ${g[8]} 組）</summary>`
-      + `<div class="dg-row">${f('dgE', '英文', g[0], '題', 1, 999)}${f('dgJ', '其中句型', g[3], '題', 0, 99)}${f('dgP', '其中片語', g[4], '題', 0, 99)}</div>`
+    return `<details class="dg" id="dgBox"><summary>🎯 改每日目標（現在：英文 ${g[0]} 題（單字 ${g[9]}、句型 ${g[3]}、片語 ${g[4]}）、數學 ${g[1]} 題（乘法 ${g[5]}、異分母加減 ${g[6]}）、閱讀 ${g[2]} 篇、歷史 ${g[7]} 話、地理 ${g[8]} 組）</summary>`
+      + `<div class="dg-row">${f('dgE', '英文', g[0], '題', 1, 999)}${f('dgW', '其中單字', g[9], '題', 0, 99)}${f('dgJ', '其中句型', g[3], '題', 0, 99)}${f('dgP', '其中片語', g[4], '題', 0, 99)}</div>`
       + `<div class="dg-row">${f('dgM', '數學', g[1], '題', 1, 999)}${f('dgU', '其中乘法', g[5], '題', 0, 99)}${f('dgF', '其中異分母加減', g[6], '題', 0, 99)}</div>`
       + `<div class="dg-row">${f('dgR', '閱讀', g[2], '篇', 1, 20)}${f('dgH', '歷史漫畫', g[7], '話', 0, 9)}${f('dgG', '地理', g[8], '組', 0, 9)}<button type="button" class="btn primary" id="dgSave">儲存</button></div>`
-      + `<p class="muted dl-foot" id="dgMsg">從今天起生效，以前的判定不會變；會同步到其他裝置。假日和平日相同。「其中…」的題也算進那一科的題數（填 0＝不設）。數學有設「其中」時，清單只算乘法快算（兩位數×兩位數以上，1 題算 1 題）和異分母分數加減，別的數學題照樣練、照樣記在上面的紀錄，但不算清單。閱讀文章、成語故事讀完一篇都算 1 篇；歷史＝看完一話漫畫並做完測驗；地理＝做完一組練習或一次測驗。歷史、地理填 0＝清單不列。</p></details>`;
+      + `<p class="muted dl-foot" id="dgMsg">從今天起生效，以前的判定不會變；會同步到其他裝置。假日和平日相同。「其中…」的題也算進那一科的題數（填 0＝不設）。英文的單字＝單字卡、單字測驗、課本單字、字根拆出來的字、英檢詞彙和單字聽寫；片語、句型、文法、閱讀、遊戲不算單字。數學有設「其中」時，清單只算乘法快算（兩位數×兩位數以上，1 題算 1 題）和異分母分數加減，別的數學題照樣練、照樣記在上面的紀錄，但不算清單。閱讀文章、成語故事讀完一篇都算 1 篇；歷史＝看完一話漫畫並做完測驗；地理＝做完一組練習或一次測驗。歷史、地理填 0＝清單不列。</p></details>`;
   }
   // GOAL_DEF 的順序；「其中」加起來不能超過那一科
-  const GOAL_IDS = ['dgE', 'dgM', 'dgR', 'dgJ', 'dgP', 'dgU', 'dgF', 'dgH', 'dgG'];
+  const GOAL_IDS = ['dgE', 'dgM', 'dgR', 'dgJ', 'dgP', 'dgU', 'dgF', 'dgH', 'dgG', 'dgW'];
   function validGoal(a) {
     const g = a.map(x => Math.floor(+x)), inR = (v, lo, hi) => v >= lo && v <= hi;
-    return a.length === 9 && inR(g[0], 1, 999) && inR(g[1], 1, 999) && inR(g[2], 1, 20) && [3, 4, 5, 6].every(i => inR(g[i], 0, 99)) && inR(g[7], 0, 9) && inR(g[8], 0, 9) && g[3] + g[4] <= g[0] && g[5] + g[6] <= g[1] ? g : null;
+    return a.length === 10 && inR(g[0], 1, 999) && inR(g[1], 1, 999) && inR(g[2], 1, 20) && [3, 4, 5, 6, 9].every(i => inR(g[i], 0, 99)) && inR(g[7], 0, 9) && inR(g[8], 0, 9) && g[9] + g[3] + g[4] <= g[0] && g[5] + g[6] <= g[1] ? g : null;
   }
 
-  const core = { evidence, view, cardHtml, shift, START, GOAL_DEF, GOAL_V2, goalOn, setGoal, readDays, checkDay, checkText, partyDue, validGoal, nextGeo, nextComic,
+  const core = { evidence, view, cardHtml, shift, START, GOAL_DEF, GOAL_V2D, GOAL_V2, GOAL_V3, goalOn, setGoal, readDays, checkDay, checkText, partyDue, validGoal, nextGeo, nextComic,
     LEARN_MAX, NEW_RULE, READ_N, COMIC_N, GEO_PER, isNew, okCounts, newFirst, geoIds, geoSetNew, geoFull, epTimes, histFull, readFull, fullOf };
   if (typeof module !== 'undefined' && module.exports) module.exports = { _core: core };
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -247,7 +255,7 @@
     localStorage.setItem('ke_sync_ctr', JSON.stringify(Object.assign(obj(m), { dev, ctr: obj(obj(m).ctr) })));
     return dev;
   }
-  // kind：英文 'sentence'（句型）／'phrase'（片語）、數學 'mul'（乘法快算兩位×兩位）／'fracadd'（異分母加減），其他不傳
+  // kind：英文 'word'（單字）／'sentence'（句型）／'phrase'（片語）、數學 'mul'（乘法快算兩位×兩位）／'fracadd'（異分母加減），其他不傳
   // prev：這一題這次之前答對過幾次（≥ 2＝舊題，記代碼 r、不算那一科和清單）；不傳＝照舊算。回 true 計入／false 舊題／null 沒記（沒登入、壞掉）
   function rec(subj, ok, kind, prev) {
     try {

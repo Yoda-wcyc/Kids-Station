@@ -105,7 +105,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     console.log('daily stats doc size: 90 天 iPad 5 科＋電腦每週一天 ' + b + ' B（上限 ' + SM.DD_MAX + ' B）');
     // 2026-11-09 清單天天做滿五項（英文 100 含句型片語、數學 30 含乘法異分母＋別的數學、閱讀 2 篇、歷史 1 話、地理 1 組）＋電腦每週一天：
     // 上限 DD_MAX 不放寬 → 最舊的幾天先丟；最新的天一定在，家長頁預設看的 14 天、每日完成紀錄一定都在
-    const full5 = []; for (let i = 0; i < 90; i++) full5.push(SM.ddDay(NOW - i * DAY) + 'c12,2e100,10f10g10,2h5,1j30m40,6o2p10u20v1w1');
+    const full5 = []; for (let i = 0; i < 90; i++) full5.push(SM.ddDay(NOW - i * DAY) + 'c12,2d20e100,10f10g10,2h5,1j30m40,6o2p10u20v1w1');   // 11/24 起多 d（單字），英文照 100 題算（偏大）
     const nf = SM.normDd({ d0abcdefgh12345: full5.reverse().join(';'), d0abcdefgh54321: pc.slice().join(';') }, NOW), kf = Object.keys(SM.ddSum(nf)).sort();
     ok(SM.bytes(nf) <= SM.DD_MAX && kf.length >= 60 && kf[kf.length - 1] === today && kf.length >= 14, 'full checklist every day: cap kept, ' + kf.length + ' newest days stay');
     console.log('daily stats checklist: 五項天天做滿＋電腦每週一天 → 留 ' + kf.length + ' 天（' + SM.bytes(nf) + ' B，上限 ' + SM.DD_MAX + ' B 不放寬）');
@@ -181,8 +181,10 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
   }
   // ---------- 每日進度清單 ----------
   {
-    const G = KD.GOAL_DEF, OLD = [60, 30, 1, 0, 0, 0, 0, 0, 0], chk = (d, reads, goal) => KD.checkDay(d, reads, goal || OLD);
-    ok(same(G, [100, 30, 2, 30, 10, 20, 10, 1, 1]) && KD.GOAL_V2 === '261109', 'default goals from 11/09: 英文 100（句型 30、片語 10）、數學 30（乘法 20、異分母 10）、閱讀 2、歷史 1、地理 1');
+    // G＝11/09～11/23 的預設（下面的舊測試照它判）；G3＝11/24 起的預設（第 10 個＝單字）
+    const G = KD.GOAL_V2D, G3 = KD.GOAL_DEF, OLD = [60, 30, 1, 0, 0, 0, 0, 0, 0, 0], chk = (d, reads, goal) => KD.checkDay(d, reads, goal || OLD);
+    ok(same(G, [100, 30, 2, 30, 10, 20, 10, 1, 1, 0]) && KD.GOAL_V2 === '261109', 'default goals 11/09～11/23: 英文 100（句型 30、片語 10）、數學 30（乘法 20、異分母 10）、閱讀 2、歷史 1、地理 1');
+    ok(same(G3, [30, 30, 2, 5, 5, 20, 10, 1, 1, 20]) && KD.GOAL_V3 === '261124', 'default goals from 11/24: 英文 30（單字 20、句型 5、片語 5）、數學 30（乘法 20、異分母 10）、閱讀 2、歷史 1、地理 1');
     // ---------- 舊規則（11/08 以前的日子、或數學子目標都設 0）：計數與折算：答錯也算；快算 3 題折 1 題 ----------
     let dd = add({}, 'iPad', NOW, 'e', false, 12); dd = add(dd, 'iPad', NOW, 'm', true, 10); dd = add(dd, 'iPad', NOW, 'x', false, 8);
     let c = chk(SM.ddSum(dd)[today], 0);
@@ -216,7 +218,18 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     ok(cs.rows[0].done && cs.allDone && KD.checkText(cs).startsWith('✓ 全部完成 5/5'), 'all reached → all done ' + KD.checkText(cs));
     cs = KD.checkDay({ e: [100, 100], j: [80, 80] }, 2, G);
     ok(!cs.rows[0].done && cs.rows[0].subs[1].n === 0 && cs.rows[0].left === 10, 'lots of 句型 does not cover 片語');
-    ok(KD.checkDay({ e: [40, 40] }, 0, [40, 30, 1, 0, 0, 0, 0, 0, 0]).rows[0].done && !KD.checkDay({ e: [40, 40] }, 0, [40, 30, 1, 0, 0, 0, 0, 0, 0]).rows[0].subs.length, 'sub goal 0 = not set');
+    ok(KD.checkDay({ e: [40, 40] }, 0, [40, 30, 1, 0, 0, 0, 0, 0, 0, 0]).rows[0].done && !KD.checkDay({ e: [40, 40] }, 0, [40, 30, 1, 0, 0, 0, 0, 0, 0, 0]).rows[0].subs.length, 'sub goal 0 = not set');
+    // ---------- 英文子目標「單字」d（2026-11-24；同一題也記 e，只記題數）----------
+    let wd = {}; for (let i = 0; i < 12; i++) { wd = SM.ddAdd(wd, 'iPad', NOW, 'e', i > 0); wd = SM.ddAdd(wd, 'iPad', NOW, 'd', true); }
+    for (let i = 0; i < 5; i++) { wd = SM.ddAdd(wd, 'iPad', NOW, 'e', true); wd = SM.ddAdd(wd, 'iPad', NOW, 'j', true); }
+    ok(/^\d{6}d12e17,1j5$/.test(wd.iPad), 'compact: d12e17,1j5 ' + wd.iPad);
+    en = KD.checkDay(SM.ddSum(wd)[today], 0, G3).rows[0];
+    ok(en.n === 17 && en.goal === 30 && !en.done && en.subs.map(s => s.name + s.n + '/' + s.goal + (s.done ? '✓' : '')).join() === '單字12/20,句型5/5✓,片語0/5' && en.left === 13 && en.subLeft === 13 && /#learn\/words$/.test(en.href), 'english 17/30: 單字 12/20、句型 5/5 ✓、片語 0/5 → goes to word cards ' + JSON.stringify(en.subs));
+    ok(!KD.checkDay({ e: [40, 40], j: [5, 5], p: [5, 5], d: [19, 19] }, 0, G3).rows[0].done && KD.checkDay({ e: [30, 30], j: [5, 5], p: [5, 5], d: [20, 20] }, 0, G3).rows[0].done, '單字 19/20 → not done; 20＋5＋5 → english ✓');
+    ok(!KD.checkDay({ e: [60, 60], j: [30, 30], p: [30, 30] }, 0, G3).rows[0].done && KD.checkDay({ e: [100, 100], j: [30, 30], p: [10, 10], d: [99, 99] }, 0, G).rows[0].done && !KD.checkDay({ e: [100, 100], d: [99, 99] }, 0, G).rows[0].subs.some(s => s.key === 'word'), 'lots of 句型片語 do not cover 單字; days before 11/24 have no 單字 sub-goal');
+    const tw = KD.checkText(KD.checkDay({ e: [22, 20], d: [12, 12], j: [5, 5], p: [5, 5] }, 0, G3));
+    ok(tw.startsWith('完成 0/5 項：英文 22/30（單字 12/20、句型 5/5 ✓、片語 5/5 ✓）'), 'parent label with 單字 ' + tw);
+    ok(KD.checkDay({ e: [30, 30], j: [5, 5], p: [5, 5], d: [3, 3] }, 0, G3, { d: true }).rows[0].done && KD.fullOf({ left: { e: 5, d: 0, j: 3, p: 3 } }).d === true && KD.fullOf({ left: { e: 5, d: 2 } }).d === false, '單字 all learned (kids_daily_left d 0) → that sub-goal done');
     const sA = SM.ddAdd(SM.ddAdd({}, 'a', NOW, 'e', true), 'a', NOW, 'j', true), sB = SM.ddAdd(SM.ddAdd({}, 'b', NOW, 'e', true), 'b', NOW, 'j', true);
     ok(same(SM.ddSum(SM.mergeDd(sA, sB, NOW))[today], { e: [2, 2], j: [2, 2] }) && same(view({ dd: SM.mergeDd(sA, sB, NOW) }).rows[0].subj.map(s => s.name + s.n), ['英文2']), 'j merges across devices; parent row does not list j as a subject');
 
@@ -260,20 +273,31 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     ok(same(KD.readDays(null, SM.ddDay), {}), 'no reading data');
 
     // ---------- 目標生效日：改目標不追溯；11/09 換新預設 ----------
-    ok(same(KD.goalOn({}, '261108'), OLD) && same(KD.goalOn({}, '261109'), G) && same(KD.goalOn({}, '261120'), G), 'no saved goal: old default before 11/09, new default from 11/09');
-    let dg = KD.setGoal({}, '261110', [80, 30, 1, 20, 5, 15, 15, 2, 0]);
-    ok(dg[261110] === '80,30,1,0,20,5,15,15,2,0' && same(KD.goalOn(dg, '261109'), G) && same(KD.goalOn(dg, '261110'), [80, 30, 1, 20, 5, 15, 15, 2, 0]) && same(KD.goalOn(dg, '261120'), [80, 30, 1, 20, 5, 15, 15, 2, 0]), 'goal applies from its effective day ' + dg[261110]);
-    dg = KD.setGoal(dg, '261115', [40, 20, 2, 10, 10, 10, 10, 1, 1]);
-    ok(same(KD.goalOn(dg, '261112'), [80, 30, 1, 20, 5, 15, 15, 2, 0]) && same(KD.goalOn(dg, '261115'), [40, 20, 2, 10, 10, 10, 10, 1, 1]), 'history kept');
+    ok(same(KD.goalOn({}, '261108'), OLD) && same(KD.goalOn({}, '261109'), G) && same(KD.goalOn({}, '261123'), G) && same(KD.goalOn({}, '261124'), G3) && same(KD.goalOn({}, '261201'), G3), 'no saved goal: old default before 11/09, 11/09 default to 11/23, new default from 11/24');
+    let dg = KD.setGoal({}, '261110', [80, 30, 1, 20, 5, 15, 15, 2, 0, 0]);
+    ok(dg[261110] === '80,30,1,0,20,5,15,15,2,0,0' && same(KD.goalOn(dg, '261109'), G) && same(KD.goalOn(dg, '261110'), [80, 30, 1, 20, 5, 15, 15, 2, 0, 0]) && same(KD.goalOn(dg, '261130'), [80, 30, 1, 20, 5, 15, 15, 2, 0, 0]), 'goal applies from its effective day ' + dg[261110]);
+    dg = KD.setGoal(dg, '261115', [40, 20, 2, 10, 10, 10, 10, 1, 1, 0]);
+    ok(same(KD.goalOn(dg, '261112'), [80, 30, 1, 20, 5, 15, 15, 2, 0, 0]) && same(KD.goalOn(dg, '261115'), [40, 20, 2, 10, 10, 10, 10, 1, 1, 0]), 'history kept');
+    // 11/24 換新預設：10 欄（11/09～11/23 存的）英文那一組還是 100／30／10＝沒改過 → 從 11/24 起 30／單字 20／5／5（數學、閱讀、歷史、地理照存的）；11/23 以前照舊
+    const v10 = { 261112: '100,25,3,2,30,10,15,10,0,1' }, c10 = { 261112: '100,30,2,0,20,10,20,10,1,1' }, c80 = { 261112: '80,30,2,0,30,10,20,10,1,1' };
+    ok(same(KD.goalOn(v10, '261123'), [100, 25, 3, 30, 10, 15, 10, 0, 1, 0]) && same(KD.goalOn(v10, '261124'), [30, 25, 3, 5, 5, 15, 10, 0, 1, 20]), '10-field at the 11/09 english default → new english default from 11/24, rest kept');
+    ok(same(KD.goalOn(c10, '261124'), [100, 30, 2, 20, 10, 20, 10, 1, 1, 0]) && same(KD.goalOn(c80, '261130'), [80, 30, 2, 30, 10, 20, 10, 1, 1, 0]), 'parent-changed english block kept from 11/24, 單字 0 (not set)');
+    ok(same(KD.goalOn({ 261104: '60,30,1,0' }, '261120'), G) && same(KD.goalOn({ 261104: '60,30,1,0' }, '261124'), G3) && same(KD.goalOn({ 261104: '80,30,1,0' }, '261124'), [80, 30, 2, 30, 10, 20, 10, 1, 1, 0]), '4-field old default → 11/09 default → 11/24 default; changed 80 kept');
+    // 11 欄（11/24 起存的，有單字）
+    const d11 = KD.setGoal(v10, '261124', [40, 30, 2, 5, 5, 20, 10, 1, 1, 25]);
+    ok(d11[261124] === '40,30,2,0,5,5,20,10,1,1,25' && same(KD.goalOn(d11, '261124'), [40, 30, 2, 5, 5, 20, 10, 1, 1, 25]) && same(KD.goalOn(d11, '261123'), [100, 25, 3, 30, 10, 15, 10, 0, 1, 0]), '11-field goal with 單字; earlier days unchanged ' + d11[261124]);
+    ok(same(KD.goalOn(KD.setGoal({}, '261125', [100, 30, 2, 30, 10, 20, 10, 1, 1, 0]), '261125'), [100, 30, 2, 30, 10, 20, 10, 1, 1, 0]), 'saved on the new page (11 fields) is never swapped for the default, even 100/30/10');
     // 舊格式（11/09 前存的 4 欄）：英文、閱讀還是舊預設＝沒改過 → 從 11/09 起套新預設；改過的保留；歷史、地理 1；11/09 以前照舊
     const o1 = { 261104: '60,25,1,0' }, o2 = { 261104: '80,30,3,1' }, o3 = { 261104: '20,10,1,0' };
-    ok(same(KD.goalOn(o1, '261108'), [60, 25, 1, 0, 0, 0, 0, 0, 0]) && same(KD.goalOn(o1, '261109'), [100, 25, 2, 30, 10, 20, 5, 1, 1]), 'old goal at old default english/reading → new default from 11/09; math 25 kept, subs fit in it');
-    ok(same(KD.goalOn(o2, '261110'), [80, 30, 3, 30, 10, 20, 10, 1, 1]), 'parent-changed english 80 / reading 3 kept; subs default');
-    ok(same(KD.goalOn(o3, '261110'), [20, 10, 2, 20, 0, 10, 0, 1, 1]), 'small goals: subs never exceed them');
+    ok(same(KD.goalOn(o1, '261108'), [60, 25, 1, 0, 0, 0, 0, 0, 0, 0]) && same(KD.goalOn(o1, '261109'), [100, 25, 2, 30, 10, 20, 5, 1, 1, 0]), 'old goal at old default english/reading → new default from 11/09; math 25 kept, subs fit in it');
+    ok(same(KD.goalOn(o2, '261110'), [80, 30, 3, 30, 10, 20, 10, 1, 1, 0]), 'parent-changed english 80 / reading 3 kept; subs default');
+    ok(same(KD.goalOn(o3, '261110'), [20, 10, 2, 20, 0, 10, 0, 1, 1, 0]), 'small goals: subs never exceed them');
     const d2 = add(add({}, 'x', Date.UTC(2026, 10, 12, 4), 'e', true, 70), 'x', Date.UTC(2026, 10, 12, 4), 'm', true, 30), lab = dgx => KD.view({ dd: d2, ev: {}, today: '261120', start: '261103', dg: dgx, done: { zh: { a: Date.UTC(2026, 10, 12, 4) } } }).rows.find(r => r.day === '261112').check;
-    const g60 = [60, 30, 1, 0, 0, 0, 0, 0, 0];
-    ok(lab(KD.setGoal({}, '261110', g60)) === '✓ 全部完成 3/3：英文 ✓、數學 ✓、閱讀 ✓、歷史 —、地理 —' && lab(KD.setGoal(KD.setGoal({}, '261110', g60), '261115', [90, 30, 1, 0, 0, 0, 0, 0, 0])) === lab(KD.setGoal({}, '261110', g60)), 'raising the goal later does not change a past day: ' + lab(KD.setGoal({}, '261110', g60)));
-    ok(lab(KD.setGoal({}, '261110', [80, 30, 1, 0, 0, 0, 0, 0, 0])) === '完成 2/3 項：英文 70/80、數學 ✓、閱讀 ✓、歷史 —、地理 —', 'judged by that day goal: ' + lab(KD.setGoal({}, '261110', [80, 30, 1, 0, 0, 0, 0, 0, 0])));
+    const g60 = [60, 30, 1, 0, 0, 0, 0, 0, 0, 0];
+    ok(lab(KD.setGoal({}, '261110', g60)) === '✓ 全部完成 3/3：英文 ✓、數學 ✓、閱讀 ✓、歷史 —、地理 —' && lab(KD.setGoal(KD.setGoal({}, '261110', g60), '261115', [90, 30, 1, 0, 0, 0, 0, 0, 0, 0])) === lab(KD.setGoal({}, '261110', g60)), 'raising the goal later does not change a past day: ' + lab(KD.setGoal({}, '261110', g60)));
+    ok(lab(KD.setGoal({}, '261110', [80, 30, 1, 0, 0, 0, 0, 0, 0, 0])) === '完成 2/3 項：英文 70/80、數學 ✓、閱讀 ✓、歷史 —、地理 —', 'judged by that day goal: ' + lab(KD.setGoal({}, '261110', [80, 30, 1, 0, 0, 0, 0, 0, 0, 0])));
+    const l12 = KD.view({ dd: d2, ev: {}, today: '261130', start: '261103', dg: {}, done: {} }).rows.find(r => r.day === '261112').check;
+    ok(l12.startsWith('完成 0/5 項：英文 70/100（句型 0/30、片語 0/10）'), 'the 11/24 default does not change 11/12 (still 100/30/10, no 單字): ' + l12);
     // 11/09 以前的日子不受新預設影響（照 60/30/1、三項）
     const d0 = add(add({}, 'x', Date.UTC(2026, 10, 5, 4), 'e', true, 60), 'x', Date.UTC(2026, 10, 5, 4), 'm', true, 30);
     ok(KD.view({ dd: d0, ev: {}, today: '261120', start: '261103', dg: {}, done: { zh: { a: Date.UTC(2026, 10, 5, 4) } } }).rows.find(r => r.day === '261105').check.startsWith('✓ 全部完成 3/3'), 'a day before 11/09 is still judged by 60/30/1');
@@ -281,24 +305,32 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     ok(KD.checkText(chk({ e: [45, 40], m: [30, 30] }, 0)) === '完成 1/3 項：英文 45/60、數學 ✓、閱讀 未完成、歷史 —、地理 —', 'parent label (old day) ' + KD.checkText(chk({ e: [45, 40], m: [30, 30] }, 0)));
     const t5 = KD.checkText(KD.checkDay({ e: [72, 70], j: [25, 25], p: [10, 10], u: [20, 20], f: [3, 3], m: [23, 23], v: [1, 1] }, 1, G));
     ok(t5 === '完成 1/5 項：英文 72/100（句型 25/30、片語 10/10 ✓）、數學 23/30（乘法 20/20 ✓、異分母加減 3/10）、閱讀 1/2、歷史 ✓、地理 0/1', 'parent label with subs ' + t5);
-    const hc = KD.cardHtml(KD.view({ dd: d2, ev: {}, today: '261120', start: '261103', dg: {}, done: { zh: { a: Date.UTC(2026, 10, 12, 4) } } }), '261120', false, G);
-    ok(hc.includes('今日清單：完成 0/5 項：英文 70/100（句型 0/30、片語 0/10）、數學 0/30（乘法 0/20、異分母加減 0/10）、閱讀 1/2、歷史 0/1、地理 0/1') && ['dgE', 'dgJ', 'dgP', 'dgM', 'dgU', 'dgF', 'dgR', 'dgH', 'dgG', 'dgSave'].every(id => hc.includes('id="' + id + '"')) && hc.includes('現在：英文 100 題（句型 30、片語 10）、數學 30 題（乘法 20、異分母加減 10）、閱讀 2 篇、歷史 1 話、地理 1 組'), 'parent card shows label and goal form');
+    const hc = KD.cardHtml(KD.view({ dd: d2, ev: {}, today: '261120', start: '261103', dg: {}, done: { zh: { a: Date.UTC(2026, 10, 12, 4) } } }), '261120', false, G3);
+    ok(hc.includes('今日清單：完成 0/5 項：英文 70/100（句型 0/30、片語 0/10）、數學 0/30（乘法 0/20、異分母加減 0/10）、閱讀 1/2、歷史 0/1、地理 0/1') && ['dgE', 'dgW', 'dgJ', 'dgP', 'dgM', 'dgU', 'dgF', 'dgR', 'dgH', 'dgG', 'dgSave'].every(id => hc.includes('id="' + id + '"')) && hc.includes('現在：英文 30 題（單字 20、句型 5、片語 5）、數學 30 題（乘法 20、異分母加減 10）、閱讀 2 篇、歷史 1 話、地理 1 組') && hc.indexOf('id="dgW"') < hc.indexOf('id="dgJ"'), 'parent card shows label and goal form (單字 field before 句型)');
     ok(!KD.view({ dd: { x: '261001e5' }, ev: {}, today: '261103', start: '261103' }).rows.find(r => r.day === '261001').check, 'days before launch have no checklist label');
     // 同步：目標合併（新舊格式混著）
     const g1 = { 261110: '80,30,1,0' }, g2 = { 261110: '70,30,1,1,20,5,20,10,1,1', 261112: '50,30,1,0,30,10,20,10,1,1' };
     ok(same(SM.mergeDg(g1, g2), SM.mergeDg(g2, g1)) && SM.mergeDg(g1, g2)[261110] === '70,30,1,1,20,5,20,10,1,1' && same(SM.mergeDg(SM.mergeDg(g1, g2), g2), SM.mergeDg(g1, g2)), 'goals merge: higher edit count wins; commutative, idempotent; old/new format mix');
-    ok(same(SM.normalize({ dg: { 261110: '80,30,1,0', 261111: '80,30,1,0,30,10,20,10,1,1', bad: 'x', 261112: 'nope', 261113: '80,30,1,0,30,10' } }).dg, { 261110: '80,30,1,0', 261111: '80,30,1,0,30,10,20,10,1,1' }) && same(SM.normalize({}).dg, {}), 'goals normalized (4 or 10 fields); old doc has none');
-    const many = {}; for (let i = 10; i < 20; i++) many['2611' + i] = '999,999,20,99,99,99,99,99,9,9';
-    ok(Object.keys(SM.normDg(many)).length === 3 && SM.normDg(many)[261119] && SM.bytes(SM.normDg(many)) <= SM.DG_MAX_BYTES, 'keep newest 3 goals within the unchanged 160 B budget: ' + SM.bytes(SM.normDg(many)));
-    ok(same(KD.setGoal({ 261110: '80,30,1,3' }, '261110', [70, 30, 1, 30, 10, 20, 10, 1, 1]), { 261110: '70,30,1,4,30,10,20,10,1,1' }), 'editing again the same day bumps the edit count');
+    ok(same(SM.normalize({ dg: { 261110: '80,30,1,0', 261111: '80,30,1,0,30,10,20,10,1,1', 261124: '30,30,2,0,5,5,20,10,1,1,20', bad: 'x', 261112: 'nope', 261113: '80,30,1,0,30,10', 261114: '30,30,2,0,5,5,20,10,1,1,200', 261115: '30,30,2,0,5,5,20,10,1,1,2,0' } }).dg, { 261110: '80,30,1,0', 261111: '80,30,1,0,30,10,20,10,1,1', 261124: '30,30,2,0,5,5,20,10,1,1,20' }) && same(SM.normalize({}).dg, {}), 'goals normalized (4, 10 or 11 fields); old doc has none');
+    const many = {}; for (let i = 10; i < 20; i++) many['2611' + i] = '999,999,20,99,99,99,99,99,9,9,99';
+    ok(Object.keys(SM.normDg(many)).length === 3 && SM.normDg(many)[261119] && SM.bytes(SM.normDg(many)) <= SM.DG_MAX_BYTES, 'keep newest 3 goals (11 fields, longest) within the unchanged 160 B budget: ' + SM.bytes(SM.normDg(many)));
+    console.log('daily goals dg: 3 筆最長（11 欄）' + SM.bytes(SM.normDg(many)) + ' B（上限 ' + SM.DG_MAX_BYTES + ' B 不放寬）');
+    ok(same(KD.setGoal({ 261110: '80,30,1,3' }, '261110', [70, 30, 1, 30, 10, 20, 10, 1, 1, 0]), { 261110: '70,30,1,4,30,10,20,10,1,1,0' }), 'editing again the same day bumps the edit count');
+    // 新舊格式互收：10、11 欄混著合併；舊版裝置（11/09～11/23 的 DG_VAL）收到 11 欄 → 只丟那一筆、別筆照留、不會壞；新版下次同步補回
+    const g11 = { 261124: '30,30,2,1,5,5,20,10,1,1,20' }, g10 = { 261124: '100,30,2,0,30,10,20,10,1,1', 261120: '90,30,2,0,30,10,20,10,1,1' };
+    ok(same(SM.mergeDg(g10, g11), SM.mergeDg(g11, g10)) && SM.mergeDg(g10, g11)[261124] === g11[261124] && SM.mergeDg(g10, g11)[261120] && same(SM.mergeDg(SM.mergeDg(g10, g11), g11), SM.mergeDg(g10, g11)), '10/11-field mix: higher edit count wins; commutative, idempotent');
+    const OLD_VAL = /^\d{1,3},\d{1,3},\d{1,2},\d{1,2}(,\d{1,2},\d{1,2},\d{1,2},\d{1,2},\d,\d)?$/, oldNorm = x => { const o = {}; Object.keys(x).filter(k => /^\d{6}$/.test(k) && typeof x[k] === 'string' && OLD_VAL.test(x[k])).sort().slice(-3).forEach(k => { o[k] = x[k]; }); return o; };
+    ok(same(oldNorm(SM.mergeDg(g10, g11)), { 261120: g10[261120] }) && SM.mergeDg(oldNorm(SM.mergeDg(g10, g11)), g11)[261124] === g11[261124] && same(oldNorm({ 261110: '80,30,1,0', 261111: '80,30,1,0,30,10,20,10,1,1' }), SM.normDg({ 261110: '80,30,1,0', 261111: '80,30,1,0,30,10,20,10,1,1' })), 'old device drops only the 11-field goal (keeps the rest); new device puts it back; 4/10 fields read the same by both');
     const V = a => KD.validGoal(a.map(String));
-    ok(same(V(G), G) && same(V([40, 30, 2, 0, 0, 0, 0, 0, 0]), [40, 30, 2, 0, 0, 0, 0, 0, 0]) && !V([0, 30, 1, 0, 0, 0, 0, 1, 1]) && !KD.validGoal(['60', 'x', '1', '0', '0', '0', '0', '1', '1']) && !V([60, 30, 21, 0, 0, 0, 0, 1, 1]) && !V([50, 30, 2, 45, 10, 20, 10, 1, 1]) && !V([100, 30, 2, 30, 10, 25, 10, 1, 1]) && !V([100, 30, 2, -1, 10, 20, 10, 1, 1]) && !V([100, 30, 2, 30, 10, 20, 10, 10, 1]) && !V([100, 200, 2, 30, 10, 100, 10, 1, 1]) && !KD.validGoal(['60', '30', '1']), 'goal validation (其中 ≤ 那一科, 0～99; 歷史地理 0～9)');
+    ok(same(V(G), G) && same(V(G3), G3) && same(V([40, 30, 2, 0, 0, 0, 0, 0, 0, 0]), [40, 30, 2, 0, 0, 0, 0, 0, 0, 0]) && !V([0, 30, 1, 0, 0, 0, 0, 1, 1, 0]) && !KD.validGoal(['60', 'x', '1', '0', '0', '0', '0', '1', '1', '0']) && !V([60, 30, 21, 0, 0, 0, 0, 1, 1, 0]) && !V([50, 30, 2, 45, 10, 20, 10, 1, 1, 0]) && !V([100, 30, 2, 30, 10, 25, 10, 1, 1, 0]) && !V([100, 30, 2, -1, 10, 20, 10, 1, 1, 0]) && !V([100, 30, 2, 30, 10, 20, 10, 10, 1, 0]) && !V([100, 200, 2, 30, 10, 100, 10, 1, 1, 0]) && !KD.validGoal(['60', '30', '1']) && !V([100, 30, 2, 30, 10, 20, 10, 1, 1]), 'goal validation (其中 ≤ 那一科, 0～99; 歷史地理 0～9)');
+    ok(!V([30, 30, 2, 5, 5, 20, 10, 1, 1, 21]) && !V([300, 30, 2, 5, 5, 20, 10, 1, 1, 100]) && same(V([30, 30, 2, 0, 0, 20, 10, 1, 1, 30]), [30, 30, 2, 0, 0, 20, 10, 1, 1, 30]), '單字＋句型＋片語 ≤ 英文; 單字 0～99');
     ok(KD.partyDue(null, '261103', true) && !KD.partyDue('261103', '261103', true) && KD.partyDue('261102', '261103', true) && !KD.partyDue(null, '261103', false), 'celebration once a day, only when all done');
     // 英文小分類（engine.js KE.dailyKind）
     const KE = require(path.join(root, 'engine.js')), dk = KE.dailyKind;
     ok(dk({ module: 'patterns', type: 'reorder' }) === 'sentence' && dk({ module: 'patterns', type: 'zh2en-type' }) === 'sentence' && dk({ module: 'phrases', type: 'phrase-fill' }) === 'phrase' && dk({ module: 'phrases', type: 'speak' }) === 'phrase', 'patterns → 句型, phrases → 片語');
     ok(['reorder', 'zh2en-type', 'tb-ask-type', 'speak'].every(t => dk({ module: 'textbook', type: t }) === 'sentence') && dk({ module: 'textbook', type: 'speak', oral: true }) === '' && ['tb-fill', 'tb-answer', 'tb-listen'].every(t => dk({ module: 'textbook', type: t }) === ''), 'textbook sentence questions → 句型; oral exam, fill-in, answer choice → general');
-    ok(['words', 'grammar', 'roots'].every(m => dk({ module: m, type: 'reorder' }) === '') && dk(null) === '', 'words/grammar/roots → general');
+    ok(dk({ module: 'grammar', type: 'reorder' }) === '' && dk({ module: 'grammar', type: 'grammar-fill' }) === '' && dk({ module: 'roots', type: 'root-meaning' }) === '' && dk(null) === '', 'grammar, root meaning → general');
+    ok(['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type', 'word-gap', 'speak'].every(t => dk({ module: 'words', type: t }) === 'word') && ['root-word', 'root-type', 'zh2en-type'].every(t => dk({ module: 'roots', type: t }) === 'word'), 'words (單字卡／測驗／課本單字) and root words → 單字');
     // 記錄點：漫畫做完測驗、地理一組做完才記（錯題重練不記）
     const cj = read('comics/comic.js'), gj = read('geo/geo.js');
     ok(cj.includes("KidsDaily.finish('comic', KidsDaily.isNew(prev))") && /quiz\.i >= quiz\.items\.length\) \{\s*epDone\(\);/.test(cj) && cj.includes('if (quiz.fin ||'), 'comic: episode recorded once per finished quiz');
@@ -326,7 +358,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       ['數學 倍數練習＋考試', 'math/multiples.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
       ['數學 乘法練習＋挑戰（兩位×兩位以上才記，清單「乘法」）', 'math/multiply.html', /function mkRec\(q, ok\) \{\s*var prev = [^\n]*\n\s*if \(window\.KidsDaily && X\.daily\(q\.a, q\.b\)\) q\.old = KidsDaily\.rec\('math', ok, 'mul', prev\)/],
       ['數學 異分母分數加減（清單「異分母加減」）', 'math/fracadd.html', "KidsDaily.rec('math', ok, 'fracadd', R && R.mk ? mkPrev(q) : null)"],
-      ['英文 全民英檢準備區（題型練習、模擬考、錯題；只算英文總數）', 'gept/gept.js', "KidsDaily.rec('english', !!ok, null, prev)"],
+      ['英文 全民英檢準備區（題型練習、模擬考、錯題；詞彙 R1、單字聽寫另算「單字」）', 'gept/gept.js', "KidsDaily.rec('english', !!ok, kind || null, prev)"],
       ['數學 短除法換你算', 'math/short-division.html', /function mkRec\(Q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
       ['數學 紙本錯題＋類題 30 題', 'math/paper.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
       ['數學 短除法應用題', 'math/short-division.html', /function wRec\(Q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],

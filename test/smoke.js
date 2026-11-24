@@ -874,8 +874,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   const g6a = allUnits.filter(([, u]) => /^六上/.test(u.label || '')), g6bHave = allUnits.filter(([, u]) => /^六下/.test(u.label || '')).length;
   const projDoc = JSON.parse(JSON.stringify(maxDoc));
   for (let i = g6bHave; i < 9; i++) { const [s, u] = g6a[i % g6a.length]; fillUnit(projDoc, s + ':g6b' + i + '-' + u.id, u); }
-  // 目標 dg 也算最壞（2026-11-09 起 10 欄、只留最新 3 筆）；dd 用上限算，不靠上面這份資料剛好沒塞滿
-  const dg6 = {}; for (let i = 0; i < 9; i++) dg6['2611' + String(i + 10)] = '999,999,20,99,99,99,99,99,9,9'; maxDoc.dg = projDoc.dg = dg6;
+  // 目標 dg 也算最壞（2026-11-09 起 10 欄、11-24 起 11 欄〔＋單字〕、只留最新 3 筆）；dd 用上限算，不靠上面這份資料剛好沒塞滿
+  const dg6 = {}; for (let i = 0; i < 9; i++) dg6['2611' + String(i + 10)] = '999,999,20,99,99,99,99,99,9,9,99'; maxDoc.dg = projDoc.dg = dg6;
   // 2026-11-06 數學五下～六下 done.mg：三冊全部單元的練習％、測驗分＋三冊總複習，全部 100（最壞情況）
   // 2026-11-24 五上單元七〈線對稱圖形〉（grade.js EXTRA，沒有總複習）多 2 個 key
   { const MGm = require(path.join(root, 'math', 'grade.js')), mg = {}; MGm.BOOKS.forEach(b => { mg[b.id + 'R'] = 100; }); MGm.BOOKS.concat(MGm.EXTRA).forEach(b => b.units.forEach(x => { mg[x[0] + 'q'] = 100; mg[x[0] + 't'] = 100; }));

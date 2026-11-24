@@ -88,7 +88,7 @@
   // ---------- 今天的清單 ----------
   // 一列一項（2026-11-09 五項）：✅ 做完的變灰、縮小；▶ 現在該做的那一列放大、下面才有「去哪裡做」的按鈕；其他沒做完的只在列裡寫一行小字
   const num = r => `${r.n} / ${r.goal}${r.unit === '題' ? '' : ' ' + r.unit}`;
-  const SUBI = { sentence: '💬', phrase: '🔗', mul: '✖️', fracadd: '➕' };
+  const SUBI = { word: '🔤', sentence: '💬', phrase: '🔗', mul: '✖️', fracadd: '➕' };
   const subLine = r => (r.subs || []).map(s => `${s.name} ${s.n}/${s.goal}${s.full ? ' 🎉 全部學會了' : s.done ? ' ✓' : ''}`).join('・');
   function rowHtml(r, cur) {
     // full＝這一項全部學過 2 次、沒有新的可學（2026-11-21）：算達成

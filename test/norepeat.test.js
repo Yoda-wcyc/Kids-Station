@@ -29,8 +29,12 @@ const sumToday = store => SM.ddSum(JSON.parse(store.kids_daily || '{}'))[SM.ddDa
   ok(D.e[0] === 2 && D.j[0] === 2 && D.r[0] === 2 && D.r[1] === 1, 'english 2 / 句型 2; old questions go to r (2, one wrong): ' + JSON.stringify(D));
   ok(K.rec('english', true) === true && sumToday(st).e[0] === 3, 'no prev (games, random questions) → counted as before');
   ok(K.rec('english', null, null, 2) === false && sumToday(st).r[0] === 3 && !(sumToday(st).o), 'open task done twice → old, not 國語/英文');
-  const c = KD.checkDay(sumToday(st), 0, G);
+  const c = KD.checkDay(sumToday(st), 0, KD.GOAL_V2D);
   ok(c.rows[0].n === 3 && c.rows[0].subs[0].n === 2, 'checklist ignores r: english 3, 句型 2');
+  // 2026-11-24 單字（d）：一樣學過 2 次就不算、不記 d
+  const sw = {}, KW = browser(sw);
+  ok(KW.rec('english', true, 'word', 0) === true && KW.rec('english', false, 'word', 1) === true && KW.rec('english', true, 'word', 2) === false && KW.rec('english', true, 'word') === true, '單字: prev 0/1/none counted, 2 → old');
+  ok(sumToday(sw).e[0] === 3 && sumToday(sw).d[0] === 3 && sumToday(sw).r[0] === 1 && KD.checkDay(sumToday(sw), 0, G).rows[0].subs[0].name === '單字' && KD.checkDay(sumToday(sw), 0, G).rows[0].subs[0].n === 3, '單字 3 counted (d3), old one only in r: ' + JSON.stringify(sumToday(sw)));
   ok(K.finish('geo', false) === false && !sumToday(st).w && K.finish('geo', true) === true && sumToday(st).w[0] === 1 && K.finish('comic') === true, 'finish: isNew false → not recorded; true / omitted → recorded');
   const v = KD.view({ dd: JSON.parse(st.kids_daily), ev: {}, today: SM.ddDay(Date.now()), start: '261103', dg: {}, done: {} });
   const h = KD.cardHtml(v, SM.ddDay(Date.now()));
@@ -97,7 +101,7 @@ const sumToday = store => SM.ddSum(JSON.parse(store.kids_daily || '{}'))[SM.ddDa
 
 // ---------- 5. 全部學會：那一項算達成、顯示 🎉 ----------
 {
-  const c = KD.checkDay({ e: [40, 40], j: [5, 5], p: [10, 10], u: [20, 20], f: [10, 10] }, 0, G, { j: true, g: true, r: true });
+  const c = KD.checkDay({ e: [40, 40], j: [5, 5], p: [10, 10], u: [20, 20], f: [10, 10] }, 0, KD.GOAL_V2D, { j: true, g: true, r: true });
   const en = c.rows[0], rd = c.rows[2], geo = c.rows[4];
   ok(en.subs[0].done && en.subs[0].full && !en.done, '句型 all learned → that sub-goal is done; english total still needs 100');
   ok(rd.done && rd.full && rd.left === 0 && geo.done && geo.full && !c.rows[3].done, 'reading / geo all learned → done (🎉); history not');
@@ -162,9 +166,9 @@ const sumToday = store => SM.ddSum(JSON.parse(store.kids_daily || '{}'))[SM.ddDa
   const ctx = { window: {} }; vm.createContext(ctx);
   ['words', 'words-2', 'words-3', 'words-4', 'words-5', 'words-6', 'words-7', 'words-8', 'phrases', 'phrases-2', 'roots', 'grammar', 'patterns', 'patterns-2', 'textbook', 'oral'].forEach(n => vm.runInContext(fs.readFileSync(path.join(root, 'data', n + '.js'), 'utf8'), ctx));
   const w = ctx.window, E = new KE.Engine({ words: w.DATA_WORDS, phrases: w.DATA_PHRASES, roots: w.DATA_ROOTS, grammar: w.DATA_GRAMMAR, patterns: w.DATA_PATTERNS, textbook: w.DATA_TEXTBOOK });
-  const k = { e: 0, j: 0, p: 0, speak: 0 }; E.meta.forEach(m => { k.e++; if (m.type === 'speak') k.speak++; const d = KE.dailyKind(Object.assign({ oral: /:oral:/.test(m.id) }, m)); if (d === 'sentence') k.j++; if (d === 'phrase') k.p++; });
+  const k = { e: 0, d: 0, j: 0, p: 0, speak: 0 }; E.meta.forEach(m => { k.e++; if (m.type === 'speak') k.speak++; const d = KE.dailyKind(Object.assign({ oral: /:oral:/.test(m.id) }, m)); if (d === 'word') k.d++; if (d === 'sentence') k.j++; if (d === 'phrase') k.p++; });
   const d22t = 81 * 8, d22 = 81 * 81 / 2;
-  console.log('norepeat: capacity (×2 per question) → days at the default goal: english ' + k.e + ' q (' + k.speak + ' 🎤) → ' + Math.floor(k.e * 2 / G[0]) + ' d; 句型 ' + k.j + ' → ' + Math.floor(k.j * 2 / G[3]) + ' d; 片語 ' + k.p + ' → ' + Math.floor(k.p * 2 / G[4]) + ' d; ' +
+  console.log('norepeat: capacity (×2 per question) → days at the default goal: english ' + k.e + ' q (' + k.speak + ' 🎤) → ' + Math.floor(k.e * 2 / G[0]) + ' d; 單字 ' + k.d + ' → ' + Math.floor(k.d * 2 / G[9]) + ' d; 句型 ' + k.j + ' → ' + Math.floor(k.j * 2 / G[3]) + ' d; 片語 ' + k.p + ' → ' + Math.floor(k.p * 2 / G[4]) + ' d; ' +
     'reading ' + (zhCat.length + cyCat.idioms.length + (cyCat.readings || []).length) + ' (first read only) → ' + Math.floor((zhCat.length + cyCat.idioms.length + (cyCat.readings || []).length) / G[2]) + ' d; history ' + KD.COMIC_N + ' eps ×2 → ' + KD.COMIC_N * 2 + ' d; geo 72 sets (≥2 counted rounds each when all right) → ' + 72 * 2 + ' d; ' +
     '乘法 二位×整十 ' + d22t + ' pairs → ' + Math.floor(d22t * 2 / G[5]) + ' d (二位×二位 ~' + Math.round(d22) + ' more pairs)');
 }

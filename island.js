@@ -14,7 +14,7 @@
   const TIMES = [['dawn', '🌅', '清晨'], ['day', '☀️', '白天'], ['dusk', '🌇', '黃昏'], ['night', '🌙', '夜晚']];
   const phase = h => (h >= 5 && h < 8 ? 'dawn' : h >= 8 && h < 17 ? 'day' : h >= 17 && h < 19 ? 'dusk' : 'night');
   // kids_daily（dd）的科目代碼 → 島（代碼見 kids-daily.js：j/p 英文子目標、u/f/x 數學、o 國語開放題、v 漫畫一話、w 地理一組）
-  const CODE = { e: 'english', j: 'english', p: 'english', m: 'math', u: 'math', f: 'math', x: 'math', c: 'chinese', o: 'chinese', s: 'social', n: 'science', h: 'history', v: 'history', g: 'geo', w: 'geo', a: 'ai' };
+  const CODE = { e: 'english', d: 'english', j: 'english', p: 'english', m: 'math', u: 'math', f: 'math', x: 'math', c: 'chinese', o: 'chinese', s: 'social', n: 'science', h: 'history', v: 'history', g: 'geo', w: 'geo', a: 'ai' };
   const shift = (d, n) => new Date(Date.UTC(2000 + +d.slice(0, 2), +d.slice(2, 4) - 1, +d.slice(4, 6)) + n * 864e5).toISOString().slice(2, 10).replace(/-/g, '');
   // sum＝KESyncMerge.ddSum(kids_daily)：{YYMMDD:{代碼:[題數,答對]}} → 各島練習天數、連續天數（今天還沒練就從昨天往回數）
   function ddStats(sum, today) {

@@ -53,14 +53,14 @@
     E.old = new Set([...S.okN].filter(x => x[1] >= 2).map(x => x[0]));
     saveLeft();
   }
-  // 英文還有幾題新題（學過不到 2 次）：e＝全部英文題、j＝句型、p＝片語 → kids_daily_left（本機快取；每日清單「🎉 這裡全部學會了」用，從同步過的紀錄算出來）
+  // 英文還有幾題新題（學過不到 2 次）：e＝全部英文題、d＝單字、j＝句型、p＝片語 → kids_daily_left（本機快取；每日清單「🎉 這裡全部學會了」用，從同步過的紀錄算出來）
   function saveLeft() {
-    const n = { e: 0, j: 0, p: 0 };
+    const n = { e: 0, d: 0, j: 0, p: 0 };
     // 等級 1 下架的單字不算新題（自動路徑不會出）
-    E.meta.forEach(m => { if (E.old.has(m.id) || (m.module === 'words' && !KE.wordInPath(m))) return; n.e++; const k = KE.dailyKind(Object.assign({ oral: /:oral:/.test(m.id) }, m)); if (k === 'sentence') n.j++; else if (k === 'phrase') n.p++; });
+    E.meta.forEach(m => { if (E.old.has(m.id) || (m.module === 'words' && !KE.wordInPath(m))) return; n.e++; const k = KE.dailyKind(Object.assign({ oral: /:oral:/.test(m.id) }, m)); if (k === 'word') n.d++; else if (k === 'sentence') n.j++; else if (k === 'phrase') n.p++; });
     // 只有某一類已經沒有新題（0）才需要記；都還有就不建這個 key（沒練過的訪客不多出本機資料）
-    const cur = load('kids_daily_left', null), need = !n.e || !n.j || !n.p;
-    try { if (!need) { if (cur) localStorage.removeItem('kids_daily_left'); } else if (!cur || cur.e !== n.e || cur.j !== n.j || cur.p !== n.p) localStorage.setItem('kids_daily_left', JSON.stringify(n)); } catch (e) { }
+    const cur = load('kids_daily_left', null), need = !n.e || !n.d || !n.j || !n.p;
+    try { if (!need) { if (cur) localStorage.removeItem('kids_daily_left'); } else if (!cur || cur.e !== n.e || cur.d !== n.d || cur.j !== n.j || cur.p !== n.p) localStorage.setItem('kids_daily_left', JSON.stringify(n)); } catch (e) { }
   }
   loadAll();
 
@@ -687,7 +687,7 @@
     if (!skipped) record(q, res.ok, q.input === 'mic' ? (res.ok ? q.answer : '') : input);
     // 學習幣（kids-coins.js）：每答一題記進「這一分鐘」；跳過不算作答
     if (window.KidsCoins) skipped ? KidsCoins.activity('english') : KidsCoins.answer(res.ok, 'english');
-    const counted = !skipped && window.KidsDaily ? KidsDaily.rec('english', res.ok, KE.dailyKind(q), prev) : null;   // 家長頁每日學習紀錄；句型、片語另記子目標；學過 2 次的不算
+    const counted = !skipped && window.KidsDaily ? KidsDaily.rec('english', res.ok, KE.dailyKind(q), prev) : null;   // 家長頁每日學習紀錄；單字、句型、片語另記子目標；學過 2 次的不算
     if (counted === false) Q.oldN = (Q.oldN || 0) + 1;
     Q.answers.push({ q, ok: res.ok, skip: !!skipped, input });
     // 📝 考試：不給回饋、不唸答案，直接下一題；全部答完才看結果
@@ -714,7 +714,7 @@
       ${q.input === 'mic' && !skipped && !res.ok ? `<div class="muted">${Q.spk && Q.spk.id === q.id && Q.spk.tries.length >= SPEAK_TRIES ? `試了 ${SPEAK_TRIES} 次，下次再挑戰！` : '跳過算答錯，下次再挑戰！'}</div>` : ''}
       ${res.score != null ? `<div class="muted">唸對了 ${Math.round(res.score * 100)}% 的字（70% 就過關）</div>` : ''}
       ${q.why ? `<div class="why">💡 ${esc(q.why)}</div>` : ''}
-      ${counted === false ? KidsDaily.oldNote({ sentence: '#learn/patterns', phrase: '#learn/phrases' }[KE.dailyKind(q)] || '#practice') : ''}
+      ${counted === false ? KidsDaily.oldNote({ word: '#learn/words', sentence: '#learn/patterns', phrase: '#learn/phrases' }[KE.dailyKind(q)] || '#practice') : ''}
       <button class="btn primary big wide" id="next">${last ? '看結果 🎉' : '下一題 ➜'}</button></div>`;
     if (q.speakText && q.type !== 'speak') speak(q.speakText);
     const sb = $('[data-say-btn]'); if (sb) sb.onclick = () => speak(q.speakText);

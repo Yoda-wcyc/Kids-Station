@@ -1,7 +1,7 @@
 /* gept/gept.js — 全民英檢準備區的畫面（首頁、題型練習、模擬考、寫作口說）。規則與計分在 gept-core.js（GeptCore），語音在 gept-tts.js（GeptTTS）。
    每頁最後呼叫 GeptPage.home()／practice()／mock()／task()。要登入才能作答（requireLogin＋startActivity('english')，同英文其他練習）。
    紀錄（CONTRACT.md §7）：
-   - 每題（聽、讀自動判分）KidsCoins.answer(ok,'english')＋KidsDaily.rec('english', ok)（只算英文總數，不算句型、片語子目標）；
+   - 每題（聽、讀自動判分）KidsCoins.answer(ok,'english')＋KidsDaily.rec('english', ok)（算英文總數；詞彙 R1、單字聽寫另算「單字」子目標，2026-11-24；不算句型、片語）；
      答錯進錯題庫 KidsMistakes.record('gept', 題目id, ok, {u:級, pt:部分, s:短句})，在錯題庫裡連對 3 次畢業（kids-mistakes.js 未畢業最多 100 題）。
    - 寫作、口說（不自動給分）：每完成一題 KidsDaily.rec('english', null)＋KidsCoins.activity('english')。
    - 一組題型練習（聽、讀）或一份模擬考做完：送 practice_round 'english:gept'（correct／total＝自動判分題；錯題練習不送）。後端白名單 kids-2026-11-16-a 加的。
@@ -38,11 +38,11 @@
   function okN(id) { var n = +((ld().ok || {})[id]) || 0; return lockN(setOf(id)) >= 2 ? Math.max(n, 2) : n; }
   function okBump(id) { var x = ld(); x.ok = x.ok || {}; var n = +x.ok[id] || 0; if (n < 2) { x.ok[id] = n + 1; sv(x); } }
   var lastOld = false;   // 最近一題是不是學過 2 次的舊題（rec 之後看，畫面上給小提示）
-  function dailyRec(id, ok) { var prev = okN(id); if (ok) okBump(id); var c = W.KidsDaily ? KidsDaily.rec('english', !!ok, null, prev) : null; lastOld = c === false; return lastOld; }
+  function dailyRec(id, ok, kind) { var prev = okN(id); if (ok) okBump(id); var c = W.KidsDaily ? KidsDaily.rec('english', !!ok, kind || null, prev) : null; lastOld = c === false; return lastOld; }
   function oldNote(text) { return W.KidsDaily && KidsDaily.oldNote ? KidsDaily.oldNote('index.html?lv=' + lvOf(arg('set')) , text, '去挑一組還沒做過的 →') : ''; }
   function rec(Q, ok) {
     try { if (W.KidsCoins) KidsCoins.answer(!!ok, 'english'); } catch (e) { }
-    dailyRec(Q.id, ok);
+    dailyRec(Q.id, ok, Q.kind === 'vocab' ? 'word' : null);   // 詞彙題算每日清單「單字」
     try { return W.KidsMistakes ? KidsMistakes.record('gept', Q.id, !!ok, G.mkP(Q)) : null; } catch (e) { return null; }
   }
   function coinRound(c, n) { try { if (W.KidsCoins && n) KidsCoins.report({ type: 'practice_round', item: 'english:gept', correct: c, total: n }); } catch (e) { } }
@@ -586,7 +586,7 @@
     function check() {
       var x = Z.qs[Z.i], inp = $('gp-wi'); if (!inp || inp.disabled || !inp.value.trim()) return;
       var ok = inp.value.trim().toLowerCase() === x.w.toLowerCase(); inp.disabled = true; $('gp-wok').disabled = true; if (ok) Z.ok++;
-      try { if (W.KidsCoins) KidsCoins.answer(ok, 'english'); } catch (e) { } dailyRec('w:' + x.w.toLowerCase(), ok);
+      try { if (W.KidsCoins) KidsCoins.answer(ok, 'english'); } catch (e) { } dailyRec('w:' + x.w.toLowerCase(), ok, 'word');
       var last = Z.i + 1 >= Z.qs.length;
       $('gp-wf').innerHTML = '<div class="gp-fb ' + (ok ? 'ok' : 'no') + '" id="gp-wr">' + (ok ? '✓ 答對了！' : '✗ 正確拼法：') + '<b class="en syl">' + esc(x.w) + '</b>（' + x.c + '）' + (lastOld ? oldNote() : '') + '</div><div class="gp-row"><button type="button" class="btn primary big" id="gp-wnx">' + (last ? '看結果 🏁' : '下一題 ▶') + '</button></div>';
     }
