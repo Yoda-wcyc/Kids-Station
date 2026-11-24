@@ -447,7 +447,7 @@
   function normPg(x) { const d = obj(x), o = {}; [['f', normF], ['v', normV], ['e', normE], ['m', normMock]].forEach(([k, fn]) => { const s = fn(d[k]); if (s) o[k] = s; }); return o; }
   function mergePg(a, b) { a = obj(a); b = obj(b); return normPg({ f: mergeF(a.f, b.f), v: mergeV(a.v, b.v), e: mergeE(a.e, b.e), m: mergeMock(a.m, b.m) }); }
 
-  // ---- 本機 key ↔ pg（sync.js readLocal／writeLocal 用；L＝{comic, anim, writing, gept, exam, lit, cards, wordLv, zhRead, zhIdiom, geoQ} 各 key 的原始物件）----
+  // ---- 本機 key ↔ pg（sync.js readLocal／writeLocal 用；L＝{comic, anim, writing, gept, exam, lit, cards, wordLv, zhRead, zhIdiom, geoQ, mg} 各 key 的原始物件）----
   const COMIC_EPS = 7 * 6;   // 世界史漫畫 7 冊 × 6 話（comics/catalog.js；test 會對）。沒載入目錄的頁面照這個順序找「下一話」
   const comicSlot = id => { const m = /^v([1-9])e([1-9])$/.exec(id); return m ? (m[1] - 1) * 9 + (m[2] - 1) : -1; };
   const comicId = i => 'v' + (Math.floor(i / 9) + 1) + 'e' + (i % 9 + 1);
@@ -457,6 +457,11 @@
   //   區＝m／t／w；第 i 格＝(單元號−1)×40＋題號（練習 p01～p30＝0～29、測驗 t01～t10＝30～39）。720 題全滿約 320 B（smoke 最壞情況有算）
   const geoSlot = id => { const m = /^([mtw])([1-7])-([pt])(\d\d)$/.exec(id || ''), n = m ? +m[4] : 0; return m && n >= 1 && n <= (m[3] === 'p' ? 30 : 10) ? [m[1], (m[2] - 1) * 40 + (m[3] === 'p' ? n - 1 : 29 + n)] : null; };
   const geoId = (r, i) => r + (Math.floor(i / 40) + 1) + '-' + (i % 40 < 30 ? 'p' + ld2(i % 40 + 1) : 't' + ld2(i % 40 - 29));
+  // 線對稱（五上單元七 g5a7，2026-11-24）每一題答對過幾次（kids_mg.c＝{題目 id: 1|2}，學過 2 次就不算）→ 同地理：f 旗標兩層 'Ms1'／'Ms2'（合併＝聯集＝每題取大）。
+  //   第 i 格＝題型序號×8＋題號（g5a7-mid0…g5a7-kite23；MG_K 只能往後加）；46 題全滿 34 B（smoke 最壞情況有算）。kids_mg.c 裡別的單元只留本機
+  const MG_K = ['mid', 'pair', 'ang', 'angmc', 'half', 'kite', 'peri', 'kite2'];
+  const mgSlot = id => { const m = /^g5a7-([a-z]+2?)([0-7])$/.exec(id || ''), k = m ? MG_K.indexOf(m[1]) : -1; return k >= 0 ? k * 8 + +m[2] : -1; };
+  const mgId = i => (MG_K[i >> 3] ? 'g5a7-' + MG_K[i >> 3] + (i & 7) : null);
   // 'social:u1-L1' 這種 key：科目要跟單元字頭對得上
   const mmKey = (k, re) => { const m = /^(social|science):([un])(\d{1,2})-(.+)$/.exec(k); if (!m || SUBJ_OF[m[2]] !== m[1]) return null; const r = re.exec(m[4]); return r ? { u: m[2] + m[3], n: +r[1] } : null; };
   function pgFromLocal(L) {
@@ -479,6 +484,7 @@
     Object.keys(obj(L.zhRead)).forEach(id => { const m = /^zh([1-4])-(\d\d)$/.exec(id); if (m) zp('Z' + m[1], m[2] - 1, L.zhRead[id]); });
     Object.keys(obj(L.zhIdiom)).forEach(id => { let m; if ((m = /^cy(\d{3})$/.exec(id))) zp('I', m[1] - 1, L.zhIdiom[id]); else if ((m = /^cy([ru])(\d\d)$/.exec(id))) zp('I' + m[1], m[2] - 1, L.zhIdiom[id]); else if (id === 'cyall') zp('Ia', 0, L.zhIdiom[id]); });
     Object.keys(obj(L.geoQ)).forEach(id => { const s = geoSlot(id), n = Math.floor(num(L.geoQ[id], 0)); if (s && n >= 1) setF('Q' + s[0] + '1', s[1]); if (s && n >= 2) setF('Q' + s[0] + '2', s[1]); });
+    { const c = obj(obj(L.mg).c); Object.keys(c).forEach(id => { const s = mgSlot(id), n = Math.floor(num(c[id], 0)); if (n >= 1) setF('Ms1', s); if (n >= 2) setF('Ms2', s); }); }
     const f = {}, v = {}; Object.keys(F).forEach(g => { f[g] = bitStr(F[g]); }); Object.keys(V).forEach(g => { v[g] = cellStr(Array.from(V[g])); });
     return normPg({ f: pgJoin(f), v: pgJoin(v), e: exClose(E), m: mockClose(mocks) });
   }
@@ -521,6 +527,7 @@
     zApply('zhRead', k => { const m = /^Z([1-4])$/.exec(k); return m && (i => 'zh' + m[1] + '-' + ld2(i + 1)); });
     zApply('zhIdiom', k => (k === 'I' ? i => 'cy' + String(i + 1).padStart(3, '0') : /^I[ru]$/.test(k) ? i => 'cy' + k.charAt(1) + ld2(i + 1) : k === 'Ia' ? i => (i ? null : 'cyall') : null));
     { const x = cl(L.geoQ); Object.keys(F).forEach(k => { const m = /^Q([mtw])([12])$/.exec(k); if (m) F[k].forEach(i => { const id = geoId(m[1], i); if (i < 280 && !(num(x[id], 0) >= +m[2])) x[id] = +m[2]; }); }); put('geoQ', obj(L.geoQ), x); }
+    { const x = cl(L.mg); x.c = obj(x.c); [1, 2].forEach(n => (F['Ms' + n] || []).forEach(i => { const id = mgId(i); if (id && !(num(x.c[id], 0) >= n)) x.c[id] = n; })); put('mg', obj(L.mg), x); }
     return out;
   }
 

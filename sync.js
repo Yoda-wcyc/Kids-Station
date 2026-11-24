@@ -81,7 +81,7 @@
   const K_MM = 'kids_mm_progress', K_MMB = 'kids_mm_blanks', K_EQ = 'tianping-eq-list-v2', K_EQS = 'ke_sync_eq', K_SCR = 'kids_scratch_done', K_PROG = 'ke_progress', K_CTR = 'ke_sync_ctr', K_MK = 'kids_mistakes', K_DONE = 'kids_done', K_DD = 'kids_daily', K_DG = 'kids_daily_goal';
   // 同步範圍裡的 localStorage：別的分頁／子框（Scratch 講義、心智圖、天平）寫進來 → 也算變動，排一次上傳
   // pg（2026-11-19）：各頁自己存的進度 key → syncmerge.js pgFromLocal／pgApply 的名字
-  const PG_KEYS = { comic: 'kids_comic', anim: 'kids_anim', writing: 'kids_writing', gept: 'kids_gept', exam: 'kids_mm_exam', lit: 'kids_mm_lit', cards: 'kids_mm_cards', wordLv: 'kids_word_lv', zhRead: 'kids_zh_reading', zhIdiom: 'kids_zh_idioms', geoQ: 'kids_geo_q' };   // geoQ：地理每題答對幾次（2026-11-21）
+  const PG_KEYS = { comic: 'kids_comic', anim: 'kids_anim', writing: 'kids_writing', gept: 'kids_gept', exam: 'kids_mm_exam', lit: 'kids_mm_lit', cards: 'kids_mm_cards', wordLv: 'kids_word_lv', zhRead: 'kids_zh_reading', zhIdiom: 'kids_zh_idioms', geoQ: 'kids_geo_q', mg: 'kids_mg' };   // geoQ：地理每題答對幾次（2026-11-21）；mg：數學年級單元每題答對幾次（2026-11-24 只同步線對稱 g5a7）
   const WATCH = ['ke_log', 'ke_agg', 'ke_learned', 'ke_mistakes', K_PROG, K_MM, K_MMB, K_EQ, K_SCR, K_MK, K_DD, K_DG, K_DONE].concat(Object.values(PG_KEYS));
   const readPg = () => { const o = {}; Object.keys(PG_KEYS).forEach(n => { o[n] = ld(PG_KEYS[n], {}); }); return o; };
   // 同步範圍的原始字串：跟上次同步後不同＝這台有還沒送出的變動（別頁趁這頁凍結時寫的也抓得到）

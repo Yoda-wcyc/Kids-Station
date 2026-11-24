@@ -113,7 +113,36 @@ ok(KL.getV(n1, 'mg:g5a7') % 3 === 2, 'kids-lock: another unit test ≥80 after d
 
 // ---------- 同步大小（上限一個都沒放寬）：這個單元多的只有 done.mg 2 格＋done.n 一組 ----------
 const mgB = SM.bytes(SM.normDone({ mg: { g5a7q: 100, g5a7t: 100 } }).mg) - 2 + 1, nB = SM.bytes(SM.normDone(KL.setV({}, 'mg:g5a7', 61)).n) - 2 + 1;
-ok(mgB + nB <= 60, 'sync cost of the new unit at its worst: done.mg ' + mgB + ' B + done.n ' + nB + ' B = ' + (mgB + nB) + ' B (per-question counts stay local, mistakes ride the existing mk sync)');
+ok(mgB + nB <= 60, 'sync cost of the new unit at its worst: done.mg ' + mgB + ' B + done.n ' + nB + ' B = ' + (mgB + nB) + ' B (mistakes ride the existing mk sync)');
+
+// ---------- 每題答對次數（kids_mg.c，0～2）跨裝置同步（2026-11-24）：pg f 旗標兩層 Ms1／Ms2，同一題取大 ----------
+const OLD = require(path.join(__dirname, 'fixtures', 'syncmerge-old-1121.js'));   // 凍結的舊版（線上 11-21；pg 程式跟這次改之前一樣）
+const allC = Object.fromEntries(qs.map((q, i) => [q.id, i % 3]));   // 0／1／2 輪流
+{ const pg = SM.pgFromLocal({ mg: { c: allC } }), back = SM.pgApply(pg, {}).mg.c, want = Object.fromEntries(Object.entries(allC).filter(([, v]) => v > 0));
+  ok(SM.canon(back) === SM.canon(want), 'encode → decode: every one of the 46 ids comes back with its count (0 not written) ' + JSON.stringify(pg));
+  ok(/^Ms1=[0-9a-v]+,Ms2=[0-9a-v]+$/.test(pg.f) && !pg.v, 'only two f groups Ms1／Ms2 ' + pg.f); }
+{ const pg = SM.pgFromLocal({ mg: { c: { 'g5a7-mid8': 2, 'g5a7-pp1': 2, 'g5a7-kite29': 1, 'g5a7-mid10': 1, 'g6b6-x0': 2, 'g5a7-x': 2, 'g5a7-kite23': 9, 'g5a7-kite2': 1 } } });
+  ok(SM.canon(SM.pgApply(pg, {}).mg.c) === SM.canon({ 'g5a7-kite23': 2, 'g5a7-kite2': 1 }), 'bad / other-unit / paper ids are not synced; count above 2 → 2 ' + JSON.stringify(SM.pgApply(pg, {}).mg)); }
+{ const A = { 'g5a7-mid0': 1, 'g5a7-pair3': 2, 'g5a7-kite20': 1 }, B = { 'g5a7-mid0': 2, 'g5a7-ang1': 1, 'g5a7-kite20': 1 }, pa = SM.pgFromLocal({ mg: { c: A } }), pb = SM.pgFromLocal({ mg: { c: B } });
+  const m = SM.mergePg(pa, pb), onA = SM.pgApply(m, { mg: { c: A, x: 1 } }).mg;
+  ok(SM.canon(onA.c) === SM.canon({ 'g5a7-mid0': 2, 'g5a7-pair3': 2, 'g5a7-kite20': 1, 'g5a7-ang1': 1 }) && onA.x === 1, 'merge: same question → the larger count; union of questions; other fields of kids_mg kept ' + JSON.stringify(onA));
+  ok(SM.canon(SM.mergePg(pa, pb)) === SM.canon(SM.mergePg(pb, pa)) && SM.canon(SM.mergePg(m, m)) === SM.canon(m), 'merge is commutative and idempotent');
+  ok(SM.pgApply(m, { mg: { c: Object.assign({}, A, B, { 'g5a7-mid0': 2 }) } }).mg === undefined, 'nothing new → kids_mg not rewritten');
+  const L2 = { mg: { c: { 'g5a7-mid0': 2, 'g6b6-q3': 2 } } }, d2 = SM.pgApply(SM.pgFromLocal({ mg: { c: { 'g5a7-mid0': 1, 'g5a7-ang1': 2 } } }), L2).mg.c;
+  ok(d2['g5a7-mid0'] === 2 && d2['g5a7-ang1'] === 2 && d2['g6b6-q3'] === 2, 'applying never lowers a local count and keeps other units (local only) ' + JSON.stringify(d2));
+  ok(!SM.pgApply({ f: 'Qm1=1' }, { mg: { c: A } }).mg && !SM.pgApply({}, {}).mg, 'doc without Ms groups (old doc) → kids_mg untouched, no empty key created'); }
+// 新舊互收：舊版裝置不認得 Ms1／Ms2，但 pg 的 f 群組照收、合併照聯集 → 不會壞、不會丟；新版收到舊版合併過的文件照樣還原
+{ const pgN = SM.pgFromLocal({ mg: { c: { 'g5a7-mid0': 2, 'g5a7-kite23': 1 } }, geoQ: { 'm1-p01': 1 } }), pgOldLocal = OLD.pgFromLocal({ geoQ: { 't3-p05': 2 } });
+  const viaOld = OLD.mergePg(OLD.normPg(pgN), pgOldLocal), oldApply = OLD.pgApply(viaOld, { geoQ: { 't3-p05': 2 } });
+  ok(/Ms1=/.test(viaOld.f) && /Ms2=/.test(viaOld.f) && SM.canon(SM.normPg(viaOld)) === SM.canon(SM.mergePg(pgN, pgOldLocal)), 'old device: normPg / mergePg keep the new groups as-is ' + viaOld.f);
+  ok(!('mg' in oldApply) && oldApply.geoQ['m1-p01'] === 1, 'old device: pgApply ignores Ms groups (no error, nothing written for them)');
+  const docOld = OLD.merge(OLD.normalize({ v: 9, pg: pgN }), OLD.normalize({ v: 9, pg: pgOldLocal }));
+  ok(SM.canon(SM.pgApply(SM.normalize(docOld).pg, {}).mg.c) === SM.canon({ 'g5a7-mid0': 2, 'g5a7-kite23': 1 }), 'whole doc merged by the old version → new device still gets the counts back');
+  ok(SM.canon(SM.normalize(SM.merge(SM.normalize({ v: 9, pg: pgOldLocal }), SM.normalize({ v: 9, pg: pgN }))).pg) === SM.canon(SM.mergePg(pgOldLocal, pgN)), 'new device merging an old doc: union, nothing lost'); }
+// 最壞大小：46 題全部 2 次＝ 'Ms1=…' ＋ 'Ms2=…'（含逗號）；家長規定加完後非英文最壞情況要留 ≥ 700 B → 這裡最多 49 B（smoke 量整份）
+{ const base = { geoQ: { 'm1-p01': 2 } }, full = SM.pgFromLocal(Object.assign({ mg: { c: Object.fromEntries(qs.map(q => [q.id, 2])) } }, base)), cost = SM.bytes(full) - SM.bytes(SM.pgFromLocal(base));
+  ok(cost <= 49 && cost === 34, 'worst case: 46 questions × 2 → +' + cost + ' B (≤ 49 B budget)');
+  console.log('symmetry: 每題次數同步最壞多 ' + cost + ' B'); }
 console.log('symmetry: bank ' + qs.length + ' (d ' + [1, 2, 3].map(k => qs.filter(q => q.d === k).length).join('/') + ')、紙本原題 2、同步多 ' + (mgB + nB) + ' B');
 console.log('symmetry: ' + pass + ' passed, ' + fail + ' failed');
 process.exitCode = fail ? 1 : 0;
