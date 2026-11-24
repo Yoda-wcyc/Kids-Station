@@ -109,7 +109,8 @@
   }
   // 主按鈕：英文、數學優先用小助理挑的那一項（錯題、複習也算題數）；閱讀一定要讀一篇，到閱讀列表
   // 子目標還沒到：直接去那一頁（那裡做的題也算總數）；數學有子目標時只有那兩頁算，不用小助理挑的錯題；閱讀、歷史、地理用清單給的入口
-  const nextHref = (T, r) => { const n = T.next, c = n.key === 'r' || n.subLeft || (n.key === 'm' && (n.subs || []).length) ? null : r.tasks.find(t => t.k === n.k); return c ? c.href : n.href; };
+  const nextHref = (T, r) => { const n = T.next, c = n.key === 'r' || n.key === 'b' || n.subLeft || (n.key === 'm' && (n.subs || []).length) ? null : r.tasks.find(t => t.k === n.k); return c ? c.href : n.href; };
+  // b＝英文閱讀 1 篇（2026-11-24）：k 是 english（學習島港口），但要直接去 english-reading/，不是英文的其他任務
   let partyDay = '';
   function mainHtml(T, r) {
     const s = T.next && (T.next.subs || []).find(x => !x.done);

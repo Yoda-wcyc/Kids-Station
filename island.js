@@ -1,6 +1,6 @@
 /* island.js — 首頁「小朋友學習島」（2026-11-16）：#home 上方一張 inline SVG 群島，9 座島＝9 科，中央廣場＝課程地圖、家長屋。
    島只是入口外殼：點島拉近 → 說明卡列出該科活動（subjects.js 的 KidsSubjects／KidsActs，不另寫一份）→ 點活動走原本的路由／整頁連結。
-   - 今日任務旗：KidsDaily.today() 的五列對到島（英文→港口、數學→數字塔、閱讀→書院、歷史→時光碼頭、地理→燈塔）；🦉 停在下一個任務旁，點牠＝小助理的「接著做」。
+   - 今日任務旗：KidsDaily.today() 的各列對到島（英文、英文閱讀→港口、數學→數字塔、閱讀→書院、歷史→時光碼頭、地理→燈塔）；🦉 停在下一個任務旁，點牠＝小助理的「接著做」。
    - 成長 0～4 階：每次從已同步的紀錄現算（kids_done 各科完成度、kids_daily 每科練習天數＋連續天數、ke_learned 學會數），不新增任何同步狀態。
    - 只寫一個本機 key kids_island_ui（看過導覽、今天放過煙火、手動時段；不同步，讀不到就照常顯示）。
    - iPad：動畫全用 CSS（頁面隱藏時暫停、prefers-reduced-motion 關掉），不跑 requestAnimationFrame、不攔捲動、觸控目標 ≥44px。
@@ -13,8 +13,8 @@
   // 時段（裝置時鐘）：清晨 5–8、白天 8–17、黃昏 17–19、夜晚
   const TIMES = [['dawn', '🌅', '清晨'], ['day', '☀️', '白天'], ['dusk', '🌇', '黃昏'], ['night', '🌙', '夜晚']];
   const phase = h => (h >= 5 && h < 8 ? 'dawn' : h >= 8 && h < 17 ? 'day' : h >= 17 && h < 19 ? 'dusk' : 'night');
-  // kids_daily（dd）的科目代碼 → 島（代碼見 kids-daily.js：j/p 英文子目標、u/f/x 數學、o 國語開放題、v 漫畫一話、w 地理一組）
-  const CODE = { e: 'english', d: 'english', j: 'english', p: 'english', m: 'math', u: 'math', f: 'math', x: 'math', c: 'chinese', o: 'chinese', s: 'social', n: 'science', h: 'history', v: 'history', g: 'geo', w: 'geo', a: 'ai' };
+  // kids_daily（dd）的科目代碼 → 島（代碼見 kids-daily.js：j/p 英文子目標、u/f/x 數學、o 國語開放題、v 漫畫一話、w 地理一組、b 英文閱讀一篇）
+  const CODE = { e: 'english', d: 'english', b: 'english', j: 'english', p: 'english', m: 'math', u: 'math', f: 'math', x: 'math', c: 'chinese', o: 'chinese', s: 'social', n: 'science', h: 'history', v: 'history', g: 'geo', w: 'geo', a: 'ai' };
   const shift = (d, n) => new Date(Date.UTC(2000 + +d.slice(0, 2), +d.slice(2, 4) - 1, +d.slice(4, 6)) + n * 864e5).toISOString().slice(2, 10).replace(/-/g, '');
   // sum＝KESyncMerge.ddSum(kids_daily)：{YYMMDD:{代碼:[題數,答對]}} → 各島練習天數、連續天數（今天還沒練就從昨天往回數）
   function ddStats(sum, today) {
@@ -51,7 +51,7 @@
   // 今日清單（KidsDaily.today()）→ 各島任務旗、🦉 要停的島、是否全部完成
   function quests(T) {
     const q = {}, rows = T && Array.isArray(T.rows) ? T.rows : [];
-    rows.forEach(r => { if (r && KS.indexOf(r.k) >= 0) q[r.k] = r.done ? 'done' : 'todo'; });
+    rows.forEach(r => { if (r && KS.indexOf(r.k) >= 0) q[r.k] = q[r.k] === 'todo' || !r.done ? 'todo' : 'done'; });   // 同一座島兩列（英文＋英文閱讀）：都完成才插 ✓
     return { q, next: T && T.next && KS.indexOf(T.next.k) >= 0 ? T.next.k : null, all: !!(T && T.allDone && rows.length) };
   }
   const core = { KS, TIMES, phase, CODE, shift, ddStats, pctOf, learnedN, score, stage, townStage, growth, quests };

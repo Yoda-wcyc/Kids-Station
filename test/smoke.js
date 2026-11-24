@@ -898,7 +898,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   { const Wp = { window: {} }; vm.createContext(Wp);
     ['comics/catalog.js', 'gept/data/catalog.js', 'chinese/writing/data/catalog.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), Wp));
     ['social', 'science'].forEach(k => { const dir = path.join(root, 'mindmap', 'data', k); fs.readdirSync(dir).filter(f => /^(unit|cards|lit)[\w-]*\.js$/.test(f)).sort((a, b) => (a.startsWith('unit') ? -1 : 0) - (b.startsWith('unit') ? -1 : 0)).forEach(f => vm.runInContext(fs.readFileSync(path.join(dir, f), 'utf8'), Wp)); });
-    const t = 1.8e12, L = { comic: { seen: {} }, anim: { seen: {} }, writing: { t: {}, l: {} }, gept: { best: {}, task: {}, mock: [] }, exam: {}, lit: {}, cards: {}, wordLv: {}, zhRead: {}, zhIdiom: {}, geoQ: {}, mg: { c: {} } };
+    const t = 1.8e12, L = { comic: { seen: {} }, anim: { seen: {} }, writing: { t: {}, l: {} }, gept: { best: {}, task: {}, mock: [] }, exam: {}, lit: {}, cards: {}, wordLv: {}, zhRead: {}, zhIdiom: {}, geoQ: {}, mg: { c: {} }, er: { p: 0 } };
     Wp.window.COMIC_CATALOG.vols.forEach(v => v.eps.forEach(e => { L.comic.seen[e.id] = t; }));
     'ABCDEFG'.split('').forEach(c => { L.anim.seen[c] = t; });
     Wp.window.WR_CAT.topics.forEach(c => { L.writing.t[c.id] = { done: t }; }); Wp.window.WR_CAT.lessons.forEach(c => { L.writing.l[c.id] = { best: 100, n: 99, done: t }; });
@@ -917,11 +917,13 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     require(path.join(root, 'completion.js')).GEO_UNITS.forEach(([u]) => { for (let i = 1; i <= 30; i++) L.geoQ[u + '-p' + String(i).padStart(2, '0')] = 2; for (let i = 1; i <= 10; i++) L.geoQ[u + '-t' + String(i).padStart(2, '0')] = 2; });
     // 2026-11-24 線對稱 g5a7 每題答對次數（kids_mg.c，學過 2 次就不算）：46 題全部答對 2 次（f 旗標兩層 Ms1／Ms2）；別的單元的 kids_mg 不同步
     { const MGm = require(path.join(root, 'math', 'grade.js')); require(path.join(root, 'math', 'grade', 'g5a7.js')); MGm.bank('g5a7').forEach(q => { L.mg.c[q.id] = 2; }); L.mg.c['g6b6-x0'] = 2; }
+    // 2026-11-24 英文閱讀：只同步 p（照順序完成到第幾篇）＝全部 200 篇讀完（pg v 群組 R 一格）
+    { const Wr = { window: {} }; vm.createContext(Wr); ['s0', 'a1', 'a2', 'a3', 'a4', 'a5'].forEach(k => vm.runInContext(fs.readFileSync(path.join(root, 'english-reading', 'data', k + '.js'), 'utf8'), Wr)); L.er = { p: Wr.window.DATA_ER.length, a: { e001: { n: 2, done: t } }, ok: { 'e001:q1': 2 } }; }
     const pg = SM.pgFromLocal(L), back = SM.pgApply(pg, {});
     pgBytes = SM.bytes({ pg }) - 2;   // ,"pg":{…} 在整份文件裡的大小
     const cnt = { comic: Object.keys(back.comic.seen).length, writing: Object.keys(back.writing.t).length + Object.keys(back.writing.l).length, best: Object.keys(back.gept.best).length, task: Object.keys(back.gept.task).length, mock: back.gept.mock.length,
-      exam: Object.keys(back.exam).length, lit: Object.keys(back.lit).length, cards: Object.keys(back.cards).length, zh: Object.keys(back.zhRead).length, cy: Object.keys(back.zhIdiom).length, geoQ: Object.values(back.geoQ).filter(v => v === 2).length, mg: Object.values(back.mg.c).filter(v => v === 2).length };
-    ok(cnt.comic === 42 && cnt.writing === 172 && cnt.best === Object.keys(L.gept.best).length && cnt.best >= 120 && cnt.task === Object.keys(L.gept.task).length && cnt.task >= 75 && cnt.mock === SM.PG_MOCK && cnt.exam === Object.keys(L.exam).length && cnt.exam >= 60 && cnt.lit === Object.keys(L.lit).length && cnt.lit >= 160 && cnt.cards === Object.keys(L.cards).length && cnt.cards >= 1000 && cnt.zh === 100 && cnt.cy === 121 && cnt.geoQ === 720 && cnt.mg === 46,
+      exam: Object.keys(back.exam).length, lit: Object.keys(back.lit).length, cards: Object.keys(back.cards).length, zh: Object.keys(back.zhRead).length, cy: Object.keys(back.zhIdiom).length, geoQ: Object.values(back.geoQ).filter(v => v === 2).length, mg: Object.values(back.mg.c).filter(v => v === 2).length, er: back.er && back.er.p };
+    ok(cnt.comic === 42 && cnt.writing === 172 && cnt.best === Object.keys(L.gept.best).length && cnt.best >= 120 && cnt.task === Object.keys(L.gept.task).length && cnt.task >= 75 && cnt.mock === SM.PG_MOCK && cnt.exam === Object.keys(L.exam).length && cnt.exam >= 60 && cnt.lit === Object.keys(L.lit).length && cnt.lit >= 160 && cnt.cards === Object.keys(L.cards).length && cnt.cards >= 1000 && cnt.zh === 100 && cnt.cy === 121 && cnt.geoQ === 720 && cnt.mg === 46 && cnt.er === 200,
       'pg worst case keeps every item (only the newest ' + SM.PG_MOCK + ' mock exams): ' + JSON.stringify(cnt));
     ok(same(SM.pgFromLocal(back), pg), 'pg worst case: local → doc → local → doc is stable');
     projDoc.pg = pg; }
@@ -933,7 +935,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 2026-11-19 加 pg 之後：124,016 B ＋ pg 最壞（約 2.7KB）；仍 ≤ MAX_BYTES/4（上限沒放寬）
   // 2026-11-21 pg 多了地理每題答對次數（geoQ，720 題兩層旗標）：用掉剩下 1,117 B 裡的約 330 B（家長同意可以用這 1,117 B），留至少 700 B 給以後
   // 2026-11-24 pg 多了線對稱 g5a7 每題答對次數（kids_mg，46 題兩層旗標 Ms1／Ms2）：127,251 → 127,285 B（+34 B），餘裕 749 → 715 B，仍 ≥ 700 B
-  ok(worstCap - pgBytes <= 124100 && worstCap <= SM.MAX_BYTES / 4 - 700, 'worst case at caps (2026-11-17 trim + 2026-11-19 pg + 2026-11-21 geoQ + 2026-11-24 g5a7 mg, pg ' + pgBytes + ' B): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (126,883 B / 1,117 B before geoQ)');
+  // 2026-11-24 pg 多了英文閱讀進度 p（v 群組 R 一格，200 篇＝',R=5l' 5 B）：餘裕 715 → 710 B，仍 ≥ 700 B（不用 40 B 的位元圖）
+  ok(worstCap - pgBytes <= 124100 && worstCap <= SM.MAX_BYTES / 4 - 700, 'worst case at caps (2026-11-17 trim + 2026-11-19 pg + 2026-11-21 geoQ + 2026-11-24 g5a7 mg + english-reading p, pg ' + pgBytes + ' B): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (126,883 B / 1,117 B before geoQ)');
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
   // 2026-11-02 五下上線塞滿約 156KB 超過 1/4 → v7 壓成字串（114,868 B，六下必超）→ v8 只同步答過的、封頂、熟練旗標
   ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === SM.MAX_EQ_DEL && SM.MAX_EQ_DEL === 50 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,9999')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
@@ -1470,6 +1473,8 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
 // 五下、六上、六下社會／自然資料檢查（2026-11-02）：作者的檢查也跑一遍
 { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'math-grade.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/math-grade.test.js passes (數學五下～六下：每題答案驗算): ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
 ['g5b-social.test.js', 'g5b-science.test.js', 'g6a-social.test.js', 'g6a-science.test.js', 'g6b-social.test.js', 'g6b-science.test.js'].forEach(f => { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'mindmap', 'test', f)], { encoding: 'utf8' }); ok(r.status === 0, 'mindmap/test/' + f + ' passes: ' + (r.stdout || '').slice(-1500) + (r.stderr || '').slice(-1500)); });
+// 2026-11-24 英文閱讀測驗 200 篇：交稿總檢查（配額、文體、撞文）＋純函式測試
+[[path.join(root, 'english-reading', 'check.js'), '--final'], [path.join(root, 'test', 'english-reading.test.js')]].forEach(a => { const r = require('child_process').spawnSync(process.execPath, a, { encoding: 'utf8' }); ok(r.status === 0, path.basename(a[0]) + ' ' + (a[1] || '') + ' passes: ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); });
 // 2026-11-13 全站禁止複製貼上：每一頁（跟 deploy_copy 部署的同一批）都在 <head> 載入根目錄的 nocopy.js
 { const pages = [], walk = d => fs.readdirSync(d, { withFileTypes: true }).forEach(e => {
     const f = path.join(d, e.name), rel = path.relative(root, f).split(path.sep);

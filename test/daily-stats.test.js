@@ -229,7 +229,14 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     ok(!KD.checkDay({ e: [60, 60], j: [30, 30], p: [30, 30] }, 0, G3).rows[0].done && KD.checkDay({ e: [100, 100], j: [30, 30], p: [10, 10], d: [99, 99] }, 0, G).rows[0].done && !KD.checkDay({ e: [100, 100], d: [99, 99] }, 0, G).rows[0].subs.some(s => s.key === 'word'), 'lots of 句型片語 do not cover 單字; days before 11/24 have no 單字 sub-goal');
     const tw = KD.checkText(KD.checkDay({ e: [22, 20], d: [12, 12], j: [5, 5], p: [5, 5] }, 0, G3));
     ok(tw.startsWith('完成 0/5 項：英文 22/30（單字 12/20、句型 5/5 ✓、片語 5/5 ✓）'), 'parent label with 單字 ' + tw);
-    ok(KD.checkDay({ e: [30, 30], j: [5, 5], p: [5, 5], d: [3, 3] }, 0, G3, { d: true }).rows[0].done && KD.fullOf({ left: { e: 5, d: 0, j: 3, p: 3 } }).d === true && KD.fullOf({ left: { e: 5, d: 2 } }).d === false, '單字 all learned (kids_daily_left d 0) → that sub-goal done');
+    // 2026-11-24 第六列「英文閱讀 1 篇」：代碼 b（english-reading 第一次完成一篇 finish('er')），目標固定 1、k＝english（學習島港口）、不算英文題數；11/24 以前、沒給 day 不列
+    { const cb = d => KD.checkDay({ e: [30, 30], j: [5, 5], p: [5, 5], d: [20, 20], b: [1, 1] }, 0, G3, null, d), r24 = cb('261124').rows, rb = r24.find(r => r.key === 'b');
+      ok(r24.length === 6 && rb === r24[5] && rb.k === 'english' && rb.name === '英文閱讀' && rb.goal === 1 && rb.n === 1 && rb.done && rb.unit === '篇' && rb.href === 'english-reading/index.html' && r24[0].n === 30, 'english reading row from 11/24: b 1/1 ✓, own href, english still 30 ' + JSON.stringify(rb));
+      ok(cb('261123').rows.length === 5 && cb().rows.length === 5 && !KD.checkDay({ e: [30, 30], d: [20, 20], j: [5, 5], p: [5, 5] }, 0, G3, null, '261124').rows.find(r => r.key === 'b').done, 'before 11/24 / no day → no row; no b → not done');
+      const tb = KD.checkText(KD.checkDay({ e: [22, 20], d: [12, 12], j: [5, 5], p: [5, 5] }, 0, G3, null, '261124'));
+      ok(tb.startsWith('完成 0/6 項：英文 22/30') && tb.endsWith('、地理 0/1、英文閱讀 0/1'), 'parent label lists 英文閱讀 last: ' + tb);
+      const ddb = SM.ddAdd({}, 'iPad', NOW, 'b', true); ok(SM.ddSum(ddb)[today].b[0] === 1 && (view({ dd: ddb }).rows[0].subj || []).length === 0, 'b is counted for the list only, not as an english question'); }
+    ok(KD.checkDay({ e: [30, 30], j: [5, 5], p: [5, 5], d: [3, 3] }, 0, G3, { d: true }).rows[0].done &&KD.fullOf({ left: { e: 5, d: 0, j: 3, p: 3 } }).d === true && KD.fullOf({ left: { e: 5, d: 2 } }).d === false, '單字 all learned (kids_daily_left d 0) → that sub-goal done');
     const sA = SM.ddAdd(SM.ddAdd({}, 'a', NOW, 'e', true), 'a', NOW, 'j', true), sB = SM.ddAdd(SM.ddAdd({}, 'b', NOW, 'e', true), 'b', NOW, 'j', true);
     ok(same(SM.ddSum(SM.mergeDd(sA, sB, NOW))[today], { e: [2, 2], j: [2, 2] }) && same(view({ dd: SM.mergeDd(sA, sB, NOW) }).rows[0].subj.map(s => s.name + s.n), ['英文2']), 'j merges across devices; parent row does not list j as a subject');
 
@@ -408,7 +415,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     const entryFiles = found.filter(f => f !== 'kids-coins.js' && /KidsCoins\.answer\(/.test(read(f).replace(/\/\*[\s\S]*?\*\//g, '')));
     ok(entryFiles.length >= 12, 'found entry files: ' + entryFiles.length);
     entryFiles.forEach(f => { const s = read(f); ok(s.includes(R) || s.includes('dailyRec(') || f === 'chinese/reading-core.js', 'file with KidsCoins.answer must record too: ' + f); });
-    const PAGES = ['index.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/fraction.html', 'math/multiples.html', 'math/multiply.html', 'math/short-division.html', 'math/paper.html', 'math/grade.html', 'math/fracadd.html', 'gept/practice.html', 'gept/mock.html', 'gept/task.html', 'geo/unit.html', 'chinese/reading.html', 'chinese/idioms/idioms.html', 'ai/ask-well.html', 'ai/hallucinate.html', 'ai/secrets.html', 'game/hero-island/index.html', 'game/hero-world/index.html', 'game/kids-town/index.html']
+    const PAGES = ['index.html', 'mindmap/social.html', 'mindmap/science.html', 'math/balance.html', 'math/fraction.html', 'math/multiples.html', 'math/multiply.html', 'math/short-division.html', 'math/paper.html', 'math/grade.html', 'math/fracadd.html', 'gept/practice.html', 'gept/mock.html', 'gept/task.html', 'english-reading/index.html', 'geo/unit.html', 'chinese/reading.html', 'chinese/idioms/idioms.html', 'ai/ask-well.html', 'ai/hallucinate.html', 'ai/secrets.html', 'game/hero-island/index.html', 'game/hero-world/index.html', 'game/kids-town/index.html']
       .concat(fs.readdirSync(path.join(root, 'comics')).filter(f => /^v\d+e\d+\.html$/.test(f)).map(f => 'comics/' + f));   // 漫畫每一話（comic.js 記錄）自動列進來
     PAGES.forEach(f => { const s = read(f), a = s.indexOf('syncmerge.js"'), a2 = s.indexOf('syncmerge.js?'), m = a >= 0 ? a : a2, b = s.search(/kids-daily\.js["?]/); ok(m >= 0 && b > m, 'page loads syncmerge.js then kids-daily.js: ' + f); });
     // 每個有記錄的 html 都在清單裡（新頁面忘了載 kids-daily.js 會擋）

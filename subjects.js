@@ -11,7 +11,9 @@
       { id: 'tb', title: '課本進度', desc: '翰林五年級課本單元', icon: '📘', href: '#tb' },
       { id: 'mistakes', title: '錯題庫', desc: '答錯的題目再練一次', icon: '🩹', href: '#mistakes' },
       { id: 'bank', title: '例題庫', desc: '全部的英文題目', icon: '🗂️', href: '#bank' },
-      { id: 'gept', title: '全民英檢考場', desc: '初級・中級・高級 題型練習與模擬考', icon: '🏅', href: 'gept/index.html' }],
+      { id: 'gept', title: '全民英檢考場', desc: '初級・中級・高級 題型練習與模擬考', icon: '🏅', href: 'gept/index.html' },
+      // 2026-11-24：英文閱讀測驗 200 篇（english-reading/；易 → 中 → 難自動排，本機 kids_en_reading；規格 english-reading/SPEC.md）
+      { id: 'reading', title: '英文閱讀測驗', desc: () => erDesc(), icon: '📰', href: 'english-reading/index.html' }],
     // 2026-11-01：國語〈閱讀素養 100 篇〉（chinese/reading.html；L1～L4 循序解鎖，規格 kids-member/docs/CHINESE_READING_SPEC.md）
     // 2026-11-01：國語〈成語故事 100〉（chinese/idioms/idioms.html；規格 kids-member/docs/CHINESE_IDIOM_SPEC.md）
     chinese: [{ id: 'reading', title: '閱讀素養 100 篇', desc: () => zhDesc(), icon: '📚', src: 'chinese/reading.html' },
@@ -124,6 +126,8 @@
   const MK_SUBJ = ['chinese', 'social', 'science', 'math', 'ai', 'geo'];   // chinese → iframe chinese/reading.html?mistakes=1（2026-11-01；閱讀和成語的錯題都在這頁練）
   // 國語卡片小字：完成幾篇（kids_done.zh 跟著同步＋本機 kids_zh_reading）
   const zhDesc = () => { let n = 0; try { const d = (JSON.parse(localStorage.getItem('kids_done')) || {}).zh || {}, l = JSON.parse(localStorage.getItem('kids_zh_reading')) || {}; n = new Set(Object.keys(d).concat(Object.keys(l).filter(k => l[k] && l[k].done))).size; } catch (e) { } return '記敘、說明、童詩、新聞、圖表、多篇比較…從讀懂字面到深度思考，分 L1～L4 一級一級往上' + (n ? `｜已完成 ${n} 篇` : ''); };
+  // 英文閱讀卡片小字：完成幾篇（本機 kids_en_reading.a[id].done；p＝別台同步來的「照順序完成到第幾篇」，閱讀頁打開時才補進 a）
+  const erDesc = () => { let n = 0; try { const r = JSON.parse(localStorage.getItem('kids_en_reading')) || {}, a = r.a || {}; n = Math.max(+r.p || 0, Object.keys(a).filter(k => a[k] && a[k].done).length); } catch (e) { } return '一次一篇短文＋3～4 題，從簡單的開始自動變難' + (n ? `｜已完成 ${n} 篇` : ''); };
   // 成語卡片小字：完成幾個成語（kids_done.cy 跟著同步＋本機 kids_zh_idioms；只數 cy001～cy100）
   const cyDesc = () => { let n = 0; try { const d = (JSON.parse(localStorage.getItem('kids_done')) || {}).cy || {}, l = JSON.parse(localStorage.getItem('kids_zh_idioms')) || {}; n = new Set(Object.keys(d).concat(Object.keys(l).filter(k => l[k] && l[k].done)).filter(k => /^cy\d{3}$/.test(k))).size; } catch (e) { } return '守株待兔、塞翁失馬…讀成語故事、分辨用法、用在生活情境，還有單元測驗和總測驗' + (n ? `｜已完成 ${n} 個成語` : ''); };
   // 作文卡片小字：①～⑤ 做完幾題（本機 kids_writing；完成了哪幾題 2026-11-19 起跟著同步）

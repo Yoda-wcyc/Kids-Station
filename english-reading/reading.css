@@ -1,0 +1,68 @@
+/* english-reading/reading.css — 英文閱讀測驗（iPad 直放優先：文章釘在上面最多占半個畫面，題目在下面；寬螢幕左右兩欄）。.btn .card .opt .fb 在 ../style.css */
+.er-wrap { max-width: 860px; margin: 0 auto; padding: 10px 16px 48px; }
+.er-auth { position: absolute; top: 8px; right: 10px; }
+.er-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 8px; padding-right: 90px; }
+.er-top h1 { font-size: 1.3rem; margin: 4px 0; flex: 1 1 100%; }
+.er-intro { color: #5b6472; line-height: 1.6; }
+.er-today { background: #e7f7ee; color: #1f7a45; border-radius: 12px; padding: 8px 12px; font-weight: 700; }
+.er-next { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; background: #fff; border: 3px solid #ffd166; border-radius: 18px; padding: 18px 20px; margin: 12px 0; box-shadow: 0 4px 12px rgba(0, 0, 0, .06); }
+.er-next small { color: #8a6d1e; font-weight: 700; }
+.er-next b { font-size: 1.5rem; }
+.er-next .er-zh { color: #5b6472; }
+.er-next .btn { align-self: flex-start; margin-top: 6px; }
+.er-meta { display: flex; align-items: center; gap: 8px; color: #5b6472; }
+.er-lv { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: .85rem; font-weight: 700; color: #fff; }
+.er-lv.l1 { background: #2fb36d; } .er-lv.l2 { background: #2b8fd6; } .er-lv.l3 { background: #8350d6; }
+.er-sum { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+.er-sum progress { flex: 1; height: 14px; }
+.er-done summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
+.er-done li { margin: 4px 0; }
+.er-off { opacity: .55; }
+.er-b { display: inline-block; font-size: .8rem; background: #e7f7ee; color: #1f7a45; border-radius: 999px; padding: 0 7px; margin-left: 6px; }
+.er-b.lk { background: #eceff3; color: #5b6472; }
+.er-lock p { font-size: 1.1rem; }
+
+/* 文章 */
+.er-art { background: #fffdf7; border: 2px solid #f0e4c8; border-radius: 14px; padding: 8px 14px 10px; margin: 8px 0; }
+.er-art.sticky { position: sticky; top: 0; z-index: 3; max-height: 46vh; overflow-y: auto; box-shadow: 0 6px 12px rgba(0, 0, 0, .07); }
+.er-art.fold article, .er-art.fold .er-glbox, .er-art.fold .er-hint { display: none; }
+.er-arth { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.er-arth .er-title { font-size: 1.2rem; }
+.er-arth small { color: #5b6472; }
+.er-arth .btn { padding: 4px 10px; font-size: .95rem; min-height: 0; }
+.er-tts { margin-left: auto; }
+.er-art article { font-size: 1.2rem; line-height: 1.75; }
+.er-art article p { margin: .5em 0; }
+.er-art article h3 { font-size: 1.15rem; margin: .5em 0 .2em; }
+.g-notice article, .g-letter article, .g-schedule article { background: #fff; border: 1px dashed #d9c48f; border-radius: 10px; padding: 2px 12px; }
+.er-who b { color: #2b6cb0; }
+.er-s { cursor: pointer; border-radius: 6px; padding: 0 1px; transition: background .2s; }
+.er-s.er-saying, tr.er-s.er-saying td { background: #ffe9a8; }
+.er-s.er-ev { background: #c9f1d6; box-shadow: 0 0 0 2px #2fb36d; }
+tr.er-s.er-ev td { background: #c9f1d6; }
+.er-gl { border-bottom: 2px dotted #c08a00; }
+.er-glbox { font-size: .95rem; color: #5b4a1e; background: #fff4d6; border-radius: 8px; padding: 4px 10px; margin: 6px 0 0; }
+.er-hint { font-size: .85rem; color: #8a8f99; margin: 4px 0 0; }
+.er-tw { overflow-x: auto; }
+.er-tw table { border-collapse: collapse; font-size: 1.05rem; margin: 4px 0; }
+.er-tw th, .er-tw td { border: 1px solid #e3d6b6; padding: 4px 10px; text-align: left; white-space: nowrap; }
+.er-tw th { background: #fbf1d8; }
+
+/* 題目 */
+.er-q { background: #fff; border: 2px solid #e6e6ef; border-radius: 14px; padding: 10px 14px; margin: 10px 0; }
+.er-q.ok { border-color: #2fb36d; } .er-q.no { border-color: #e05656; }
+.er-qh { display: flex; gap: 10px; align-items: center; color: #5b6472; font-size: .95rem; }
+.er-k { background: #eef2ff; border-radius: 999px; padding: 0 8px; }
+.er-sayq { margin-left: auto; border: 0; background: #f2f4f8; border-radius: 10px; font-size: 1.1rem; padding: 4px 10px; }
+.er-qt { font-size: 1.2rem; font-weight: 700; margin: 8px 0; line-height: 1.5; }
+.er-evq { margin-top: 6px; font-size: .98rem; }
+.er-row { margin-top: 10px; text-align: right; }
+.er-mkart summary { cursor: pointer; color: #2b6cb0; font-weight: 700; margin-bottom: 4px; }
+.er-res .btns, .er-lock .btn { margin-top: 8px; }
+
+/* 寬螢幕（iPad 橫放、電腦）：左右兩欄，文章整篇看得到 */
+@media (min-width: 1000px) {
+  .er-wrap { max-width: 1180px; }
+  .er-read { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; align-items: start; }
+  .er-art.sticky { top: 8px; max-height: calc(100vh - 16px); }
+}

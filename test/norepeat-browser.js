@@ -123,7 +123,7 @@ async function run() {
   await ev(`const t = document.getElementById('td'); if (t) t.scrollIntoView({ block: 'start' }); return 1`); await sleep(200); await shot('6-home-all-learned');
   await go('/index.html#parent'); await sleep(400);
   const pc = await ev(`const c = document.querySelector('#dailyCard .dl-check'); return c ? c.textContent : (document.getElementById('dailyCard') || {}).textContent || ''`);
-  assert(/歷史 🎉 全部學會了/.test(pc) && /地理 🎉 全部學會了/.test(pc) && /完成 2\/5/.test(pc), '家長頁今天：完成 2/5 項（歷史、地理 🎉 全部學會了） ' + pc);
+  assert(/歷史 🎉 全部學會了/.test(pc) && /地理 🎉 全部學會了/.test(pc) && /完成 2\/6/.test(pc) && /、英文閱讀 0\/1$/.test(pc), '家長頁今天：完成 2/6 項（歷史、地理 🎉 全部學會了；11/24 起多英文閱讀） ' + pc);
   await ev(`document.getElementById('dailyCard').scrollIntoView({ block: 'start' }); return 1`); await sleep(200); await shot('7-parent-daily-card');
   const wide = await ev(`return document.documentElement.scrollWidth <= innerWidth + 1`);
   assert(wide, 'iPad 820px: no horizontal scroll on the parent page');

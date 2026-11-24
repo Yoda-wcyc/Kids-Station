@@ -25,6 +25,7 @@
    2026-11-24 起（GOAL_V3，家長定）：英文 30（其中單字 ≥20、句型 ≥5、片語 ≥5），其他不變。英文多一個子目標「單字」：rec('english', ok, 'word')→代碼 d
      （KE.dailyKind：單字卡／單字測驗各題型、課本本課單字＝words 模組；字根拆出來的字＝roots 模組，字根本身的意思 root-meaning 不算；英檢詞彙 R1、單字聽寫＝gept.js）。
      目標陣列第 10 個＝單字；dg 多第 11 欄「單字」（0～99，不升版；10 欄＝沒設單字，舊版裝置看不懂 11 欄會丟掉、新版下次同步從本機補回，同 11/09）。
+     2026-11-24 起清單多一列「英文閱讀 1 篇」：english-reading/ 第一次完成一篇 finish('er')→代碼 b；目標固定 1（ER_GOAL，不進 dg）、ER_FROM 以前的日子不列；不算英文 30 題。
      11/24 起英文那一組（英文、句型、片語）還是 11/09 預設 100／30／10＝家長沒改過 → 換新預設 30／單字 20／5／5；改過的保留（單字 0＝不設）。11/23 以前照舊判。 */
 (function (G) {
   'use strict';
@@ -35,9 +36,10 @@
   SUBJ.forEach(s => { CODE[s[0]] = s[1]; NAME[s[0]] = s[2]; });
   // 目標 [英文,數學,閱讀,句型,片語,乘法,異分母加減,歷史話,地理組,單字]；GOAL_V2D＝11/09～11/23 的預設
   const GOAL_DEF = [30, 30, 2, 5, 5, 20, 10, 1, 1, 20], GOAL_V2D = [100, 30, 2, 30, 10, 20, 10, 1, 1, 0], GOAL_OLD = [60, 30, 1, 0, 0, 0, 0, 0, 0, 0], GOAL_V2 = '261109', GOAL_V3 = '261124', MX_RATE = 3, K_GOAL = 'kids_daily_goal', K_PARTY = 'kids_daily_party';
-  const HREF = { english: 'index.html#en', math: 'index.html#s/math', reading: 'index.html#s/chinese/reading', idioms: 'index.html#s/chinese/idioms', sentence: 'index.html#learn/patterns', phrase: 'index.html#learn/phrases', mul: 'index.html#s/math/multiply', fracadd: 'index.html#s/math/fracadd', word: 'index.html#learn/words', history: 'comics/index.html', geo: 'index.html#s/geo' };   // 首頁上 assistant-ui link() 會拿掉 index.html；小助理全頁也點得到
+  const HREF = { english: 'index.html#en', math: 'index.html#s/math', reading: 'index.html#s/chinese/reading', idioms: 'index.html#s/chinese/idioms', sentence: 'index.html#learn/patterns', phrase: 'index.html#learn/phrases', mul: 'index.html#s/math/multiply', fracadd: 'index.html#s/math/fracadd', word: 'index.html#learn/words', history: 'comics/index.html', geo: 'index.html#s/geo', er: 'english-reading/index.html' };   // 首頁上 assistant-ui link() 會拿掉 index.html；小助理全頁也點得到
   const SUBK = { word: 'd', sentence: 'j', phrase: 'p', mul: 'u', fracadd: 'f' }, SUBN = { word: '單字', sentence: '句型', phrase: '片語', mul: '乘法', fracadd: '異分母加減' }, SUBOF = { english: ['word', 'sentence', 'phrase'], math: ['mul', 'fracadd'] };
-  const FIN = { comic: 'v', geo: 'w' };   // finish(kind) 記的代碼：歷史一話、地理一組
+  const FIN = { comic: 'v', geo: 'w', er: 'b' };   // finish(kind) 記的代碼：歷史一話、地理一組、英文閱讀一篇（english-reading/，第一次完成）
+  const ER_FROM = '261124', ER_GOAL = 1;   // 每日清單「英文閱讀 1 篇」：生效日起才列、目標固定 1（不進 dg，同步 0 B）
   const LEARN_MAX = 2, NEW_RULE = '261121', OLDC = 'r';   // 學過 2 次＝舊題；r＝重複的舊題（不算清單，只給家長看）
   const READ_N = { zh: 100, cy: 100, cyr: 10 }, COMIC_N = 42, GEO_PER = 40;   // 閱讀篇數、漫畫話數（7 冊×6 話）、地理每單元題數（練習 30＋測驗 10）；test/norepeat.test.js 會對目錄
 
@@ -136,7 +138,8 @@
   };
   // 一天的清單：D＝那天各科 {代碼:[n,ok]}（各裝置已加總），reads＝那天完成幾篇，goal＝那天的目標，
   //   full＝今天哪些項目全部學會了（{e,j,p,u,f,r,h,g}，fullOf；只有今天才給）→ 那一項（子目標）算達成、left 0、標 full
-  function checkDay(D, reads, goal, full) {
+  //   day＝那一天（YYMMDD）：≥ ER_FROM 才多一列「英文閱讀 1 篇」（代碼 b，k 仍是 english＝學習島英文港口；不算英文題數）；不給 day＝不列（舊呼叫照舊）
+  function checkDay(D, reads, goal, full, day) {
     D = obj(D); const F = obj(full);
     const c = k => (D[k] || [0])[0], e = c('e'), m = c('m'), x = c(MX);
     const row = (key, k, name, n, g, unit, extra) => Object.assign({ key, k, name, n, goal: g, unit, left: F[key] ? 0 : Math.max(0, g - n), done: n >= g || !!F[key], over: n > g, href: HREF[key === 'r' ? 'reading' : k] }, F[key] ? { full: true } : {}, extra);
@@ -151,7 +154,7 @@
     const msub = goal[5] > 0 || goal[6] > 0;   // 有數學子目標：清單只認乘法快算（兩位×兩位）＋異分母加減
     const ma = msub ? withSubs(row('m', 'math', '數學', c('u') + c('f'), goal[1], '題'), [goal[5], goal[6]]) : row('m', 'math', '數學', m + Math.floor(x / MX_RATE), goal[1], '題', { raw: m + x, mx: x });
     if (msub && !ma.done && !ma.subLeft && ma.subs.length) ma.href = ma.subs[0].href;   // 子目標都到了、總數還不夠：一樣只能去那兩頁
-    const rows = [en, ma, row('r', 'chinese', '閱讀', +reads || 0, goal[2], '篇', { alt: HREF.idioms }), row('h', 'history', '歷史', c(FIN.comic), goal[7] || 0, '話'), row('g', 'geo', '地理', c(FIN.geo), goal[8] || 0, '組')].filter(r => r.goal > 0);
+    const rows = [en, ma, row('r', 'chinese', '閱讀', +reads || 0, goal[2], '篇', { alt: HREF.idioms }), row('h', 'history', '歷史', c(FIN.comic), goal[7] || 0, '話'), row('g', 'geo', '地理', c(FIN.geo), goal[8] || 0, '組'), row('b', 'english', '英文閱讀', c(FIN.er), day >= ER_FROM ? ER_GOAL : 0, '篇', { href: HREF.er })].filter(r => r.goal > 0);
     const doneN = rows.filter(r => r.done).length;
     return { rows, doneN, total: rows.length, allDone: doneN === rows.length };
   }
@@ -162,7 +165,7 @@
     const item = r => r.name + ' ' + (r.full ? '🎉 全部學會了' : r.done ? '✓' : r.key === 'r' && !r.n ? '未完成' : r.n + '/' + r.goal) + (!r.done && sub(r) ? '（' + sub(r) + '）' : '');
     const by = {}; c.rows.forEach(r => { by[r.key] = r; });
     const head = c.allDone ? '✓ 全部完成 ' + c.doneN + '/' + c.total : '完成 ' + c.doneN + '/' + c.total + ' 項';
-    return head + '：' + ALL.map(a => by[a[0]] ? item(by[a[0]]) : a[1] + ' —').join('、');
+    return head + '：' + ALL.map(a => by[a[0]] ? item(by[a[0]]) : a[1] + ' —').join('、') + (by.b ? '、' + item(by.b) : '');   // 英文閱讀（11/24 起）只在那天有這一列時才寫
   }
   // 慶祝一天只跳一次（這台）：stored＝上次跳的那天
   const partyDue = (stored, day, allDone) => !!allDone && stored !== day;
@@ -187,7 +190,7 @@
         else if (E[s[0]]) noted.push(s[2]);
       });
       const old = (D[OLDC] || [0])[0];   // 2026-11-21 起：學過 2 次的舊題（不算進上面各科、不算清單）
-      if (n || noted.length || old) { rows.push(Object.assign({ day: d, n, ok, den, pct: den ? Math.round(ok / den * 100) : null, subj, noted, check: d >= start ? checkText(checkDay(D, reads[d], goalOn(o.dg, d), d === today ? o.full : null)) : '' }, old ? { old } : {})); continue; }
+      if (n || noted.length || old) { rows.push(Object.assign({ day: d, n, ok, den, pct: den ? Math.round(ok / den * 100) : null, subj, noted, check: d >= start ? checkText(checkDay(D, reads[d], goalOn(o.dg, d), d === today ? o.full : null, d)) : '' }, old ? { old } : {})); continue; }
       const pre = d < start ? 1 : 0, last = rows[rows.length - 1];
       if (last && last.gap && last.pre === pre) last.from = d; else rows.push({ gap: 1, from: d, to: d, pre });
     }
@@ -267,7 +270,7 @@
       return fresh;
     } catch (e) { return null; /* 統計壞掉也不能讓練習頁壞掉 */ }
   }
-  // 做完一個單位（不是一題）：'comic'＝歷史漫畫一話（測驗做完）、'geo'＝地理一組練習／一次測驗。isNew === false＝做過 2 次的舊單位：不記、回 false
+  // 做完一個單位（不是一題）：'comic'＝歷史漫畫一話（測驗做完）、'geo'＝地理一組練習／一次測驗、'er'＝英文閱讀一篇（第一次完成）。isNew === false＝做過 2 次的舊單位：不記、回 false
   function finish(kind, fresh) {
     try {
       const SM = window.KESyncMerge, code = FIN[kind];
@@ -322,7 +325,7 @@
     const row = view({ dd: ld(K, {}), log, ev: {}, today: day, done, dg }).rows.find(r => r.day === day) || { n: 0, subj: [], pct: null };
     const D = obj(SM.ddSum(ld(K, {}))[day]);
     if (log.length) { let n = 0, ok = 0; log.forEach(e => { if (e && SM.ddDay(+e.t) === day) { n++; if (e.ok) ok++; } }); if (n > (D.e || [0])[0]) D.e = [n, ok]; }
-    const c = checkDay(D, readDays(done, SM.ddDay)[day], goalOn(dg, day), fullNow());
+    const c = checkDay(D, readDays(done, SM.ddDay)[day], goalOn(dg, day), fullNow(), day);
     // 歷史、地理的入口：下一話沒看過（或做不到 2 次）的漫畫、地理第一個還有新題的組
     c.rows.forEach(r => {
       if (r.key === 'h') r.href = nextComic(ld('kids_comic', {}), done);

@@ -18,7 +18,9 @@ ok(I.TIMES.map(t => t[0]).join() === 'dawn,day,dusk,night', 'four times');
   ok(JSON.stringify(q.q) === '{"english":"done","math":"todo","chinese":"todo","history":"done","geo":"todo"}' && q.next === 'math' && q.all === false, '5 rows → 港口 done、數字塔／書院／燈塔 todo、時光碼頭 done；🦉 去數學 ' + JSON.stringify(q));
   const all = I.quests({ rows: T.rows.map(r => Object.assign({}, r, { done: true })), allDone: true, next: null });
   ok(all.all && all.next === null && Object.values(all.q).every(v => v === 'done'), 'all done → celebrate, owl free');
-  ok(JSON.stringify(I.quests(null)) === '{"q":{},"next":null,"all":false}' && I.quests({ rows: [], allDone: true }).all === false, 'no list (logged out / goals all 0) → no flags, no party');
+  // 2026-11-24 英文閱讀那一列也對到英文港口：英文、英文閱讀都完成才 ✓（順序不影響）；dd 代碼 b 算英文島練習天數
+ok(I.quests({ rows: [{ k: 'english', key: 'e', done: true }, { k: 'english', key: 'b', done: false }] }).q.english === 'todo' && I.quests({ rows: [{ k: 'english', key: 'b', done: false }, { k: 'english', key: 'e', done: true }] }).q.english === 'todo' && I.quests({ rows: [{ k: 'english', key: 'e', done: true }, { k: 'english', key: 'b', done: true }] }).q.english === 'done' && I.CODE.b === 'english', 'english harbour: flag ✓ only when 英文 and 英文閱讀 are both done');
+ok(JSON.stringify(I.quests(null)) ==='{"q":{},"next":null,"all":false}' && I.quests({ rows: [], allDone: true }).all === false, 'no list (logged out / goals all 0) → no flags, no party');
   ok(!('x' in I.quests({ rows: [{ k: 'x', done: false }], next: { k: 'x' } }).q) && I.quests({ rows: [{ k: 'x' }], next: { k: 'x' } }).next === null, 'unknown subject ignored');
   // 跟 kids-daily.js 的 checkDay 對：列的 k 一定是島
   const KD = require(path.join(root, 'kids-daily.js'))._core, c = KD.checkDay({}, 0, KD.GOAL_DEF);

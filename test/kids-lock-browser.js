@@ -164,7 +164,7 @@ async function run() {
   await go('/mindmap/social.html?review=1'); assert(await ev(`return !document.getElementById('kl-gate')`), '社會 🔁 今天要複習不擋');
   await go('/mindmap/social.html?mistakes=1&u=u1'); assert(await ev(`return !document.getElementById('kl-gate')`), '社會單元一的錯題庫重練不擋');
 
-  // ---- 4. 每日清單 5 項：能鎖的全部做 2 次之後，還是做得到 ----
+  // ---- 4. 每日清單 5 項（11/24 起 6 項，多英文閱讀：沒讀完 200 篇永遠有下一篇）：能鎖的全部做 2 次之後，還是做得到 ----
   await go('/index.html');
   const every = await ev(`const S = KidsLock._snap(); return S.ps.flatMap(p => p.items.map(u => u.key))`);
   const zhAll = Array.from({ length: 4 }, (_, l) => Array.from({ length: 25 }, (_, i) => 'zh' + (l + 1) + '-' + String(i + 1).padStart(2, '0'))).flat();
@@ -208,7 +208,7 @@ async function run() {
   assert(/#s\/geo\/w7$/.test(gg), '地理全部做 2 次：m1 鎖住 → 去挑戰唯一沒鎖的最後一個（南極洲 w7） ' + gg);
   await go('/index.html'); await ev(HOOK); await sleep(300);
   const T = await ev(`const T = KidsDaily.today(); return T.rows.map(r => r.key + ':' + r.href)`);
-  assert(T.length === 5, '每日清單 5 項都在：' + T.join(' '));
+  assert(T.length === 6 && T[5] === 'b:english-reading/index.html', '每日清單 6 項都在（11/24 起多英文閱讀 1 篇）：' + T.join(' '));
   await go('/index.html#parent'); await sleep(300);
   const many = await ev(`return document.querySelectorAll('#kl-parent li').length`);
   assert(many > 100, '全部鎖住時家長頁列出 ' + many + ' 個上鎖單元');
