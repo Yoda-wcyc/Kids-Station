@@ -65,8 +65,9 @@ body{background:var(--bg)}
   <section id="exam" hidden></section>
 </main>
 
-<script src="../kids-mistakes.js?v=6bec191c33"></script>
-<script src="grade.js?v=1f28c5ffac"></script>
+<script src="../kids-mistakes.js?v=4979f1a60d"></script>
+<script src="grade.js?v=013588bd10"></script>
+<script src="grade/g5a7.js?v=0a64110961"></script>
 <script src="grade/g5b1.js?v=e8e8371405"></script>
 <script src="grade/g5b2.js?v=5dcb9ecea0"></script>
 <script src="grade/g5b3.js?v=4a04931d63"></script>
@@ -98,7 +99,8 @@ body{background:var(--bg)}
 /* 五下／六上／六下數學單元頁（2026-11-06；引擎 math/grade.js，資料 math/grade/<單元>.js）
    ?u=<單元>：📖 看重點（免登入）／✏️ 練習（一輪 15 題：沒答對過 → 錯題 → 其他，照難度）／📝 單元測驗（20 題，交卷才看分數與解說）
    ?r=<冊>：📝 總複習（整冊 30 題）　?mistakes=1：數學錯題庫裡 type 'grade' 的題（原題重做，連對 3 次畢業）
-   每題作答：KidsCoins.answer(ok,'math')＋KidsDaily.rec('math', ok)（同 mkRec，錯題庫同一點）；答對過的題記在本機 kids_mg（不同步，只影響抽題順序）。
+   每題作答：KidsCoins.answer(ok,'math')＋KidsDaily.rec('math', ok, null, prev)（同 mkRec，錯題庫同一點）；每題答對過幾次記在本機 kids_mg（不同步：抽題順序＋學過 2 次不算）。
+   五上單元七〈線對稱圖形〉（g5a7，2026-11-24）也走這頁；錯題庫裡的紙本原題（g5a7-pp1、pp2）用 MG.byId 找回。
    完成：KidsDone.record('mg', '<單元>q'＝練習一輪最佳 %、'<單元>t'＝測驗最高分、'<冊>R'＝總複習最高分)；判定在 completion.js（mg:<單元>、mg:<冊>R）。
    學習幣「一輪」事件（practice_round）要後端白名單，還沒加，先不送（每題的 answer 照算）。 */
 var $ = function (id) { return document.getElementById(id); };
@@ -112,11 +114,15 @@ function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'ma
 function authOK() { try { return !window.KidsAuth || KidsAuth.requireLogin('math'); } catch (e) { return true; } }
 function startAct(retry) { try { return !(window.KidsAuth && KidsAuth.startActivity) || KidsAuth.startActivity('math', retry); } catch (e) { return true; } }
 function doneRec(key, v) { try { if (window.KidsDone) KidsDone.record('mg', key, v); } catch (e) { } }
-function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok); try { if (!window.KidsMistakes) return null; var m = M.mkEntry(Q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e) { return null; } }
+// 學過 2 次就不算（2026-11-24 接上，規則見 README）：prev＝這題之前答對幾次（kids_mg.c，0～2），≥ 2 不算今天的數學題數（Q.old → 畫面一行小提示）
+function mkRec(Q, ok) { Q.old = window.KidsDaily ? KidsDaily.rec('math', ok, null, okN(Q.id)) === false : false; try { if (!window.KidsMistakes) return null; var m = M.mkEntry(Q); return KidsMistakes.record('math', m.id, ok, m.p); } catch (e) { return null; } }
+function oldNote(Q) { try { return Q.old && window.KidsDaily ? KidsDaily.oldNote(null, '這題你已經答對 2 次了，不算今天的題數，去練新的題吧') : ''; } catch (e) { return ''; } }
 function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['eq', 'gcd', 'gcdword', 'multiples', 'multiply', 'fraction'], true) : ''; } catch (e) { return ''; } }
-// 本機：答對過的題（抽題用）
+// 本機：每題答對過幾次（抽題先出沒答對過的；學過 2 次不算題數）
+// shortcut: 每題答對次數只存本機（kids_mg 不同步；加了線對稱單元後同步餘裕剩 758 B、規定至少留 700 B），換一台 iPad 從 0 算、可能多算幾題，錯題本身照常同步；同步瘦身有空間時比照地理 geoQ 放進 syncmerge.js pg
 function ldOk() { try { return (JSON.parse(localStorage.getItem('kids_mg')) || {}).c || {}; } catch (e) { return {}; } }
-function markOk(id) { try { var s = JSON.parse(localStorage.getItem('kids_mg')) || {}; s.c = s.c || {}; s.c[id] = 1; localStorage.setItem('kids_mg', JSON.stringify(s)); } catch (e) { } }
+function okN(id) { return Math.min(2, +ldOk()[id] || 0); }
+function markOk(id) { try { var s = JSON.parse(localStorage.getItem('kids_mg')) || {}; s.c = s.c || {}; s.c[id] = Math.min(2, (+s.c[id] || 0) + 1); localStorage.setItem('kids_mg', JSON.stringify(s)); } catch (e) { } }
 function mkSet() { var o = {}; try { KidsMistakes.list('math').forEach(function (e) { if (e.p && e.p.type === 'grade') o[e.p.qid] = 1; }); } catch (e) { } return o; }
 
 /* ---------- 一題的畫面 ---------- */
@@ -186,7 +192,7 @@ function pCheck() {
   $('p-msg').textContent = '';
   var more = P.idx + 1 < P.items.length;
   $('p-row').outerHTML = '<div class="fb ' + (r.ok ? 'ok' : 'no') + '" id="p-fb">' + (r.ok ? '🎉 答對了！' : '✘ ' + esc(r.msg) + '<br>正確答案：<b>' + html(M.ansText(Q)) + '</b>') +
-    '<br>💡 ' + html(Q.why) + '</div><div class="row"><button type="button" class="btn primary big" id="p-next">' + (more ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
+    '<br>💡 ' + html(Q.why) + oldNote(Q) + '</div><div class="row"><button type="button" class="btn primary big" id="p-next">' + (more ? '下一題 ▶' : '看結果 🏁') + '</button></div>';
   try { $('p-next').focus({ preventScroll: true }); } catch (e) { }
 }
 function pEnd() {
@@ -267,7 +273,7 @@ if (MK) {
   var items = [], seen = {};
   try { KidsMistakes.list('math').forEach(function (e) { var Q = M.fromMistake(e.p); if (Q && !seen[Q.id] && items.length < 30) { seen[Q.id] = 1; items.push(Q); } }); } catch (e) { }
   document.title = '數學錯題練習';
-  $('title').textContent = '📕 數學錯題練習（五下～六下）';
+  $('title').textContent = '📕 數學錯題練習（線對稱・五下～六下）';
   $('lede').textContent = '答錯過的題目再做一次。同一題連續答對 3 次就會畢業 🎓';
   $('prac').hidden = false;
   P = { items: items, idx: 0, ok: 0, grad: 0, mk: true };   // 練習額度在錯題庫按「只練錯題」時已經算過
@@ -294,7 +300,7 @@ if (MK) {
 <script src="../kids-coins.js?v=8a5c449e88"></script>
 <script src="../syncmerge.js?v=63f8313fbd"></script>
 <script src="../kids-daily.js?v=52f643ae99"></script>
-<script src="../completion.js?v=b30e514aad"></script>
+<script src="../completion.js?v=37ef183e06"></script>
 <script src="../kids-done.js?v=6c3dfa8aeb"></script>
 <script src="../kids-lock.js?v=923677cdf3"></script>
 <script src="../syncauto.js?v=d7ed49f73e"></script>

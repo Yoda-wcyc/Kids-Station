@@ -12,7 +12,7 @@ const dir = path.join(root, 'math', 'grade');
 const ONLY = (process.env.MG_ONLY || '').split(',').filter(Boolean);
 const have = (fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => /^g[56][ab]\d+\.js$/.test(f)).map(f => f.replace(/\.js$/, '')) : []).filter(u => !ONLY.length || ONLY.includes(u));
 have.forEach(u => require(path.join(dir, u + '.js')));
-const all = MG.BOOKS.flatMap(b => b.units.map(x => x[0]));
+const all = MG.BOOKS.concat(MG.EXTRA).flatMap(b => b.units.map(x => x[0]));   // EXTRA＝五上單元七〈線對稱圖形〉（2026-11-24）
 ok(have.every(u => all.includes(u)), 'data files are known units: ' + have);
 // 上線的冊：整冊每個單元都要有（grade.html 只載入上線的冊）
 const html = fs.readFileSync(path.join(root, 'math', 'grade.html'), 'utf8');
@@ -117,11 +117,11 @@ if (!ONLY.length) {
   const a = { mg: { g5b1q: 70, g5bR: 50, 'bad!': 1, g7a1q: 9 } }, b = { mg: { g5b1q: 90, g5b2t: 40 } }, mm = SM.mergeDone(a, b).mg;
   ok(JSON.stringify(mm) === JSON.stringify({ g5b1q: 90, g5b2t: 40, g5bR: 50 }) && JSON.stringify(SM.mergeDone(b, a).mg) === JSON.stringify(mm), 'done.mg 同步：取大、丟不合格 key、可交換');
   const cat = KC.catalog({}).find(s => s.k === 'math');
-  ok(live.every(bk => bk.units.every(x => cat.units.some(u => u.key === 'mg:' + x[0] && u.group === bk.name))) && cat.units.filter(u => u.group === '五上').length === 6, '課程地圖：五上 6 格＋上線的冊');
+  ok(live.every(bk => bk.units.every(x => cat.units.some(u => u.key === 'mg:' + x[0] && u.group === bk.name))) && cat.units.filter(u => u.group === '五上').length === 7 && cat.units.some(u => u.key === 'mg:g5a7' && u.group === '五上'), '課程地圖：五上 7 格（含單元七線對稱 mg:g5a7）＋上線的冊');
   // 頁面：每題記每日題數、學習幣、錯題；完成紀錄
-  ok(html.includes("function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)") && html.includes("KidsCoins.answer(!!ok, 'math')") && html.includes("KidsDone.record('mg', key, v)") && html.includes("KidsAuth.startActivity('math'"), 'grade.html：每日紀錄、學習幣、完成、登入');
+  ok(html.includes("KidsDaily.rec('math', ok, null, okN(Q.id))") && html.includes("KidsCoins.answer(!!ok, 'math')") && html.includes("KidsDone.record('mg', key, v)") && html.includes("KidsAuth.startActivity('math'"), 'grade.html：每日紀錄、學習幣、完成、登入');
   const KM = fs.readFileSync(path.join(root, 'kids-mistakes.js'), 'utf8');
-  ok(KM.includes("t === 'grade' ? t : 'eq'") && KM.includes("['grade', '五下～六下', 'grade.html?mistakes=1']") && sj.includes("'math/grade.html?mistakes=1'"), '錯題庫：grade 類型路由');
+  ok(KM.includes("t === 'grade' ? t : 'eq'") && KM.includes("['grade', '線對稱・五下～六下', 'grade.html?mistakes=1']") && sj.includes("'math/grade.html?mistakes=1'"), '錯題庫：grade 類型路由');
 }
 if (ONLY.length) console.log(JSON.stringify(stats));
 console.log(fails ? fails + ' / ' + n + ' FAILED' : 'math-grade OK (' + n + ' checks)');

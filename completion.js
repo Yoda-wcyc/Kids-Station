@@ -16,7 +16,7 @@
    - 倍數與公倍數（math:mul，2026-10-21）：✏️ 練習六種題型（圈圈看、想一想、填填看、最小公倍數、應用題、素養題）各有一輪 ≥ 80%（第一次就答對的題數／題數）＋📝 考試最高分 ≥ 80
      （隨機考卷 test、練習卷第一回 p1、第二回 p2，任何一份 ≥ 80 都算）。
    - 分數比較大小（math:frc，2026-10-27）：✏️ 練習五種題型（同分母・同分子、跟 1 跟一半比、通分再比、先約分再比、假分數・帶分數）各有一輪 ≥ 80%＋📝 考試（固定一份）≥ 80。
-   - 數學五下～六下（mg:<單元>，2026-11-06，math/grade.html）：✏️ 練習一輪（15 題）答對 ≥ 80%＋📝 單元測驗（20 題）≥ 80 分；每冊總複習（mg:<冊>R，30 題）≥ 80 分。
+   - 數學五下～六下（mg:<單元>，2026-11-06，math/grade.html；五上單元七 mg:g5a7〈線對稱圖形〉2026-11-24 起同一套）：✏️ 練習一輪（15 題）答對 ≥ 80%＋📝 單元測驗（20 題）≥ 80 分；每冊總複習（mg:<冊>R，30 題）≥ 80 分。
    - 🌍 地理（geo:<單元>，2026-11-08，geo/unit.html）：✏️ 練習 3 組（每組 10 題）各有一輪答對 ≥ 80%＋📝 單元測驗（10 題）≥ 80 分（kids_done.geo）。
    - 乘法快算（math:mx，2026-10-21）：⏱️ 挑戰「二位數×一位數」「二位數×二位數」各有一輪（20 題）答對 ≥ 90% 而且平均每題在秒數內（同一輪兩個都要到；記在 mx.<題型>.ok）：
      二位數×一位數 ≤ 10 秒、二位數×二位數 ≤ 20 秒（Yoda 2026-10-21 由 10 秒放寬）；其他題型（九九、整十、三位×一位）不算完成，達標記號照 10 秒。
@@ -290,7 +290,8 @@
         { key: 'math:gw', group: '五上', title: '短除法：應用題', href: 'index.html#s/math/short-division-word' },
         { key: 'math:mul', group: '五上', title: '倍數與公倍數', href: 'index.html#s/math/multiples' },
         { key: 'math:mx', group: '五上', title: '乘法快算', href: 'index.html#s/math/multiply' },
-        { key: 'math:frc', group: '五上', title: '分數比較大小', href: 'index.html#s/math/fraction' }].concat(MG_BOOKS.flatMap(([b, g, ts]) =>
+        { key: 'math:frc', group: '五上', title: '分數比較大小', href: 'index.html#s/math/fraction' },
+        { key: 'mg:g5a7', group: '五上', title: '單元七　線對稱圖形', href: 'index.html#s/math/g5a7' }].concat(MG_BOOKS.flatMap(([b, g, ts]) =>   // 2026-11-24 五上單元七（math/grade.html?u=g5a7，判定同 mgUnit）
         ts.map((t, i) => ({ key: `mg:${b}${i + 1}`, group: g, title: `單元${NUMS[i]}　${t}`, href: `index.html#s/math/${b}${i + 1}` })).concat([{ key: `mg:${b}R`, group: g, title: `${g}總複習`, href: `index.html#s/math/${b}r` }]))) },
       { k: 'geo', name: '地理', icon: '🌍', units: GEO_UNITS.map(([id, t, g]) => ({ key: 'geo:' + id, group: g, title: t, href: `index.html#s/geo/${id}` })) },
       { k: 'ai', name: 'AI', icon: '🤖', units: AI.map(([id, t, i]) => ({ key: 'ai:' + id, title: `${i} ${t}`, href: `index.html#s/ai/${id}` })) },

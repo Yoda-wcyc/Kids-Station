@@ -29,6 +29,8 @@
       { id: 'fraction', title: '分數比較大小', desc: '分數條、數線看懂比大小：同分母、同分子、跟 1 跟一半比、通分、先約分、假分數化帶分數；按 ＞＜＝ 大按鈕，考試一份 100 分', icon: '🍰', src: 'math/fraction.html', dk: 'math:frc', grp: '五上' },
       // 2026-11-09：異分母分數加減（隨機出題，每日清單數學「異分母加減」算這裡的題；不算單元完成，沒有 dk）
       { id: 'fracadd', title: '異分母分數加減', desc: '每日清單的數學題：分母 2～12，真分數、帶分數加減，先通分再約分；一輪 10 題，每次都是新題', icon: '➕', src: 'math/fracadd.html', grp: '五上' },
+      // 2026-11-24：五上單元七〈線對稱圖形〉（引擎同五下起 math/grade.js＋grade/g5a7.js：看重點 → 練習 15 題 → 單元測驗 20 題；dk mg:g5a7 → 完成、做過幾次／鎖）
+      { id: 'g5a7', title: '線對稱圖形', desc: '五上單元七：八邊形、箏形對摺看對稱軸；對稱邊一樣長、對稱角一樣大、軸通過的邊被平分，用來回推不知道的邊和周長', icon: '🦋', src: 'math/grade.html?u=g5a7', dk: 'mg:g5a7', grp: '五上' },
       // 2026-11-03：📝 紙本錯題／類題 30 題（入口在數學錯題庫的紙本區，不列卡片）
       { id: 'paper-mk', title: '紙本錯題', icon: '📝', src: 'math/paper.html?mistakes=1', hidden: true },
       { id: 'paper-30', title: '類題 30 題', icon: '🎯', src: 'math/paper.html?set=30', hidden: true },

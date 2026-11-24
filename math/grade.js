@@ -1,4 +1,4 @@
-/* math/grade.js — 五下／六上／六下數學（康軒，2026-11-06）的題目引擎。純函式：瀏覽器（window.MG）與 Node（require）共用，不碰 DOM／localStorage。
+/* math/grade.js — 五下／六上／六下數學（康軒，2026-11-06）＋五上單元七〈線對稱圖形〉（2026-11-24，EXTRA）的題目引擎。純函式：瀏覽器（window.MG）與 Node（require）共用，不碰 DOM／localStorage。
    單元清單（BOOKS）依 115 學年度屏東縣國小公開的康軒數學領域教學計畫（見 README）；全部「待課本核對」，重點與題目都是原創。
    資料：math/grade/<單元id>.js 呼叫 MG.unit({id, cards, gens})：
      cards：[{t:一句白話重點, ex:例題＋完整算法, why:公式為什麼, svg?:圖}]（字串可用 [[n/d]] 畫上下排分數、w[[n/d]] 帶分數）
@@ -18,6 +18,8 @@
     { id: 'g6a', name: '六上', units: [['g6a1', '最大公因數與最小公倍數'], ['g6a2', '分數除法'], ['g6a3', '數量關係'], ['g6a4', '小數除法'], ['g6a5', '比與比值'], ['g6a6', '圓周長與扇形周長'], ['g6a7', '圓面積與扇形面積'], ['g6a8', '認識速率'], ['g6a9', '放大圖、縮圖與比例尺']] },
     { id: 'g6b', name: '六下', units: [['g6b1', '小數與分數的計算'], ['g6b2', '速率的應用'], ['g6b3', '柱體體積與表面積'], ['g6b4', '基準量與比較量'], ['g6b5', '怎樣解題'], ['g6b6', '圓形圖']] }
   ];
+  // 五上（2026-11-24）：只有單元七〈線對稱圖形〉用這個引擎（其他五上單元是各自的頁面）；第 3 欄＝課本單元號。不算「一冊上線」：沒有總複習、不進 MG_BOOKS
+  var EXTRA = [{ id: 'g5a', name: '五上', units: [['g5a7', '線對稱圖形', 7]] }];
   var ROUND = 15, TEST_N = 20, REVIEW_N = 30, PASS = 80;
   var NUMS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
@@ -116,9 +118,10 @@
 
   // ================= 單元資料 =================
   var UNITS = {}, BANK = {};
-  function bookOf(uid) { for (var i = 0; i < BOOKS.length; i++) for (var j = 0; j < BOOKS[i].units.length; j++) if (BOOKS[i].units[j][0] === uid) return { book: BOOKS[i], no: j + 1, title: BOOKS[i].units[j][1] }; return null; }
+  function bookOf(uid) { var bs = BOOKS.concat(EXTRA); for (var i = 0; i < bs.length; i++) for (var j = 0; j < bs[i].units.length; j++) if (bs[i].units[j][0] === uid) return { book: bs[i], no: bs[i].units[j][2] || j + 1, title: bs[i].units[j][1] }; return null; }
   function label(uid) { var b = bookOf(uid); return b ? b.book.name + ' 單元' + NUMS[b.no - 1] : uid; }
-  function unit(u) { if (!u || !bookOf(u.id)) throw new Error('unknown unit ' + (u && u.id)); UNITS[u.id] = u; delete BANK[u.id]; return u; }
+  // fixed＝寫死的題（紙本錯題原題，2026-11-24）：不進題庫（練習、測驗不抽），只給錯題庫用 id 找回來；id＝<單元>-<k>
+  function unit(u) { if (!u || !bookOf(u.id)) throw new Error('unknown unit ' + (u && u.id)); (u.fixed || []).forEach(function (q) { q.id = u.id + '-' + q.k; q.u = u.id; q.d = q.d || 1; }); UNITS[u.id] = u; delete BANK[u.id]; return u; }
   // 一個單元的題庫（照 gens 順序；同一單元題目文字重複、或出題回 null（例：選擇題湊不出合格選項）就換種子重抽，最多 30 次）
   function bank(uid) {
     if (BANK[uid]) return BANK[uid];
@@ -139,7 +142,7 @@
     });
     return (BANK[uid] = out);
   }
-  function byId(qid) { var m = /^(g[56][ab]\d+)-/.exec(String(qid || '')); if (!m) return null; var b = bank(m[1]); for (var i = 0; i < b.length; i++) if (b[i].id === qid) return b[i]; return null; }
+  function byId(qid) { var m = /^(g[56][ab]\d+)-/.exec(String(qid || '')); if (!m) return null; var b = bank(m[1]).concat((UNITS[m[1]] || {}).fixed || []); for (var i = 0; i < b.length; i++) if (b[i].id === qid) return b[i]; return null; }
   function bookUnits(bid) { var b = BOOKS.filter(function (x) { return x.id === bid; })[0]; return b ? b.units.map(function (x) { return x[0]; }) : []; }
   function ready(bid) { var us = bookUnits(bid); return us.length > 0 && us.every(function (u) { return !!UNITS[u]; }); }
 
@@ -262,12 +265,12 @@
   function plain(s) { return String(s == null ? '' : s).replace(FR_RE, ' $1/$2 ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim(); }
 
   // ================= 錯題庫（kids-mistakes.js 數學 type 'grade'）=================
-  // id 'mg:<題目id>'，p＝{type:'grade', qid, b:冊別 單元X, q:題目純文字（清單顯示）}；重做用 qid 找回原題
-  function mkEntry(Q) { return { id: 'mg:' + Q.id, p: { type: 'grade', qid: Q.id, b: label(Q.u), q: plain(Q.q).slice(0, 160) } }; }
+  // id 'mg:<題目id>'，p＝{type:'grade', qid, b:冊別 單元X（紙本原題再加「・出處」）, q:題目純文字（清單顯示）}；重做用 qid 找回原題
+  function mkEntry(Q) { return { id: 'mg:' + Q.id, p: { type: 'grade', qid: Q.id, b: label(Q.u) + (Q.src ? '・' + Q.src : ''), q: plain(Q.q).slice(0, 160) } }; }
   function fromMistake(p) { return p && p.type === 'grade' ? byId(p.qid) : null; }
 
   var H = { isR: isR, same: same, R: R, add: add, sub: sub, mul: mul, div: div, eq: eq, cmp: cmp, gcd: gcd, lcm: lcm, fromDec: fromDec, toDec: toDec, fmt: fmt, fr: fr, comma: comma, ri: ri, pick: pick, shuffle: shuffle, mc: mc, set: set, num: num, nums: nums, Q: Q, svg: svgWrap, txt: txt, box: box, INK: INK };
-  var MG = { BOOKS: BOOKS, ROUND: ROUND, TEST_N: TEST_N, REVIEW_N: REVIEW_N, PASS: PASS, H: H, UNITS: UNITS, unit: unit, bank: bank, byId: byId, bookOf: bookOf, bookUnits: bookUnits, label: label, ready: ready,
+  var MG = { BOOKS: BOOKS, EXTRA: EXTRA, ROUND: ROUND, TEST_N: TEST_N, REVIEW_N: REVIEW_N, PASS: PASS, H: H, UNITS: UNITS, unit: unit, bank: bank, byId: byId, bookOf: bookOf, bookUnits: bookUnits, label: label, ready: ready,
     rng: rng, hash: hash, shuffle: shuffle, pickRound: pickRound, exam: exam, review: review, optOrder: optOrder, parseNum: parseNum, parseFrac: parseFrac, check: check, grade: grade, ansText: ansText, html: html, plain: plain, esc: esc, mkEntry: mkEntry, fromMistake: fromMistake };
   if (typeof module !== 'undefined' && module.exports) module.exports = MG;
   root.MG = MG;

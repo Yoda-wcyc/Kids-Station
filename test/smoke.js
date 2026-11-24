@@ -877,8 +877,9 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 目標 dg 也算最壞（2026-11-09 起 10 欄、只留最新 3 筆）；dd 用上限算，不靠上面這份資料剛好沒塞滿
   const dg6 = {}; for (let i = 0; i < 9; i++) dg6['2611' + String(i + 10)] = '999,999,20,99,99,99,99,99,9,9'; maxDoc.dg = projDoc.dg = dg6;
   // 2026-11-06 數學五下～六下 done.mg：三冊全部單元的練習％、測驗分＋三冊總複習，全部 100（最壞情況）
-  { const MGb = require(path.join(root, 'math', 'grade.js')).BOOKS, mg = {}; MGb.forEach(b => { mg[b.id + 'R'] = 100; b.units.forEach(x => { mg[x[0] + 'q'] = 100; mg[x[0] + 't'] = 100; }); });
-    projDoc.done = Object.assign({}, projDoc.done, { mg }); ok(Object.keys(SM.normDone({ mg }).mg).length === 53, 'done.mg worst case: 25 單元×2＋3 冊 = 53 keys kept'); }
+  // 2026-11-24 五上單元七〈線對稱圖形〉（grade.js EXTRA，沒有總複習）多 2 個 key
+  { const MGm = require(path.join(root, 'math', 'grade.js')), mg = {}; MGm.BOOKS.forEach(b => { mg[b.id + 'R'] = 100; }); MGm.BOOKS.concat(MGm.EXTRA).forEach(b => b.units.forEach(x => { mg[x[0] + 'q'] = 100; mg[x[0] + 't'] = 100; }));
+    projDoc.done = Object.assign({}, projDoc.done, { mg }); ok(Object.keys(SM.normDone({ mg }).mg).length === 55, 'done.mg worst case: 26 單元×2＋3 冊 = 55 keys kept'); }
   // 2026-11-08 🌍 地理 done.geo：18 單元 × 練習 3 組＋測驗，全部 100（最壞情況）
   { const geo = {}; require(path.join(root, 'completion.js')).GEO_UNITS.forEach(([id]) => ['p1', 'p2', 'p3', 't'].forEach(k => { geo[id + k] = 100; }));
     projDoc.done = Object.assign({}, projDoc.done, { geo }); ok(Object.keys(SM.normDone({ geo }).geo).length === 72, 'done.geo worst case: 18 單元×4 = 72 keys kept'); }
@@ -1160,7 +1161,8 @@ const srcs = [...sj.matchAll(/src: '([^']+)'/g)].map(m => m[1]);
 // 2026-11-08：國語第 3 張卡（作文 chinese/writing/writing.html）→ 19 個 src
 // 2026-11-08：地理「世界篇」🗺️ 歷史地圖 1 張卡（geo/history.html）→ 20 個 src
 // 2026-11-09：數學「異分母分數加減」1 張卡（math/fracadd.html，每日清單數學子目標）→ 21 個 src
-ok(srcs.length === 21 &&(sj.match(/hidden: true/g) || []).length === 8 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
+// 2026-11-24：數學五上單元七「線對稱圖形」1 張卡（math/grade.html?u=g5a7）→ 22 個 src
+ok(srcs.length === 22 &&(sj.match(/hidden: true/g) || []).length === 8 && sj.includes('src: `mindmap/${k}.html?review=1`, hidden: true'), 'activity cards: ' + srcs.length);
 srcs.forEach(s => ok(nonEmpty(s.split('?')[0]), 'activity src exists: ' + s));
 
 // ---- 社會、自然：心智圖（mindmap/），每單元一張卡，src＝mindmap/<科>.html?u=<單元id> ----

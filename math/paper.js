@@ -472,11 +472,17 @@
     { id: 'fa:5.1_12-3.4_6', d: '2026-11-21', src: '講義第 12 回 看圖 第 (2) 題 ①' },   // 正解 1又5/12（誤用甲木棒的 3又4/9）
     { id: 'fa:3.4_9+1.5_12', d: '2026-11-21', src: '講義第 12 回 看圖 第 (2) 題 ②' }
   ];
+  /* 紙本錯題・線對稱（2026-11-24）：同 FA_ROWS（登錄日、14 天、只補加過紙本錯題的帳號、was＝換 id），只是 id＝五上單元七的紙本原題 'mg:g5a7-pp<n>'（math/grade/g5a7.js fixed，題目寫死、id 不會變），
+     走 math/grade.html?mistakes=1 重練。p＝錯題庫要存的，跟 MG.mkEntry 一樣（首頁沒載 grade.js，照抄在這裡；test/symmetry.test.js 逐字對）。src 只寫回數、題目，不寫孩子的任何資料。 */
+  var MG_ROWS = [
+    { id: 'mg:g5a7-pp1', d: '2026-11-24', src: '第 13 回 線對稱圖形 八邊形 第 1 題', p: { type: 'grade', qid: 'g5a7-pp1', b: '五上 單元七・第 13 回紙本', q: '下圖以甲線為對稱軸，甲線通過 AH 的中點 M。AH＝8 公分，AM 是幾公分？' } },   // 正解 4（答 3）
+    { id: 'mg:g5a7-pp2', d: '2026-11-24', src: '第 13 回 線對稱圖形 八邊形 第 2 題', p: { type: 'grade', qid: 'g5a7-pp2', b: '五上 單元七・第 13 回紙本', q: '下圖以甲線為對稱軸，周長是 40 公分，AH＝8 公分、GF＝4 公分、EF＝4 公分、DE＝8 公分，AB 是幾公分？' } }   // 正解 4（答 60）
+  ];
   function unitOfMistake(p) { return unitOf(fromMistake(p)); }
   function animOfMistake(p) { return animOf(fromMistake(p)); }
 
   var API = { PAPER: PAPER, VARIANTS: VARIANTS, FRACTIONS: FRACTIONS, MIDTERM: MIDTERM, EXAM: EXAM, SECTOR: SECTOR, EXAM1517: EXAM1517, FIGS: FIGS, FIG_PTS: FIG_PTS, fmt: fmt, plain: plain, esc: esc, partAns: partAns, ansText: ansText, check: check, checkQ: checkQ, mkEntry: mkEntry, fromMistake: fromMistake,
-    unitOf: unitOf, unitOfMistake: unitOfMistake, animOf: animOf, animOfMistake: animOfMistake, ADD_HASH: 'uwj3ic', FA_ROWS: FA_ROWS };
+    unitOf: unitOf, unitOfMistake: unitOfMistake, animOf: animOf, animOfMistake: animOfMistake, ADD_HASH: 'uwj3ic', FA_ROWS: FA_ROWS, MG_ROWS: MG_ROWS };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else { G.PAPER = API; try { if (G.KidsMistakes && G.KidsMistakes.seedPaper) G.KidsMistakes.seedPaper(); } catch (e) { } }
 })(typeof window !== 'undefined' ? window : globalThis);

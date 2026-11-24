@@ -144,6 +144,8 @@ async function paperSeed() {
   const PAPER_IDS = ['fa:12_15+3.4_5', 'fa:3.4_9+1.5_12', 'fa:5.1_12-3.4_6', 'fa:8_27+7_18',   // 清單排序：新登錄的（11-21）在前，同一個 t → id 排
     'fa:2.1_2+1.4_5-3.2_3', 'fa:3.15_27-11_18', 'fa:3.2_3+1.4_5', 'fa:3.5_7+5.11_12', 'fa:33_14-5_3', 'fa:8_9+3.7_15+8_9'];   // 三個數＝2026-11-21 改收原題
   const NFR = id => id.split(/[+-]/).length;   // 幾個數
+  // 2026-11-24 起 seedPaper 也補線對稱紙本原題（paper.js MG_ROWS，type 'grade'，歸五上 單元七）：清單多一個單元、題數多 SYM 題；異分母的檢查照舊
+  const SYM_IDS = require(path.join(SITE, 'math', 'paper.js')).MG_ROWS.map(r => r.id), NS = SYM_IDS.length;
   const T = Date.parse('2026-11-19T00:00:00+08:00') + 3600e3;
   await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `window.__KIDS_TEST_DAYS = (${T} - Date.now()) / 864e5;` });
   await width(820);
@@ -155,7 +157,7 @@ async function paperSeed() {
   await ev(`localStorage.setItem('kids_mistakes', JSON.stringify({ math: { 'pp:A': { d: 1, w: 1, t: 5, u: 5 } } })); return 1`);
   await go('/index.html?reload=1#s/math/mistakes'); await sleep(400);   // 換網址才會真的重新載入（只換 # 不會）
   const L = await ev(`return { ids: [...document.querySelectorAll('#mk-list li[data-id]')].map(li => li.dataset.id), units: [...document.querySelectorAll('#mk-list .mk-uh')].map(h => h.textContent), badges: [...document.querySelectorAll('#mk-list .badge')].map(b => b.textContent), stacked: document.querySelectorAll('#mk-list li span[style*="flex-direction:column"]').length, go: document.getElementById('mk-go').textContent, noH: document.documentElement.scrollWidth <= innerWidth + 1, bk: JSON.parse(localStorage.getItem('kids_mistakes')).math }`);
-  assert(L.ids.join() === PAPER_IDS.join() && L.units.length === 1 && /單元六/.test(L.units[0]) && L.badges.every(b => b === '異分母加減') && L.stacked === PAPER_IDS.reduce((s, id) => s + NFR(id), 0) && new RegExp(PAPER_IDS.length + ' 題').test(L.go) && L.noH, 'paper seed: ' + PAPER_IDS.length + ' questions in 錯題庫 → 五上 單元六: ' + JSON.stringify({ ids: L.ids, units: L.units, go: L.go }));
+  assert(L.ids.join() === PAPER_IDS.concat(SYM_IDS).join() && L.units.length === 2 && /單元六/.test(L.units[0]) && /單元七/.test(L.units[1]) && L.badges.slice(0, PAPER_IDS.length).every(b => b === '異分母加減') && L.stacked === PAPER_IDS.reduce((s, id) => s + NFR(id), 0) && new RegExp((PAPER_IDS.length + NS) + ' 題').test(L.go) && L.noH, 'paper seed: ' + PAPER_IDS.length + ' questions in 錯題庫 → 五上 單元六 (+ ' + NS + ' 線對稱 → 單元七): ' + JSON.stringify({ ids: L.ids, units: L.units, go: L.go }));
   assert(PAPER_IDS.every(id => L.bk[id].c === 0 && L.bk[id].w === 1 && L.bk[id].t === L.bk[id].u), 'paper seed: stored c=0 w=1 t=u');
   await shot('paper-mk-list.png');
   await ev(`KidsAuth.requireLogin = () => true; KidsAuth.startActivity = () => true; document.getElementById('mk-go').click(); return 1`); await sleep(800);
@@ -202,13 +204,13 @@ async function paperSeed() {
   // 再開首頁：不重複加、進度不被重設
   await go('/index.html#s/math/mistakes'); await sleep(400);
   const r2 = await ev(`const b = JSON.parse(localStorage.getItem('kids_mistakes')).math; return { n: Object.keys(b).length, c: ${JSON.stringify(PAPER_IDS)}.map(id => b[id].c) }`);
-  assert(r2.n === PAPER_IDS.length + 1 && r2.c.every(c => c === 1), 'paper seed: reload adds nothing, progress kept: ' + JSON.stringify(r2));
+  assert(r2.n === PAPER_IDS.length + NS + 1 && r2.c.every(c => c === 1), 'paper seed: reload adds nothing, progress kept: ' + JSON.stringify(r2));
   // 換 id（2026-11-21）：舊的兩個數 id 一個畢業了、一個還在練（c=1）→ 首頁載入：畢業的不補新 id；還在練的換成新 id（c=1 接著），舊 id 蓋墓碑；清單每題一次
   await ev(`localStorage.setItem('kids_mistakes', JSON.stringify({ math: { 'pp:A': { d: 1, w: 1, t: 5, u: 5 }, 'fa:4.3_10-3.2_3': { d: 1, w: 1, t: 1763481600000, u: 1763482000000 },
     'fa:4.16_45+8_9': { c: 1, w: 2, t: 1763481600000, u: 1763482000000, p: { type: 'fracadd', v: [4, 16, 45, 0, 8, 9], op: '+', q: '4 又 16/45 ＋ 8/9' } } } })); return 1`);
   await go('/index.html?reload=2#s/math/mistakes'); await sleep(400);
   const M = await ev(`const b = JSON.parse(localStorage.getItem('kids_mistakes')).math; return { ids: [...document.querySelectorAll('#mk-list li[data-id]')].map(li => li.dataset.id), n1: b['fa:2.1_2+1.4_5-3.2_3'] || null, o1: b['fa:4.3_10-3.2_3'], n2: b['fa:8_9+3.7_15+8_9'], o2: b['fa:4.16_45+8_9'] }`);
-  assert(!M.n1 && M.o1.d === 1 && M.n2 && M.n2.c === 1 && M.n2.w === 2 && M.o2.d === 1 && M.ids.length === PAPER_IDS.length - 1 && M.ids.indexOf('fa:8_9+3.7_15+8_9') >= 0 && !M.ids.some(id => id === 'fa:4.16_45+8_9' || id === 'fa:4.3_10-3.2_3' || id === 'fa:2.1_2+1.4_5-3.2_3'), 'id change: graduated old → not re-added; live old → new id (c=1, w=2), old tombstoned; list ' + M.ids.length);
+  assert(!M.n1 && M.o1.d === 1 && M.n2 && M.n2.c === 1 && M.n2.w === 2 && M.o2.d === 1 && M.ids.length === PAPER_IDS.length - 1 + NS && M.ids.indexOf('fa:8_9+3.7_15+8_9') >= 0 && !M.ids.some(id => id === 'fa:4.16_45+8_9' || id === 'fa:4.3_10-3.2_3' || id === 'fa:2.1_2+1.4_5-3.2_3'), 'id change: graduated old → not re-added; live old → new id (c=1, w=2), old tombstoned; list ' + M.ids.length);
   await shot('paper-id-change.png');
   await ev(`localStorage.removeItem('kids_mistakes'); localStorage.removeItem('kids_daily'); return 1`);
 }

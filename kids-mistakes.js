@@ -13,7 +13,7 @@
        'mul:<題型>:<數字>'，p＝{type:'multiples', k:題型, v:[數字], q:顯示文字}（倍數與公倍數，math/multiples.js 用 k＋v 原題重做，2026-10-21）；
        'mx:<a>x<b>'，p＝{type:'multiply', a, b, lv, q:'a×b'}（乘法快算，2026-10-21）；
        'frc:<題型>:<數字>'，p＝{type:'fraction', k:題型, v:[aw,an,ad,bw,bn,bd], q:顯示文字}（分數比較大小，math/fraction.js 用 k＋v 原題重做；清單用 v 畫上下排的分數，2026-10-27）
-       'mg:<題目id>'，p＝{type:'grade', qid, b:'五下 單元一', q:題目純文字}（五下～六下 math/grade.js 用 qid 找回原題，2026-11-06）；
+       'mg:<題目id>'，p＝{type:'grade', qid, b:'五下 單元一', q:題目純文字}（五下～六下 math/grade.js 用 qid 找回原題，2026-11-06；五上單元七線對稱 'mg:g5a7-…' 2026-11-24 起，紙本原題 'mg:g5a7-pp1'、'pp2' 由 paper.js MG_ROWS 補進來）；
        'fa:<數>±<數>[±<數>]'（數＝[整數.]分子_分母，例 'fa:1_3+3_4'、'fa:2.1_3-1_4'、三個數 'fa:2.1_2+1.4_5-3.2_3'），p＝{type:'fracadd', v:[aw,an,ad,bw,bn,bd(,cw,cn,cd)], op:'+'|'-'|兩個字, q:顯示文字}（異分母分數加減，
          math/fracadd.js FA.fromId 用 id 原題重做；歸五上單元六；隨機題會一直冒新的 → 未畢業最多留 MAX_FA＝50 題，超過把最舊答錯的蓋墓碑擠掉，2026-11-09；紙本上錯的異分母題由家長登錄在 math/paper.js FA_ROWS、seedPaper 補進來，2026-11-19）；
        'pp:<題>'（紙本錯題 math/paper.js，家長用連結加入）、'pv:<題>'（類題答錯）、'pf:<題>'（約分通分 15 題答錯，2026-11-05）、'pm:'／'pe:'（期中錯題／期中類題）、'ps:'（扇形小考錯題，2026-11-06）、'pc:'（期中第 15、17 題類題 5 題，2026-11-06），p＝{type:'paper', set:'p'|'v'|'f'|'m'|'e'|'s'|'c', pid, src:來源, tag:'x'|'r'|'', q:顯示文字}（2026-11-03）
@@ -186,10 +186,13 @@
     return r;
   }
   // 紙本錯題・異分母（math/paper.js FA_ROWS → fracadd 錯題，規則見 _core seed）：要 PAPER＋FA 都載入（首頁、paper.html）；paper.js 載入時和打開數學錯題庫時各跑一次
+  // 紙本錯題・線對稱（2026-11-24，paper.js MG_ROWS → grade 錯題 'mg:g5a7-pp<n>'）：同一套規則，p 照抄在每一行（首頁沒載 grade.js）
   function seedPaper() {
     try {
       var P = G.PAPER, F = G.FA; if (!P || !P.FA_ROWS || !F) return 0;
-      var rows = P.FA_ROWS.map(function (r) { var q = F.fromId(r.id), e = q && F.mkEntry(q); return e ? { id: e.id, t: Date.parse(r.d + 'T00:00:00+08:00'), p: e.p, was: r.was } : null; });
+      var day = function (r) { return Date.parse(r.d + 'T00:00:00+08:00'); };
+      var rows = P.FA_ROWS.map(function (r) { var q = F.fromId(r.id), e = q && F.mkEntry(q); return e ? { id: e.id, t: day(r), p: e.p, was: r.was } : null; })
+        .concat((P.MG_ROWS || []).map(function (r) { return { id: r.id, t: day(r), p: r.p, was: r.was }; }));
       var a = loadAll(), b = a.math || {}, n = seed(b, rows, now());
       if (n) { a.math = b; cap(b, 'fa:', MAX_FA, now()); saveAll(a); }
       return n;
@@ -306,7 +309,7 @@
 
   /* 數學錯題分頁（2026-10-21）：type → 在哪一頁練。mathMore(types)＝「接著練…錯題」按鈕（math/ 底下的頁面用，href 相對於 math/）；eq＝天平（其他沒標 type 的） */
   var MATH_MK = [['eq', '天平', 'balance.html?mistakes=1'], ['gcd', '短除法', 'short-division.html?mistakes=1'], ['gcdword', '應用題', 'short-division.html?mistakes=word'],
-    ['multiples', '倍數', 'multiples.html?mistakes=1'], ['multiply', '乘法', 'multiply.html?mistakes=1'], ['fraction', '分數', 'fraction.html?mistakes=1'], ['fracadd', '異分母加減', 'fracadd.html?mistakes=1'], ['grade', '五下～六下', 'grade.html?mistakes=1']];
+    ['multiples', '倍數', 'multiples.html?mistakes=1'], ['multiply', '乘法', 'multiply.html?mistakes=1'], ['fraction', '分數', 'fraction.html?mistakes=1'], ['fracadd', '異分母加減', 'fracadd.html?mistakes=1'], ['grade', '線對稱・五下～六下', 'grade.html?mistakes=1']];
   function mathType(p) { var t = p && p.type; return t === 'paper' || t === 'gcd' || t === 'gcdword' || t === 'multiples' || t === 'multiply' || t === 'fraction' || t === 'fracadd' || t === 'grade' ? t : 'eq'; }
   function mathCount(type) { return list('math').filter(function (e) { return mathType(e.p) === type; }).length; }
   // grade（五下～六下，math/grade.html，2026-11-06）、fracadd（異分母加減，2026-11-09）：各頁沒列的一律自動接上；self＝這頁自己的 type 不列（grade 頁傳 true＝'grade'）

@@ -330,7 +330,7 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       ['數學 短除法換你算', 'math/short-division.html', /function mkRec\(Q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
       ['數學 紙本錯題＋類題 30 題', 'math/paper.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
       ['數學 短除法應用題', 'math/short-division.html', /function wRec\(Q, ok\) \{\s*if \(window\.KidsDaily\) KidsDaily\.rec\('math', ok\)/],
-      ['數學 五下～六下 練習＋測驗＋總複習＋錯題', 'math/grade.html', "function mkRec(Q, ok) { if (window.KidsDaily) KidsDaily.rec('math', ok)"],
+      ['數學 五上線對稱＋五下～六下 練習＋測驗＋總複習＋錯題（2026-11-24 起帶 prev：學過 2 次不算）', 'math/grade.html', "KidsDaily.rec('math', ok, null, okN(Q.id))"],
       // 社會／自然（SUBJ＝科）
       ['社自 挖空（考考自己）', 'mindmap/mindmap.js', 'function logBlank(b, ok){ dailyRec(ok);'],
       ['社自 背架構四關', 'mindmap/mindmap.js', 'if(!s || s.x.nq) return; dailyRec(ok);'],

@@ -180,7 +180,8 @@ const T0 = Date.parse('2026-10-20T01:00:00Z');
   const M = KC.build(DATA, {});
   const nS = KC.MM_UNITS.social.length, nN = KC.MM_UNITS.science.length;   // 社會／自然單元數照 MM_UNITS（11-02 加五下：社會 9、自然 8）
   const nMG = KC.MG_BOOKS.reduce((n, b) => n + b[2].length + 1, 0);   // 數學五下起（2026-11-06）：每冊單元數＋總複習
-  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:' + DATA.textbook.length + `,social:${nS},science:${nN},math:${6 + nMG},geo:18,ai:3,scratch:7` && M.total === 16 + 18 + nMG + nS + nN + DATA.textbook.length && M.done === 0 && M.pct === 0, 'map: judgeable units (英文課本單元數照 textbook.js，11-01 加六上 4 課): ' + M.subjects.map(s => s.k + ':' + s.total).join());
+  // 數學五上 7 格（2026-11-24 加單元七線對稱 mg:g5a7）
+  ok(M.subjects.map(s => s.k + ':' + s.total).join() === 'english:' + DATA.textbook.length + `,social:${nS},science:${nN},math:${7 + nMG},geo:18,ai:3,scratch:7` && M.total === 17 + 18 + nMG + nS + nN + DATA.textbook.length && M.done === 0 && M.pct === 0, 'map: judgeable units (英文課本單元數照 textbook.js，11-01 加六上 4 課): ' + M.subjects.map(s => s.k + ':' + s.total).join());
   // 五上／五下分冊（2026-11-02）：沒 label 的＝五上「單元X」照舊；有 label 的照 label 顯示、group＝冊別；五上排在五下前面
   [['social', 1], ['science', 2]].forEach(([k, i]) => {
     const us = M.subjects[i].units, up = us.filter(u => u.group === '五上'), dn = us.filter(u => u.group === '五下');
