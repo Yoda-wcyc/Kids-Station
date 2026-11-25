@@ -61,7 +61,7 @@ english-reading/index.html
 
 | 機制 | 怎麼接 | 備註 |
 |---|---|---|
-| 學習幣 | 每題 `KidsCoins.answer(ok, 'english')`；一篇做完一輪送 `practice_round` `english:reading`（correct／total＝這篇 3～4 題） | GAS `kids-2026-11-24-a` 白名單加 `english:reading`、這個 item 最少題數用 3（其他照 5）。家長部署 GAS 前送出去回 bad_event、移出佇列，頁面不受影響 |
+| 學習幣 | 每題 `KidsCoins.answer(ok, 'english')`；一篇做完一輪送 `practice_round` `english:reading`（correct／total＝這篇 3～4 題） | GAS `kids-2026-11-24-a` 白名單加 `english:reading`、這個 item 最少題數用 3（其他照 5）；GAS `kids-2026-11-25-a` 起這個 item 答對門檻用 2/3（3 題對 2、4 題對 3 就給，跟「完成一篇」60% 一致；其他照 0.8）。家長部署 GAS 前送出去回 bad_event、移出佇列，頁面不受影響 |
 | 每日統計 | 每題 `KidsDaily.rec('english', ok, null, prev)` | 算英文總數，不算單字／句型／片語子目標 |
 | 每日清單「英文閱讀 1 篇」 | 第一次完成一篇呼叫 `KidsDaily.finish('er', true)` → dd 代碼 `b` | 目標固定 1 篇（不進 dg）、2026-11-24 起；不算英文 30 題。首頁小助理、學習島（英文港口插旗）、家長頁都列 |
 | 錯題庫 | `KidsMistakes.record('gept', 'er:<篇id>:<題id>', ok, {u:'r', s:題目前 60 字})` | 用英檢那一本：已在同步範圍；英檢頁只看 `u` 是 e/i/a/u 的，看不到 `r` |
