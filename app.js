@@ -54,11 +54,7 @@
   }
   // E.old＝不算每日題數的舊題：答對過 2 次的題 ∪ 已按「學會了」（ke_learned）的項目的每一題（2026-11-26 Yoda：已學會的都不計入）；抽題時排後面
   const learnedQ = id => { const r = S.learned[E.itemOfQ(id)]; return !!(r && r.at); };   // 不用 isL：loadAll() 開頁時就跑，isL 在下面才宣告
-  function markOld() {
-    E.old = new Set([...S.okN].filter(x => x[1] >= 2).map(x => x[0]));
-    if (Object.values(S.learned).some(r => r && r.at)) E.meta.forEach(m => { if (learnedQ(m.id)) E.old.add(m.id); });
-    saveLeft();
-  }
+  function markOld() { E.markOld(S.okN, S.learned); saveLeft(); }   // 判斷在 engine.js（遊戲也用同一個）
   // 英文還有幾題新題（學過不到 2 次）：e＝全部英文題、d＝單字、j＝句型、p＝片語 → kids_daily_left（本機快取；每日清單「🎉 這裡全部學會了」用，從同步過的紀錄算出來）
   function saveLeft() {
     const n = { e: 0, d: 0, j: 0, p: 0 };
@@ -762,7 +758,7 @@
       <div class="row wrap"><button class="btn primary big" data-go="${esc(d.back)}">${p.complete ? '回去按學會了' : '回去學習頁'}</button>${p.complete ? '' : `<button class="btn big" data-drill="${esc(d.itemId)}">繼續練習這組</button>`}</div>`;
   }
   // 這一回有幾題是學過 2 次的舊題（不算今天的題數）：結果頁一行小字＋去學新的
-  const oldLine = () => (Q && Q.oldN && window.KidsDaily ? KidsDaily.oldNote('#practice', '這一回有 ' + Q.oldN + ' 題你已經會了（學過 2 次），不算今天的題數，去學新的吧') : '');
+  const oldLine = () => (Q && Q.oldN && window.KidsDaily ? KidsDaily.oldNote('#practice', '這一回有 ' + Q.oldN + ' 題你已經會了（學過 2 次或按過學會了），不算今天的題數，去學新的吧') : '');
   function pResult() {
     if (!Q || !Q.result) return go('#home');
     if (Q.gate) return pGateResult();

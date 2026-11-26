@@ -511,6 +511,13 @@
     get(id) { const m = this.byId[id]; return m ? m.make() : null; },
     // 學過 2 次的題排到後面（各自順序不變）；xs＝題號或 meta 陣列
     newFirst(xs) { const old = this.old, isOld = x => !!(old && old.has(typeof x === 'string' ? x : x && x.id)); return xs.filter(x => !isOld(x)).concat(xs.filter(isOld)); },
+    // this.old＝不算每日題數的舊題（2026-11-26 Yoda：已學會的都不計入）：答對過 2 次（okN＝KidsDaily okCounts 的 Map）∪ 按過「學會了」（learned＝ke_learned）的項目的每一題。app.js、遊戲共用
+    markOld(okN, learned) {
+      const L = learned || {}, it = this._itm || (this._itm = new Map());
+      this.old = new Set([...(okN || [])].filter(x => x[1] >= 2).map(x => x[0]));
+      if (Object.keys(L).some(k => L[k] && L[k].at)) this.meta.forEach(m => { if (!it.has(m.id)) it.set(m.id, this.itemOfQ(m.id)); const r = L[it.get(m.id)]; if (r && r.at) this.old.add(m.id); });
+      return this.old;
+    },
     // ---- 課本單元（2026-10-18）----
     tbUnit(unitId) { return this.D.textbook.find(u => u.id === unitId) || null; },
     // 本課的單字／片語／句型／文法：照各資料檔的 tb 標記（同一個字不重複新增，id 不變）

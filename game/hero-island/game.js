@@ -511,6 +511,12 @@
   let E = null;
   try { if (KE && root.DATA_WORDS) E = new KE.Engine({ words: (root.DATA_WORDS || []).filter(L.wordOk), phrases: root.DATA_PHRASES || [], roots: root.DATA_ROOTS || [], grammar: root.DATA_GRAMMAR || [], patterns: root.DATA_PATTERNS || [] }); }
   catch (e) { console.warn('engine', e); }
+  // 已學會的題（答對 2 次或按過學會了，engine markOld，跟學習站同一個判斷）：出題排後面、答了不算今天的英文題數（2026-11-26）
+  const lsJ = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+  const KL = lsJ('ke_learned') || {};
+  try { const KD = root.KidsDaily && root.KidsDaily._core; if (E && KD) E.markOld(KD.okCounts(lsJ('ke_log'), (lsJ('ke_agg') || {}).agg), KL); } catch (e) { /* 判斷不了就照舊算 */ }
+  // 自己產生的題（句型填空、片語跳石）看 mistakeId 指到的項目有沒有按過學會了
+  const oldQ = q => !!E && (E.old.has(q.id) || !!(q.mistakeId && (KL[E.itemOfQ(q.mistakeId)] || {}).at));
   const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const SAMPLE = [
     { id: 's:1', type: 'zh2en', prompt: '蘋果', options: ['apple', 'banana', 'cat', 'dog'], answer: 'apple', speakText: 'apple', why: 'apple ＝ 蘋果' },
@@ -730,7 +736,7 @@
     function finish(ok, timeUp) {
       if (answered) return; answered = true; box.classList.add('done');
       au('sfx', ok ? 'correct' : 'wrong');
-      if (root.KidsDaily) root.KidsDaily.rec('english', ok);   // 家長頁每日學習紀錄：遊戲裡的題算英文
+      if (root.KidsDaily) root.KidsDaily.rec('english', ok, null, oldQ(q) ? 2 : 0);   // 家長頁每日學習紀錄：遊戲裡的題算英文；已學會的不算
       if (o.onAnswer) o.onAnswer(ok);
       if (ok) { fb.className = 'q-fb ok'; fb.textContent = ['答對了！', '漂亮！', '命中！', '好厲害！'][Math.floor(Math.random() * 4)]; setTimeout(() => o.onDone && o.onDone(true), 750); return; }
       fb.className = 'q-fb bad'; fb.innerHTML = '';

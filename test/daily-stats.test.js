@@ -354,6 +354,9 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     // 記錄點：漫畫做完測驗、地理一組做完才記（錯題重練不記）
     const cj = read('comics/comic.js'), gj = read('geo/geo.js');
     ok(cj.includes("KidsDaily.finish('comic', KidsDaily.isNew(prev))") && /quiz\.i >= quiz\.items\.length\) \{\s*epDone\(\);/.test(cj) && cj.includes('if (quiz.fin ||'), 'comic: episode recorded once per finished quiz');
+    // 2026-11-26 已學會不計：漫畫一話做完 2 次後的單題（epPrev＝done.n）、國語閱讀重讀（這一輪開始前已完成）的題傳 prev 2；只練錯題不帶
+    const zj = read('chinese/reading.js');
+    ok((cj.match(/epPrev\(\)/g) || []).length === 3 && zj.includes('last: 0, old: isDone(a.id) };') && zj.includes('return R && R.old ? 2 : 0;') && !/R = \{ mk: true[^\n]*old:/.test(zj), 'comic questions / reading re-reads pass prev');
     ok((gj.match(/KidsDaily\.finish\('geo', setNew\)/g) || []).length === 1 && gj.indexOf("KidsDaily.finish('geo', setNew)") > gj.indexOf('function end()') && gj.indexOf("KidsDaily.finish('geo', setNew)") < gj.indexOf('function eHome()'), 'geo: one finish, inside end() of a practice set / test');
   }
   // ---------- 小助理看清單 ----------
@@ -390,8 +393,8 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       ['社自 素養題組', 'mindmap/mindmap.js', 'var q = LT.items[i].q, u = unit(); coinAnswer(ok); dailyRec(ok);'],
       ['社自 單元測驗／段考', 'mindmap/mindmap.js', 'coinAnswer(oks[i]); dailyRec(oks[i]);'],
       // 國語
-      ['國語 閱讀自動判分＋只練錯題', 'chinese/reading.js', "KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok);"],
-      ['國語 閱讀想一想', 'chinese/reading.js', "KidsDaily.rec('chinese', null)"],
+      ['國語 閱讀自動判分＋只練錯題（2026-11-26 起重讀的傳 prev）', 'chinese/reading.js', "KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok, null, rePrev());"],
+      ['國語 閱讀想一想', 'chinese/reading.js', "KidsDaily.rec('chinese', null, null, rePrev())"],
       ['國語 成語＋測驗', 'chinese/idioms/idioms.js', "KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok);"],
       ['國語 成語想一想', 'chinese/idioms/idioms.js', "KidsDaily.rec('chinese', null)"],
       // AI
@@ -400,17 +403,17 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       ['AI 秘密', 'ai/secrets.html', "KidsDaily.rec('ai',ok)"],
       ['AI 錯題回合', 'kids-mistakes.js', "KidsDaily.rec('ai', right)"],
       // 歷史
-      ['歷史漫畫測驗', 'comics/comic.js', "KidsDaily.rec('history', r.result)"],
+      ['歷史漫畫測驗', 'comics/comic.js', "KidsDaily.rec('history', r.result, null, epPrev())"],
       // 地理（2026-11-08）：練習、測驗每題都記（geo/geo.js page → rec）
       ['地理單元', 'geo/geo.js', "KidsDaily.rec('geo', !!ok, null, prev)"],
       // 遊戲（算英文）：勇者島戰鬥／夜襲／競技場都走 askQ.finish；方塊世界石碑／錯題怪／任務都走 recordAnswer；小朋友鎮只有執照考試／工作任務（閒聊不算）
-      ['勇者島', 'game/hero-island/game.js', "root.KidsDaily.rec('english', ok)"],
+      ['勇者島', 'game/hero-island/game.js', "root.KidsDaily.rec('english', ok, null, oldQ(q) ? 2 : 0)"],
       ['方塊世界（打包檔）', 'game/hero-world/assets/hw.js', /KidsDaily\.rec\("english",/],
       ['小朋友鎮（打包檔）', 'game/kids-town/assets/kt.js', /KidsDaily\.rec\("english",/],
     ];
     ENTRIES.forEach(([name, f, needle]) => { const s = read(f); ok(needle instanceof RegExp ? needle.test(s) : s.includes(needle), 'entry records: ' + name + ' (' + f + ')'); });
     if (fs.existsSync(path.join(root, 'game/hero-world/src'))) {   // 原始碼只在正本
-      ok(read('game/hero-world/src/ui/quiz.js').includes("rec('english', ok)"), 'hero-world source records');
+      ok(read('game/hero-world/src/ui/quiz.js').includes("rec('english', ok, null, wasOld(q) ? 2 : 0)"), 'hero-world source records');
       // 小朋友鎮（2026-11-08 Yoda 定）：只有執照考試、工作任務算進每日英文題數，跟居民閒聊（對話、小測驗）不算
       const tm = read('game/hero-world/src/town/main.js'), body = (from, to) => tm.slice(tm.indexOf(from), tm.indexOf(to, tm.indexOf(from) + 1));
       ok((tm.match(/KidsDaily\.rec\('english'/g) || []).length === 1 && tm.includes("function countEnglish(ok) { if (window.KidsDaily) window.KidsDaily.rec('english', ok); }"), 'kids-town records through countEnglish only');

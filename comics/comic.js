@@ -102,13 +102,15 @@
     // 本機 kids_comic＝{seen:{話id:時間}, next:下一話沒看過的 id}（首頁按鈕用）；2026-11-19 起看過的話跟著同步（syncmerge.js pg 的 C，別台同步進來的時間記 1），漫畫頁也載 sync.js
     // 2026-11-21 學過 2 次就不算：「歷史 1 話」跟做過幾次（kids-lock）同一個算法——「從頭再看一次」才是新的一次，「再測一次」不算新的一話；
     //   這一話之前已經做完 2 次（done.n，已同步）＝不算今天的清單（quiz.old → 結果頁小提示）
+    // 這一話之前做完過幾次（kids-lock done.n，已同步）
+    function epPrev() { try { return KidsDaily._core.epTimes(JSON.parse(localStorage.getItem('kids_done') || '{}'), (JSON.parse(localStorage.getItem('kids_comic') || '{}') || {}).seen, ep.id); } catch (e) { return 0; } }
     function epDone() {
       if (quiz.fin || !/^v\d+e\d+$/.test(ep.id)) return;
       quiz.fin = 1;
       // 做過幾次（../kids-lock.js，同步在 kids_done.n）：看完一話＝1 次；「再測一次」不重複算，「從頭再看一次」才算。要在寫 kids_comic 之前記（才分得出第一次）
       if (!quiz.counted) {
         quiz.counted = 1;
-        let prev = 0; try { prev = KidsDaily._core.epTimes(JSON.parse(localStorage.getItem('kids_done') || '{}'), (JSON.parse(localStorage.getItem('kids_comic') || '{}') || {}).seen, ep.id); } catch (e) { }
+        const prev = epPrev();
         if (window.KidsDaily && KidsDaily.finish) quiz.old = KidsDaily.finish('comic', KidsDaily.isNew(prev)) === false;
         try { if (window.KidsLock) KidsLock.bump(ep.id); } catch (e) { }
       }
@@ -145,7 +147,7 @@
       if (t.dataset.c === 'retry') { quizStart(); renderSheet(); return; }
       if (t.dataset.c === 'again') { quiz.items = []; quiz.counted = 0; go(0); return; }
       const r = QK.act(quiz.items[quiz.i], t.dataset.qk, t.dataset.v) || {};
-      if (r.result != null && window.KidsDaily) KidsDaily.rec('history', r.result);   // 家長頁每日學習紀錄
+      if (r.result != null && window.KidsDaily) KidsDaily.rec('history', r.result, null, epPrev());   // 家長頁每日學習紀錄；這一話已做完 2 次＝題也不算（2026-11-26）
       if (r.msg) { const m = el('cm-msg'); if (m) m.textContent = r.msg; }
       if (r.render || r.result != null) renderSheet(false);
     });

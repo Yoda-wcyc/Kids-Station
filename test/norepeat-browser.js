@@ -70,7 +70,7 @@ async function run() {
   assert(seenE[0].de === 1 && seenE[1].de === 1 && !seenE[0].note && !seenE[1].note, '1st and 2nd right answer: 每日英文 +1, no hint');
   assert(seenE[2].de === 0 && seenE[2].dr === 1 && seenE[2].note && seenE[2].link, '3rd right answer: 每日英文 not increased (old question r +1), gentle hint with a link next to the answer');
   const res = await ev(`return { old: (document.querySelector('.result .kd-old') || {}).textContent || '', mk: JSON.parse(localStorage.getItem('ke_mistakes'))[${JSON.stringify(qid)}] }`);
-  assert(/題你已經會了（學過 2 次）/.test(res.old) && res.mk && res.mk.d === 1, 'result page: one small line; the mistake still graduates (3 in a row) ' + JSON.stringify(res));
+  assert(/題你已經會了（學過 2 次或按過學會了）/.test(res.old) && res.mk && res.mk.d === 1, 'result page: one small line; the mistake still graduates (3 in a row) ' + JSON.stringify(res));
 
   // ---- 2. 英文：已按「學會了」的字（ke_learned），作答前就是已學會 → 答對也不算今天的題數、有提示（2026-11-26 Yoda：已學會的都不計入）----
   await go('/index.html');
