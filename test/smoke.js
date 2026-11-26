@@ -1485,7 +1485,11 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
     const a = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
     ok(a.includes("mode: 'words', oneWord: true") && a.includes("mode: 'speak', allowSpeak: true, oneWord: true"), 'app.js: 🎯／🎤 pass oneWord'); }
   // 2026-11-26 遊戲錯題怪備援不指定 lv（等級 1 從 11/23 下架，lv:1 回空 → 錯題怪沒題目）
-  ['game/hero-world/assets/hw.js', 'game/kids-town/assets/kt.js', 'game/hero-world/src/ui/quiz.js'].filter(f => fs.existsSync(path.join(root, f))).forEach(f => { const s = fs.readFileSync(path.join(root, f), 'utf8').replace(/\s/g, ''); ok(!/buildQuiz\(\{modules:\[["']words["']\],types:\[["']zh2en["'],["']en2zh["']\],lv:1/.test(s) && /buildQuiz\(\{modules:\[["']words["']\],types:\[["']zh2en["'],["']en2zh["']\],count:1\}\)/.test(s), f + ': 錯題怪備援 buildQuiz 不指定 lv'); });
+  ['game/hero-world/assets/hw.js', 'game/kids-town/assets/kt.js', 'game/hero-world/src/ui/quiz.js'].filter(f => fs.existsSync(path.join(root, f))).forEach(f => { const s = fs.readFileSync(path.join(root, f), 'utf8').replace(/\s/g, ''); ok(!/buildQuiz\(\{modules:\[["']words["']\],types:\[["']zh2en["'],["']en2zh["']\],lv:1/.test(s) && /buildQuiz\(\{modules:\[["']words["']\],types:\[["']zh2en["'],["']en2zh["']\],count:1\}\)/.test(s), f + ': 錯題怪備援 buildQuiz 不指定 lv');
+    // 2026-11-26 練習石碑、錯題怪第一順位（adaptiveQuiz）也不帶 lv；pool 先篩掉等級 1 單字，挑到的 id 才不會被 buildQuiz 丟掉
+    ok(!/lv:["']?1\b/.test(s) && /\.filter\(\(?(\w+)\)?=>\1\.type!==["']speak["']&&\(\1\.module!==["']words["']\|\|window\.KE\.wordInPath\(\1\)\)\)/.test(s), f + ': 沒有 lv:1、adaptiveQuiz pool 篩 wordInPath'); });
+  { const ids = E.list({ modules: ['words'], types: ['zh2en', 'en2zh'] }).filter(m => KE.wordInPath(m)).slice(0, 5).map(m => m.id);
+    ok(ids.length === 5 && E.buildQuiz({ modules: ['words'], types: ['zh2en', 'en2zh'], ids, count: 5 }).length === 5, 'game adaptiveQuiz: wordInPath-filtered ids → buildQuiz keeps all 5'); }
   ok(E.buildQuiz({ modules: ['words'], types: ['zh2en', 'en2zh'], count: 1 }).length === 1 && !E.buildQuiz({ modules: ['words'], types: ['zh2en', 'en2zh'], lv: 1, count: 1 }).length, 'game fallback: no lv → 1 question (lv:1 → none)');
   const appSrc = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
   ok(appSrc.includes('const list = E.round(cfg);') && appSrc.includes('每回最後至少 3 題打字（含 2 題中翻英）'), 'app.js: every round goes through E.round + settings note');
