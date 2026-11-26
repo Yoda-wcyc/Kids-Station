@@ -39,7 +39,9 @@
     return true;
   }
   function loggedOK() { var A = window.KidsAuth; try { return !A || !A.configured() || A.isLoggedIn(); } catch (e) { return true; } }
-  // 重讀（這一輪開始前這篇已經完成過）的題不算家長頁題數（2026-11-26；清單本來就只算第一次讀完）；只練錯題照舊算
+  // 重讀的題：這一輪開始前這篇已經完成 2 次以上才不算家長頁題數（2026-11-26；只完成 1 次的再讀照算，跟歷史漫畫一話一樣）；清單本來就只算第一次讀完；只練錯題照舊算
+  // 完成幾次＝kids-lock 的 done.n（已同步；v ≥ 2＝做滿 2 次，家長解鎖過的也是）；舊紀錄沒有 n＝最多算 1 次
+  function done2(id) { try { return !!window.KidsLock && KidsLock.getV(ld('kids_done', {}), id) >= KidsLock.MAX; } catch (e) { return false; } }
   function rePrev() { return R && R.old ? 2 : 0; }
   function coinAnswer(ok) { try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok, null, rePrev()); }
   function coinRound(item, c, n) { try { if (window.KidsCoins && n > 0) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); } catch (e) { } }
@@ -145,7 +147,7 @@
   function startRound(again) {
     if (!gate(function () { startRound(again); })) return;
     var a = R.art, old = prog(a.id).open || {};
-    R = { art: a, items: a.qs.map(function (q) { var it = newItem(q); if (ZR.isOpen(q) && old[q.id]) it.text = old[q.id]; return it; }), started: true, reported: false, last: 0, old: isDone(a.id) };
+    R = { art: a, items: a.qs.map(function (q) { var it = newItem(q); if (ZR.isOpen(q) && old[q.id]) it.text = old[q.id]; return it; }), started: true, reported: false, last: 0, old: done2(a.id) };
     paintQs(); document.getElementById('jump').hidden = false;
     if (again) document.getElementById('qs').scrollIntoView({ block: 'start' });
   }

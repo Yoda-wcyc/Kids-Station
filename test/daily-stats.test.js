@@ -354,9 +354,10 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
     // 記錄點：漫畫做完測驗、地理一組做完才記（錯題重練不記）
     const cj = read('comics/comic.js'), gj = read('geo/geo.js');
     ok(cj.includes("KidsDaily.finish('comic', KidsDaily.isNew(prev))") && /quiz\.i >= quiz\.items\.length\) \{\s*epDone\(\);/.test(cj) && cj.includes('if (quiz.fin ||'), 'comic: episode recorded once per finished quiz');
-    // 2026-11-26 已學會不計：漫畫一話做完 2 次後的單題（epPrev＝done.n）、國語閱讀重讀（這一輪開始前已完成）的題傳 prev 2；只練錯題不帶
-    const zj = read('chinese/reading.js');
-    ok((cj.match(/epPrev\(\)/g) || []).length === 3 && zj.includes('last: 0, old: isDone(a.id) };') && zj.includes('return R && R.old ? 2 : 0;') && !/R = \{ mk: true[^\n]*old:/.test(zj), 'comic questions / reading re-reads pass prev');
+    // 2026-11-26 已學會不計：漫畫一話做完 2 次後的單題（epPrev＝done.n）、國語閱讀／成語重讀（這一輪開始前已完成 2 次，done.n）的題傳 prev 2；只練錯題、成語總測驗不帶
+    const zj = read('chinese/reading.js'), yj = read('chinese/idioms/idioms.js'), D2 = 'KidsLock.getV(ld(\'kids_done\', {}), id) >= KidsLock.MAX';
+    ok((cj.match(/epPrev\(\)/g) || []).length === 3 && zj.includes('last: 0, old: done2(a.id) };') && zj.includes(D2) && zj.includes('return R && R.old ? 2 : 0;') && !/R = \{ mk: true[^\n]*old:/.test(zj), 'comic questions / reading re-reads (done 2 times) pass prev');
+    ok(yj.includes(D2) && yj.includes("id !== 'cyall'") && (yj.match(/R\.old = done2\(R\.id\)/g) || []).length === 2 && (yj.match(/rePrev\(\)\)/g) || []).length === 2, 'idiom re-reads (done 2 times) pass prev; final test not');
     ok((gj.match(/KidsDaily\.finish\('geo', setNew\)/g) || []).length === 1 && gj.indexOf("KidsDaily.finish('geo', setNew)") > gj.indexOf('function end()') && gj.indexOf("KidsDaily.finish('geo', setNew)") < gj.indexOf('function eHome()'), 'geo: one finish, inside end() of a practice set / test');
   }
   // ---------- 小助理看清單 ----------
@@ -395,8 +396,8 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       // 國語
       ['國語 閱讀自動判分＋只練錯題（2026-11-26 起重讀的傳 prev）', 'chinese/reading.js', "KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok, null, rePrev());"],
       ['國語 閱讀想一想', 'chinese/reading.js', "KidsDaily.rec('chinese', null, null, rePrev())"],
-      ['國語 成語＋測驗', 'chinese/idioms/idioms.js', "KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok);"],
-      ['國語 成語想一想', 'chinese/idioms/idioms.js', "KidsDaily.rec('chinese', null)"],
+      ['國語 成語＋測驗（2026-11-26 起重讀的傳 prev）', 'chinese/idioms/idioms.js', "KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok, null, rePrev());"],
+      ['國語 成語想一想', 'chinese/idioms/idioms.js', "KidsDaily.rec('chinese', null, null, rePrev())"],
       // AI
       ['AI 幻覺', 'ai/hallucinate.html', "KidsDaily.rec('ai',ok)"],
       ['AI 問得好', 'ai/ask-well.html', "KidsDaily.rec('ai',ok)"],
@@ -416,7 +417,8 @@ const view = o => KD.view(Object.assign({ today, ev: {} }, o));
       ok(read('game/hero-world/src/ui/quiz.js').includes("rec('english', ok, null, wasOld(q) ? 2 : 0)"), 'hero-world source records');
       // 小朋友鎮（2026-11-08 Yoda 定）：只有執照考試、工作任務算進每日英文題數，跟居民閒聊（對話、小測驗）不算
       const tm = read('game/hero-world/src/town/main.js'), body = (from, to) => tm.slice(tm.indexOf(from), tm.indexOf(to, tm.indexOf(from) + 1));
-      ok((tm.match(/KidsDaily\.rec\('english'/g) || []).length === 1 && tm.includes("function countEnglish(ok) { if (window.KidsDaily) window.KidsDaily.rec('english', ok); }"), 'kids-town records through countEnglish only');
+      ok((tm.match(/KidsDaily\.rec\('english'/g) || []).length === 1 && tm.includes("function countEnglish(ok, id) { if (window.KidsDaily) window.KidsDaily.rec('english', ok, null, id && localOld()(id) ? 2 : 0); }"), 'kids-town records through countEnglish only (2026-11-26: learned game questions pass prev 2)');
+      ok(read('game/hero-world/src/ui/quiz.js').includes('if (q && q.local) return localOld()(q.id);'), 'hero-world own questions (books, builds) pass prev 2 when learned');
       ok(['function renderExam', 'function renderTask', 'function goTick'].every(fn => body(fn, '\n  function ').includes('countEnglish(')), 'kids-town license exam and job tasks record');
       ok(!/countEnglish|KidsDaily/.test(body('function answer(', 'function checkAns(') + body('function checkAns(', '\n  // ')), 'kids-town chat does not record');
     }

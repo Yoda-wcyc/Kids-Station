@@ -34,7 +34,11 @@
     try { if (!A.requireLogin('做成語練習')) return false; if (A.startActivity && !A.startActivity('chinese', retry)) return false; } catch (e) { }
     return true;
   }
-  function coinAnswer(ok) { if (!WIRE) return; try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok); }
+  // 重讀的題：這一輪開始前這個成語／素養閱讀／單元測驗已經完成 2 次以上（kids-lock 的 done.n，已同步；家長解鎖過的也是）就不算家長頁題數（2026-11-26，同國語閱讀）。
+  // 總測驗每次隨機抽 30 題，不算重讀、照算
+  function done2(id) { try { return id !== 'cyall' && !!window.KidsLock && KidsLock.getV(ld('kids_done', {}), id) >= KidsLock.MAX; } catch (e) { return false; } }
+  function rePrev() { return R && R.old ? 2 : 0; }
+  function coinAnswer(ok) { if (!WIRE) return; try { if (window.KidsCoins) KidsCoins.answer(!!ok, 'chinese'); } catch (e) { } if (window.KidsDaily) KidsDaily.rec('chinese', !!ok, null, rePrev()); }
   function coinRound(item, c, n) { if (!WIRE) return; try { if (window.KidsCoins && n > 0) KidsCoins.report({ type: 'practice_round', item: item, correct: c, total: n }); } catch (e) { } }
   function mkRec(id, ok, p) { if (!WIRE) return null; try { return window.KidsMistakes ? KidsMistakes.record('chinese', id, ok, p) : null; } catch (e) { return null; } }
   function doneRec(id, pct) { if (!WIRE) return; try { if (window.KidsDone) KidsDone.record('cy', id, pct); } catch (e) { } }
@@ -185,7 +189,7 @@
     if (!gate(function () { startRound(again); })) return;
     var old = prog(R.id).open || {};
     R.items = qsOf().map(function (q) { var it = newItem(q, R.owner); if (CY.isOpen(q) && old[q.id]) it.text = old[q.id]; return it; });
-    R.started = true; R.reported = false; R.last = 0;
+    R.started = true; R.reported = false; R.last = 0; R.old = done2(R.id);
     paintQs(); var j = document.getElementById('jump'); if (j) j.hidden = false;
     if (again) document.getElementById('qs').scrollIntoView({ block: 'start' });
   }
@@ -263,7 +267,7 @@
   function startTest(again) {
     if (!gate(function () { startTest(again); })) return;
     if (R.id === 'cyall' && again) R.list = CY.finalTest(IDS, CY.FINAL);
-    R.items = R.list.map(function (x) { return newItem(x.q, x.it); }); R.started = true; R.reported = false; R.grade = null;
+    R.items = R.list.map(function (x) { return newItem(x.q, x.it); }); R.started = true; R.reported = false; R.grade = null; R.old = done2(R.id);
     paintQs(); if (again) window.scrollTo(0, 0);
   }
 
@@ -287,7 +291,7 @@
       var cc = z.closest('.zr-q'), n = +cc.getAttribute('data-i'), item = R.items[n], ta = cc.querySelector('textarea');
       item.text = ta ? ta.value : item.text;
       if (ZR.countText(item.text) < ZR.OPEN_MIN) { setMsg(n, '再多寫一點：至少 ' + ZR.OPEN_MIN + ' 個字，說出你的想法和理由。'); return; }
-      item.done = true; if (WIRE && window.KidsDaily) KidsDaily.rec('chinese', null); onAnswerOpen(n);   // 開放題：算一題、不計答對率
+      item.done = true; if (WIRE && window.KidsDaily) KidsDaily.rec('chinese', null, null, rePrev()); onAnswerOpen(n);   // 開放題：算一題、不計答對率
     }
   });
   function onAnswerOpen(n) {

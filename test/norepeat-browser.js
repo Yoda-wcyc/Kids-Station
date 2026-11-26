@@ -5,6 +5,8 @@
 //   2. 英文：已按「學會了」的字（作答前就已學會）→ 答對也不算今天的題數、有提示（2026-11-26；原本的例題庫測試隨例題庫刪掉）
 //   3. 地理：同一組（m1 第 1 組）全對做 3 次 → 第 1、2 次算「地理 1 組」，第 3 次不算、結果頁有提示和去新題的連結；每日清單地理連結指到下一組
 //   4. 全部學會：地理 720 題、歷史 42 話都學過 2 次 → 首頁清單那兩項 ✅「🎉 這裡全部學會了」、家長頁「完成 x/5」照新規則算
+//   5. 家長頁每日目標英文閱讀改 0
+//   6. 國語閱讀 zh1-01、成語 cy001：全對做 2 次都算 → 家長解鎖 → 第 3 次每題記舊題 r（2026-11-26：完成 2 次以上才不算）
 //   全程 0 個 JS 錯誤
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), { spawn } = require('child_process');
@@ -138,6 +140,32 @@ async function run() {
     return { v0, check: c ? c.textContent : '', sum: (document.querySelector('#dgBox summary') || {}).textContent || '', dg: dg[k], rows: KidsDaily.today().rows.map(r => r.key) }`);
   assert(f5 && f5.v0 === '1' && f5.dg.split(',').length === 12 && /,0$/.test(f5.dg) && /完成 2\/5/.test(f5.check) && !/英文閱讀/.test(f5.check) && /英文閱讀 0 篇）/.test(f5.sum) && !f5.rows.includes('b'), '家長改英文閱讀 0 篇 → dg 12 欄、清單不列英文閱讀（完成 2/5）' + JSON.stringify(f5));
   await shot('8-parent-goal-english-reading-0');
+
+  // ---- 6. 國語閱讀／成語重讀（2026-11-26）：同一篇全對做 2 次（第 2 次照算）→ 鎖住 → 家長解鎖 → 第 3 次的題不算（記 r）----
+  const ALL_RIGHT = (page, core) => `const P = ${page}, n = P.state().items.length;
+    for (let i = 0; i < n; i++) { const it = P.state().items[i]; if (it.done) continue; const q = it.q, card = () => document.getElementById('zq' + i), click = (a, v) => card().querySelector('[data-qk="' + a + '"][data-v="' + v + '"]').click();
+      if (${core}.isOpen(q)) { const ta = card().querySelector('textarea'); ta.value = '我覺得這篇故事很有意思，因為主角很努力。'; ta.dispatchEvent(new Event('input', { bubbles: true })); card().querySelector('[data-z="open"]').click(); }
+      else if (q.type === 'mc' || q.type === 'tf') click(q.type, q.a);
+      else if (q.type === 'order') { q.items.forEach((_, k) => click('oPick', k)); click('oCheck', 0); }
+      else if (q.type === 'match') { q.pairs.forEach((_, l) => { click('mL', l); click('mR', l); }); click('mCheck', 0); } }
+    return n`;
+  for (const [name, url, page, core, key] of [['國語閱讀', '/chinese/reading.html?a=zh1-01', 'ZRPage', 'ZhReading', 'zh1-01'], ['成語故事', '/chinese/idioms/idioms.html?i=cy001', 'CYPage', 'ZhIdiom', 'cy001']]) {
+    await go(url); await ev(`localStorage.clear(); localStorage.setItem('kids_jwt', 'x'); return 1`);
+    const rounds = [];
+    for (let k = 1; k <= 3; k++) {
+      if (k === 3) await ev(`localStorage.setItem('kids_done', JSON.stringify(KidsLock.unlock(JSON.parse(localStorage.getItem('kids_done') || '{}'), '${key}'))); return 1`);   // 家長解鎖（v＝4：做滿 2 次、解鎖過 1 次）
+      await go(url); await ev(HOOK);
+      const b = await ev(DAYC + `return [(D.c || [0])[0] + (D.o || [0])[0], (D.r || [0])[0], KidsLock.getV(JSON.parse(localStorage.getItem('kids_done') || '{}'), '${key}'), !!document.getElementById('kl-gate')]`);
+      await ev(`document.getElementById('zr-start').click(); return 1`); await sleep(200);
+      const n = await ev(ALL_RIGHT(page, core)); await sleep(300);
+      const a = await ev(DAYC + `return [(D.c || [0])[0] + (D.o || [0])[0], (D.r || [0])[0], KidsLock.getV(JSON.parse(localStorage.getItem('kids_done') || '{}'), '${key}'), (document.getElementById('zr-result') || {}).dataset ? document.getElementById('zr-result').dataset.pass : '']`);
+      rounds.push({ k, n, vBefore: b[2], gate: b[3], dc: a[0] - b[0], dr: a[1] - b[1], vAfter: a[2], pass: a[3] });
+    }
+    assert(rounds.every(r => r.pass === '1' && r.n > 0), name + ': 3 rounds all passed ' + JSON.stringify(rounds));
+    assert(rounds[0].dc === rounds[0].n && rounds[0].dr === 0 && rounds[1].dc === rounds[1].n && rounds[1].dr === 0, name + '：第 1、2 次（完成 0、1 次之後再讀）每題照算 ' + JSON.stringify(rounds.slice(0, 2)));
+    assert(rounds[1].vAfter === 2 && rounds[2].vBefore === 4 && !rounds[2].gate && rounds[2].dc === 0 && rounds[2].dr === rounds[2].n, name + '：做滿 2 次、家長解鎖後的第 3 次，每題記成舊題（不算國語） ' + JSON.stringify(rounds[2]));
+    await shot('9-' + key + '-3rd-round');
+  }
 }
 
 (async () => {
