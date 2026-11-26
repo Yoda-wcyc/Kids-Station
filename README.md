@@ -180,7 +180,7 @@ nocopy.js         全站禁止複製／剪下／貼上（2026-11-13 家長指令
 - 記錄：每個作答入口在「一題有結果」時呼叫 `KidsDaily.rec(科, 對錯)`（開放題傳 `null`），沒登入不記。多步驟、可重試的題記在第一次答錯或一路沒錯做完（跟錯題庫同一點），不是每次按確定。閃卡不算；遊戲算英文。**新增作答入口要接上**，`node test/daily-stats.test.js` 會擋。
 - 同步：文件 v9 的 `dd`（`syncmerge.js`）：每台裝置一個字串 `261103e30,5m18,3;…`（題數,答錯數），合併各欄取大、顯示才加總（G-counter）。整個 dd 上限 3800 位元組（smoke 的文件上限沒放寬），超過從最舊的一天丟。
 - 舊紀錄：英文顯示時從 `ke_log` 回算上線日（`kids-daily.js` START）以前；其他科只看得出「有練習（題數未記錄）」。
-- 學過 2 次就不算（2026-11-21 家長定）：`KidsDaily.rec(科, 對錯, kind, prev)`，prev＝這一題這次之前答對過幾次，≥ 2 記代碼 `r`（家長頁另列「舊題」），不算那一科和今日清單；`finish(kind, false)`＝舊的一話／一組不記。各入口的次數來源：英文 `ke_log`＋`ke_agg`、地理 `kids_geo_q`（同步在 pg 的 `Q` 旗標）、數學年級單元 `kids_mg`（線對稱 g5a7 同步在 pg 的 `Ms` 旗標，其他單元只在本機）、歷史 `done.n`、英檢 `kids_gept.ok`（只在本機）、乘法 `kids_mx_ok`（只在本機）、異分母錯題重練＝錯題庫 c。抽題先出新題；一整項都學過 2 次＝今天算達成、顯示「🎉 這裡全部學會了」。測試：`node test/norepeat.test.js`、`node test/norepeat-browser.js`。
+- 學過 2 次就不算（2026-11-21 家長定）：`KidsDaily.rec(科, 對錯, kind, prev)`，prev＝這一題這次之前答對過幾次，≥ 2 記代碼 `r`（家長頁另列「舊題」），不算那一科和今日清單；`finish(kind, false)`＝舊的一話／一組不記。各入口的次數來源：英文 `ke_log`＋`ke_agg`、地理 `kids_geo_q`（同步在 pg 的 `Q` 旗標）、數學年級單元 `kids_mg`（線對稱 g5a7 的「答對 2 次」同步在 pg 的 `Ms2` 旗標，其他單元只在本機）、歷史 `done.n`、英檢 `kids_gept.ok`（只在本機）、乘法 `kids_mx_ok`（只在本機）、異分母錯題重練＝錯題庫 c。抽題先出新題；一整項都學過 2 次＝今天算達成、顯示「🎉 這裡全部學會了」。測試：`node test/norepeat.test.js`、`node test/norepeat-browser.js`。
 - 方塊世界、小朋友鎮的記錄點在 `game/hero-world/src`（`ui/quiz.js`、`town/main.js`），改了要重新 build。瀏覽器實測：kids-member `tests\daily-stats-browser.js`。
 
 ## 📋 首頁與每日進度清單（2026-11-03）
@@ -221,7 +221,7 @@ nocopy.js         全站禁止複製／剪下／貼上（2026-11-13 家長指令
   - 跑 `node test/fracadd.test.js`：裡面的 `WANT` 也要加這題的正解（手寫，跟程式算的對），然後照平常 `deploy_copy.py` → commit → push。
   - 孩子那邊：首頁載入或打開數學錯題庫時，`kids-mistakes.js seedPaper` 把還沒有的補進 `kids_mistakes.math`（會同步），出現在「📕 數學錯題庫 → 五上 單元六」，「只練錯題」或「接著練異分母加減錯題」進 `fracadd.html?mistakes=1` 重練，連對 3 次畢業。
   - 規則：只補給**加過紙本錯題的帳號**（錯題本有 `pp:`，同「📝 紙本錯題」區的開關；其他會員不會收到）；本機已經有（還在練或畢業留墓碑）就不動；補進去的時間＝登錄日，同步時不會蓋掉別台的畢業墓碑；登錄超過 14 天不再補（墓碑每科只留 300 筆，避免太久以後畢業的題復活）；算在異分母未畢業 50 題的上限裡。新的帳號用紙本加入連結（`math/paper.html?add=<碼>`）也會一起補。
-- 線對稱圖形（五上單元七，2026-11-24；`math/grade.html?u=g5a7`＋`math/grade/g5a7.js`，引擎同五下起 `grade.js`，`grade.js` 的 `EXTRA` 讓它算「五上 單元七」但不算一冊上線〔沒有總複習、不進 MG_BOOKS〕）：八邊形以甲線為對稱軸（M、N＝軸和邊的交點）、箏形；六種題：軸通過邊的中點（求一半）、已知周長和幾條邊求一條邊、已知一半的邊求周長、對稱邊／對稱點（選擇）、對稱角、箏形 (360－a－b)÷2。46 題（d1 19／d2 17／d3 10），解說先寫「哪兩條邊一樣長」再列式。完成＝練習一輪 ≥80%＋單元測驗 ≥80（`mg:g5a7`，`done.mg` 多 2 格）；課程地圖五上第 7 格，做 2 次會鎖（不是最後一個）。**每題答對次數（學過 2 次不算，`kids_mg.c`）跨裝置同步**（2026-11-24：`syncmerge.js` pg 的 f 旗標兩層 `Ms1`／`Ms2`，同地理 geoQ；第 i 格＝題型序號×8＋題號、`MG_K` 只能往後加；合併＝同一題取大；不升版，舊版裝置照收照併、不會壞；46 題全滿 +34 B，非英文最壞情況 127,285 B、餘裕 715 B）。`math/grade.html` 全部單元一起接上「學過 2 次不算」，但只有 g5a7 的次數同步，其他單元的 `kids_mg` 只在本機（shortcut 註解在 grade.html）。紙本第 13 回錯的兩題＝`fixed` 原題 `g5a7-pp1`、`g5a7-pp2`（不進練習題庫），`math/paper.js` `MG_ROWS` 由 seedPaper 補進錯題庫（規則同 FA_ROWS：有 pp:、14 天內、有墓碑不補），重練走 `math/grade.html?mistakes=1`。測試：`node test/symmetry.test.js`、`node test/math-grade.test.js`（驗算 `test/mg-verify/g5a7.js`）、瀏覽器 `node test/symmetry-browser.js`（`SYM_SHOTS`＝截圖資料夾）。
+- 線對稱圖形（五上單元七，2026-11-24；`math/grade.html?u=g5a7`＋`math/grade/g5a7.js`，引擎同五下起 `grade.js`，`grade.js` 的 `EXTRA` 讓它算「五上 單元七」但不算一冊上線〔沒有總複習、不進 MG_BOOKS〕）：八邊形以甲線為對稱軸（M、N＝軸和邊的交點）、箏形；六種題：軸通過邊的中點（求一半）、已知周長和幾條邊求一條邊、已知一半的邊求周長、對稱邊／對稱點（選擇）、對稱角、箏形 (360－a－b)÷2。46 題（d1 19／d2 17／d3 10），解說先寫「哪兩條邊一樣長」再列式。完成＝練習一輪 ≥80%＋單元測驗 ≥80（`mg:g5a7`，`done.mg` 多 2 格）；課程地圖五上第 7 格，做 2 次會鎖（不是最後一個）。**答對 2 次的題（學過 2 次不算，`kids_mg.c`）跨裝置同步**（`syncmerge.js` pg 的 f 旗標 `Ms2`；第 i 格＝題型序號×8＋題號、`MG_K` 只能往後加；合併＝聯集；不升版。2026-11-26 拿掉 `Ms1`：答對 1 次只影響抽題順序，用本機的；舊版裝置送來的 `Ms1` 新版收到就丟。46 題全滿約 +17 B，非英文最壞情況 127,273 B、餘裕 727 B）。`math/grade.html` 全部單元一起接上「學過 2 次不算」，但只有 g5a7 的次數同步，其他單元的 `kids_mg` 只在本機（shortcut 註解在 grade.html）。紙本第 13 回錯的兩題＝`fixed` 原題 `g5a7-pp1`、`g5a7-pp2`（不進練習題庫），`math/paper.js` `MG_ROWS` 由 seedPaper 補進錯題庫（規則同 FA_ROWS：有 pp:、14 天內、有墓碑不補），重練走 `math/grade.html?mistakes=1`。測試：`node test/symmetry.test.js`、`node test/math-grade.test.js`（驗算 `test/mg-verify/g5a7.js`）、瀏覽器 `node test/symmetry-browser.js`（`SYM_SHOTS`＝截圖資料夾）。
 - 英文小分類（`engine.js` `KE.dailyKind`）：**單字**（2026-11-24）＝單字模組各題型（單字卡練習、單字測驗、課本本課單字、🎤 說單字）＋字根拆出來的字（字根本身的意思 root-meaning 不算）＋英檢詞彙 R1、英檢單字聽寫（`gept.js`）；**句型**＝句型頁的題＋課本句子題（重組、中翻英整句、看提示造句、🎤 唸課本句子；口語考試不算）；**片語**＝片語頁的題；其他（文法、字根意思、課本填空／選回答／聽力、口語考試、英檢其他題型、遊戲、小朋友鎮）只算英文總數。單字子目標的入口＝單字卡「🎯 練這些字」（`#learn/words`）。`rec('english', ok, kind)` 多記代碼 j／p（只記題數）。入口：句型頁、片語頁最上面「🎯 隨機練 10 題」（照目前選的等級／類別，不出 🎤）；首頁英文列下面有沒達到的子目標按鈕。
 - 題數看每日統計：答錯也算；數學＝m＋⌊快算 x／3⌋（`rec('mathx', …)`，各裝置先加總再折算）。閱讀不另外計數：`kids_done` 的 zh（國語閱讀）、cy 的 cy001～cy100（成語故事）和 cyr*（成語素養閱讀），第一次完成時間落在當天才算（單元測驗、總測驗不算）。
 - 小助理：`snap.daily`＝今天的清單；任務先排沒達標科目的錯題／複習，再來別科的錯題／複習，再來沒達標科目的新單元。主按鈕指到的那一項不在「其他任務」重複。15 分鐘目標任務已拿掉（學習幣後端照舊）。
@@ -238,13 +238,8 @@ nocopy.js         全站禁止複製／剪下／貼上（2026-11-13 家長指令
 
 ## 📰 英文閱讀測驗（english-reading/，2026-11-24 上線）
 
-- 入口：英文頁（#en）「📰 英文閱讀測驗」方塊、學習島英文港口清單 → `english-reading/index.html`（首頁只有「下一篇」；`?a=<篇id>` 閱讀＋作答、`?mistakes=1` 錯題、`&preview=1` 作者預覽）。規格 `english-reading/SPEC.md`、寫題契約 `english-reading/CONTRACT.md`（作者只看這份）。
-- 200 篇＝易 80（A1，40～70 字）／中 70（A1+，60～100 字）／難 50（A2，90～140 字），照「級別 → 字數」自動排、沒有等級選單；每篇 3～4 題四選一（主旨／細節／推論／字義／指代），答完中文解說＋文章標出答案依據那句；🔊 全文朗讀、點一句念一句（`gept/gept-tts.js`）。答對 ≥ 60% 完成，完成 2 次上鎖。
-- 題目：`english-reading/data/s0.js`（樣本 10 篇）＋`a1.js`～`a5.js`（五位作者各 38 篇）；改完跑 `node english-reading/check.js`（字表、字數、句長、選項、解說、依據、題型配比、撞文）。
-- 紀錄：每題學習幣算英文、每日統計算英文總數（學過 2 次不算）；一篇做完送一輪 `practice_round` `english:reading`（GAS kids-2026-11-24-a，家長部署後才給幣）；答錯進 `kids_mistakes.gept`（id `er:<篇>:<題>`、p.u＝'r'，英檢頁看不到）。
-- 每日清單「英文閱讀 1 篇」（2026-11-24 起，目標固定 1、不算英文 30 題）：第一次完成一篇 `KidsDaily.finish('er', true)` → dd 代碼 `b`；首頁小助理、學習島英文港口、家長頁都列。
-- 進度：本機 `kids_en_reading`；只有 `p`（照順序完成到第幾篇，不能跳篇所以一個整數就夠）跟著同步（pg 的 v 群組 `R`，約 5 B）；✓1／✓2、🔒 只在這台（見 SPEC §6.3）。
-- 測試：`node test/english-reading.test.js`、瀏覽器 `node test/english-reading-browser.js`（`ER_SHOTS`＝截圖資料夾）。
+- `english-reading/index.html`（英文頁 #en 方塊、學習島英文港口）：200 篇照易→難自動排、每篇 3～4 題、答對 ≥ 60% 完成、完成 2 次上鎖；每日清單「英文閱讀 1 篇」（dd 代碼 b）、進度 p 跨裝置（pg 'R'）、錯題進 `kids_mistakes.gept`；一篇做完送 `practice_round` `english:reading`（門檻見 kids-member `docs/COINS_CONTRACT.md` practice_round）。
+- 畫面、規則、紀錄與同步、檔案都在 [`english-reading/SPEC.md`](english-reading/SPEC.md)（寫題契約 `CONTRACT.md`）；測試 `node test/english-reading.test.js`、`node english-reading/check.js`、瀏覽器 `node test/english-reading-browser.js`。
 
 ## 🃏 名詞閃卡＋🔁 隔天複習（社會、自然，2026-11-01）
 
