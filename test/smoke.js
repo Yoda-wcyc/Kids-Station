@@ -1487,7 +1487,14 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
   // 2026-11-26 遊戲錯題怪備援不指定 lv（等級 1 從 11/23 下架，lv:1 回空 → 錯題怪沒題目）
   ['game/hero-world/assets/hw.js', 'game/kids-town/assets/kt.js', 'game/hero-world/src/ui/quiz.js'].filter(f => fs.existsSync(path.join(root, f))).forEach(f => { const s = fs.readFileSync(path.join(root, f), 'utf8').replace(/\s/g, ''); ok(!/buildQuiz\(\{modules:\[["']words["']\],types:\[["']zh2en["'],["']en2zh["']\],lv:1/.test(s) && /buildQuiz\(\{modules:\[["']words["']\],types:\[["']zh2en["'],["']en2zh["']\],count:1\}\)/.test(s), f + ': 錯題怪備援 buildQuiz 不指定 lv');
     // 2026-11-26 練習石碑、錯題怪第一順位（adaptiveQuiz）也不帶 lv；pool 先篩掉等級 1 單字，挑到的 id 才不會被 buildQuiz 丟掉
-    ok(!/lv:["']?1\b/.test(s) && /\.filter\(\(?(\w+)\)?=>\1\.type!==["']speak["']&&\(\1\.module!==["']words["']\|\|window\.KE\.wordInPath\(\1\)\)\)/.test(s), f + ': 沒有 lv:1、adaptiveQuiz pool 篩 wordInPath'); });
+    // 2026-11-26 改成 wordScopeOk（等級 1 一樣篩掉，再加家長範圍 ke_settings.wordScope）＋ lvWeave 3:2:1；載入 lv4 字檔 words-5～8
+    ok(!/lv:["']?1\b/.test(s) && /\.filter\(\(?(\w+)\)?=>\1\.type!==["']speak["']&&\(\1\.module!==["']words["']\|\|[\w$]+\.wordScopeOk\((\w+)\.scope,\1\)\)\)/.test(s) && /\.lvWeave\(/.test(s) && /ke_settings/.test(s), f + ': 沒有 lv:1、adaptiveQuiz pool 篩 wordScopeOk（家長範圍）＋ lvWeave');
+    ok(['words-5', 'words-6', 'words-7', 'words-8'].every(n => s.includes(`"data/${n}.js"`) || s.includes(`'data/${n}.js'`)), f + ': 載入 lv4 字檔 words-5～words-8');
+    ok(!/lv:\w+\.lv\}/.test(s), f + ': 英文委託不帶 quest.lv（trades.json 寫等級 1，會回空）'); });
+  // 遊戲照家長範圍：wordScopeOk 擋範圍外、lvWeave 3:2:1（遊戲端 200 回實測在 game/hero-world/src/test/m9e.test.js）
+  { const ws = E.list({ modules: ['words'], types: ['zh2en'] }).filter(m => KE.wordScopeOk('', m));
+    ok(ws.some(m => m.lv === 4) && ws.every(m => m.lv !== 1) && E.list({ modules: ['words'], types: ['zh2en'] }).filter(m => KE.wordScopeOk('lv:3', m)).every(m => m.lv === 3), 'game pool: wordScopeOk on meta (auto has lv4, no lv1; lv:3 only lv3)');
+    const c = {}; KE.lvWeave(ws, 0).slice(0, 600).forEach(m => { c[m.lv] = (c[m.lv] || 0) + 1; }); ok(c[2] === 300 && c[3] === 200 && c[4] === 100, 'lvWeave on game pool meta: first 600 = 300:200:100 ' + JSON.stringify(c)); }
   { const ids = E.list({ modules: ['words'], types: ['zh2en', 'en2zh'] }).filter(m => KE.wordInPath(m)).slice(0, 5).map(m => m.id);
     ok(ids.length === 5 && E.buildQuiz({ modules: ['words'], types: ['zh2en', 'en2zh'], ids, count: 5 }).length === 5, 'game adaptiveQuiz: wordInPath-filtered ids → buildQuiz keeps all 5'); }
   ok(E.buildQuiz({ modules: ['words'], types: ['zh2en', 'en2zh'], count: 1 }).length === 1 && !E.buildQuiz({ modules: ['words'], types: ['zh2en', 'en2zh'], lv: 1, count: 1 }).length, 'game fallback: no lv → 1 question (lv:1 → none)');
