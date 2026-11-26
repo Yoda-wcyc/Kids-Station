@@ -1,4 +1,9 @@
 /* syncmerge.js — 裝置同步的合併規則（純函式，不碰 DOM／網路以外的東西；瀏覽器與 Node 共用）
+   2026-11-26 mmBlanks 瘦身（不升版、上限都沒動）：q（練習題答對過）、lastShown（詞上次出現在第幾次練習）不同步，只留在本機。
+    - 紀錄寫成 "ok,wrong,streak," ／ "m<次數>,"（尾巴逗號留著＝舊版 normRec 認得的段數，舊版 1121、11-26 前的線上版都照收、一筆不掉）。
+    - 本機的 q、lastShown 由 expandBl 留著（別台答得多、換成文件那筆時 lastShown 也照本機的）；舊版裝置寫進文件的 q、lastShown 收到就丟。
+    - 取捨：sess 照舊同步取大，換台後那台沒出過的 core 詞會被「前兩次沒出現就一定出」補出來＝換台可能重複出剛在別台練過的詞（各台一次，出過就記在本機）；
+      練習題換台時抽題先後可能不同。都只影響出題順序，不影響進度、完成判定（completion 不讀 q／lastShown）。
    2026-11-23 英文 agg／learned 上傳時壓縮（不升版、上限都沒動；以前這兩個欄位跟著學過的題數一直長，約 2,560 字就會 413）：
     ke:{a:'<LZW>', l:'<LZW>', o:舊版最後出現的時間}   ← 只在 PUT 出去的文件裡（packDoc）；normalize 解開併回 agg／learned，程式裡、本機照舊是完整物件。
     - a：每題只留「答對過幾次（封頂 2）」三種狀態（答過沒對／1 次／2 次以上）——學過 2 次就不算、解鎖、課本「有沒有練過」都只看這個；
@@ -34,9 +39,9 @@
       'rel:' 開頭的背架構紀錄（關係詞 2026-10-11 起不挖空、不會再有新作答）不同步。
     - 計數封頂：ok、wrong 各最多 BL_CAP（99）、streak 最多 3（引擎只看 ≥3）。完整紀錄 "ok,wrong,streak,lastShown"（last 由 streak 推：＞0＝答對）。
     - 已熟練（last＝ok 且 streak≥3，引擎 ×0.25 降權的那種）只留旗標 "m<答題次數>,<lastShown>"，例 "m12,40"：
-      答題次數留著給合併比「誰答得多」；lastShown 留著給 core 保證（前兩次沒出現就一定出），不然別台會每次都硬塞這些詞。
-    - q（練習題答對過的題目雜湊）從 {雜湊:1} 改成排序過、空格分隔的字串 "h1 h2 h3"。
-    - 升級：normRec／normQ 舊物件、v7 字串都吃，一律輸出 v8；新舊格式混著合併結果一樣（smoke 有測）。
+      答題次數留著給合併比「誰答得多」。（lastShown 當初為了 core 保證留著；2026-11-26 起不同步、寫成 "m12,"，取捨見檔頭）
+    - q（練習題答對過的題目雜湊）從 {雜湊:1} 改成排序過、空格分隔的字串 "h1 h2 h3"。（2026-11-26 起不同步，見檔頭）
+    - 升級：normRec 舊物件、v7 字串都吃，一律輸出 v8；新舊格式混著合併結果一樣（smoke 有測）。
     - 本機照舊存完整物件：sync.js writeLocal 用 expandBl(文件, 本機)——同步結果跟本機那筆壓縮後一樣就留本機原本的（不會被封頂、
       旗標蓋掉），本機有、文件沒有的（沒作答的）也留著。只有別台答得比較多的詞才換成文件裡的（可能是封頂／旗標還原的）。
     - 舊版（v7）裝置讀 v8：紀錄、旗標、q 字串都看不懂會丟掉，PUT 回去少了它們 → 新版下次同步從本機補回（跟 v6→v7 一樣，不會掉資料；?v= 換網址後重開頁就是新版）。
@@ -81,8 +86,8 @@
    - mistakes：每題 u（更新時間）最新的勝；畢業用 d:1 墓碑
    - mm：每單元 unlocked／best／passedAt 各關取最大（＝過關聯集＋最佳成績＋最新過關時間）；複習：lastPassAt 取最新，
      reviewStep 跟著 lastPassAt 較新的那份走（一樣新取大的）。'_' 開頭的 key（示範時鐘）不同步。
-   - mmBlanks：sess 取大；每個詞／節點取「答題次數（ok+wrong）較多」的那份（一樣多取 lastShown 大的）。
-     q（2026-10-29 加，練習題答對過的題目雜湊 → 1）：聯集。跟 p1／p2 一樣不升版：舊版裝置的 normBl 會丟掉 q，新版下次同步從本機補回。
+   - mmBlanks：sess 取大；每個詞／節點取「答題次數（ok+wrong）較多」的那份（一樣多取字串大的；2026-11-26 前是 lastShown 大的）。
+     q（2026-10-29 加，練習題答對過的題目雜湊 → 1）：2026-11-26 起不同步（見檔頭）。
      不用加總：同一份紀錄每次同步都會再碰到，加總會一直重複累加（不冪等）；取較多的那份每次結果都一樣。
    - eq：依題目字串聯集＋刪除墓碑（del 比 t 新＝刪掉），順序跟 at（最後在哪台改清單）較新的那份，最多 30 題、墓碑最多 100 筆。
    - scratch：聯集，同一堂留最早的完成時間。
@@ -157,14 +162,14 @@
     if (p[4] !== '') o.lastShown = +p[4];
     return o;
   };
+  // 2026-11-26 起 lastShown 不同步（只留在本機）：寫成 "ok,wrong,streak," ／ "m<次數>,"——尾巴的逗號要留，舊版 normRec 只收 4 段／旗標 2 段
   function normRec(r) {
     if (typeof r === 'string') { const n = r.split(',').length; r = (r.charAt(0) === 'm' ? n === 2 : n === 4 || n === 5) ? unRec(r) : null; }
     if (!r || typeof r !== 'object') return null;
     const ok = Math.min(int0(r.ok), BL_CAP), wrong = Math.min(int0(r.wrong), BL_CAP), st0 = Math.min(int0(r.streak), 3);
     if (!(ok + wrong)) return null;   // 只抽出來、沒作答
     const lastOk = r.last === 'ok' || (r.last !== 'wrong' && st0 > 0), st = lastOk ? Math.max(1, st0) : 0;
-    const ls = num(r.lastShown, null), L = ls == null ? '' : ls;
-    return st >= 3 ? 'm' + (ok + wrong) + ',' + L : [ok, wrong, st, L].join(',');
+    return st >= 3 ? 'm' + (ok + wrong) + ',' : ok + ',' + wrong + ',' + st + ',';
   }
   // 背架構節點 id（a 的 key）短寫（2026-11-17 瘦身，不升版）：節點 id 都是「<單元>-…」→ 文件裡省掉單元名、留「-」開頭（例 social:u1 的 'u1-l1-c' 寫 '-l1-c'）。
   //   舊版裝置看不懂也不會丟：舊版 section 只丟 '_' 開頭的 key，'-…' 照樣留著、合併、PUT 回去（只是舊版自己用不到那幾筆）；
@@ -177,25 +182,24 @@
     Object.keys(d).sort().forEach(k => { if (!k || k.charAt(0) === '_') return; const f = aFull(k, uid), v = normRec(d[k]); if (!v || f.indexOf('rel:') === 0) return; const s = aShort(f, uid); o[s] = o[s] ? pickRec(o[s], v) : v; });
     const out = {}; Object.keys(o).sort().forEach(k => { out[k] = o[k]; }); return out;
   };
-  // q：v8 存成排序過、空格分隔的字串；舊的 {雜湊:1} 也吃。'_' 開頭的不同步；空的回 ''
-  const normQ = x => { const s = new Set(); (typeof x === 'string' ? x.split(/\s+/) : Object.keys(obj(x)).filter(k => x[k] && !/\s/.test(k))).forEach(k => { if (k && k.charAt(0) !== '_') s.add(k); }); return [...s].sort().join(' '); };
+  // 記錄都已整理過（lastShown 不同步）：答得多的勝，一樣多取字串大的（兩邊結果一致）
   function pickRec(a, b) {
     const x = unRec(a), y = unRec(b), na = x.ok + x.wrong, nb = y.ok + y.wrong; if (na !== nb) return na > nb ? a : b;
-    const la = x.lastShown || 0, lb = y.lastShown || 0; if (la !== lb) return la > lb ? a : b;
     return a >= b ? a : b;
   }
-  // q：練習題答對過的題（題目雜湊，2026-10-29）；聯集。空的不寫出來（舊文件、舊測試的形狀不變）
-  const withQ = (o, q) => { if (q && (typeof q === 'string' || Object.keys(q).length)) o.q = q; return o; };
-  function normBl(s, key) { if (!s || typeof s !== 'object' || Array.isArray(s)) return null; return withQ({ sess: int0(s.sess), w: section(s.w, normRec), a: normA(s.a, aUnit(key)) }, normQ(s.q)); }
-  const mergeBl = (a, b) => withQ({ sess: Math.max(a.sess, b.sess), w: mergeSection(a.w, b.w, pickRec), a: mergeSection(a.a, b.a, pickRec) }, normQ((a.q || '') + ' ' + (b.q || '')));
+  // q（練習題答對過的題目雜湊）2026-11-26 起不同步：只影響 pickQuiz 抽題先後（completion 不讀），留在本機；舊版裝置寫進文件的 q 收到就丟
+  function normBl(s, key) { if (!s || typeof s !== 'object' || Array.isArray(s)) return null; return { sess: int0(s.sess), w: section(s.w, normRec), a: normA(s.a, aUnit(key)) }; }
+  const mergeBl = (a, b) => ({ sess: Math.max(a.sess, b.sess), w: mergeSection(a.w, b.w, pickRec), a: mergeSection(a.a, b.a, pickRec) });
   // 同步結果寫回本機 kids_mm_blanks 用：字串紀錄還原成物件（形狀跟 blanks.js 寫的一樣）。
-  // local＝本機原本的 kids_mm_blanks：文件裡那筆＝本機那筆壓縮後的樣子 → 留本機原本的（沒被封頂／旗標化）；本機有、文件沒有的（沒作答的）也留
+  // local＝本機原本的 kids_mm_blanks：文件裡那筆＝本機那筆壓縮後的樣子 → 留本機原本的（沒被封頂／旗標化）；本機有、文件沒有的（沒作答的）也留。
+  //   本機的 q、lastShown 一律留著（文件裡沒有）：別台答得多、換成文件那筆時，lastShown 照本機的
   function expandBl(x, local) {
-    const L = obj(local), qo = q => { const o = {}; (q ? q.split(' ') : []).forEach(h => { o[h] = 1; }); return o; };
+    const L = obj(local);
     // uid：a 的短寫 key 還原成完整節點 id；本機裡舊版留下的短寫 key（'-' 開頭）不留（文件裡那筆已經用完整 id 寫回）
-    const m = (r, lb, uid) => { const lo = obj(lb), o = {}; Object.keys(lo).forEach(k => { if (lo[k] && typeof lo[k] === 'object' && !(uid && k.charAt(0) === '-')) o[k] = lo[k]; }); Object.keys(r).forEach(k0 => { const k = aFull(k0, uid); if (normRec(lo[k]) !== r[k0]) o[k] = unRec(r[k0]); }); return o; };
+    const m = (r, lb, uid) => { const lo = obj(lb), o = {}; Object.keys(lo).forEach(k => { if (lo[k] && typeof lo[k] === 'object' && !(uid && k.charAt(0) === '-')) o[k] = lo[k]; });
+      Object.keys(r).forEach(k0 => { const k = aFull(k0, uid); if (normRec(lo[k]) === r[k0]) return; const v = unRec(r[k0]), ls = num(obj(lo[k]).lastShown, null); if (ls != null) v.lastShown = ls; o[k] = v; }); return o; };
     const d = section(x, normBl), o = {};
-    Object.keys(d).forEach(k => { const u = d[k], l = obj(L[k]); o[k] = withQ({ sess: u.sess, w: m(u.w, l.w, ''), a: m(u.a, l.a, aUnit(k)) }, qo(u.q)); });
+    Object.keys(d).forEach(k => { const u = d[k], l = obj(L[k]); o[k] = { sess: u.sess, w: m(u.w, l.w, ''), a: m(u.a, l.a, aUnit(k)) }; if (l.q && typeof l.q === 'object') o[k].q = l.q; });
     return o;
   }
   // ---- eq：數學天平題目清單（聯集＋刪除墓碑）----

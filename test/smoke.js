@@ -689,36 +689,41 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   const X = d => SM.expandBl(d.mmBlanks), bAB = X(SM.merge(bA, bB))['social:u1'];
   ok(bAB.sess === 5 && bAB.w['臺南'].ok === 4 && bAB.w['1624'].wrong === 1 && bAB.w['荷蘭'].ok === 2 && bAB.a.l1.wrong === 3, 'mmBlanks: per word the record with more answers wins, sess max');
   ok(X(SM.merge(SM.merge(bA, bB), bB))['social:u1'].w['臺南'].ok === 4, 'mmBlanks: syncing again does not add up counts');
-  ok(X(SM.merge(bB, bC))['social:u1'].w['荷蘭'].lastShown === 9, 'mmBlanks: tie on answers → newer lastShown');
+  // 2026-11-26 lastShown 不同步：文件裡沒有；寫回本機時照本機的（本機那筆輸了、換成別台的也一樣）
+  const tieHL = SM.merge(bB, bC).mmBlanks;
+  ok(tieHL['social:u1'].w['荷蘭'] === '2,0,2,' && !('lastShown' in X({ mmBlanks: tieHL })['social:u1'].w['荷蘭']) && same(SM.expandBl(tieHL, bC.mmBlanks)['social:u1'].w['荷蘭'], { ok: 2, wrong: 0, streak: 2, last: 'ok', lastShown: 9 }) && SM.expandBl(tieHL, bB.mmBlanks)['social:u1'].w['荷蘭'] === bB.mmBlanks['social:u1'].w['荷蘭'],
+    'mmBlanks: lastShown not synced; tie on answers → larger string; expandBl keeps the local lastShown even when the other device\'s record wins');
   props(bA, bB, bC, 'mmBlanks');
   // v7（2026-11-02）：紀錄壓成 "ok,wrong,streak,last,lastShown"。舊格式（物件）升級、還原回本機一模一樣、新舊混著合併結果相同
   const nA = SM.normalize(bA);
-  ok(nA.mmBlanks['social:u1'].w['臺南'] === '4,1,2,5' && nA.mmBlanks['social:u1'].a.l1 === '1,0,1,' && same(SM.normalize(nA), nA), 'mmBlanks v7: old object records upgrade to compact strings, normalize idempotent');
-  ok(same(X(nA), bA.mmBlanks) && same(X(SM.normalize(bC)), bC.mmBlanks), 'mmBlanks v7: expandBl restores the exact local (object) shape');
+  ok(nA.mmBlanks['social:u1'].w['臺南'] === '4,1,2,' && nA.mmBlanks['social:u1'].a.l1 === '1,0,1,' && same(SM.normalize(nA), nA), 'mmBlanks v7: old object records upgrade to compact strings (no lastShown since 11-26), normalize idempotent');
+  ok(same(SM.expandBl(nA.mmBlanks, bA.mmBlanks), bA.mmBlanks) && same(SM.expandBl(SM.normalize(bC).mmBlanks, bC.mmBlanks), bC.mmBlanks) && same(X(nA)['social:u1'].w['臺南'], { ok: 4, wrong: 1, streak: 2, last: 'ok' }), 'mmBlanks v7: expandBl restores the exact local (object) shape (with local lastShown)');
   ok(same(SM.merge(bA, SM.normalize(bB)), SM.merge(bA, bB)) && same(SM.merge(SM.normalize(bA), bB), SM.merge(bA, bB)), 'mmBlanks v7: old + new format mixed merge = same result');
   props(bA, SM.normalize(bB), bC, 'mmBlanks old/new mixed');
   ok(SM.normalize({ mmBlanks: { 'social:u1': { sess: 1, w: { x: '1,2', y: 5, z: null }, a: {} } } }).mmBlanks['social:u1'].w.x === undefined, 'mmBlanks v7: broken records dropped, do not throw');
   // 兩台：A 還是舊版本機紀錄（物件）、B 是 v7 文件 → 合併後兩邊的詞都在、A 本機還原後還是物件
   const mixAB = X(SM.merge(bA, SM.normalize(bB)))['social:u1'];
   ok(mixAB.w['臺南'].ok === 4 && mixAB.w['1624'].wrong === 1 && mixAB.w['荷蘭'].ok === 2 && mixAB.w['荷蘭'].last === 'ok' && typeof mixAB.a.l1 === 'object', 'mmBlanks v7: mixed devices keep every word, local stays objects');
-  // 練習題答對過（kids_mm_blanks[單元].q，2026-10-29）：聯集；沒有 q 的舊紀錄形狀不變
+  // 練習題答對過（kids_mm_blanks[單元].q，2026-10-29）：2026-11-26 起不同步——文件裡沒有 q（舊版寫的 q 字串收到就丟），本機的 q 寫回時留著
   const qA = { mmBlanks: { 'science:n4': { sess: 1, w: {}, a: {}, q: { h1: 1, h2: 1 } } } }, qB = { mmBlanks: { 'science:n4': { sess: 2, w: {}, a: {}, q: { h3: 1, _x: 1 } } } }, qC = { mmBlanks: { 'science:n4': { sess: 0, w: {}, a: {} } } };
-  ok(SM.merge(qA, qB).mmBlanks['science:n4'].q === 'h1 h2 h3' && SM.merge(qA, qC).mmBlanks['science:n4'].q === 'h1 h2' && !('q' in SM.merge(bA, bB).mmBlanks['social:u1']), 'mmBlanks.q: answered-right quiz hashes union (v8: sorted, space-separated string), absent when empty');
-  ok(same(X(SM.merge(qA, qB))['science:n4'].q, { h1: 1, h2: 1, h3: 1 }) && same(SM.merge(qA, SM.normalize(qB)), SM.merge(qA, qB)), 'mmBlanks.q v8: old object + new string mixed merge = same, expands back to {hash:1}');
+  const qOld = { mmBlanks: { 'science:n4': { sess: 3, w: {}, a: {}, q: 'h3 h4' } } };   // 舊版裝置上傳的樣子
+  ok(!('q' in SM.merge(qA, qB).mmBlanks['science:n4']) && !('q' in SM.merge(qA, qOld).mmBlanks['science:n4']) && !('q' in SM.normalize(qA).mmBlanks['science:n4']), 'mmBlanks.q not synced: not in normalized / merged doc, old device\'s q string dropped');
+  ok(same(SM.expandBl(SM.merge(qA, qOld).mmBlanks, qA.mmBlanks)['science:n4'].q, { h1: 1, h2: 1 }) && same(SM.expandBl(SM.merge(qA, qB).mmBlanks, qA.mmBlanks)['science:n4'], { sess: 2, w: {}, a: {}, q: { h1: 1, h2: 1 } }) && !('q' in X(SM.merge(qA, qB))['science:n4']),
+    'mmBlanks.q: expandBl keeps the local q (doc has none; other device\'s q never overwrites or clears it)');
   props(qA, qB, qC, 'mmBlanks');
   // v8（2026-11-02）：只同步答過的、計數封頂、已熟練只留旗標 "m<次數>,<lastShown>"、rel: 不同步
   {
     const U = w => ({ mmBlanks: { 'science:n9': { sess: 50, w, a: {} } } }), R = (d, k) => SM.normalize(d).mmBlanks['science:n9'].w[k];
-    ok(R(U({ x: { ok: 500, wrong: 3, streak: 0, last: 'wrong', lastShown: 7 } }), 'x') === '99,3,0,7', 'mmBlanks v8: counts capped at ' + 99);
-    ok(R(U({ x: { ok: 12, wrong: 2, streak: 5, last: 'ok', lastShown: 40 } }), 'x') === 'm14,40' && R(U({ x: '12,2,5,o,40' }), 'x') === 'm14,40', 'mmBlanks v8: mastered (last ok, streak ≥3) → flag only; v7 string upgrades too');
+    ok(R(U({ x: { ok: 500, wrong: 3, streak: 0, last: 'wrong', lastShown: 7 } }), 'x') === '99,3,0,', 'mmBlanks v8: counts capped at ' + 99 + ' (lastShown not synced: trailing comma kept for old devices)');
+    ok(R(U({ x: { ok: 12, wrong: 2, streak: 5, last: 'ok', lastShown: 40 } }), 'x') === 'm14,' && R(U({ x: '12,2,5,o,40' }), 'x') === 'm14,', 'mmBlanks v8: mastered (last ok, streak ≥3) → flag only; v7 string upgrades too');
     ok(R(U({ x: { ok: 0, wrong: 0, streak: 0, lastShown: 9 } }), 'x') === undefined && R(U({ x: '0,0,0,,9' }), 'x') === undefined, 'mmBlanks v8: shown but never answered → not synced');
     const nR = SM.normalize({ mmBlanks: { 'science:n9': { sess: 1, w: {}, a: { 'n9-a': { ok: 2, wrong: 0, streak: 2, last: 'ok' }, 'rel:n9-a': { ok: 5, wrong: 0, streak: 5, last: 'ok' } } } } }).mmBlanks['science:n9'].a;
     ok(same(nR, { '-a': '2,0,2,' }), 'mmBlanks v8: rel: records (not quizzed since 10-11) not synced (2026-11-17：節點 id 省掉單元名 n9-a → -a): ' + C(nR));
     ok(SM.normalize({ mmBlanks: { 'science:n9': { sess: 1, w: { a: 'm3', b: 'mx,1', c: 'm,2' }, a: {} } } }).mmBlanks['science:n9'].w.a === undefined, 'mmBlanks v8: broken flags dropped, do not throw');
     const big = U({ x: { ok: 400, wrong: 300, streak: 9, last: 'ok', lastShown: 70 }, y: { ok: 150, wrong: 2, streak: 0, last: 'wrong', lastShown: 3 } }), nB = SM.normalize(big);
-    ok(nB.mmBlanks['science:n9'].w.x === 'm198,70' && same(SM.normalize(nB), nB) && same(SM.normalize({ mmBlanks: SM.expandBl(nB.mmBlanks) }), nB), 'mmBlanks v8: capped / flag records stable through normalize → expand → normalize');
+    ok(nB.mmBlanks['science:n9'].w.x === 'm198,' && same(SM.normalize(nB), nB) && same(SM.normalize({ mmBlanks: SM.expandBl(nB.mmBlanks) }), nB), 'mmBlanks v8: capped / flag records stable through normalize → expand → normalize');
     const fl = SM.expandBl(nB.mmBlanks)['science:n9'].w.x;
-    ok(same(fl, { ok: 99, wrong: 99, streak: 3, last: 'ok', lastShown: 70 }), 'mmBlanks v8: flag expands to a mastered record (keeps answer count & lastShown): ' + C(fl));
+    ok(same(fl, { ok: 99, wrong: 99, streak: 3, last: 'ok' }) && same(SM.expandBl(nB.mmBlanks, big.mmBlanks)['science:n9'].w.x, big.mmBlanks['science:n9'].w.x), 'mmBlanks v8: flag expands to a mastered record (keeps answer count; lastShown only from local, local full record kept): ' + C(fl));
     // 熟練後在另一台答錯：那台的紀錄答題次數比較多 → 合併時它贏（不會被旗標蓋回「熟練」）
     const devB = SM.expandBl(SM.normalize(U({ x: { ok: 12, wrong: 2, streak: 5, last: 'ok', lastShown: 40 } })).mmBlanks); require(path.join(root, 'mindmap', 'blanks.js')).recordAnswer(devB['science:n9'], 'x', false);
     const after = SM.expandBl(SM.merge(U({ x: { ok: 12, wrong: 2, streak: 5, last: 'ok', lastShown: 40 } }), { mmBlanks: devB }).mmBlanks)['science:n9'].w.x;
@@ -729,11 +734,11 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     ok(same(SM.merge(o6, o7), SM.merge(SM.normalize(o6), SM.normalize(o7))) && same(SM.merge(o7, o8), SM.merge(SM.normalize(o7), o8)), 'mmBlanks v8: v6 objects / v7 strings / v8 mixed merge = same result');
     props(o6, o7, o8, 'mmBlanks v6/v7/v8 mixed');
     const m678 = SM.merge(SM.merge(o6, o7), o8).mmBlanks['science:n9'].w;
-    ok(m678.x === 'm100,30' && m678.y === '99,99,0,2' && !('z' in m678), 'mmBlanks v8: merged words — more answers wins, unanswered not synced: ' + C(m678));
+    ok(m678.x === 'm100,' && m678.y === '99,99,0,' && !('z' in m678), 'mmBlanks v8: merged words — more answers wins, unanswered not synced: ' + C(m678));
     // 本機還原：文件那筆＝本機那筆壓縮後 → 留本機原本的（不封頂、不變旗標）；本機有、文件沒有的（沒作答）也留；別台贏的才換
     const loc = { 'science:n9': { sess: 50, w: { x: { ok: 120, wrong: 1, streak: 4, last: 'ok', lastShown: 30 }, s: { ok: 0, wrong: 0, streak: 0, lastShown: 50 }, y: { ok: 1, wrong: 2, streak: 0, last: 'wrong', lastShown: 31 } }, a: {}, q: { h9: 1 } } };
     const doc = SM.merge({ mmBlanks: loc }, o8), back = SM.expandBl(doc.mmBlanks, loc)['science:n9'];
-    ok(same(back.w.x, loc['science:n9'].w.x) && same(back.w.s, loc['science:n9'].w.s) && back.w.y.ok === 99 && back.w.y.wrong === 99 && same(back.q, { h9: 1 }), 'expandBl(doc, local): local full record kept when it is what was synced; unanswered local kept; other device\'s winner restored: ' + C(back.w));
+    ok(same(back.w.x, loc['science:n9'].w.x) && same(back.w.s, loc['science:n9'].w.s) && back.w.y.ok === 99 && back.w.y.wrong === 99 && back.w.y.lastShown === 31 && same(back.q, { h9: 1 }), 'expandBl(doc, local): local full record kept when it is what was synced; unanswered local kept; other device\'s winner restored: ' + C(back.w));
     ok(same(SM.normalize({ mmBlanks: Object.assign({}, loc, SM.expandBl(doc.mmBlanks, loc)) }).mmBlanks, doc.mmBlanks), 'expandBl(doc, local): writing back then reading is stable (no re-upload loop)');
     // 舊版（v7）裝置：丟掉旗標、q 字串，PUT 回去 → 新版裝置下次同步從本機補回
     const v7strip = d => { const n = SM.normalize(d), o = {}; Object.keys(n.mmBlanks).forEach(k => { const u = n.mmBlanks[k], f = r => { const x = {}; Object.keys(r).forEach(w => { if (r[w].split(',').length === 5) x[w] = r[w]; }); return x; }; o[k] = { sess: u.sess, w: f(u.w), a: f(u.a) }; }); return Object.assign({}, n, { v: 7, mmBlanks: o }); };
@@ -869,11 +874,9 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   maxDoc.eq = { at: 1.8e12, items: many(30).map(it => Object.assign({ t: 1.8e12 }, it)), del: Object.fromEntries(Array.from({ length: 150 }, (_, i) => ['(x+' + i + ')−(' + i + '−2)=' + (i + 100), 1.7e12])) };
   // 2026-11-02 v9：每日學習統計 dd 也算進最壞情況：90 天、5 台裝置、每天 8 個代碼全部封頂（整理後被 SM.DD_MAX 限住，超過從最舊的一天丟；正常使用 90 天放得下，見 test/daily-stats.test.js）
   maxDoc.dd = {}; for (let d = 0; d < 5; d++) { const days = []; for (let i = 0; i < 90; i++) days.push(SM.ddDay(Date.now() - i * 864e5) + 'emcsnhaox'.split('').map(c => c + '9999,9999').join('')); maxDoc.dd['d' + d + 'mgk2x9abc123'] = days.reverse().join(';'); }
-  // 六下全部上線後的估計：原本估 9 單元（社會 5、自然 4），還沒上線的用六上單元照抄（每單元詞數、節點數、題數＝六上）。
-  // 2026-11-02 六下實際上線 6 單元（社會 u15～u17〔第四單元是探究實作、沒有新知識節點，不做〕、自然 n13～n15）＝ maxDoc 已含；這裡照舊再補 3 個六上大小的單元當餘裕，上限不放寬
-  const g6a = allUnits.filter(([, u]) => /^六上/.test(u.label || '')), g6bHave = allUnits.filter(([, u]) => /^六下/.test(u.label || '')).length;
+  // 2026-11-26 帳算對：六下已全部上線（社會 u15～u17〔第四單元是探究實作、不做〕、自然 n13～n15），不再補 3 個照六上抄的虛構單元；
+  //   心智圖單元一律照 social.html／science.html 真的載入的單元檔算（課本補詞、加單元時自動重算，不寫死數量）
   const projDoc = JSON.parse(JSON.stringify(maxDoc));
-  for (let i = g6bHave; i < 9; i++) { const [s, u] = g6a[i % g6a.length]; fillUnit(projDoc, s + ':g6b' + i + '-' + u.id, u); }
   // 目標 dg 也算最壞（2026-11-09 起 10 欄、11-24 起 11 欄〔＋單字〕、只留最新 3 筆）；dd 用上限算，不靠上面這份資料剛好沒塞滿
   const dg6 = {}; for (let i = 0; i < 9; i++) dg6['2611' + String(i + 10)] = '999,999,20,99,99,99,99,99,9,9,99,9'; maxDoc.dg = projDoc.dg = dg6;   // 2026-11-26 12 欄（多英文閱讀 0～9）
   // 2026-11-06 數學五下～六下 done.mg：三冊全部單元的練習％、測驗分＋三冊總複習，全部 100（最壞情況）
@@ -892,12 +895,22 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     let nd = {}; nk.forEach(k => { nd = KLk.setV(nd, k, 61); });
     projDoc.done = Object.assign({}, projDoc.done, { n: SM.normDone(nd).n });
     ok(nk.length > 550 && SM.bytes(SM.normDone(nd).n) < 1500, 'done.n worst case: ' + nk.length + ' 個單元每格最大值 = ' + SM.bytes(SM.normDone(nd).n) + ' B'); }
+  // 2026-11-26 done 其他 11 節也照真目錄塞滿（以前最壞情況是空的）：課本 tb、心智圖 mm、天平 bal、短除法 sd、應用題 gw、AI ai、倍數 mp、乘法快算 mx、分數 fr、國語閱讀 zh、成語 cy
+  { const KC = require(path.join(root, 'completion.js')), Wt = { window: {} }, t = 1.8e12, all = (ks, v) => Object.fromEntries(ks.map(k => [k, v]));
+    vm.createContext(Wt); vm.runInContext(fs.readFileSync(path.join(root, 'data', 'textbook.js'), 'utf8'), Wt);
+    const CYd = require(path.join(root, 'chinese', 'idioms', 'data', 'catalog.js')), first = a => a.map(x => x[0]);
+    const full = { tb: all(Wt.window.DATA_TEXTBOOK.map(u => u.id), { best: 100, last: 100, at: t }), mm: all(Object.keys(projDoc.mm), { cz: 100, czFirst: 100, qz: 100 }),
+      bal: all(KC.BAL.map((q, i) => 'b' + (i + 1)), t), sd: all(first(KC.SD_LV), 100), gw: all(first(KC.GW_LV), 100), ai: all(first(KC.AI), t),
+      mp: all(SM.MP_K, 100), mx: all(SM.MX_K, { acc: 100, sp: 36000, ok: t }), fr: all(SM.FR_K, 100), zh: all(require(path.join(root, 'chinese', 'data', 'catalog.js')).map(c => c.id), t),
+      cy: all(CYd.idioms.map(c => c.id).concat((CYd.readings || []).map(r => r.id), Array.from({ length: 10 }, (_, i) => 'cyu' + String(i + 1).padStart(2, '0')), ['cyall']), t) };
+    projDoc.done = Object.assign({}, projDoc.done, full); const nd2 = SM.normDone(projDoc.done);
+    ok(Object.keys(full).every(k => Object.keys(nd2[k]).length === Object.keys(full[k]).length && Object.keys(full[k]).length > 0), 'done 11 sections at real catalog size, every key kept: ' + Object.keys(full).map(k => k + ' ' + Object.keys(full[k]).length).join('、')); }
   // 2026-11-19 pg（只在各頁本機存的進度，syncmerge.js pgFromLocal）最壞情況：照真的目錄全部做過、分數 100、次數封頂、模擬考 8 筆三位數，
-  //   段考模擬每個單元都當成一份三單元卷的開頭（約 28 份，實際約 13 份）；上限一個都沒放寬，要擠進 2026-11-17 瘦身空出的 3,984 B
+  //   段考模擬照 mockPairs() 真的配對（2026-11-26 起；以前每個單元都當成一份三單元卷的開頭、約 28 份）；上限一個都沒放寬，要擠進 2026-11-17 瘦身空出的 3,984 B
   let pgBytes = 0;
   { const Wp = { window: {} }; vm.createContext(Wp);
     ['comics/catalog.js', 'gept/data/catalog.js', 'chinese/writing/data/catalog.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), Wp));
-    ['social', 'science'].forEach(k => { const dir = path.join(root, 'mindmap', 'data', k); fs.readdirSync(dir).filter(f => /^(unit|cards|lit)[\w-]*\.js$/.test(f)).sort((a, b) => (a.startsWith('unit') ? -1 : 0) - (b.startsWith('unit') ? -1 : 0)).forEach(f => vm.runInContext(fs.readFileSync(path.join(dir, f), 'utf8'), Wp)); });
+    ['social', 'science'].forEach(k => { const dir = path.join(root, 'mindmap', 'data', k); fs.readdirSync(dir).filter(f => /^(unit|cards|lit|exam)[\w-]*\.js$/.test(f)).sort((a, b) => (a.startsWith('unit') ? -1 : 0) - (b.startsWith('unit') ? -1 : 0)).forEach(f => vm.runInContext(fs.readFileSync(path.join(dir, f), 'utf8'), Wp)); });
     const t = 1.8e12, L = { comic: { seen: {} }, anim: { seen: {} }, writing: { t: {}, l: {} }, gept: { best: {}, task: {}, mock: [] }, exam: {}, lit: {}, cards: {}, wordLv: {}, zhRead: {}, zhIdiom: {}, geoQ: {}, mg: { c: {} }, er: { p: 0 } };
     Wp.window.COMIC_CATALOG.vols.forEach(v => v.eps.forEach(e => { L.comic.seen[e.id] = t; }));
     'ABCDEFG'.split('').forEach(c => { L.anim.seen[c] = t; });
@@ -905,8 +918,12 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     // shortcut: 中高級（u，2026-11-21）的進度不進同步（pg、done.n 最壞約多 200 B，同步預算只剩 799 B、要留 700 B）；syncmerge.js／kids-lock.js 只認 e|i|a，等同步瘦身有空間再加
     const G = Wp.window.GEPT_CATALOG; Object.keys(G).filter(lv => lv !== 'u').forEach(lv => Object.keys(G[lv]).forEach(pt => G[lv][pt].forEach(s => { if (/^[LR]/.test(pt)) L.gept.best[s.id] = { p: 100 }; else if (/^[SW]/.test(pt)) L.gept.task[s.id] = { t }; else for (let i = 0; i < 2; i++) L.gept.mock.push({ id: s.id, t: t + i * 1e6 + s.id.length, lc: 999, ln: 999, rc: 999, rn: 999, L: 120, R: 120, pass: true }); })));
     const MMD = { social: Wp.window.DATA_SOCIAL, science: Wp.window.DATA_SCIENCE };
+    // 段考模擬照 mindmap.js mockPairs() 真的配對（直接拿原始碼那個函式來跑，配對規則改了這裡跟著變）
+    const mockSrc = /function mockPairs\(\)\{[\s\S]*?return out\.filter\([^\n]*\}/.exec(fs.readFileSync(path.join(root, 'mindmap', 'mindmap.js'), 'utf8'))[0];
+    let mockN = 0;
     Object.keys(MMD).forEach(k => { const D = MMD[k], us = D.units.map(u => u.id);
-      us.forEach((u, i) => { L.exam[k + ':' + u] = { best: 100, last: 100, n: 9, at: t }; if (i + 2 < us.length) L.exam[k + ':mock-' + us.slice(i, i + 3).join('-')] = { best: 100, last: 100, n: 9, at: t }; });
+      us.forEach(u => { L.exam[k + ':' + u] = { best: 100, last: 100, n: 9, at: t }; });
+      new Function('D', 'ALL_UNITS', mockSrc + '\nreturn mockPairs();')(D, D.units.slice()).forEach(g => { mockN++; L.exam[k + ':mock-' + g.map(x => x.id).join('-')] = { best: 100, last: 100, n: 9, at: t }; });
       Object.keys(D.lit || {}).forEach(u => (Array.isArray(D.lit[u]) ? D.lit[u] : []).forEach(s => { L.lit[k + ':' + s.id] = { best: 100, n: 9 }; }));
       Object.keys(D.cards || {}).forEach(u => D.cards[u].forEach(c => { L.cards[k + ':' + c.id] = t; })); });
     ['gw', 'mul', 'frc', 'mx', 'bal'].forEach(u => { L.wordLv[u] = { 1: 999, 2: 999, 3: 999 }; });
@@ -923,13 +940,13 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     pgBytes = SM.bytes({ pg }) - 2;   // ,"pg":{…} 在整份文件裡的大小
     const cnt = { comic: Object.keys(back.comic.seen).length, writing: Object.keys(back.writing.t).length + Object.keys(back.writing.l).length, best: Object.keys(back.gept.best).length, task: Object.keys(back.gept.task).length, mock: back.gept.mock.length,
       exam: Object.keys(back.exam).length, lit: Object.keys(back.lit).length, cards: Object.keys(back.cards).length, zh: Object.keys(back.zhRead).length, cy: Object.keys(back.zhIdiom).length, geoQ: Object.values(back.geoQ).filter(v => v === 2).length, mg: Object.values(back.mg.c).filter(v => v === 2).length, er: back.er && back.er.p };
-    ok(cnt.comic === 42 && cnt.writing === 172 && cnt.best === Object.keys(L.gept.best).length && cnt.best >= 120 && cnt.task === Object.keys(L.gept.task).length && cnt.task >= 75 && cnt.mock === SM.PG_MOCK && cnt.exam === Object.keys(L.exam).length && cnt.exam >= 60 && cnt.lit === Object.keys(L.lit).length && cnt.lit >= 160 && cnt.cards === Object.keys(L.cards).length && cnt.cards >= 1000 && cnt.zh === 100 && cnt.cy === 121 && cnt.geoQ === 720 && cnt.mg === 46 && cnt.er === 200,
+    ok(cnt.comic === 42 && cnt.writing === 172 && cnt.best === Object.keys(L.gept.best).length && cnt.best >= 120 && cnt.task === Object.keys(L.gept.task).length && cnt.task >= 75 && cnt.mock === SM.PG_MOCK && cnt.exam === Object.keys(L.exam).length && mockN >= 10 && cnt.exam === allUnits.length + mockN && cnt.lit === Object.keys(L.lit).length && cnt.lit >= 160 && cnt.cards === Object.keys(L.cards).length && cnt.cards >= 1000 && cnt.zh === 100 && cnt.cy === 121 && cnt.geoQ === 720 && cnt.mg === 46 && cnt.er === 200,
       'pg worst case keeps every item (only the newest ' + SM.PG_MOCK + ' mock exams): ' + JSON.stringify(cnt));
     ok(same(SM.pgFromLocal(back), pg), 'pg worst case: local → doc → local → doc is stable');
     projDoc.pg = pg; }
   ok(SM.bytes(SM.normDg(dg6)) <= SM.DG_MAX_BYTES && SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX <= SM.MAX_BYTES / 4, 'daily stats + goals at their caps fit the budget: ' + (SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX));
   const projBytes = SM.bytes(SM.normalize(projDoc));
-  ok(g6a.length === 9 && projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats) after 六下 (9 units, sized like 六上) still ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes (六下已上線 ' + g6bHave + ' 單元)');
+  ok(projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats, ' + allUnits.length + ' 個心智圖單元照真目錄) ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes');
   // 2026-11-17 瘦身（背架構節點 id 省掉單元名、天平刪除墓碑 100 → 50；上限一個都沒放寬）：dd 用上限 DD_MAX 算，最壞情況 127,544 → 124,016 B，空出約 4KB 給以後的新功能
   const worstCap = SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX;
   // 2026-11-19 加 pg 之後：124,016 B ＋ pg 最壞（約 2.7KB）；仍 ≤ MAX_BYTES/4（上限沒放寬）
@@ -938,14 +955,17 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 2026-11-24 pg 多了英文閱讀進度 p（v 群組 R 一格，200 篇＝',R=5l' 5 B）：餘裕 715 → 710 B，仍 ≥ 700 B（不用 40 B 的位元圖）
   // 2026-11-26 線對稱拿掉 Ms1（答對 1 次只影響抽題順序，用本機的）：127,290 → 127,273 B，餘裕 710 → 727 B
   // 2026-11-26 dg 多第 12 欄「英文閱讀」（3 筆最長 133 → 139 B）：餘裕 727 → 721 B，仍 ≥ 700 B
+  // 2026-11-26 帳算對（上限、規則都沒動）：拿掉 3 個虛構六下單元（−11,597 B）、done 11 節照真目錄塞滿（+8,056 B）、段考模擬照 mockPairs() 14 份（−244 B）
+  //   → 127,279 → 123,494 B，餘裕 721 → 4,506 B
+  // 2026-11-26 mmBlanks.q、lastShown 不同步（只留本機；上面 fillUnit 照樣塞，確認 normalize 會丟掉）：123,494 → 95,807 B，餘裕 4,506 → 32,193 B
   ok(worstCap - pgBytes <= 124100 && worstCap <= SM.MAX_BYTES / 4 - 700, 'worst case at caps (2026-11-17 trim + 2026-11-19 pg + 2026-11-21 geoQ + 2026-11-24 g5a7 mg + english-reading p, pg ' + pgBytes + ' B): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (126,883 B / 1,117 B before geoQ)');
   console.log('sync worst case (non-English): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (must stay ≥ 700 B)');
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
   // 2026-11-02 五下上線塞滿約 156KB 超過 1/4 → v7 壓成字串（114,868 B，六下必超）→ v8 只同步答過的、封頂、熟練旗標
-  ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === SM.MAX_EQ_DEL && SM.MAX_EQ_DEL === 50 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,9999')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
+  ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === SM.MAX_EQ_DEL && SM.MAX_EQ_DEL === 50 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
   const bigAll = SM.compact(Object.assign({}, maxDoc, { log: big.log.concat(big.log.map(e => Object.assign({}, e, { t: e.t + 1e7, a: e.a + '-again' }))) }));
   ok(SM.bytes(SM.packDoc(bigAll, null, 0)) <= SM.MAX_BYTES && same(bigAll.mm, sec.mm) && same(bigAll.mmBlanks, sec.mmBlanks) && same(bigAll.eq, sec.eq) && same(bigAll.dd, sec.dd) && SM.bytes(sec.dd) <= SM.DD_MAX, 'compact keeps doc ≤ 500KB (≪ 1MB server limit) by folding old English answers, v3 sections untouched: ' + SM.bytes(SM.packDoc(bigAll, null, 0)));
-  console.log('sync v9 doc size: sections max ' + secBytes + ' B (六下全上線估 ' + projBytes + ' B；dd 用上限算 ' + worstCap + ' B，其中 pg ' + pgBytes + ' B，剩 ' + (SM.MAX_BYTES / 4 - worstCap) + ' B); 18000 answers + sections after compact ' + SM.bytes(SM.packDoc(bigAll, null, 0)) + ' B（上傳的樣子）');
+  console.log('sync v9 doc size: sections max ' + secBytes + ' B (真目錄全部塞滿 ' + projBytes + ' B；dd 用上限算 ' + worstCap + ' B，其中 pg ' + pgBytes + ' B，剩 ' + (SM.MAX_BYTES / 4 - worstCap) + ' B); 18000 answers + sections after compact ' + SM.bytes(SM.packDoc(bigAll, null, 0)) + ' B（上傳的樣子）');
 }
 
 // ---- 2026-11-23 英文全部學會的最壞情況（agg／learned 上傳時壓進 ke；上限一個都沒放寬）----
@@ -979,6 +999,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   ok(cpB <= SMk.MAX_BYTES && cp.log.length < 6050 && ids.every(q => cp.agg[q] && Math.min(2, cp.agg[q].k) >= Math.min(2, agg[q].k)), 'compact with full English + 6000 new answers: wire doc ' + cpB + ' B ≤ MAX_BYTES, log ' + cp.log.length + ' kept, no question lost');
   // 壓縮與還原、合併語意、學過 2 次、新舊版雙向（凍結的 2026-11-21 線上版）、三台輪流同步 → test/sync-ke.test.js
   { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'sync-ke.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/sync-ke.test.js passes: ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
+  // 心智圖 mmBlanks 的 q、lastShown 不同步（2026-11-26）：新舊雙向（凍結的 11-21、11-26 線上版）、本機 q／lastShown 不被清掉 → test/sync-blanks.test.js
+  { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'sync-blanks.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/sync-blanks.test.js passes: ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
   console.log('english worst case: ' + WORDS + ' 字（現有 ' + W.length + ' ＋ 補 ' + addW + '）、' + ids.length + ' 題、' + items.size + ' 項；ke.a ' + (wire.ke.a || '').length + ' B、ke.l ' + (wire.ke.l || '').length + ' B、英文合計 ' + enB + ' B；128,000 + ' + enB + ' = ' + total + ' B ≤ ' + LIM + ' B（舊寫法 ' + legacyB + ' B）');
 }
 

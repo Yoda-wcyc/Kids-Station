@@ -33,7 +33,7 @@ ok(NEW.bytes(nd) < NEW.bytes(od), 'new doc is smaller: ' + NEW.bytes(nd) + ' < '
 // ---------- 2. 新版讀舊格式：跟直接讀本機一樣；expandBl 還原成本機的完整 id ----------
 ok(same(NEW.normalize(od), nd), 'new reads an old-format doc = same as reading local');
 const back = NEW.expandBl(nd.mmBlanks, {});
-ok(same(Object.keys(back['social:u1'].a).sort(), ['odd', 'u1-l1', 'u1-l1-c']) && same(back['science:n10'].a['n10-a1'], { ok: 9, wrong: 0, streak: 3, last: 'ok', lastShown: 4 }), 'expandBl restores full node ids for the local store: ' + C(back));
+ok(same(Object.keys(back['social:u1'].a).sort(), ['odd', 'u1-l1', 'u1-l1-c']) && same(back['science:n10'].a['n10-a1'], { ok: 9, wrong: 0, streak: 3, last: 'ok' }) && same(NEW.expandBl(nd.mmBlanks, L.mmBlanks)['science:n10'].a['n10-a1'], L.mmBlanks['science:n10'].a['n10-a1']), 'expandBl restores full node ids for the local store (lastShown only from local since 11-26): ' + C(back));
 ok(same(NEW.normalize({ mmBlanks: NEW.expandBl(nd.mmBlanks, L.mmBlanks) }).mmBlanks, nd.mmBlanks), 'local → doc → local → doc is stable (no re-upload loop)');
 
 // ---------- 3. 舊版讀新格式：不報錯、一筆都不丟（舊版整理後新版再讀＝原文件） ----------
@@ -50,8 +50,8 @@ const oldLocal = local0();
 const viaOld = OLD.merge(oldLocal, J(newer)), direct = NEW.merge(oldLocal, newer);
 ok(same(NEW.normalize(viaOld), direct), 'old merges new doc + its local → new reads it = new merging directly (nothing lost or overwritten)');
 const l1 = NEW.normalize(viaOld).mmBlanks['social:u1'].a['-l1'];
-ok(l1 === '20,10,0,39', 'the newer device\'s 30-answer record survives the old device\'s merge+PUT: ' + l1);
-ok(NEW.normalize(viaOld).mmBlanks['social:u1'].a['-l9'] === '2,0,2,38' && NEW.normalize(viaOld).mmBlanks['social:u1'].a['-l1-c'] === '0,2,0,9', 'records only on one side are kept from both');
+ok(l1 === '20,10,0,', 'the newer device\'s 30-answer record survives the old device\'s merge+PUT: ' + l1);
+ok(NEW.normalize(viaOld).mmBlanks['social:u1'].a['-l9'] === '2,0,2,' && NEW.normalize(viaOld).mmBlanks['social:u1'].a['-l1-c'] === '0,2,0,', 'records only on one side are kept from both');
 // 舊版拿到新文件、沒有自己的資料就直接 PUT 回去（只整理）：也一樣
 ok(same(NEW.normalize(OLD.merge({}, J(newer))), newer), 'old device with no local data passes the new doc through unchanged');
 // 結合、交換：新舊格式混著合併，順序不影響結果
@@ -76,7 +76,7 @@ ok(same(NEW.merge(a, b), NEW.merge(b, a)) && same(NEW.merge(NEW.merge(a, b), c),
   ok(!e2, 'alternating new / old syncOnce: no error ' + (e2 && e2.stack));
   const want = NEW.merge(local0(), N.local), sv = NEW.normalize(server.doc);
   ok(same(sv.mmBlanks, want.mmBlanks) && same(sv.done, want.done) && same(sv.mk, want.mk) && sv.log.length === want.log.length, 'server ends with everything from both devices (as if both were new): ' + C(sv.mmBlanks['social:u1']));
-  ok(sv.mmBlanks['social:u1'].a['-l1'] === '20,10,0,39' && sv.mmBlanks['social:u1'].w['荷蘭'] === 'm7,40' && sv.mmBlanks['social:u1'].q.split(' ').length === 3, 'new device\'s records not overwritten by the old device');
+  ok(sv.mmBlanks['social:u1'].a['-l1'] === '20,10,0,' && sv.mmBlanks['social:u1'].w['荷蘭'] === 'm7,' && !('q' in sv.mmBlanks['social:u1']) && same(N.local.mmBlanks['social:u1'].q, { h9: 1 }) && N.local.mmBlanks['social:u1'].w['荷蘭'].lastShown === 40, 'new device\'s records not overwritten by the old device; q / lastShown stay local (not in the doc, kept in the new device\'s store)');
   const nl = N.local.mmBlanks['social:u1'];
   ok(nl.a['u1-l1'].ok === 20 && nl.a['u1-l1-c'] && !Object.keys(nl.a).some(k => k.charAt(0) === '-'), 'new device local: full node ids, old device\'s record pulled in, no short keys left: ' + C(Object.keys(nl.a)));
   const ol = O.local.mmBlanks['social:u1'];
