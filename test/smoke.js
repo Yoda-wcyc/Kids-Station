@@ -948,7 +948,9 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   const projBytes = SM.bytes(SM.normalize(projDoc));
   ok(projBytes <= SM.MAX_BYTES / 4, 'v9 worst case (with daily stats, ' + allUnits.length + ' 個心智圖單元照真目錄) ≤ 1/4 of the 500KB doc: ' + projBytes + ' bytes');
   // 2026-11-17 瘦身（背架構節點 id 省掉單元名、天平刪除墓碑 100 → 50；上限一個都沒放寬）：dd 用上限 DD_MAX 算，最壞情況 127,544 → 124,016 B，空出約 4KB 給以後的新功能
-  const worstCap = SM.bytes(SM.normalize(Object.assign({}, projDoc, { dd: {} }))) + SM.DD_MAX;
+  // 2026-11-26 起量「上傳的樣子」（packDoc，跟英文那邊一致）：mm、mmBlanks、eq、scratch、done.mg／geo 上傳時壓進 pk；預算規則（MAX_BYTES/4、餘裕 ≥700 B）不變
+  const worstDoc = SM.normalize(Object.assign({}, projDoc, { dd: {} })), worstPlain = SM.bytes(worstDoc) + SM.DD_MAX, worstWire = SM.packDoc(worstDoc, null, 0);
+  const worstCap = SM.bytes(worstWire) + SM.DD_MAX;
   // 2026-11-19 加 pg 之後：124,016 B ＋ pg 最壞（約 2.7KB）；仍 ≤ MAX_BYTES/4（上限沒放寬）
   // 2026-11-21 pg 多了地理每題答對次數（geoQ，720 題兩層旗標）：用掉剩下 1,117 B 裡的約 330 B（家長同意可以用這 1,117 B），留至少 700 B 給以後
   // 2026-11-24 pg 多了線對稱 g5a7 每題答對次數（kids_mg，46 題兩層旗標 Ms1／Ms2）：127,251 → 127,285 B（+34 B），餘裕 749 → 715 B，仍 ≥ 700 B
@@ -959,7 +961,12 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   //   → 127,279 → 123,494 B，餘裕 721 → 4,506 B
   // 2026-11-26 mmBlanks.q、lastShown 不同步（只留本機；上面 fillUnit 照樣塞，確認 normalize 會丟掉）：123,494 → 95,807 B，餘裕 4,506 → 32,193 B
   ok(worstCap - pgBytes <= 124100 && worstCap <= SM.MAX_BYTES / 4 - 700, 'worst case at caps (2026-11-17 trim + 2026-11-19 pg + 2026-11-21 geoQ + 2026-11-24 g5a7 mg + english-reading p, pg ' + pgBytes + ' B): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (126,883 B / 1,117 B before geoQ)');
-  console.log('sync worst case (non-English): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (must stay ≥ 700 B)');
+  // 2026-11-26 pk（上傳壓縮）：95,807 → 60,237 B，餘裕 32,193 → 67,763 B。最壞情況整份 packDoc → JSON → normalize 逐值相同；
+  //   過渡期（14 天內看到舊版寫過）原寫法也寫一份＝兩種加起來（只在整份 ≤ MAX_BYTES 時才寫，放不下就只寫壓縮的）
+  const dualCap = SM.bytes(SM.packDoc(worstDoc, { mm: { x: {} } }, 1.8e12)) + SM.DD_MAX;
+  ok(same(SM.normalize(JSON.parse(JSON.stringify(worstWire))), worstDoc) && !Object.keys(worstWire.mmBlanks).length && !Object.keys(worstWire.mm).length && !('eq' in worstWire) && !Object.keys(worstWire.scratch).length && dualCap > worstPlain && dualCap <= SM.MAX_BYTES,
+    'worst case wire (pk) round trip: every value back; nothing left in the old fields; transition (both forms) ' + dualCap + ' B ≤ MAX_BYTES');
+  console.log('sync worst case (non-English): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (must stay ≥ 700 B)；原寫法 ' + worstPlain + ' B；過渡期兩種都寫 ' + dualCap + ' B');
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
   // 2026-11-02 五下上線塞滿約 156KB 超過 1/4 → v7 壓成字串（114,868 B，六下必超）→ v8 只同步答過的、封頂、熟練旗標
   ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === SM.MAX_EQ_DEL && SM.MAX_EQ_DEL === 50 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
@@ -1001,6 +1008,8 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'sync-ke.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/sync-ke.test.js passes: ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
   // 心智圖 mmBlanks 的 q、lastShown 不同步（2026-11-26）：新舊雙向（凍結的 11-21、11-26 線上版）、本機 q／lastShown 不被清掉 → test/sync-blanks.test.js
   { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'sync-blanks.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/sync-blanks.test.js passes: ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
+  // 心智圖、天平、Scratch、數學年級、地理上傳壓縮 pk（2026-11-26）：每種資料來回逐值相同、分隔字元退回原寫法、新舊版 14 天兩種都寫 → test/sync-pk.test.js
+  { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'sync-pk.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/sync-pk.test.js passes: ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
   console.log('english worst case: ' + WORDS + ' 字（現有 ' + W.length + ' ＋ 補 ' + addW + '）、' + ids.length + ' 題、' + items.size + ' 項；ke.a ' + (wire.ke.a || '').length + ' B、ke.l ' + (wire.ke.l || '').length + ' B、英文合計 ' + enB + ' B；128,000 + ' + enB + ' = ' + total + ' B ≤ ' + LIM + ' B（舊寫法 ' + legacyB + ' B）');
 }
 

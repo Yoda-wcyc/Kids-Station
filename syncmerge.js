@@ -1,4 +1,13 @@
 /* syncmerge.js — 裝置同步的合併規則（純函式，不碰 DOM／網路以外的東西；瀏覽器與 Node 共用）
+   2026-11-26 非英文欄位上傳時壓縮（跟 ke 同一套作法；不升版、上限都沒動）：
+    pk:{bl:{單元:'…'}, mm:{單元:'…'}, eq:'…', sc:'…', mg:'…', geo:'…', o:舊版最後出現的時間}   ← 只在 PUT 出去的文件裡（packDoc）；normalize 解開併回 mmBlanks／mm／eq／scratch／done.mg／done.geo，程式裡、本機照舊是完整物件。
+    - bl：每單元 'sess|w|a'（數字 36 進位）；w、a＝'詞=紀錄;…'，a 的 key 前綴共用（第一個字＝跟上一個 key 一樣的前幾個字）；紀錄 'ok,wrong,st,' → (ok×100＋wrong)×3＋st，旗標 'm<n>,' → '+n'。
+    - mm：每單元 'unlocked|關分數,…|關時間,…|lastPassAt|reviewStep'（關＝1～9 一個字＋36 進位）。eq：'at|<own 0/1><t>~題目;…|<時間>~題目;…'。
+    - sc（scratch）、mg、geo：'key=值;…'（key 前綴共用；scratch 的時間是毫秒 36 進位，只收還原後一模一樣的標準 ISO）。
+    - 寫不進去的照原寫法留在原欄位：key 有分隔字元（bl：= ; |，其他：= ;）、數字不是非負整數（mmBlanks／mm 整個單元、eq 整份）、scratch 不是標準 ISO（那一筆）。
+    - 舊版（11-26 以前，看不懂 pk）裝置：丟掉 pk，PUT 回去只剩原欄位 → 新版看到「沒有 pk、原欄位有東西」＝舊版寫過 → pk.o＝那時候；
+      之後 14 天（KE_OLD_MS）內原寫法也整份寫一份（整份放得進 MAX_BYTES 才寫）→ 舊版那台看得到全部；14 天沒再看到舊版就只寫壓縮的。不能在原欄位直接改格式（舊版 1121 會整個單元丟掉）。
+      雙向測試見 test/sync-pk.test.js；最壞大小見 smoke（量上傳的樣子）。
    2026-11-26 mmBlanks 瘦身（不升版、上限都沒動）：q（練習題答對過）、lastShown（詞上次出現在第幾次練習）不同步，只留在本機。
     - 紀錄寫成 "ok,wrong,streak," ／ "m<次數>,"（尾巴逗號留著＝舊版 normRec 認得的段數，舊版 1121、11-26 前的線上版都照收、一筆不掉）。
     - 本機的 q、lastShown 由 expandBl 留著（別台答得多、換成文件那筆時 lastShown 也照本機的）；舊版裝置寫進文件的 q、lastShown 收到就丟。
@@ -641,26 +650,101 @@
     if (dead.length > MK_DEL) dead.sort((a, b) => (ev(b) - ev(a)) || (a < b ? -1 : 1)).slice(MK_DEL).forEach(k => { delete m[k]; });
     return m;
   }
-  // 上傳用的文件：agg、learned 壓進 ke。remote＝伺服器上那份（原樣）：
-  //   舊版裝置寫過（有 agg／learned、沒有 ke）→ ke.o＝現在。KE_OLD_MS（14 天）內舊寫法的 agg／learned 也整份寫一份：
-  //   舊版那台看得到全部（學會、學過 2 次都一致），也不會因為「本機有、文件沒有」每次都 PUT、跟新版來回蓋。
-  //   兩份加起來超過 MAX_BYTES 就只寫壓縮的（舊版那台只看得到自己的；它 PUT 時丟掉 ke，新版下次同步補回）。14 天沒再看到舊版就不寫舊寫法了。
+  // ---- pk：心智圖（mm、mmBlanks）、天平 eq、Scratch、數學年級 done.mg、地理 done.geo 上傳時的壓縮寫法（2026-11-26，格式見檔頭；不升版）----
+  // 跟 ke 一樣：程式裡、本機照舊是完整物件，只有 PUT 出去的文件（packDoc）是壓縮的；normalize 解開併回原欄位。
+  const t36 = v => v.toString(36), nn = v => Number.isSafeInteger(v) && v >= 0, p36 = s => (/^[0-9a-z]{1,11}$/.test(s) ? parseInt(s, 36) : NaN);
+  // 'key=值;key=值'（key 排序；share：key 前綴共用，第一個字＝跟上一個一樣的前幾個字）。key 有 bad 裡的字、val 回 null 的放 rest（照原寫法）
+  function kvP(o, val, share, bad) {
+    const rest = {}, out = []; let prev = '';
+    Object.keys(o).sort().forEach(k => { const v = bad.test(k) ? null : val(o[k]); if (v == null) { rest[k] = o[k]; return; } const p = share ? pre(k, prev) : 0; prev = k; out.push((share ? t36(p) : '') + k.slice(p) + '=' + v); });
+    return { s: out.join(';'), rest };
+  }
+  // 解不開的那筆略過（不報錯）
+  function kvU(s, share, val) {
+    const o = {}; let prev = '';
+    (typeof s === 'string' && s ? s.split(';') : []).forEach(r => { const e = r.indexOf('='); if (e < 1) return; const k = share ? prev.slice(0, parseInt(r[0], 36) || 0) + r.slice(1, e) : r.slice(0, e); prev = k; const v = val(r.slice(e + 1)); if (k && v != null) o[k] = v; });
+    return o;
+  }
+  const empty = x => !Object.keys(x).length;
+  // mmBlanks 紀錄：'ok,wrong,st,' → 36 進位 (ok×100＋wrong)×3＋st；旗標 'm<次數>,' → '+'＋次數
+  const recP = r => { if (r.charAt(0) === 'm') return '+' + t36(+r.slice(1, -1)); const p = r.split(','); return t36((+p[0] * 100 + +p[1]) * 3 + +p[2]); };
+  const recU = s => {
+    if (s.charAt(0) === '+') { const n = p36(s.slice(1)); return n >= 1 ? 'm' + n + ',' : null; }
+    const v = p36(s); if (!(v >= 0)) return null; const st = v % 3, x = (v - st) / 3, w = x % 100;
+    return (x - w) / 100 + ',' + w + ',' + st + ',';
+  };
+  const BL_BAD = /[;=|]/, KV_BAD = /[;=]/;
+  const blU = s => { const p = typeof s === 'string' ? s.split('|') : []; return p.length === 3 && p36(p[0]) >= 0 ? { sess: p36(p[0]), w: kvU(p[1], false, recU), a: kvU(p[2], true, recU) } : null; };
+  // mm：'unlocked|關數值,…|關時間,…|lastPassAt|reviewStep'（關＝1～9 一個字＋36 進位）
+  const lvP = o => Object.keys(o).sort().map(k => k + t36(o[k])).join(',');
+  const lvU = s => { const o = {}; (s ? s.split(',') : []).forEach(r => { const v = p36(r.slice(1)); if (/^[1-9]$/.test(r.charAt(0)) && v >= 0) o[r.charAt(0)] = v; }); return o; };
+  const mmP = p => ([p.unlocked, p.lastPassAt, p.reviewStep].concat(Object.values(p.best), Object.values(p.passedAt)).every(nn) ? [p.unlocked, lvP(p.best), lvP(p.passedAt), t36(p.lastPassAt), t36(p.reviewStep)].join('|') : null);
+  const mmU = s => { const p = typeof s === 'string' ? s.split('|') : []; return p.length === 5 ? { unlocked: +p[0], best: lvU(p[1]), passedAt: lvU(p[2]), lastPassAt: p36(p[3]), reviewStep: p36(p[4]) } : null; };
+  // eq：'at|<own 0/1><t>~題目;…|<刪除時間>~題目;…'；題目有 | ; ~ 或數字不是非負整數 → 整份照原寫法
+  const eqP = e => {
+    if (e.items.map(it => it.q).concat(Object.keys(e.del)).some(q => /[|;~]/.test(q)) || ![e.at].concat(e.items.map(it => it.t), Object.values(e.del)).every(nn)) return null;
+    return t36(e.at) + '|' + e.items.map(it => (it.own ? '1' : '0') + t36(it.t) + '~' + it.q).join(';') + '|' + Object.keys(e.del).map(q => t36(e.del[q]) + '~' + q).join(';');
+  };
+  const eqU = s => {
+    const p = typeof s === 'string' ? s.split('|') : [], items = [], del = {}; if (p.length !== 3) return null;
+    (p[1] ? p[1].split(';') : []).forEach(r => { const i = r.indexOf('~'), t = p36(r.slice(1, i)); if (i > 1 && t >= 0 && /^[01]$/.test(r.charAt(0))) items.push({ q: r.slice(i + 1), own: r.charAt(0) === '1', t }); });
+    (p[2] ? p[2].split(';') : []).forEach(r => { const i = r.indexOf('~'), t = p36(r.slice(0, i)); if (i > 0 && t >= 0) del[r.slice(i + 1)] = t; });
+    return { at: p36(p[0]) || 0, items, del };
+  };
+  const isoP = v => { const t = Date.parse(v); return t > 0 && t < KE_TMAX && kIso(t) === v ? t36(t) : null; }, isoU = s => { const t = p36(s); return t > 0 && t < KE_TMAX ? kIso(t) : null; };
+  const intP = v => (nn(v) ? t36(v) : null), intU = s => { const v = p36(s); return v >= 0 ? v : null; };
+  // 整理過的文件 → { pk, rest }：rest＝寫不進 pk、照原寫法留在原欄位的
+  function pkPack(d) {
+    const pk = {}, bl = {}, mm = {}, blR = {}, mmR = {}, dn = obj(d.done), doneR = Object.assign({}, dn);
+    Object.keys(obj(d.mmBlanks)).forEach(k => { const u = d.mmBlanks[k], w = kvP(obj(u.w), recP, false, BL_BAD), a = kvP(obj(u.a), recP, true, BL_BAD);
+      if (nn(u.sess) && empty(w.rest) && empty(a.rest)) bl[k] = t36(u.sess) + '|' + w.s + '|' + a.s; else blR[k] = u; });
+    Object.keys(obj(d.mm)).forEach(k => { const s = mmP(d.mm[k]); if (s) mm[k] = s; else mmR[k] = d.mm[k]; });
+    if (!empty(bl)) pk.bl = bl; if (!empty(mm)) pk.mm = mm;
+    const sc = kvP(obj(d.scratch), isoP, true, KV_BAD); if (sc.s) pk.sc = sc.s;
+    ['mg', 'geo'].forEach(s => { const x = kvP(obj(dn[s]), intP, true, KV_BAD); if (x.s) pk[s] = x.s; doneR[s] = x.rest; });
+    const rest = { mmBlanks: blR, mm: mmR, scratch: sc.rest, done: doneR }, e = d.eq && eqP(d.eq);
+    if (e) pk.eq = e; else rest.eq = d.eq;
+    return { pk, rest };
+  }
+  // pk 解開成跟原欄位一樣的形狀（還沒整理；normalize 用原欄位的整理＋合併規則併進去）
+  function pkUnpack(pk) {
+    const p = obj(pk), each = (x, f) => { const o = {}; Object.keys(obj(x)).forEach(k => { const v = f(x[k]); if (v) o[k] = v; }); return o; };
+    return { mmBlanks: each(p.bl, blU), mm: each(p.mm, mmU), eq: p.eq ? eqU(p.eq) : null, scratch: kvU(p.sc, true, isoU), done: { mg: kvU(p.mg, true, intU), geo: kvU(p.geo, true, intU) } };
+  }
+  // normalize 用：pk 解開併回原欄位（原欄位也有的，照各欄位的合併規則；兩邊一樣＝結果不變）
+  function pkMerge(d) {
+    const u = pkUnpack(d.pk), o = Object.assign({}, d); delete o.pk;
+    o.mm = mergeSection(section(d.mm, normProg), section(u.mm, normProg), mergeProg);
+    o.mmBlanks = mergeSection(section(d.mmBlanks, normBl), section(u.mmBlanks, normBl), mergeBl);
+    if (u.eq) o.eq = mergeEq(d.eq, u.eq);
+    o.scratch = mergeSection(normScr(d.scratch), normScr(u.scratch), earliest);
+    o.done = mergeDone(d.done, u.done);
+    return o;
+  }
+  // 舊版裝置（看不懂 pk）寫過：文件沒有 pk，但原欄位有東西
+  const pkOldWrote = r => !r.pk && (['mm', 'mmBlanks', 'scratch'].some(k => !empty(obj(r[k]))) || (Array.isArray(obj(r.eq).items) && r.eq.items.length > 0) || !empty(obj(obj(r.eq).del)) || !empty(obj(obj(r.done).mg)) || !empty(obj(obj(r.done).geo)));
+
+  // 上傳用的文件：agg、learned 壓進 ke；mm、mmBlanks、eq、scratch、done.mg／geo 壓進 pk。remote＝伺服器上那份（原樣）：
+  //   舊版裝置寫過（ke：有 agg／learned、沒有 ke；pk：原欄位有東西、沒有 pk）→ ke.o／pk.o＝現在。KE_OLD_MS（14 天）內舊寫法也整份寫一份：
+  //   舊版那台看得到全部（學會、學過 2 次、過關…都一致），也不會因為「本機有、文件沒有」每次都 PUT、跟新版來回蓋。
+  //   加起來超過 MAX_BYTES 就只寫壓縮的（舊版那台只看得到自己的；它 PUT 時丟掉 ke／pk，新版下次同步補回）。14 天沒再看到舊版就不寫舊寫法了。
   function packDoc(d, remote, now) {
-    const r = obj(remote), ro = num(obj(r.ke).o, 0);
+    const r = obj(remote), ro = num(obj(r.ke).o, 0), po = num(obj(r.pk).o, 0);
     const seen = Math.max(ro <= now + 864e5 ? ro : 0, !r.ke && (Object.keys(obj(r.agg)).length || Object.keys(obj(r.learned)).length) ? now : 0);
-    const A = aggPack(obj(d.agg)), L = lPack(obj(d.learned)), ke = {};
+    const pSeen = Math.max(po <= now + 864e5 ? po : 0, pkOldWrote(r) ? now : 0);
+    const A = aggPack(obj(d.agg)), L = lPack(obj(d.learned)), ke = {}, P = pkPack(d);
     if (A.s) ke.a = zip(A.s); if (L.s) ke.l = zip(L.s);
-    const out = Object.assign({}, d, { agg: A.rest, learned: L.rest, ke });
-    if (!(seen > 0 && now - seen < KE_OLD_MS)) return out;
-    ke.o = seen;
-    const both = Object.assign({}, out, { agg: d.agg, learned: d.learned });
-    return bytes(both) <= MAX_BYTES ? both : out;
+    let out = Object.assign({}, d, { agg: A.rest, learned: L.rest, ke }, P.rest, { pk: P.pk });
+    if (!('eq' in P.rest)) delete out.eq;
+    if (seen > 0 && now - seen < KE_OLD_MS) { ke.o = seen; const both = Object.assign({}, out, { agg: d.agg, learned: d.learned }); if (bytes(both) <= MAX_BYTES) out = both; }
+    if (pSeen > 0 && now - pSeen < KE_OLD_MS) { P.pk.o = pSeen; const both = Object.assign({}, out, { mm: d.mm, mmBlanks: d.mmBlanks, eq: d.eq, scratch: d.scratch, done: d.done }); if (bytes(both) <= MAX_BYTES) out = both; }
+    return out;
   }
 
   // 整理成 v7：補 r、去重、排序；t ≤ cut 的舊紀錄只保留「答對過」到 agg；新欄位缺了就是空的（讀舊文件不會壞）
   // 2026-11-23：壓縮的 ke（agg、learned）解開併回完整物件；結果裡沒有 ke（上傳前才 packDoc）
   function normalize(doc) {
-    const d = obj(doc), cut = +d.cut || 0, ke = obj(d.ke), agg = mergeAgg(obj(d.agg), aggUnpack(unzip(ke.a), cut > 0 ? cut : KE_TMAX)), seen = new Map();
+    const d0 = obj(doc), d = d0.pk ? pkMerge(d0) : d0, cut = +d.cut || 0, ke = obj(d.ke), agg = mergeAgg(obj(d.agg), aggUnpack(unzip(ke.a), cut > 0 ? cut : KE_TMAX)), seen = new Map();
     (Array.isArray(d.log) ? d.log : []).forEach(e0 => {
       if (!e0 || !e0.id || !isFinite(+e0.t)) return;
       const e = e0.r ? e0 : Object.assign({}, e0, { r: rid(e0) });
