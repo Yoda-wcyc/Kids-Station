@@ -875,7 +875,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   const projDoc = JSON.parse(JSON.stringify(maxDoc));
   for (let i = g6bHave; i < 9; i++) { const [s, u] = g6a[i % g6a.length]; fillUnit(projDoc, s + ':g6b' + i + '-' + u.id, u); }
   // 目標 dg 也算最壞（2026-11-09 起 10 欄、11-24 起 11 欄〔＋單字〕、只留最新 3 筆）；dd 用上限算，不靠上面這份資料剛好沒塞滿
-  const dg6 = {}; for (let i = 0; i < 9; i++) dg6['2611' + String(i + 10)] = '999,999,20,99,99,99,99,99,9,9,99'; maxDoc.dg = projDoc.dg = dg6;
+  const dg6 = {}; for (let i = 0; i < 9; i++) dg6['2611' + String(i + 10)] = '999,999,20,99,99,99,99,99,9,9,99,9'; maxDoc.dg = projDoc.dg = dg6;   // 2026-11-26 12 欄（多英文閱讀 0～9）
   // 2026-11-06 數學五下～六下 done.mg：三冊全部單元的練習％、測驗分＋三冊總複習，全部 100（最壞情況）
   // 2026-11-24 五上單元七〈線對稱圖形〉（grade.js EXTRA，沒有總複習）多 2 個 key
   { const MGm = require(path.join(root, 'math', 'grade.js')), mg = {}; MGm.BOOKS.forEach(b => { mg[b.id + 'R'] = 100; }); MGm.BOOKS.concat(MGm.EXTRA).forEach(b => b.units.forEach(x => { mg[x[0] + 'q'] = 100; mg[x[0] + 't'] = 100; }));
@@ -937,6 +937,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 2026-11-24 pg 多了線對稱 g5a7 每題答對次數（kids_mg，46 題兩層旗標 Ms1／Ms2）：127,251 → 127,285 B（+34 B），餘裕 749 → 715 B，仍 ≥ 700 B
   // 2026-11-24 pg 多了英文閱讀進度 p（v 群組 R 一格，200 篇＝',R=5l' 5 B）：餘裕 715 → 710 B，仍 ≥ 700 B（不用 40 B 的位元圖）
   // 2026-11-26 線對稱拿掉 Ms1（答對 1 次只影響抽題順序，用本機的）：127,290 → 127,273 B，餘裕 710 → 727 B
+  // 2026-11-26 dg 多第 12 欄「英文閱讀」（3 筆最長 133 → 139 B）：餘裕 727 → 721 B，仍 ≥ 700 B
   ok(worstCap - pgBytes <= 124100 && worstCap <= SM.MAX_BYTES / 4 - 700, 'worst case at caps (2026-11-17 trim + 2026-11-19 pg + 2026-11-21 geoQ + 2026-11-24 g5a7 mg + english-reading p, pg ' + pgBytes + ' B): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (126,883 B / 1,117 B before geoQ)');
   console.log('sync worst case (non-English): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (must stay ≥ 700 B)');
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
@@ -1127,6 +1128,9 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
 ok(KE.clampRate(0.7) === 0.7 && KE.clampRate('1') === 1 && KE.clampRate(0.84) === 0.8, 'rate keep/round');
 ok(KE.clampRate(0.1) === 0.5 && KE.clampRate(2) === 1.3 && KE.clampRate(undefined) === 1 && KE.clampRate('x') === 1, 'rate clamp/default');
 ok(!/name="rate"|'0\.7', '🐢 慢慢唸'/.test(fs.readFileSync(path.join(root, 'app.js'), 'utf8')), 'old 0.7/1.0 radios removed');
+// 2026-11-26 Yoda 下令刪掉英文「🗂️ 例題庫」：英文入口方塊、#bank 路由、頁面、首頁島清單都不再有（舊網址 #bank 落到首頁）
+{ const ap = fs.readFileSync(path.join(root, 'app.js'), 'utf8'), sj = fs.readFileSync(path.join(root, 'subjects.js'), 'utf8');
+  ok(!/例題庫|pBank|'#bank'|bank:/.test(ap) && !/例題庫|#bank/.test(sj) && ap.includes('(pages[p] || pHome)'), '例題庫 removed (tile, route, page, island list); unknown hash → home'); }
 
 // ---- 多科目：math/balance.html 是天平的正本；科目列只在網站版 ----
 const balancePath = path.join(root, 'math', 'balance.html');
@@ -1453,7 +1457,6 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
   cfgs.push({ ids: W.slice(0, 12).map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true });
   cfgs.push({ ids: W.slice(0, 5).flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)), count: 10, mode: 'words' });
   cfgs.push({ ids: W.slice(0, 5).flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)), count: 10, mode: 'words', oneWord: true });
-  cfgs.push({ ids: E.list({ modules: ['phrases'], types: ['en2zh'] }).slice(0, 40).map(m => m.id), count: 30, mode: 'bank' });
   cfgs.push({ ids: E.tbExam('hanlin-5-u2').filter(q => !KE.isTyped(q)).map(q => q.id), mode: 'redo' });
   cfgs.push({ ids: mids1, mode: 'redo' });
   // 錯題庫（mistakes）、練答錯的題目（redo）、只練錯題（mistakeRatio 1）：原題全部都在、打字只追加；說說看：口說題全在、打字追加在後；其他回合題數不變

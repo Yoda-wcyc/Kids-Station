@@ -50,7 +50,13 @@
     // 2026-11-21 學過 2 次就不算：每題答對過幾次（ke_log＋agg，都跟著同步 → 換裝置一樣）；E.old＝已學過 2 次的題，抽題時排後面
     const KDc = window.KidsDaily && KidsDaily._core;
     S.okN = KDc ? KDc.okCounts(S.log, S.agg.agg) : new Map();
+    markOld();
+  }
+  // E.old＝不算每日題數的舊題：答對過 2 次的題 ∪ 已按「學會了」（ke_learned）的項目的每一題（2026-11-26 Yoda：已學會的都不計入）；抽題時排後面
+  const learnedQ = id => { const r = S.learned[E.itemOfQ(id)]; return !!(r && r.at); };   // 不用 isL：loadAll() 開頁時就跑，isL 在下面才宣告
+  function markOld() {
     E.old = new Set([...S.okN].filter(x => x[1] >= 2).map(x => x[0]));
+    if (Object.values(S.learned).some(r => r && r.at)) E.meta.forEach(m => { if (learnedQ(m.id)) E.old.add(m.id); });
     saveLeft();
   }
   // 英文還有幾題新題（學過不到 2 次）：e＝全部英文題、d＝單字、j＝句型、p＝片語 → kids_daily_left（本機快取；每日清單「🎉 這裡全部學會了」用，從同步過的紀錄算出來）
@@ -158,7 +164,7 @@
     try { const K = window.KESync; if (K && K.hold) { if (/^#quiz/.test(h) && Q && !Q.result) K.hold('english'); else setTimeout(() => K.release('english'), 0); } } catch (e) { }
     if (/^#s\//.test(h)) return; // 其他科目由 subjects.js 負責
     const [p, sub, sub2] = h.slice(1).split('/');
-    const pages = { home: pHome, en: pEn, learn: pLearn, practice: pPractice, quiz: pQuiz, result: pResult, mistakes: pMistakes, bank: pBank, parent: pParent, tb: pTb };
+    const pages = { home: pHome, en: pEn, learn: pLearn, practice: pPractice, quiz: pQuiz, result: pResult, mistakes: pMistakes, parent: pParent, tb: pTb };
     (pages[p] || pHome)(sub, sub2);
     window.scrollTo(0, 0);
   }
@@ -175,7 +181,7 @@
       if (!authOK('unlearn')) return; // 改學習紀錄一律要登入
       if (!confirm('確定要取消「已學會」嗎？')) return;
       S.learned = KE.unsetLearned(S.learned, lb.dataset.unlearn, learnIso(lb.dataset.unlearn));
-      save('ke_learned', S.learned);
+      save('ke_learned', S.learned); markOld();
       if (window.KESync) KESync.now();
       if (redraw) redraw();
       return;
@@ -311,7 +317,7 @@
     const st = stats(), mc = mistakeIds().length;
     app.innerHTML = top('🔤 英文', '#home') + `
       <div class="stats"><div class="stat"><span>🔥</span><b>${st.streak}</b><small>連續天數</small></div><div class="stat"><span>✏️</span><b>${st.today}</b><small>今天做的題目</small></div><div class="stat"><span>⭐</span><b>${S.progress.stars}</b><small>星星</small></div></div>
-      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? `翰林五年級・${D.textbook.length} 個單元` : '準備中', 'c2')}${tile('#bank', '🗂️', '例題庫', `全部 ${E.meta.length} 題`, 'c4')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}<a class="tile c1" href="map.html"><span class="ti">🗺️</span><b>課程地圖</b><small>哪些單元學完了、還差哪些</small></a><a class="tile c3" id="tile-gept" href="gept/index.html"><span class="ti">🏅</span><b>全民英檢</b><small>初級・中級・高級 題型練習與模擬考</small></a><a class="tile c4" id="tile-reading" href="english-reading/index.html"><span class="ti">📰</span><b>英文閱讀測驗</b><small>一次一篇短文，從簡單的開始</small></a></div>
+      <div class="tiles">${tile('#learn', '📖', '學習', '單字・字根・文法・句型', 'c1')}${tile('#practice', '🎯', '練習', '自己選題目來挑戰', 'c2')}${tile('#mistakes', '🩹', '錯題庫', mc ? `有 ${mc} 題等你復仇` : '目前沒有錯題', 'c3')}${tile('#tb', '📘', '課本進度', D.textbook.length ? `翰林五年級・${D.textbook.length} 個單元` : '準備中', 'c2')}${tile('#parent', '👨‍👩‍👦', '家長', '學習紀錄與設定', 'c5')}<a class="tile c1" href="map.html"><span class="ti">🗺️</span><b>課程地圖</b><small>哪些單元學完了、還差哪些</small></a><a class="tile c3" id="tile-gept" href="gept/index.html"><span class="ti">🏅</span><b>全民英檢</b><small>初級・中級・高級 題型練習與模擬考</small></a><a class="tile c4" id="tile-reading" href="english-reading/index.html"><span class="ti">📰</span><b>英文閱讀測驗</b><small>一次一篇短文，從簡單的開始</small></a></div>
       <p class="muted center">小提示：看到英文，點一下就會唸給你聽 👂</p>`;
   }
 
@@ -682,7 +688,7 @@
     if (Q.answered) return;
     Q.answered = true; stopRec();
     const res = skipped ? { ok: false } : E.check(q, input);
-    const prev = S.okN.get(q.id) || 0;   // 這次之前答對過幾次（≥ 2＝舊題：照樣判對錯，不算每日清單）
+    const lq = learnedQ(q.id), prev = lq ? 2 : S.okN.get(q.id) || 0;   // 這次之前答對過幾次（≥ 2＝舊題：照樣判對錯，不算每日清單）；作答前已學會的項目＝當 2 次（2026-11-26）
     // 說說看：紀錄（會跟著裝置同步）不留辨識出來的原文，只記題目答案（答對）或空白（答錯）
     if (!skipped) record(q, res.ok, q.input === 'mic' ? (res.ok ? q.answer : '') : input);
     // 學習幣（kids-coins.js）：每答一題記進「這一分鐘」；跳過不算作答
@@ -714,7 +720,7 @@
       ${q.input === 'mic' && !skipped && !res.ok ? `<div class="muted">${Q.spk && Q.spk.id === q.id && Q.spk.tries.length >= SPEAK_TRIES ? `試了 ${SPEAK_TRIES} 次，下次再挑戰！` : '跳過算答錯，下次再挑戰！'}</div>` : ''}
       ${res.score != null ? `<div class="muted">唸對了 ${Math.round(res.score * 100)}% 的字（70% 就過關）</div>` : ''}
       ${q.why ? `<div class="why">💡 ${esc(q.why)}</div>` : ''}
-      ${counted === false ? KidsDaily.oldNote({ word: '#learn/words', sentence: '#learn/patterns', phrase: '#learn/phrases' }[KE.dailyKind(q)] || '#practice') : ''}
+      ${counted === false ? KidsDaily.oldNote({ word: '#learn/words', sentence: '#learn/patterns', phrase: '#learn/phrases' }[KE.dailyKind(q)] || '#practice', lq ? '這題你已經會了（已學會），不算今天的題數，去學新的吧' : '') : ''}
       <button class="btn primary big wide" id="next">${last ? '看結果 🎉' : '下一題 ➜'}</button></div>`;
     if (q.speakText && q.type !== 'speak') speak(q.speakText);
     const sb = $('[data-say-btn]'); if (sb) sb.onclick = () => speak(q.speakText);
@@ -734,7 +740,7 @@
     if (Q.gate) {
       Q.result.pass = KE.gatePassed(Q.gate, ok);
       if (Q.result.pass) {
-        S.learned = KE.setLearned(S.learned, Q.gate.itemId, learnIso(Q.gate.itemId), `${ok}/${tot}`); save('ke_learned', S.learned);
+        S.learned = KE.setLearned(S.learned, Q.gate.itemId, learnIso(Q.gate.itemId), `${ok}/${tot}`); save('ke_learned', S.learned); markOld();
         if (window.KidsCoins) KidsCoins.report({ type: 'test_' + Q.gate.itemId.split(':')[0], item: Q.gate.itemId, correct: ok, total: tot });
       }
     }
@@ -776,29 +782,6 @@
     app.innerHTML = top('錯題庫') + `<div class="card"><p>答錯的題目會來這裡。同一題<b>連續答對 3 次</b>就會畢業離開 🎓</p><button class="btn primary big" id="onlym" ${ids.length ? '' : 'disabled'}>只練錯題（${ids.length} 題）</button></div>
       ${ids.length ? `<ul class="list card">${ids.map(id => { const m = E.byId[id], s = S.mistakes[id]; return `<li><span class="badge">${KE.TYPES[m.type]}</span> <span>${esc(m.title)}</span> <span class="dots">${'●'.repeat(s.c)}${'○'.repeat(3 - s.c)}</span> <small class="muted">錯 ${s.w} 次</small></li>`; }).join('')}</ul>` : '<p class="center muted">太棒了，目前沒有錯題！🎉</p>'}`;
     $('#onlym').onclick = () => startQuiz({ ids, count: 30, mode: 'mistakes' });
-  }
-
-  // ---------- 例題庫 ----------
-  const BF = { m: '', k: '', y: '' };
-  function pBank() {
-    const mods = Object.keys(KE.MODULES);
-    const types = Object.keys(KE.TYPES).filter(y => (canSpeak || y !== 'speak') && !KE.SET_ONLY_TYPES.includes(y));
-    app.innerHTML = top('例題庫') + `<div class="filters"><select id="bm" aria-label="單元"><option value="">全部單元</option>${mods.map(m => `<option value="${m}">${KE.MODULES[m]}</option>`).join('')}</select><select id="bk" aria-label="主題"></select><select id="by" aria-label="題型"><option value="">全部題型</option>${types.map(y => `<option value="${y}">${KE.TYPES[y]}</option>`).join('')}</select><button class="btn primary" id="bgo">🎯 練這些</button></div><p class="muted" id="bn"></p><ul class="list card" id="bl"></ul>`;
-    const pick = () => E.list({ modules: BF.m ? [BF.m] : null, topics: BF.k ? [BF.k] : null, types: BF.y ? [BF.y] : null, allowSpeak: canSpeak });
-    const draw = () => {
-      const tops = BF.m ? E.topics(BF.m) : [];
-      $('#bk').innerHTML = `<option value="">全部主題</option>` + tops.map(t => `<option value="${esc(t.key)}">${esc(t.label)}</option>`).join('');
-      $('#bk').value = BF.k; $('#bk').disabled = !BF.m;
-      const L = pick(), show = L.slice(0, 200);
-      $('#bn').textContent = `共 ${L.length} 題` + (L.length > 200 ? '（先列出前 200 題）' : '');
-      $('#bl').innerHTML = show.map(m => `<li><span class="badge">${KE.TYPES[m.type]}</span> <span>${esc(m.title)}</span> <small class="muted">${esc(E.topicLabel(m.tkey))}</small></li>`).join('');
-    };
-    $('#bm').value = BF.m; $('#by').value = BF.y;
-    $('#bm').onchange = e => { BF.m = e.target.value; BF.k = ''; draw(); };
-    $('#bk').onchange = e => { BF.k = e.target.value; draw(); };
-    $('#by').onchange = e => { BF.y = e.target.value; draw(); };
-    $('#bgo').onclick = () => startQuiz({ ids: pick().map(m => m.id), count: 30, mode: 'bank' });
-    draw();
   }
 
   // ---------- 家長 ----------

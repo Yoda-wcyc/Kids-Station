@@ -2,7 +2,7 @@
 // 用法：node test/norepeat-browser.js [網站資料夾，預設＝正本] [截圖資料夾，預設不存]；環境變數 NR_PS／NR_PD 換 port
 // iPad 820×1180：
 //   1. 英文：一個單字題答錯進錯題庫 →「只練錯題」真的作答 3 輪都答對 → 第 1、2 次每日英文 +1，第 3 次不加、答題區出現小提示、結果頁一行小字（錯題照樣畢業）
-//   2. 英文例題庫「練這些」：大部分句型題已學過 2 次 → 這一回出的句型題全部是新題
+//   2. 英文：已按「學會了」的字（作答前就已學會）→ 答對也不算今天的題數、有提示（2026-11-26；原本的例題庫測試隨例題庫刪掉）
 //   3. 地理：同一組（m1 第 1 組）全對做 3 次 → 第 1、2 次算「地理 1 組」，第 3 次不算、結果頁有提示和去新題的連結；每日清單地理連結指到下一組
 //   4. 全部學會：地理 720 題、歷史 42 話都學過 2 次 → 首頁清單那兩項 ✅「🎉 這裡全部學會了」、家長頁「完成 x/5」照新規則算
 //   全程 0 個 JS 錯誤
@@ -72,22 +72,26 @@ async function run() {
   const res = await ev(`return { old: (document.querySelector('.result .kd-old') || {}).textContent || '', mk: JSON.parse(localStorage.getItem('ke_mistakes'))[${JSON.stringify(qid)}] }`);
   assert(/題你已經會了（學過 2 次）/.test(res.old) && res.mk && res.mk.d === 1, 'result page: one small line; the mistake still graduates (3 in a row) ' + JSON.stringify(res));
 
-  // ---- 2. 例題庫：大部分句型選擇題學過 2 次 → 這一回只出新題 ----
+  // ---- 2. 英文：已按「學會了」的字（ke_learned），作答前就是已學會 → 答對也不算今天的題數、有提示（2026-11-26 Yoda：已學會的都不計入）----
   await go('/index.html');
-  const NEWN = 40;
-  const newIds = await ev(`window.__E = new KE.Engine({ words: DATA_WORDS, phrases: DATA_PHRASES, roots: DATA_ROOTS, grammar: DATA_GRAMMAR, patterns: DATA_PATTERNS, textbook: DATA_TEXTBOOK });
-    const all = __E.list({ modules: ['patterns'], types: ['pattern-choose'] }).map(m => m.id), keep = all.slice(-${NEWN}), agg = {};
-    all.slice(0, -${NEWN}).forEach(id => { agg[id] = { n: 2, k: 2, fc: 1.7e12 }; });
-    localStorage.setItem('ke_agg', JSON.stringify({ cut: 0, agg })); return keep`);
-  await go('/map.html'); await go('/index.html#bank'); await ev(HOOK); await sleep(200);
-  await ev(`const m = document.getElementById('bm'); m.value = 'patterns'; m.dispatchEvent(new Event('change')); const y = document.getElementById('by'); y.value = 'pattern-choose'; y.dispatchEvent(new Event('change')); return 1`);
-  const bn = await ev(`return document.getElementById('bn').textContent`);
-  await ev(`document.getElementById('bgo').click(); return 1`); await sleep(300);
-  await shot('3-bank-round-new-first');
-  const got = [];
-  for (let k = 0; k < 40; k++) { const id = await ev(ANSWER(true)); if (!id) break; got.push(id); await sleep(80); if (!(await ev(NEXT))) break; await sleep(120); if (await ev(`return location.hash === '#result'`)) break; }
-  const choose = got.filter(id => /:choose$/.test(id)), oldOnes = choose.filter(id => !newIds.includes(id));
-  assert(choose.length >= 20 && oldOnes.length === 0, '例題庫「練這些」（' + bn + '）：這一回 ' + choose.length + ' 題句型選擇題全部是還沒學過 2 次的（舊題 0）');
+  const q2 = await ev(`localStorage.clear(); localStorage.setItem('kids_jwt', 'x'); const w = DATA_WORDS.filter(x => /^[a-z]{4,6}$/.test(x.w))[3], id = 'w:' + KE.wordKey(w) + ':zh2en', t = Date.now() - 864e5;
+    const e = { t, id, m: 'words', k: 'words:x', y: 'zh2en', ok: 0, a: 'zzz' }; e.r = KESyncMerge.rid(e);
+    localStorage.setItem('ke_log', JSON.stringify([e])); localStorage.setItem('ke_mistakes', JSON.stringify({ [id]: { c: 0, w: 1, t, u: t } }));
+    localStorage.setItem('ke_learned', JSON.stringify({ ['word:' + KE.wordKey(w)]: { at: new Date(t).toISOString(), score: '3/3' } })); return id`);
+  await go('/map.html'); await go('/index.html#mistakes'); await ev(HOOK); await sleep(200);
+  await ev(`document.getElementById('onlym').click(); return 1`); await sleep(300);
+  let seen2 = null;
+  for (let k = 0; k < 12; k++) {
+    const before = await ev(DAYC + `return [(D.e || [0])[0], (D.r || [0])[0], (D.d || [0])[0]]`);
+    const id = await ev(ANSWER(false)); if (!id) break; await sleep(150);
+    const after = await ev(DAYC + `const fb = document.getElementById('fb'); return [(D.e || [0])[0], (D.r || [0])[0], (D.d || [0])[0], fb ? fb.innerHTML : '']`);
+    if (id === q2) { seen2 = { de: after[0] - before[0], dr: after[1] - before[1], dd: after[2] - before[2], note: /這題你已經會了（已學會），不算今天的題數/.test(after[3]), ok: /答對了/.test(after[3]) }; await shot('3-english-learned-word-not-counted'); }
+    if (!(await ev(NEXT))) break; await sleep(200);
+    if (await ev(`return location.hash === '#result'`)) break;
+  }
+  assert(seen2 && seen2.ok && seen2.de === 0 && seen2.dd === 0 && seen2.dr === 1 && seen2.note, 'learned word (👍 學會了, answered right 0 times before): right answer not counted (英文 +0、單字 +0、舊題 +1), gentle hint ' + JSON.stringify(seen2));
+  const left2 = await ev(`return JSON.parse(localStorage.getItem('kids_daily_left') || 'null')`);
+  assert(left2 === null || left2.e > 0, 'kids_daily_left still has new questions (one learned word does not empty a category) ' + JSON.stringify(left2));
 
   // ---- 3. 地理：同一組全對做 3 次 → 第 3 次不算 1 組 ----
   await go('/geo/unit.html?u=m1&tab=prac'); await ev(`localStorage.clear(); localStorage.setItem('kids_jwt', 'x'); return 1`);
@@ -127,6 +131,13 @@ async function run() {
   await ev(`document.getElementById('dailyCard').scrollIntoView({ block: 'start' }); return 1`); await sleep(200); await shot('7-parent-daily-card');
   const wide = await ev(`return document.documentElement.scrollWidth <= innerWidth + 1`);
   assert(wide, 'iPad 820px: no horizontal scroll on the parent page');
+
+  // ---- 5. 家長頁「🎯 改每日目標」英文閱讀（2026-11-26）：改成 0 → 清單不列這一項、不擋完成；存在 dg 第 12 欄 ----
+  const f5 = await ev(`const b = document.getElementById('dgB'); if (!b) return null; const v0 = b.value; b.value = '0'; document.getElementById('dgSave').click(); await new Promise(r => setTimeout(r, 300));
+    const c = document.querySelector('#dailyCard .dl-check'), dg = JSON.parse(localStorage.getItem('kids_daily_goal') || '{}'), k = Object.keys(dg).sort().pop();
+    return { v0, check: c ? c.textContent : '', sum: (document.querySelector('#dgBox summary') || {}).textContent || '', dg: dg[k], rows: KidsDaily.today().rows.map(r => r.key) }`);
+  assert(f5 && f5.v0 === '1' && f5.dg.split(',').length === 12 && /,0$/.test(f5.dg) && /完成 2\/5/.test(f5.check) && !/英文閱讀/.test(f5.check) && /英文閱讀 0 篇）/.test(f5.sum) && !f5.rows.includes('b'), '家長改英文閱讀 0 篇 → dg 12 欄、清單不列英文閱讀（完成 2/5）' + JSON.stringify(f5));
+  await shot('8-parent-goal-english-reading-0');
 }
 
 (async () => {

@@ -11,7 +11,7 @@
   var TPE_MS = 8 * 3600 * 1000;            // 台北時間 = UTC+8（1979 年後沒有日光節約）
   var WEEK_MS = 7 * 86400 * 1000;
   var BATCH_MAX = 50, QUEUE_MAX = 500;
-  var MODES = ['practice', 'words', 'roots', 'grammar', 'patterns', 'mistakes', 'bank', 'redo', 'drill', 'speak', 'textbook', 'test', 'gept', 'reading'];   // reading＝📰 英文閱讀測驗做完一篇（2026-11-24；後端 Code.gs kids-2026-11-24-a 同步加，家長部署 GAS 前送了會被當 bad_event、移出佇列，不影響頁面）；textbook／test＝📘 課本進度的專屬題一輪／考試（2026-10-18）；gept＝🏅 全民英檢準備區一組練習／一份模擬考（2026-11-16；後端 Code.gs kids-2026-11-16-a 同步加，家長部署 GAS 前送了會被當 bad_event）
+  var MODES = ['practice', 'words', 'roots', 'grammar', 'patterns', 'mistakes', 'bank', 'redo', 'drill', 'speak', 'textbook', 'test', 'gept', 'reading'];   // bank＝已刪的例題庫（2026-11-26）：新版不再送，留著讓舊裝置佇列裡的 english:bank 照樣送得出去；reading＝📰 英文閱讀測驗做完一篇（2026-11-24；後端 Code.gs kids-2026-11-24-a 同步加，家長部署 GAS 前送了會被當 bad_event、移出佇列，不影響頁面）；textbook／test＝📘 課本進度的專屬題一輪／考試（2026-10-18）；gept＝🏅 全民英檢準備區一組練習／一份模擬考（2026-11-16；後端 Code.gs kids-2026-11-16-a 同步加，家長部署 GAS 前送了會被當 bad_event）
   var TEST_PREFIX = { test_word: 'word', test_phrase: 'phrase', test_root: 'root', test_grammar: 'grammar', test_pattern: 'pattern' };
   var SUBJECTS = ['english', 'math', 'ai', 'social', 'science', 'chinese'];   // social／science＝心智圖（2026-10-09）；chinese＝國語閱讀（2026-11-01）
   // geo:practice／geo:test＝🌍 地理練習一組 10 題／單元測驗 10 題（2026-11-08；後端 Code.gs COIN_PRACTICE_RE 要同步加，家長部署前送了會被當 bad_event）

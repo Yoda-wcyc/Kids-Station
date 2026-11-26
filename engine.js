@@ -10,7 +10,7 @@
     // 課本單元專屬題（2026-10-18，只在 📘 課本進度的練習／考試出）
     'tb-fill': '選出正確的字', 'tb-fill-type': '填空（打字）', 'tb-ask-type': '看提示造問句（打字）', 'tb-answer': '選出正確的回答', 'tb-answer-type': '打出簡答', 'tb-listen': '聽力：選出意思' };
   const TB_TYPES = ['tb-fill', 'tb-fill-type', 'tb-ask-type', 'tb-answer', 'tb-answer-type', 'tb-listen'];
-  // 只放在「練習這組」的題型（一般練習回合、例題庫不出，題型組成維持原樣）；課本專屬題也不進一般練習
+  // 只放在「練習這組」的題型（一般練習回合不出，題型組成維持原樣）；課本專屬題也不進一般練習
   const SET_ONLY_TYPES = ['word-gap', 'grammar-fill-type', 'grammar-fix-type', 'phrase-fill-type', 'phrase-dictation'].concat(TB_TYPES);
   const MOD_TYPES = { words: ['listen-choose', 'zh2en', 'en2zh', 'spell', 'zh2en-type', 'speak'], phrases: ['listen-choose', 'zh2en', 'en2zh', 'phrase-fill', 'zh2en-type', 'phrase-fill-type', 'phrase-dictation', 'speak'], roots: ['root-meaning', 'root-word', 'root-type'], grammar: ['grammar-fill', 'grammar-fix', 'reorder', 'zh2en-type', 'grammar-fill-type', 'grammar-fix-type', 'speak'], patterns: ['reorder', 'pattern-choose', 'zh2en-type', 'speak'] };
   const TYPED = 'zh2en-type';
@@ -398,7 +398,7 @@
     });
 
     // ---- 課本單元專屬題（2026-10-18）：每個單元在 data/textbook.js 給「句子 sents」和「問答 replies」，題型都從這兩樣組出來；
-    // module 'textbook'、setOnly（一般練習／例題庫不出）。題號＝內容：tb:<單元>:<題型>:<句子 key>，錯題庫可以原題重做。
+    // module 'textbook'、setOnly（一般練習不出）。題號＝內容：tb:<單元>:<題型>:<句子 key>，錯題庫可以原題重做。
     // sents：{key, g(同組才互當聽力干擾), en, zh, alts, why, ask:{prompt, hint}, blanks:[{fam, w, opts, cue, hint, alts, why}]}
     //   → 每句：重組 ro、🎤 sp、中翻英 zh、聽力 li（選意思對的中文）、看提示造句 ask（有 ask 才出）、每個空格：選 <fam>／打 <fam>:type
     // replies：{key, card(同一輪不重複用), q, cue(⭕ 有／圖示提示), en, alts, wrong(3 個錯的), kind, why} → 選回答 ans、打回答 anst
@@ -612,7 +612,7 @@
       while (out.filter(isTyped).length < needT && swap(false));
       return [0, 1, 2, 3].flatMap(r => out.filter(q => typedRank(q) === r));
     },
-    // 一般練習一回（練習設定、各頁 🎯、錯題庫、例題庫、結果頁再練、說說看）：照舊抽題再做打字保底（2026-10-25）
+    // 一般練習一回（練習設定、各頁 🎯、錯題庫、結果頁再練、說說看）：照舊抽題再做打字保底（2026-10-25）
     // 錯題庫的錯題、「練答錯的題目」的題、說說看回合的口說題不換掉，打字不足的部分追加到最後
     round(cfg) {
       cfg = cfg || {};
@@ -697,7 +697,7 @@
     drill(itemId, correct, o) { const qs = this.drillIds(itemId, o).filter(id => !correct.has(id)).map(id => this.get(id)).filter(Boolean); return /^word:/.test(itemId) ? qs : drillOrder(qs); },
     topicLabel(tkey) { const m = tkey.split(':')[0]; const t = this.topics(m).find(x => x.key === tkey); return t ? (t.group && m === 'phrases' ? `${t.group}・${t.label}` : t.label) : tkey; },
     // f: {modules, topics(tkey 陣列), types, src, lv, allowSpeak, ids, withSetOnly}
-    // 只在題組出的題（setOnly：填空拼字、文法打字版、句型加練句打字）一般練習與例題庫不出；給 ids 或 withSetOnly 才列
+    // 只在題組出的題（setOnly：填空拼字、文法打字版、句型加練句打字）一般練習不出；給 ids 或 withSetOnly 才列
     list(f) {
       f = f || {};
       const src = f.src && f.src.length ? [].concat(f.src) : null;

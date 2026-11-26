@@ -10,7 +10,6 @@
       { id: 'practice', title: '練習', desc: '自己選題目來挑戰', icon: '🎯', href: '#practice' },
       { id: 'tb', title: '課本進度', desc: '翰林五年級課本單元', icon: '📘', href: '#tb' },
       { id: 'mistakes', title: '錯題庫', desc: '答錯的題目再練一次', icon: '🩹', href: '#mistakes' },
-      { id: 'bank', title: '例題庫', desc: '全部的英文題目', icon: '🗂️', href: '#bank' },
       { id: 'gept', title: '全民英檢考場', desc: '初級・中級・高級 題型練習與模擬考', icon: '🏅', href: 'gept/index.html' },
       // 2026-11-24：英文閱讀測驗 200 篇（english-reading/；易 → 中 → 難自動排，本機 kids_en_reading；規格 english-reading/SPEC.md）
       { id: 'reading', title: '英文閱讀測驗', desc: () => erDesc(), icon: '📰', href: 'english-reading/index.html' }],
