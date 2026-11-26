@@ -214,7 +214,7 @@ ok(E.buildQuiz({ modules: ['words'], src: 'textbook-x', count: 10 }).length === 
   const qt = E2.buildQuiz({ modules: ['words'], scope: 'tb', count: 300 });
   ok(qt.length && qt.every(q => (wOf(q).tb || []).length && lvOf(q) !== 1), 'parent scope tb → textbook words only, no lv1');
   ok(KE.wordScopeOk('', { lv: 2 }) && !KE.wordScopeOk('', { lv: 1 }) && !KE.wordScopeOk('tb', { lv: 1, tb: ['x'] }) && KE.wordScopeOk('src:moe800', { lv: 4, src: 'moe800' }) && !KE.wordScopeOk('src:moe800', { lv: 4, src: 'gept1' }), 'wordScopeOk');
-  ok(KE.pathSort([{ w: 'a', lv: 4 }, { w: 'b', lv: 2 }, { w: 'c', lv: 3 }, { w: 'd', lv: 2 }], w => w.w === 'd').map(w => w.w).join('') === 'bcad', 'pathSort: unlearned first, levels interleaved, stable');
+  ok(KE.lvWeave([{ w: 'a', lv: 4 }, { w: 'b', lv: 2 }, { w: 'c', lv: 3 }, { w: 'd', lv: 2 }]).map(w => w.w).join('') === 'bcda' && !('pathSort' in KE), 'word cards: lvWeave order (learned cards stay in place; pathSort removed)');
   // lvWeave：每 6 張 3 張 lv2、2 張 lv3、1 張 lv4（2,3,2,4,2,3），每級照原順序；lv3 用完後剩 lv2:lv4；lv1 等不在輪替裡的放最後
   { const mk = (l, n) => Array.from({ length: n }, (_, i) => ({ w: 'L' + l + '_' + i, lv: l })), ws = mk(4, 4).concat(mk(2, 9), mk(3, 2), [{ w: 'x', lv: 1 }]), out = KE.lvWeave(ws);
     ok(out.map(w => w.lv).join('') === '232423' + '2242' + '2242' + '41' && out.filter(w => w.lv === 2).map(w => w.w).join() === mk(2, 9).map(w => w.w).join(), 'lvWeave: 3:2:1 by position, in-level order kept, exhausted level skipped: ' + out.map(w => w.lv).join(''));
@@ -915,7 +915,7 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
     CY.idioms.map(c => c.id).concat((CY.readings || []).map(r => r.id), Array.from({ length: 10 }, (_, i) => 'cyu' + String(i + 1).padStart(2, '0')), ['cyall']).forEach(id => { L.zhIdiom[id] = { best: 100, n: 99 }; });
     // 2026-11-21 地理每題答對次數 geoQ（學過 2 次就不算）：18 單元 × 40 題全部答對 2 次（720 題，f 旗標兩層）
     require(path.join(root, 'completion.js')).GEO_UNITS.forEach(([u]) => { for (let i = 1; i <= 30; i++) L.geoQ[u + '-p' + String(i).padStart(2, '0')] = 2; for (let i = 1; i <= 10; i++) L.geoQ[u + '-t' + String(i).padStart(2, '0')] = 2; });
-    // 2026-11-24 線對稱 g5a7 每題答對次數（kids_mg.c，學過 2 次就不算）：46 題全部答對 2 次（f 旗標兩層 Ms1／Ms2）；別的單元的 kids_mg 不同步
+    // 2026-11-24 線對稱 g5a7 每題答對次數（kids_mg.c，學過 2 次就不算）：46 題全部答對 2 次（f 旗標 Ms2；11-26 拿掉 Ms1）；別的單元的 kids_mg 不同步
     { const MGm = require(path.join(root, 'math', 'grade.js')); require(path.join(root, 'math', 'grade', 'g5a7.js')); MGm.bank('g5a7').forEach(q => { L.mg.c[q.id] = 2; }); L.mg.c['g6b6-x0'] = 2; }
     // 2026-11-24 英文閱讀：只同步 p（照順序完成到第幾篇）＝全部 200 篇讀完（pg v 群組 R 一格）
     { const Wr = { window: {} }; vm.createContext(Wr); ['s0', 'a1', 'a2', 'a3', 'a4', 'a5'].forEach(k => vm.runInContext(fs.readFileSync(path.join(root, 'english-reading', 'data', k + '.js'), 'utf8'), Wr)); L.er = { p: Wr.window.DATA_ER.length, a: { e001: { n: 2, done: t } }, ok: { 'e001:q1': 2 } }; }
@@ -936,7 +936,9 @@ ok(E.learnedRows({ 'word:cat': { at: '2026-10-05T01:00:00Z' } })[0].score === '�
   // 2026-11-21 pg 多了地理每題答對次數（geoQ，720 題兩層旗標）：用掉剩下 1,117 B 裡的約 330 B（家長同意可以用這 1,117 B），留至少 700 B 給以後
   // 2026-11-24 pg 多了線對稱 g5a7 每題答對次數（kids_mg，46 題兩層旗標 Ms1／Ms2）：127,251 → 127,285 B（+34 B），餘裕 749 → 715 B，仍 ≥ 700 B
   // 2026-11-24 pg 多了英文閱讀進度 p（v 群組 R 一格，200 篇＝',R=5l' 5 B）：餘裕 715 → 710 B，仍 ≥ 700 B（不用 40 B 的位元圖）
+  // 2026-11-26 線對稱拿掉 Ms1（答對 1 次只影響抽題順序，用本機的）：127,290 → 127,273 B，餘裕 710 → 727 B
   ok(worstCap - pgBytes <= 124100 && worstCap <= SM.MAX_BYTES / 4 - 700, 'worst case at caps (2026-11-17 trim + 2026-11-19 pg + 2026-11-21 geoQ + 2026-11-24 g5a7 mg + english-reading p, pg ' + pgBytes + ' B): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (126,883 B / 1,117 B before geoQ)');
+  console.log('sync worst case (non-English): ' + worstCap + ' B, headroom ' + (SM.MAX_BYTES / 4 - worstCap) + ' B (must stay ≥ 700 B)');
   const sec = SM.normalize(maxDoc), secBytes = SM.bytes(sec);
   // 2026-11-02 五下上線塞滿約 156KB 超過 1/4 → v7 壓成字串（114,868 B，六下必超）→ v8 只同步答過的、封頂、熟練旗標
   ok(secBytes <= SM.MAX_BYTES / 4 && Object.keys(sec.eq.del).length === SM.MAX_EQ_DEL && SM.MAX_EQ_DEL === 50 && Object.values(sec.mmBlanks).every(u => !Object.keys(u.a).some(k => /^rel:/.test(k)) && Object.values(u.w).every(r => r === '99,99,0,9999')), 'v3 sections at maximum leave ≥3/4 of the 500KB doc for English answers: ' + secBytes + ' bytes');
@@ -1450,12 +1452,13 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
   [1, 2, 3].forEach(n => cfgs.push({ ids: E.list({ modules: ['words'], types: ['listen-choose'] }).slice(0, n).map(m => m.id), count: 30, mode: 'redo' }));
   cfgs.push({ ids: W.slice(0, 12).map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true });
   cfgs.push({ ids: W.slice(0, 5).flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)), count: 10, mode: 'words' });
+  cfgs.push({ ids: W.slice(0, 5).flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)), count: 10, mode: 'words', oneWord: true });
   cfgs.push({ ids: E.list({ modules: ['phrases'], types: ['en2zh'] }).slice(0, 40).map(m => m.id), count: 30, mode: 'bank' });
   cfgs.push({ ids: E.tbExam('hanlin-5-u2').filter(q => !KE.isTyped(q)).map(q => q.id), mode: 'redo' });
   cfgs.push({ ids: mids1, mode: 'redo' });
   // 錯題庫（mistakes）、練答錯的題目（redo）、只練錯題（mistakeRatio 1）：原題全部都在、打字只追加；說說看：口說題全在、打字追加在後；其他回合題數不變
   cfgs.forEach(cfg => { for (let k = 0; k < 50; k++) {
-    const qs = E.round(cfg), n = qs.length, want = cfg.ids ? Math.min(cfg.count || 30, cfg.ids.length) : E.buildQuiz(cfg).length, got = new Set(qs.map(q => q.id));
+    const qs = E.round(cfg), n = qs.length, want = cfg.ids ? Math.min(cfg.count || 30, cfg.oneWord ? new Set(cfg.ids.map(id => id.split(':')[1])).size : cfg.ids.length) : E.buildQuiz(cfg).length, got = new Set(qs.map(q => q.id));
     const orig = cfg.ids && /^(mistakes|redo)$/.test(cfg.mode) ? cfg.ids : cfg.mistakeRatio >= 1 ? cfg.mistakes : null, sp = cfg.mode === 'speak';
     const kept = orig ? orig.every(id => got.has(id)) && n >= want : sp ? qs.filter(q => q.type === 'speak').length === want && n >= want : n === want;
     ok(kept && n > 0 && rule(qs, 3, 2) && got.size === n, 'round typed≥3 zh≥2 typed last, originals kept: ' + JSON.stringify(cfg).slice(0, 120) + ' → ' + qs.map(q => q.type));
@@ -1466,6 +1469,24 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
   // 單字頁「🎤 說說看」：10 題口說都在，最後補 3 題打字
   const rs = E.round({ ids: W.slice(0, 12).map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true });
   ok(rs.length === 13 && rs.slice(0, 10).every(q => q.type === 'speak') && rs.slice(10).every(q => KE.isTyped(q)) && rs.filter(isZ).length >= 2, 'word-page speak round: 10 speak + 3 typed last: ' + rs.map(q => q.type));
+  // 2026-11-26 單字卡 🎯／🎤（oneWord）：一回一個字最多一題、新題優先；字不到 10 個就少於 10 題（不補重複的字）
+  { const W5 = k => W.slice(0, k).flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)), wk = q => q.id.split(':')[1];
+    let good = true, msg = '';
+    for (let k = 0; k < 50 && good; k++) {
+      const r10 = E.round({ ids: W5(10), count: 10, mode: 'words', oneWord: true }), r3 = E.round({ ids: W5(3), count: 10, mode: 'words', oneWord: true });
+      const sp = E.round({ ids: W.slice(0, 12).map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true, oneWord: true }).filter(q => q.type === 'speak');
+      good = r10.length === 10 && new Set(r10.map(wk)).size === 10 && r3.length === 3 && new Set(r3.map(wk)).size === 3 && sp.length === 10 && new Set(sp.map(wk)).size === 10;
+      msg = [r10, r3].map(r => r.map(q => q.id).join(' ')).join(' ／ ');
+    }
+    ok(good, 'word cards 🎯/🎤: one question per word per round (10 words → 10, 3 words → 3, speak 10 distinct): ' + msg);
+    const sav = E.old; E.old = new Set(W5(4).filter(id => !/:type$/.test(id)));
+    { const r = E.round({ ids: W5(4), count: 10, mode: 'words', oneWord: true }); ok(r.length === 4 && r.every(q => /:type$/.test(q.id)), 'word cards 🎯: each word takes its new question first: ' + r.map(q => q.id)); }
+    E.old = sav;
+    const a = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+    ok(a.includes("mode: 'words', oneWord: true") && a.includes("mode: 'speak', allowSpeak: true, oneWord: true"), 'app.js: 🎯／🎤 pass oneWord'); }
+  // 2026-11-26 遊戲錯題怪備援不指定 lv（等級 1 從 11/23 下架，lv:1 回空 → 錯題怪沒題目）
+  ['game/hero-world/assets/hw.js', 'game/kids-town/assets/kt.js', 'game/hero-world/src/ui/quiz.js'].filter(f => fs.existsSync(path.join(root, f))).forEach(f => { const s = fs.readFileSync(path.join(root, f), 'utf8').replace(/\s/g, ''); ok(!/buildQuiz\(\{modules:\[["']words["']\],types:\[["']zh2en["'],["']en2zh["']\],lv:1/.test(s) && /buildQuiz\(\{modules:\[["']words["']\],types:\[["']zh2en["'],["']en2zh["']\],count:1\}\)/.test(s), f + ': 錯題怪備援 buildQuiz 不指定 lv'); });
+  ok(E.buildQuiz({ modules: ['words'], types: ['zh2en', 'en2zh'], count: 1 }).length === 1 && !E.buildQuiz({ modules: ['words'], types: ['zh2en', 'en2zh'], lv: 1, count: 1 }).length, 'game fallback: no lv → 1 question (lv:1 → none)');
   const appSrc = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
   ok(appSrc.includes('const list = E.round(cfg);') && appSrc.includes('每回最後至少 3 題打字（含 2 題中翻英）'), 'app.js: every round goes through E.round + settings note');
   console.log(`typed rule: ${stat.set} item sets, ${stat.tb} textbook units (practice+exam ×30), ${stat.round} round configs ×50 — all pass`);
@@ -1474,7 +1495,8 @@ ok(E.itemSet('word:may-month').length === 6 && E.itemSet('word:may').length === 
 { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'test', 'math-grade.test.js')], { encoding: 'utf8' }); ok(r.status === 0, 'test/math-grade.test.js passes (數學五下～六下：每題答案驗算): ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); }
 ['g5b-social.test.js', 'g5b-science.test.js', 'g6a-social.test.js', 'g6a-science.test.js', 'g6b-social.test.js', 'g6b-science.test.js'].forEach(f => { const r = require('child_process').spawnSync(process.execPath, [path.join(root, 'mindmap', 'test', f)], { encoding: 'utf8' }); ok(r.status === 0, 'mindmap/test/' + f + ' passes: ' + (r.stdout || '').slice(-1500) + (r.stderr || '').slice(-1500)); });
 // 2026-11-24 英文閱讀測驗 200 篇：交稿總檢查（配額、文體、撞文）＋純函式測試
-[[path.join(root, 'english-reading', 'check.js'), '--final'], [path.join(root, 'test', 'english-reading.test.js')]].forEach(a => { const r = require('child_process').spawnSync(process.execPath, a, { encoding: 'utf8' }); ok(r.status === 0, path.basename(a[0]) + ' ' + (a[1] || '') + ' passes: ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); });
+// 2026-11-26 線對稱 g5a7：紙本原題、錯題補題、鎖、Ms2 同步新舊互收（答案驗算在 math-grade.test.js、同步大小在上面）
+[[path.join(root, 'english-reading', 'check.js'), '--final'], [path.join(root, 'test', 'english-reading.test.js')], [path.join(root, 'test', 'symmetry.test.js')]].forEach(a => { const r = require('child_process').spawnSync(process.execPath, a, { encoding: 'utf8' }); ok(r.status === 0, path.basename(a[0]) + ' ' + (a[1] || '') + ' passes: ' + (r.stdout || '').slice(-600) + (r.stderr || '').slice(-1500)); });
 // 2026-11-13 全站禁止複製貼上：每一頁（跟 deploy_copy 部署的同一批）都在 <head> 載入根目錄的 nocopy.js
 { const pages = [], walk = d => fs.readdirSync(d, { withFileTypes: true }).forEach(e => {
     const f = path.join(d, e.name), rel = path.relative(root, f).split(path.sep);

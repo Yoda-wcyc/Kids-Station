@@ -103,12 +103,12 @@ async function run() {
   await A.ev(`history.back(); return 1`); await sleep(600); await A.wait(); await sleep(1500);
   assert(SYNC.puts > puts0 && /A=8/.test(docNow().pg.f), '回首頁（history.back／bfcache）就把別頁改的進度推上去: ' + docNow().pg.f);
   await A.shot('A-1-home');
-  // ---- A：線對稱（五上單元七）練習答對 1 題 → kids_mg 每題答對次數 1，跟著推上去（pg f 'Ms1'，2026-11-24）----
+  // ---- A：線對稱（五上單元七）練習答對 1 題 → kids_mg 每題答對次數 1，只在本機（2026-11-26 拿掉 pg 'Ms1'；答對 2 次才同步 'Ms2'）----
   await A.go('/math/grade.html?u=g5a7');
   await A.ev(`document.getElementById('tab-prac').click(); document.getElementById('p-go').click(); return 1`); await sleep(300);
   const mq = await A.ev(`const Q = MGPage.P().items[MGPage.P().idx], c = document.getElementById('p-card'); if (Q.t === 'mc') c.querySelector('[data-o="' + Q.a + '"]').click(); else c.querySelector('input').value = MG.H.toDec(Q.a); document.getElementById('p-ok').click(); return Q.id`);
   await sleep(2200);
-  assert(await A.ev(`return JSON.parse(localStorage.getItem('kids_mg')).c['${mq}']`) === 1 && /Ms1=/.test(docNow().pg.f) && !/Ms2=/.test(docNow().pg.f), '線對稱答對 1 題（' + mq + '）→ kids_mg 1 次、pg 推上去 Ms1: ' + docNow().pg.f);
+  assert(await A.ev(`return JSON.parse(localStorage.getItem('kids_mg')).c['${mq}']`) === 1 && !/Ms[12]=/.test(docNow().pg.f), '線對稱答對 1 題（' + mq + '）→ kids_mg 1 次、只在本機（pg 沒有 Ms1／Ms2）: ' + docNow().pg.f);
   await A.go('/index.html'); await sleep(800);
 
   // ---- B：首頁一直開著 → 回到前景 ----
@@ -118,11 +118,11 @@ async function run() {
   assert(JSON.stringify(hA) === JSON.stringify(hB), 'B 回到前景：首頁今日清單、學習島任務旗與成長、清單 ✓ 都跟 A 一樣\n   A=' + JSON.stringify(hA) + '\n   B=' + JSON.stringify(hB));
   assert(/g✓/.test(hA.today) && /h✓/.test(hA.today) && /comics\/v1e2\.html/.test(hA.today), '（今日清單：地理 ✓、歷史 ✓、下一話＝第 2 話）' + hA.today);
   await B.shot('B-1-home-after-foreground');
-  assert(await B.ev(`return JSON.parse(localStorage.getItem('kids_mg')).c['${mq}']`) === 1, 'B 回到前景：收到 A 的線對稱答對次數（' + mq + ' 1 次）');
+  assert(await B.ev(`return !('${mq}' in ((JSON.parse(localStorage.getItem('kids_mg')) || {}).c || {}))`), 'B 回到前景：A 答對 1 次的線對稱題不會過來（' + mq + '，只影響 A 的抽題順序）');
   // B 另一題答對 2 次（同一個 kids_mg 裡也有別的單元的次數）→ 推上去 Ms2
-  await B.ev(`const s = JSON.parse(localStorage.getItem('kids_mg')); s.c['g5a7-kite23'] = 2; s.c['g6b6-x0'] = 1; localStorage.setItem('kids_mg', JSON.stringify(s)); KESync.touch(); return 1`); await sleep(2400);
+  await B.ev(`const s = JSON.parse(localStorage.getItem('kids_mg')) || {}; s.c = s.c || {}; s.c['g5a7-kite23'] = 2; s.c['g6b6-x0'] = 1; localStorage.setItem('kids_mg', JSON.stringify(s)); KESync.touch(); return 1`); await sleep(2400);
   const mgB = await B.ev(`return JSON.parse(localStorage.getItem('kids_mg')).c`);
-  assert(mgB[mq] === 1 && mgB['g5a7-kite23'] === 2 && mgB['g6b6-x0'] === 1 && /Ms2=/.test(docNow().pg.f), 'B 的 2 次推上去 Ms2、本機別的單元留著: ' + JSON.stringify(mgB) + ' ' + docNow().pg.f);
+  assert(!(mq in mgB) && mgB['g5a7-kite23'] === 2 && mgB['g6b6-x0'] === 1 && /Ms2=/.test(docNow().pg.f) && !/Ms1=/.test(docNow().pg.f), 'B 的 2 次推上去 Ms2、本機別的單元留著: ' + JSON.stringify(mgB) + ' ' + docNow().pg.f);
   await A.ev(`await KESync.syncNow(); return 1`);
   const mgA = await A.ev(`return JSON.parse(localStorage.getItem('kids_mg')).c`);
   assert(mgA[mq] === 1 && mgA['g5a7-kite23'] === 2 && !('g6b6-x0' in mgA), 'A 再同步收到 B 的 2 次（同一題取大），別的單元不跟著過來: ' + JSON.stringify(mgA));

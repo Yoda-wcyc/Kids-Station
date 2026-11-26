@@ -43,7 +43,7 @@
   }
   function mkRec(id, ok, p) { try { return window.KidsMistakes ? KidsMistakes.record(ER.MK_SUBJ, id, !!ok, p) : null; } catch (e) { return null; } }
   function mkList() { try { return window.KidsMistakes ? KidsMistakes.list(ER.MK_SUBJ, ER.MK_U) : []; } catch (e) { return []; } }
-  // 每日清單「英文閱讀 1 篇」的接點：kids-daily.js FIN 加 er 之前不會記（回 null）
+  // 每日清單「英文閱讀 1 篇」：第一次完成一篇 → dd 代碼 b（kids-daily.js FIN.er）
   function finishDaily(fresh) { try { if (window.KidsDaily && KidsDaily.finish) KidsDaily.finish('er', fresh); } catch (e) { } }
 
   // ---------- 小元件 ----------

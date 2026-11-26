@@ -399,7 +399,8 @@
   //   e 段考／單元測驗：'卷代碼＋8 個字;…'（見 exOpen）；最高取大、最近跟著小時較新的（一樣新取大）
   //   m 英檢模擬考：最新 PG_MOCK 筆 '級組.秒.聽對.聽題.讀對.讀題.聽分.讀分.過'；依（卷, 秒）聯集
   const B32 = '0123456789abcdefghijklmnopqrstuv', PG_GRP = /^[A-Za-z][A-Za-z0-9]{0,4}$/, PG_FSLOT = 320, PG_VSLOT = 200, PG_NGRP = 120, PG_EX = 80, PG_MOCK = 8, PG_PAIR = /^[ZIW]/, PG_NCAP = 11;
-  const pgSplit = s => { const o = {}; (typeof s === 'string' ? s : '').split(',').forEach(x => { const i = x.indexOf('='), g = x.slice(0, i), v = x.slice(i + 1); if (i > 0 && PG_GRP.test(g) && v) o[g] = v; }); return o; };
+  const PG_GONE = /^Ms1$/;   // 退役的群組：舊版裝置還會送，收到就丟（合併結果不留，免得永久吃空間）
+  const pgSplit = s => { const o = {}; (typeof s === 'string' ? s : '').split(',').forEach(x => { const i = x.indexOf('='), g = x.slice(0, i), v = x.slice(i + 1); if (i > 0 && PG_GRP.test(g) && !PG_GONE.test(g) && v) o[g] = v; }); return o; };
   const pgJoin = o => Object.keys(o).filter(g => o[g]).sort().slice(0, PG_NGRP).map(g => g + '=' + o[g]).join(',');
   const bitsOf = s => { const o = []; String(s || '').slice(0, PG_FSLOT / 5).split('').forEach((c, i) => { const v = B32.indexOf(c); for (let b = 0; v > 0 && b < 5; b++) if (v >> b & 1) o.push(i * 5 + b); }); return o; };
   const bitStr = idx => { const a = []; idx.forEach(i => { if (i >= 0 && i < PG_FSLOT) { const k = Math.floor(i / 5); a[k] = (a[k] || 0) | (1 << (i % 5)); } }); let s = ''; for (let k = 0; k < a.length; k++) s += B32[a[k] || 0]; return s.replace(/0+$/, ''); };
@@ -457,8 +458,9 @@
   //   區＝m／t／w；第 i 格＝(單元號−1)×40＋題號（練習 p01～p30＝0～29、測驗 t01～t10＝30～39）。720 題全滿約 320 B（smoke 最壞情況有算）
   const geoSlot = id => { const m = /^([mtw])([1-7])-([pt])(\d\d)$/.exec(id || ''), n = m ? +m[4] : 0; return m && n >= 1 && n <= (m[3] === 'p' ? 30 : 10) ? [m[1], (m[2] - 1) * 40 + (m[3] === 'p' ? n - 1 : 29 + n)] : null; };
   const geoId = (r, i) => r + (Math.floor(i / 40) + 1) + '-' + (i % 40 < 30 ? 'p' + ld2(i % 40 + 1) : 't' + ld2(i % 40 - 29));
-  // 線對稱（五上單元七 g5a7，2026-11-24）每一題答對過幾次（kids_mg.c＝{題目 id: 1|2}，學過 2 次就不算）→ 同地理：f 旗標兩層 'Ms1'／'Ms2'（合併＝聯集＝每題取大）。
-  //   第 i 格＝題型序號×8＋題號（g5a7-mid0…g5a7-kite23；MG_K 只能往後加）；46 題全滿 34 B（smoke 最壞情況有算）。kids_mg.c 裡別的單元只留本機
+  // 線對稱（五上單元七 g5a7，2026-11-24）答對 2 次的題（kids_mg.c＝{題目 id: 1|2}，學過 2 次就不算）→ f 旗標 'Ms2'（合併＝聯集）。
+  //   2026-11-26 拿掉 'Ms1'（答對 1 次只用在抽題順序，用本機的就好）：舊版裝置送來的 Ms1 在 pgSplit 丟掉（PG_GONE）、合併結果不留。
+  //   第 i 格＝題型序號×8＋題號（g5a7-mid0…g5a7-kite23；MG_K 只能往後加）；46 題全滿約 17 B（smoke 最壞情況有算）。kids_mg.c 裡別的單元只留本機
   const MG_K = ['mid', 'pair', 'ang', 'angmc', 'half', 'kite', 'peri', 'kite2'];
   const mgSlot = id => { const m = /^g5a7-([a-z]+2?)([0-7])$/.exec(id || ''), k = m ? MG_K.indexOf(m[1]) : -1; return k >= 0 ? k * 8 + +m[2] : -1; };
   const mgId = i => (MG_K[i >> 3] ? 'g5a7-' + MG_K[i >> 3] + (i & 7) : null);
@@ -484,7 +486,7 @@
     Object.keys(obj(L.zhRead)).forEach(id => { const m = /^zh([1-4])-(\d\d)$/.exec(id); if (m) zp('Z' + m[1], m[2] - 1, L.zhRead[id]); });
     Object.keys(obj(L.zhIdiom)).forEach(id => { let m; if ((m = /^cy(\d{3})$/.exec(id))) zp('I', m[1] - 1, L.zhIdiom[id]); else if ((m = /^cy([ru])(\d\d)$/.exec(id))) zp('I' + m[1], m[2] - 1, L.zhIdiom[id]); else if (id === 'cyall') zp('Ia', 0, L.zhIdiom[id]); });
     Object.keys(obj(L.geoQ)).forEach(id => { const s = geoSlot(id), n = Math.floor(num(L.geoQ[id], 0)); if (s && n >= 1) setF('Q' + s[0] + '1', s[1]); if (s && n >= 2) setF('Q' + s[0] + '2', s[1]); });
-    { const c = obj(obj(L.mg).c); Object.keys(c).forEach(id => { const s = mgSlot(id), n = Math.floor(num(c[id], 0)); if (n >= 1) setF('Ms1', s); if (n >= 2) setF('Ms2', s); }); }
+    { const c = obj(obj(L.mg).c); Object.keys(c).forEach(id => { const s = mgSlot(id), n = Math.floor(num(c[id], 0)); if (n >= 2) setF('Ms2', s); }); }
     // 英文閱讀（2026-11-24）：不能跳篇 → 只同步「照順序完成到第幾篇」p 一個整數＝v 群組 'R' 第 0 格（合併每格取大），約 5 B（smoke 最壞情況有算）。每篇次數、鎖、每題 ok 只留本機
     { const p = Math.floor(num(obj(L.er).p, 0)); if (p > 0) setV('R', 0, Math.min(999, p)); }
     const f = {}, v = {}; Object.keys(F).forEach(g => { f[g] = bitStr(F[g]); }); Object.keys(V).forEach(g => { v[g] = cellStr(Array.from(V[g])); });
@@ -529,7 +531,7 @@
     zApply('zhRead', k => { const m = /^Z([1-4])$/.exec(k); return m && (i => 'zh' + m[1] + '-' + ld2(i + 1)); });
     zApply('zhIdiom', k => (k === 'I' ? i => 'cy' + String(i + 1).padStart(3, '0') : /^I[ru]$/.test(k) ? i => 'cy' + k.charAt(1) + ld2(i + 1) : k === 'Ia' ? i => (i ? null : 'cyall') : null));
     { const x = cl(L.geoQ); Object.keys(F).forEach(k => { const m = /^Q([mtw])([12])$/.exec(k); if (m) F[k].forEach(i => { const id = geoId(m[1], i); if (i < 280 && !(num(x[id], 0) >= +m[2])) x[id] = +m[2]; }); }); put('geoQ', obj(L.geoQ), x); }
-    { const x = cl(L.mg); x.c = obj(x.c); [1, 2].forEach(n => (F['Ms' + n] || []).forEach(i => { const id = mgId(i); if (id && !(num(x.c[id], 0) >= n)) x.c[id] = n; })); put('mg', obj(L.mg), x); }
+    { const x = cl(L.mg); x.c = obj(x.c); (F.Ms2 || []).forEach(i => { const id = mgId(i); if (id && !(num(x.c[id], 0) >= 2)) x.c[id] = 2; }); put('mg', obj(L.mg), x); }
     { const p = (V.R || [])[0]; if (p > 0) { const x = cl(L.er); if (!(num(x.p, 0) >= p)) x.p = p; put('er', obj(L.er), x); } }   // 只補 p；閱讀頁打開時 EnReading.syncIn 再把前 p 篇補成完成
     return out;
   }

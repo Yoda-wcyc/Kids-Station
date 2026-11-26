@@ -99,7 +99,7 @@ body{background:var(--bg)}
 /* 五下／六上／六下數學單元頁（2026-11-06；引擎 math/grade.js，資料 math/grade/<單元>.js）
    ?u=<單元>：📖 看重點（免登入）／✏️ 練習（一輪 15 題：沒答對過 → 錯題 → 其他，照難度）／📝 單元測驗（20 題，交卷才看分數與解說）
    ?r=<冊>：📝 總複習（整冊 30 題）　?mistakes=1：數學錯題庫裡 type 'grade' 的題（原題重做，連對 3 次畢業）
-   每題作答：KidsCoins.answer(ok,'math')＋KidsDaily.rec('math', ok, null, prev)（同 mkRec，錯題庫同一點）；每題答對過幾次記在本機 kids_mg（抽題順序＋學過 2 次不算；只有線對稱 g5a7 跟著同步，其他單元不同步）。
+   每題作答：KidsCoins.answer(ok,'math')＋KidsDaily.rec('math', ok, null, prev)（同 mkRec，錯題庫同一點）；每題答對過幾次記在本機 kids_mg（抽題順序＋學過 2 次不算；只有線對稱 g5a7 的「答對 2 次」跟著同步，其他單元不同步）。
    五上單元七〈線對稱圖形〉（g5a7，2026-11-24）也走這頁；錯題庫裡的紙本原題（g5a7-pp1、pp2）用 MG.byId 找回。
    完成：KidsDone.record('mg', '<單元>q'＝練習一輪最佳 %、'<單元>t'＝測驗最高分、'<冊>R'＝總複習最高分)；判定在 completion.js（mg:<單元>、mg:<冊>R）。
    學習幣「一輪」事件（practice_round）要後端白名單，還沒加，先不送（每題的 answer 照算）。 */
@@ -119,7 +119,7 @@ function mkRec(Q, ok) { Q.old = window.KidsDaily ? KidsDaily.rec('math', ok, nul
 function oldNote(Q) { try { return Q.old && window.KidsDaily ? KidsDaily.oldNote(null, '這題你已經答對 2 次了，不算今天的題數，去練新的題吧') : ''; } catch (e) { return ''; } }
 function mkMore() { try { return window.KidsMistakes && KidsMistakes.mathMore ? KidsMistakes.mathMore(['eq', 'gcd', 'gcdword', 'multiples', 'multiply', 'fraction'], true) : ''; } catch (e) { return ''; } }
 // 本機：每題答對過幾次（抽題先出沒答對過的；學過 2 次不算題數）
-// 線對稱 g5a7 的次數跟著同步（2026-11-24，syncmerge.js pg 'Ms1'／'Ms2'，同地理 geoQ）
+// 線對稱 g5a7 答對 2 次的題跟著同步（syncmerge.js pg 'Ms2'，防換台重複算題數）；答對 1 次只在本機（只影響抽題順序，2026-11-26 拿掉 'Ms1'）
 // shortcut: 其他年級單元的每題答對次數只存本機（同步最壞情況餘裕只剩約 700 B），換一台 iPad 從 0 算、可能多算幾題，錯題本身照常同步；同步瘦身有空間時比照 g5a7 加進 syncmerge.js MG_K
 function ldOk() { try { return (JSON.parse(localStorage.getItem('kids_mg')) || {}).c || {}; } catch (e) { return {}; } }
 function okN(id) { return Math.min(2, +ldOk()[id] || 0); }
@@ -299,8 +299,8 @@ if (MK) {
 </script>
 <script src="../kids-auth.js?v=42d7c72a13"></script>
 <script src="../kids-coins.js?v=7d4d0b22eb"></script>
-<script src="../syncmerge.js?v=854bf98256"></script>
-<script src="../kids-daily.js?v=00fddb1609"></script>
+<script src="../syncmerge.js?v=0e99c141e3"></script>
+<script src="../kids-daily.js?v=915971e5d0"></script>
 <script src="../completion.js?v=37ef183e06"></script>
 <script src="../kids-done.js?v=6c3dfa8aeb"></script>
 <script src="../kids-lock.js?v=923677cdf3"></script>

@@ -344,9 +344,9 @@
       <select id="ftag" aria-label="主題"><option value="">全部主題</option>${tags.map(t => `<option value="${esc(t)}">${esc(KE.TAGS[t] || t)}</option>`).join('')}</select>
       <button class="btn primary" id="pw">🎯 練這些字</button><button class="btn" id="ps" ${canSpeak ? '' : 'disabled'} title="${canSpeak ? '用說的練這些字' : NO_SPEAK_MSG}">🎤 說說看</button></div>${canSpeak ? '' : `<p class="muted" id="psno">🎤 ${NO_SPEAK_MSG}</p>`}${note ? `<p class="muted" id="wscope-note">${note}</p>` : ''}${lfBar('words')}<p class="muted" id="wn"></p><div class="cards" id="wl"></div><div class="pager" id="wp"></div>`;
     const qOk = w => { const q = LF.q.trim().toLowerCase(); return !q || w.w.toLowerCase().includes(q) || w.zh.includes(LF.q.trim()); };
-    // 卡片照 lv2:lv3:lv4 = 3:2:1 交錯排（KE.pathSort）；按了「學會了」的卡留在原位（不會一按就跳到最後一頁），要只看沒學會的用上面的「未學會」
-    const pick = () => KE.pathSort(all.filter(w => (!LF.tag || (w.tags || []).includes(LF.tag)) && qOk(w) && lfPass('words', KE.wordItemId(w))), () => false);
-    // 🎯／🎤：照順序取前 10 個還有新題（學過不到 2 次）的字，由易到難；都學過了就用前 10 個
+    // 卡片照 lv2:lv3:lv4 = 3:2:1 交錯排（KE.lvWeave）；按了「學會了」的卡留在原位（不會一按就跳到最後一頁），要只看沒學會的用上面的「未學會」
+    const pick = () => KE.lvWeave(all.filter(w => (!LF.tag || (w.tags || []).includes(LF.tag)) && qOk(w) && lfPass('words', KE.wordItemId(w))));
+    // 🎯／🎤：照順序取前 10 個還有新題（學過不到 2 次）的字，由易到難；都學過了就用前 10 個；一回一個字最多一題（oneWord）
     const fresh = () => { const L = pick(), f = L.filter(w => !isL(KE.wordItemId(w)) && ['listen', 'zh2en', 'en2zh', 'spell', 'type'].some(t => !E.old.has(`w:${KE.wordKey(w)}:${t}`))); return (f.length ? f : L).slice(0, 10); };
     const draw = () => {
       const L = pick(), pages = Math.max(1, Math.ceil(L.length / PAGE));
@@ -359,8 +359,8 @@
     };
     const ft = $('#ftag'); if (!tags.includes(LF.tag)) LF.tag = ''; ft.value = LF.tag; ft.onchange = () => { LF.tag = ft.value; LF.page = 0; draw(); };
     const fq = $('#fq'); let qt = null; fq.value = LF.q; fq.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { if (!fq.isConnected) return; /* 0.2 秒內已切頁：舊搜尋框不在畫面上，略過 */ LF.q = fq.value; LF.page = 0; draw(); }, 200); };
-    $('#pw').onclick = () => { const ids = fresh().flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)); startQuiz({ ids, count: 10, mode: 'words' }); };
-    $('#ps').onclick = () => { if (!canSpeak) return; startQuiz({ ids: fresh().map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true }); };
+    $('#pw').onclick = () => { const ids = fresh().flatMap(w => ['listen', 'zh2en', 'en2zh', 'spell', 'type'].map(t => `w:${KE.wordKey(w)}:${t}`)); startQuiz({ ids, count: 10, mode: 'words', oneWord: true }); };
+    $('#ps').onclick = () => { if (!canSpeak) return; startQuiz({ ids: fresh().map(w => `w:${KE.wordKey(w)}:speak`), count: 10, mode: 'speak', allowSpeak: true, oneWord: true }); };
     bindLf('words', '單字', all.map(KE.wordItemId), draw);   // 分母＝目前路徑的字數（不含等級 1、含新字）
   }
   function pRoots() {

@@ -59,8 +59,8 @@
     for (let i = start || 0, n = ws.length - rest.length; out.length < n; i++) { const q = b[LV_CYCLE[i % 6]]; if (q && q.length) out.push(q.shift()); }
     return out.concat(rest);
   }
-  // 卡片／出題順序：沒學會的在前，同一組裡三級交錯（見 lvWeave）
-  const pathSort = (ws, learned) => lvWeave(ws.filter(w => !learned(w))).concat(lvWeave(ws.filter(w => !!learned(w))));
+  // 單字題的字（w:<字>:<題型> → <字>）；不是單字題回傳 false。一回一個字只出一題用（buildQuiz、單字卡 🎯／🎤）
+  const wordOfQ = m => !!m && m.module === 'words' && m.id.split(':')[1];
 
   function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   function norm(s) { return String(s == null ? '' : s).trim().toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' '); }
@@ -616,7 +616,10 @@
     // 錯題庫的錯題、「練答錯的題目」的題、說說看回合的口說題不換掉，打字不足的部分追加到最後
     round(cfg) {
       cfg = cfg || {};
-      const qs = cfg.ids ? shuffle(this.newFirst(shuffle(cfg.ids)).slice(0, cfg.count || 30)).map(id => this.get(id)).filter(Boolean) : this.buildQuiz(cfg);
+      let ids = cfg.ids && this.newFirst(shuffle(cfg.ids));
+      // oneWord（單字卡 🎯／🎤）：跟 buildQuiz 一樣一回一個字最多一題（新題優先）；字不夠就少出幾題，不補重複的字
+      if (ids && cfg.oneWord) { const seen = new Set(); ids = ids.filter(id => { const k = wordOfQ(this.byId[id]); if (k && seen.has(k)) return false; if (k) seen.add(k); return true; }); }
+      const qs = ids ? shuffle(ids.slice(0, cfg.count || 30)).map(id => this.get(id)).filter(Boolean) : this.buildQuiz(cfg);
       const all = cfg.ids && (cfg.mode === 'mistakes' || cfg.mode === 'redo'), ms = new Set(cfg.mistakes || []);
       return this.withTyped(qs, q => all || ms.has(q.id) || (cfg.mode === 'speak' && q.type === 'speak'));
     },
@@ -724,8 +727,8 @@
         pool.forEach(m => { if (!taken.has(m.id)) (groups[m.module + '|' + m.type] = groups[m.module + '|' + m.type] || []).push(m); });
         const gs0 = shuffle(Object.values(groups).map(g => (isW(g) ? g : shuffle(g))));
         let wj = 0; const off = gs0.map(g => (isW(g) ? wj++ : 0)), easyLast = (g, j) => (isW(g) ? lvWeave(g, off[j]).reverse() : g);
-        const seenW = new Set(), later = [], wk = m => m.module === 'words' && m.id.split(':')[1];
-        const take = g => { while (g.length) { const m = g.pop(), k = wk(m); if (k && seenW.has(k)) { later.push(m); continue; } if (k) seenW.add(k); chosen.push(m); return; } };
+        const seenW = new Set(), later = [];
+        const take = g => { while (g.length) { const m = g.pop(), k = wordOfQ(m); if (k && seenW.has(k)) { later.push(m); continue; } if (k) seenW.add(k); chosen.push(m); return; } };
         [gs0.map((g, j) => easyLast(g.filter(m => !isOld(m)), j)), gs0.map((g, j) => easyLast(isW(g) ? shuffle(g.filter(isOld)) : g.filter(isOld), j))].forEach(gs => {
           while (chosen.length < count && gs.some(g => g.length)) gs.forEach(g => { if (g.length && chosen.length < count) take(g); });
         });
@@ -743,7 +746,7 @@
     }
   };
 
-  const KE = { Engine, phraseInEx, wordKey, wordInPath, wordScopeOk, lvWeave, pathSort, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, dailyKind, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, TB_TYPES, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
+  const KE = { Engine, phraseInEx, wordKey, wordInPath, wordScopeOk, lvWeave, POS, PATTERN_LV, PHRASE_LV, phraseItemId, TAGS, ROOT_T, MODULES, TYPES, MOD_TYPES, SRC_LABEL, shuffle, norm, tokens, fillBlank, fmtTaipei, clampRate, gatePassed, typeNorm, typeGrade, speakNorm, speakGrade, wordGaps, gapGrade, seededPick, SET_ONLY_TYPES, typedRank, isTyped, dailyKind, TYPED_TYPES, SET_CHOICE, SET_TYPED, composeSet, TB_TYPES, expandContr, drillOrder, requeue, correctIds, setLearned, unsetLearned, wordItemId, patternItemId, grammarItemId, rootItemId, slug };
   if (typeof module !== 'undefined' && module.exports) module.exports = KE;
   root.KE = KE;
 })(typeof window !== 'undefined' ? window : globalThis);

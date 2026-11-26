@@ -79,8 +79,14 @@ async function run() {
   assert(sev && sev.map(s => s.t).join('/') === 'sev/en/ty', 'seventy → sev/en/ty (same split as seven) ' + JSON.stringify(sev && sev.map(s => s.t)));
 
   // ---- 4. 拼字題：題目上沒有底線（解答畫面可以有） ----
+  // 2026-11-26 🎯 一回一個字最多一題：只搜到 ability → 這回只有 1 題；拼字題改從錯題庫「只練錯題」叫出來（原題照出）
   await ev(`const q = document.getElementById('fq'); q.value = 'ability'; q.dispatchEvent(new Event('input')); return 1`); await sleep(500);
   await ev(`document.getElementById('pw').click(); return 1`); await sleep(400);
+  const cnt1 = await ev(`const c = document.querySelector('#app .count'); return c ? c.textContent : null`);
+  assert(cnt1 === '第 1 / 1 題', '🎯 one word on the cards → one question (one per word per round): ' + cnt1);
+  const MK_SPELL = `const m = JSON.parse(localStorage.getItem('ke_mistakes') || '{}'), t = Date.now(); m['w:ability:spell'] = { c: 0, w: 1, t, u: t }; localStorage.setItem('ke_mistakes', JSON.stringify(m)); KEApp.reloadData(); return 1`;   // 同一頁只換 hash 不會重載，要自己重讀
+  await ev(MK_SPELL); await go('/index.html#mistakes'); await ev(HOOK);
+  await ev(`document.getElementById('onlym').click(); return 1`); await sleep(400);
   let spellSeen = false;
   for (let k = 0; k < 12 && !spellSeen; k++) {
     const st = await ev(`const c = document.querySelector('.qcard'); if (!c) return null; return { type: c.querySelector('.qtype').textContent, sy: document.querySelectorAll('#app .sy, #app .syl').length, txt: c.textContent }`);
@@ -99,9 +105,8 @@ async function run() {
   }
   assert(spellSeen, 'a spell (聽寫拼字) question came up in the ability round');
   // 2026-11-24 第二輪：拼字答對也秀那個字（同一套底線）
-  await go('/index.html#learn/words'); await ev(HOOK);
-  await ev(`const q = document.getElementById('fq'); q.value = 'ability'; q.dispatchEvent(new Event('input')); return 1`); await sleep(500);
-  await ev(`document.getElementById('pw').click(); return 1`); await sleep(400);
+  await ev(MK_SPELL); await go('/index.html#mistakes'); await ev(HOOK);
+  await ev(`document.getElementById('onlym').click(); return 1`); await sleep(400);
   let okSeen = false;
   for (let k = 0; k < 12 && !okSeen; k++) {
     const t = await ev(`const c = document.querySelector('.qcard'); return c ? c.querySelector('.qtype').textContent : null`);
